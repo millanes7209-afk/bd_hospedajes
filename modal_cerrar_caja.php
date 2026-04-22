@@ -23,6 +23,31 @@
                 <p><strong>Total: <span id="totalGeneral">Bs. 0.00</span></strong></p>
                 
                 <p>¿Está seguro de cerrar la caja?</p>
+
+                <!-- DEPURADOR DE ENVÍO -->
+                <div style="background: #f8f9fa; border: 1px solid #ddd; padding: 10px; border-radius: 5px; font-size: 11px; font-family: monospace; margin-top: 20px;">
+                    <b style="color: #d9534f; display: block; margin-bottom: 5px;">[DEBUG] DATOS A ENVIAR:</b>
+                    Ruta: <span style="color: blue;">../../procesar_caja.php</span><br>
+                    Acción: <span style="color: green;">cerrar</span><br>
+                    CajaID: <span style="color: #611; font-weight: bold;"><?php echo $_SESSION['caja_abierta_id'] ?? 'N/A'; ?></span><br>
+                    UsuarioID (Sesión): <span style="color: #611; font-weight: bold;"><?php echo $_SESSION['sesion_id_usuario'] ?? 'N/A'; ?></span><br>
+                    EmpresaID: <span style="color: #611; font-weight: bold;"><?php echo $_SESSION['empresaID'] ?? 'N/A'; ?></span><br>
+                    
+                    <div style="margin-top: 5px; border-top: 1px dashed #ccc; padding-top: 5px;">
+                        <b>Desglose de Saldos:</b><br>
+                        <?php 
+                        if (isset($saldos_forma_pago)) {
+                            foreach ($saldos_forma_pago as $tipo => $monto) {
+                                if ($monto > 0) {
+                                    echo "• " . htmlspecialchars($tipo) . ": Bs. " . number_format($monto, 2) . "<br>";
+                                }
+                            }
+                        } else {
+                            echo "<span style='color:red;'>No se detectaron saldos</span>";
+                        }
+                        ?>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">

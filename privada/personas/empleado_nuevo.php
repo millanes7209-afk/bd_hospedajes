@@ -397,7 +397,7 @@ function guardarContrato() {
     // Limpiar formato de sueldo antes de enviar
     const sueldoInput = document.getElementById('sueldo');
     const sueldoOriginal = sueldoInput.value;
-    sueldoInput.value = sueldoInput.value.replace(/\D/g, ''); // Eliminar separadores
+    sueldoInput.value = sueldoInput.value.replace(/[^0-9]/g, ''); // Eliminar separadores
     
     // Obtener datos del formulario
     const formData = new FormData(document.getElementById('formContrato'));
@@ -652,7 +652,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('sueldoError').textContent = '';
             
             // Formatear con separadores de miles
-            let value = e.target.value.replace(/\D/g, ''); // Eliminar todo excepto números
+            let value = e.target.value.replace(/[^0-9]/g, ''); // Eliminar todo excepto números
             if (value) {
                 // Formatear con separadores de miles
                 value = parseInt(value).toLocaleString('es-ES');
@@ -663,7 +663,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Limpiar formato al enviar formulario
         document.getElementById('formContrato').addEventListener('submit', function(e) {
             e.preventDefault();
-            const sueldoValue = sueldoInput.value.replace(/\D/g, ''); // Eliminar separadores para enviar
+            const sueldoValue = sueldoInput.value.replace(/[^0-9]/g, ''); // Eliminar separadores para enviar
             sueldoInput.value = sueldoValue;
             guardarContrato();
         });

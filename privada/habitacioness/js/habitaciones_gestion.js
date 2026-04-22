@@ -16,7 +16,6 @@ function mostrarModalIngreso() {
  * CLICK EN HABITACIÓN - DETERMINA ACCIÓN SEGÚN ESTADO
  */
 function handleHabitacionClick(estado, numero, tipo, precio, habitacionID) {
-    console.log("Datos recibidos:", {estado, numero, tipo, precio, habitacionID});
     var modal = new bootstrap.Modal(document.getElementById('menu-opciones'));
     const modalFooter = document.getElementById('modal-footer');
     modalFooter.innerHTML = ''; // Limpiar botones existentes
@@ -188,7 +187,6 @@ function mostrarModalCambioHabitacion(habitacionID) {
     fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&v=' + vStamp)
         .then(response => response.text())
         .then(text => {
-            console.log("RAW Hospedaje:", text);
             try {
                 return JSON.parse(text);
             } catch(e) {
@@ -208,7 +206,6 @@ function mostrarModalCambioHabitacion(habitacionID) {
                 fetch('get_habitaciones_disponibles.php?v=' + vStamp)
                     .then(res => res.text())
                     .then(text2 => {
-                        console.log("RAW Disponibles:", text2);
                         try {
                             return JSON.parse(text2);
                         } catch(e) {
@@ -409,12 +406,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Notificaciones iniciales
-    console.log('Página cargada, ejecutando solicitud AJAX notificaciones...');
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '../../ejecutar_notificaciones.php', true); 
     xhr.onreadystatechange = function() {
         if (xhr.readyState == 4 && xhr.status == 200) {
-            console.log('Notificaciones ejecutadas: ' + xhr.responseText);
+            // Notificaciones ejecutadas exitosamente
         }
     };
     xhr.send();

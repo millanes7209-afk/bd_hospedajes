@@ -29,6 +29,11 @@ class MiConexion extends PDO {
         }
     }
 
+    // Alias para compatibilidad con código existente
+    public function ultimoInsertId() {
+        return $this->lastInsertId();
+    }
+
     // Método simple para obtener una sola fila (Como un SELECT de un ID)
     public function obtenerFila($sql, $params = []) {
         $stmt = $this->ejecutar($sql, $params);

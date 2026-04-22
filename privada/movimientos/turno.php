@@ -59,7 +59,13 @@ $saldo_final = $total_ingresos - $total_egresos;
     <title>Movimientos del Turno - Sistema Web Dulces Sueños</title>
     <!-- Los estilos bootstrap nativos ya son provistos por libreria_menu.php -->
     <style>
-        
+        thead {
+            color: black!important;
+            background: #b5b5b5!important;
+        }
+        .card {
+            margin: 20px;
+        }
         .tabla-turno th, .tabla-turno td { vertical-align: middle !important; }
         .badge-ingreso { background-color: #28a745; color: white; padding: 5px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85rem; letter-spacing: 0.5px;}
         .badge-egreso { background-color: #dc3545; color: white; padding: 5px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85rem; letter-spacing: 0.5px;}
@@ -69,7 +75,9 @@ $saldo_final = $total_ingresos - $total_egresos;
 </head>
 <body>
     <div class="container-fluid mt-4 mb-5">
-        <div class="card shadow-sm border-0">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card shadow-sm border-0">
             <div class="card-header d-flex justify-content-between align-items-center py-3">
                 <h3 class="mb-0 m-0" style="font-size: 1.4rem;">
                     <i class="fas fa-cash-register mr-2"></i> Flujo Financiero del Turno 
@@ -81,8 +89,7 @@ $saldo_final = $total_ingresos - $total_egresos;
                     <table class="table table-hover table-striped tabla-turno border-bottom mb-0">
                         <thead>
                             <tr class="">
-                                <th width="5%">REF#</th>
-                                <th width="10%">TIPO</th>
+                                <th width="15%">TIPO</th>
                                 <th width="35%">CONCEPTO DE OPERACIÓN</th>
                                 <th width="15%">FORMA DE PAGO</th>
                                 <th width="15%">CAJERO</th>
@@ -94,9 +101,6 @@ $saldo_final = $total_ingresos - $total_egresos;
                             <?php if (count($movimientos_caja) > 0): ?>
                                 <?php foreach ($movimientos_caja as $mov): ?>
                                     <tr>
-                                        <td class=" text-muted font-weight-bold">
-                                            <?php echo str_pad($mov['movimientoID'], 5, '0', STR_PAD_LEFT); ?>
-                                        </td>
                                         <td class="">
                                             <?php if($mov['tipo'] === 'INGRESO'): ?>
                                                 <span class="badge-ingreso"><i class="fas fa-plus-circle"></i> INGRESO</span>
@@ -156,6 +160,8 @@ $saldo_final = $total_ingresos - $total_egresos;
                             </tr>
                         </tfoot>
                     </table>
+                </div>
+            </div>
                 </div>
             </div>
         </div>

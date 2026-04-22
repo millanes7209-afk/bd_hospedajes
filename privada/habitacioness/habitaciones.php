@@ -3,6 +3,8 @@ session_start();
 require_once("../../conexion.php");
 require_once("../../libreria_menu.php");
 
+$empresaID = $_SESSION['empresaID'];
+
 // Consulta SQL para obtener habitaciones filtradas por empresa actual
 $sql = "SELECT  thab.tipohabitacionID, hab.habitacionID, hab.bano, hab.tv, hab.ventilador, 
                 thab.nombre, thab.precio, hab.estado as estado, hab.numero as numero, 
@@ -167,6 +169,18 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                             <?php elseif ($habitacion['estado'] === 'DISPONIBLE'): ?>
                                 <!-- Precio visible directamente solo en DISPONIBLES -->
                                 <span class="badge-precio">Bs. <?php echo number_format($habitacion['precio'], 0); ?></span>
+                                
+                                <div style="position: absolute; top: 4px; left: 4px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;">
+                                    <?php if ($habitacion['tv'] == 1): ?>
+                                        <span style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">TV</span>
+                                    <?php endif; ?>
+                                    <?php if ($habitacion['bano'] == 1): ?>
+                                        <span style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">BAÑO</span>
+                                    <?php endif; ?>
+                                    <?php if ($habitacion['ventilador'] == 1): ?>
+                                        <span style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">VENT</span>
+                                    <?php endif; ?>
+                                </div>
                             <?php else: ?>
                                 <!-- Otros estados: Texto simple -->
                                 <span class="estado-label"><?php echo ($habitacion['estado'] === 'MANTENIMIENTO') ? 'MANT.' : $habitacion['estado']; ?></span>

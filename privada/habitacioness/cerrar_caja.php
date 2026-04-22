@@ -12,9 +12,9 @@ $rs_caja_abierta = $db->obtenerTodo($sql_caja_abierta, array($id_usuario));
 if (count($rs_caja_abierta) > 0) {
     $caja_id = $rs_caja_abierta[0]["cajaID"];
 
-    // Actualizar la caja para cerrarla
-    $sql_cerrar_caja = $db->Prepare("UPDATE cajas SET estado = 'CERRADA', fecha_cierre = NOW() WHERE cajaID = ?");
-    $db->Execute($sql_cerrar_caja, array($caja_id));
+    // Actualizar la caja para cerrarla (Auditando el usuario)
+    $sql_cerrar_caja = "UPDATE cajas SET estado = 'CERRADA', fecha_cierre = NOW(), _usuario = ? WHERE cajaID = ?";
+    $db->ejecutar($sql_cerrar_caja, array($id_usuario, $caja_id));
 
     // Establecer un mensaje de éxito en la sesión
     $_SESSION['mensaje'] = 'Caja cerrada exitosamente.';

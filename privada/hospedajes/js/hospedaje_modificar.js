@@ -91,7 +91,7 @@ function cargarDatosHospedaje() {
             window.esPropietario = data.es_propietario;
             
             if (!window.esPropietario) {
-                document.getElementById('displayHabitacion').insertAdjacentHTML('beforebegin', '<div class="alert alert-warning py-1 small fw-bold text-center mt-2"><i class="fas fa-lock"></i> Este registro pertenece a otro turno. Formulario financiero bloqueado (solo lectura).</div>');
+                document.getElementById('displayHabitacion').insertAdjacentHTML('beforebegin', '<div class="alert alert-danger py-3 fs-5 fw-bold text-center mt-2 border-5"><i class="fas fa-exclamation-circle"></i> ESTE HOSPEDAJE PERTENECE A OTRO TURNO. MONTOS Y FORMAS DE PAGO NO PUEDEN SER MODIFICADOS.</div>');
             }
 
             renderizarFormulario(data);

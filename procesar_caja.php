@@ -70,10 +70,11 @@ if (isset($_POST['accion'])) {
                            HAVING SUM(m.monto) > 0";
             $saldos = $db->obtenerTodo($sql_saldos, array($caja_abierta_id, $empresaID));
             
-            // Crear snapshots en cierre_cajas
+            // Crear snapshots en cierre_cajas con auditoría completa
             foreach ($saldos as $saldo) {
-                $sql_snapshot = "INSERT INTO cierre_cajas (cajaID, formapagoID, monto) VALUES (?, ?, ?)";
-                $db->ejecutar($sql_snapshot, array($caja_abierta_id, $saldo['formapagoID'], $saldo['total_monto']));
+                $sql_snapshot = "INSERT INTO cierre_cajas (cajaID, formapagoID, monto, _fec_insercion, _fec_modificacion, _usuario, _estado) 
+                                 VALUES (?, ?, ?, NOW(), NOW(), ?, 'A')";
+                $db->ejecutar($sql_snapshot, array($caja_abierta_id, $saldo['formapagoID'], $saldo['total_monto'], $usuarioID));
             }
             
             // Limpiar la caja abierta en la sesión
