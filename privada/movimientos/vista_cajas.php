@@ -9,13 +9,22 @@ if (!isset($_SESSION['sesion_usuario'])) {
     exit();
 }
 
-// Obtener parámetros de filtro
+// Obtener roles y parámetros de filtro
+$rol_usuario = $_SESSION['sesion_rol'] ?? '';
 $empresaID_filtro = $_SESSION['empresaID'];
 $fecha_inicio = $_GET['fecha_inicio'] ?? date('Y-m-d', strtotime('-6 days'));
 $fecha_fin = $_GET['fecha_fin'] ?? date('Y-m-d');
+$usuarioID_filtro = $_GET['usuarioID'] ?? '';
 
-// Obtener usuarioID actual: REGLA DE NEGOCIO ESTRICTA "Cada usuario solo ve su propio historial"
+// Obtener usuarioID actual
 $usuarioID_actual = $_SESSION['sesion_id_usuario'] ?? $_SESSION['usuarioID'] ?? 0;
+
+// Obtener usuarios para filtro si tiene privilegios
+$usuarios_mov = [];
+if ($rol_usuario === 'PROPIETARIO' || $rol_usuario === 'ADMINISTRADOR') {
+    $sql_usuarios = "SELECT usuarioID, usuario FROM usuarios WHERE _estado <> 'X' ORDER BY usuario";
+    $usuarios_mov = $db->obtenerTodo($sql_usuarios);
+}
 
 // Obtener formas de pago disponibles
 $sql_formas_pago = "SELECT fp.formapagoID, fp.tipo 
@@ -50,17 +59,26 @@ while ($fecha_actual <= $fecha_fin_obj) {
 
 // Para cada fecha, obtener movimientos
 foreach ($fechas_rango as $fecha) {
-    // Obtener movimientos del día SOLO DEL USUARIO y SOLO CAJAS CERRADAS
+    // Armar consulta según el rol
+    if ($rol_usuario === 'RECEPCIONISTA') {
+        $where_user = "AND m.usuarioID = ?";
+        $params_mov = [$fecha, $empresaID_filtro, $usuarioID_actual];
+    } else {
+        if (!empty($usuarioID_filtro)) {
+            $where_user = "AND m.usuarioID = ?";
+            $params_mov = [$fecha, $empresaID_filtro, $usuarioID_filtro];
+        } else {
+            $where_user = "";
+            $params_mov = [$fecha, $empresaID_filtro];
+        }
+    }
+
     $sql_movimientos_dia = "SELECT 
-                              m.movimientoID,
-                              m.usuarioID,
-                              m.cajaID,
-                              m.tipo,
-                              m.concepto,
                               m.monto,
-                              m._fec_insercion,
+                              m.tipo as mov_tipo,
                               u.usuario as nombre_usuario,
-                              fp.tipo as forma_pago
+                              fp.tipo as forma_pago,
+                              m.cajaID
                             FROM movimientos m
                             INNER JOIN usuarios u ON m.usuarioID = u.usuarioID
                             INNER JOIN formas_pago fp ON m.formapagoID = fp.formapagoID
@@ -69,10 +87,8 @@ foreach ($fechas_rango as $fecha) {
                               AND m.empresaID = ? 
                               AND m._estado = 'A' 
                               AND c.estado = 'CERRADA'
-                              AND m.usuarioID = ?
+                              $where_user
                             ORDER BY m._fec_insercion DESC";
-    
-    $params_mov = [$fecha, $empresaID_filtro, $usuarioID_actual];
     
     $movimientos_dia = $db->obtenerTodo($sql_movimientos_dia, $params_mov);
     
@@ -96,7 +112,7 @@ foreach ($fechas_rango as $fecha) {
         }
         
         // Sumar o restar según tipo de movimiento
-        if ($mov['tipo'] == 'INGRESO') {
+        if ($mov['mov_tipo'] == 'INGRESO') {
             $agrupados[$clave]['saldos'][$forma_pago] += $mov['monto'];
         } else {
             $agrupados[$clave]['saldos'][$forma_pago] -= $mov['monto'];
@@ -123,30 +139,42 @@ foreach ($fechas_rango as $fecha) {
         <!-- Filtros -->
         <div class="row mt-3 mb-4">
             <div class="col-md-3">
-                <label for="fecha_inicio" class="fw-bold">Fecha Inicio:</label>
+                <label for="fecha_inicio">Fecha Inicio:</label>
                 <input type="date" id="fecha_inicio" class="form-control" value="<?= $fecha_inicio ?>">
             </div>
             <div class="col-md-3">
-                <label for="fecha_fin" class="fw-bold">Fecha Fin:</label>
+                <label for="fecha_fin">Fecha Fin:</label>
                 <input type="date" id="fecha_fin" class="form-control" value="<?= $fecha_fin ?>">
             </div>
+            <?php if ($rol_usuario === 'PROPIETARIO' || $rol_usuario === 'ADMINISTRADOR'): ?>
+            <div class="col-md-3">
+                <label for="usuarioID">Usuario:</label>
+                <select id="usuarioID" class="form-control">
+                    <option value="">Todos los usuarios</option>
+                    <?php foreach ($usuarios_mov as $usr): ?>
+                        <option value="<?= $usr['usuarioID'] ?>" <?= $usuarioID_filtro == $usr['usuarioID'] ? 'selected' : '' ?>>
+                            <?= $usr['usuario'] ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
             <div class="col-md-3 d-flex align-items-end">
-                <button onclick="filtrar()" class="btn btn-primary w-100 fw-bold"><i class="fas fa-filter"></i> Filtrar Fechas</button>
+                <button onclick="filtrar()" class="btn btn-secondary w-100"><i class="fas fa-filter"></i> Filtrar</button>
             </div>
         </div>
         
         <!-- Tabla -->
-        <div class="table-responsive shadow-sm rounded">
-            <table class="table table-bordered table-striped mb-0">
-                <thead class="table-dark">
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm table-hover mb-0">
+                <thead class="bg-light">
                     <tr>
                         <th class="text-center">Fecha</th>
                         <th class="text-center">Usuario Autor</th>
-                        <th class="text-center">Operaciones</th>
                         <?php foreach ($formas_pago as $forma_pago): ?>
-                            <th class="text-center bg-secondary"><?= $forma_pago['tipo'] ?></th>
+                            <th class="text-center"><?= $forma_pago['tipo'] ?></th>
                         <?php endforeach; ?>
-                        <th class="text-end bg-success text-white">Ingreso Total</th>
+                        <th class="text-end">Ingreso Total</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -155,7 +183,7 @@ foreach ($fechas_rango as $fecha) {
                     foreach ($vista_semanal as $fecha => $datos): ?>
                         <?php if (empty($datos['movimientos'])): ?>
                             <tr>
-                                <td colspan="<?= 3 + count($formas_pago) + 1 ?>" class="text-center text-muted fst-italic">
+                                <td colspan="<?= 2 + count($formas_pago) + 1 ?>" class="text-center text-muted fst-italic">
                                     <?= date('d/m/Y', strtotime($fecha)) ?> - Sin cajas cerradas
                                 </td>
                             </tr>
@@ -163,9 +191,8 @@ foreach ($fechas_rango as $fecha) {
                             $hayRegistros = true;
                             foreach ($datos['movimientos'] as $movimiento): ?>
                                 <tr>
-                                    <td class="fw-bold text-center align-middle"><?= date('d/m/Y', strtotime($fecha)) ?></td>
-                                    <td class="text-center align-middle"><i class="fas fa-user-circle text-primary"></i> <?= $movimiento['usuario'] ?></td>
-                                    <td class="text-center align-middle"><span class="badge bg-secondary"><?= $movimiento['movimientos_count'] ?> req.</span></td>
+                                    <td class="text-center align-middle"><?= date('d/m/Y', strtotime($fecha)) ?></td>
+                                    <td class="text-center align-middle"><?= $movimiento['usuario'] ?></td>
                                     
                                     <?php 
                                     $total_fila = 0;
@@ -178,7 +205,7 @@ foreach ($fechas_rango as $fecha) {
                                     <?php endforeach; ?>
                                     
                                     <?php $suma_footer_total_general += $total_fila; ?>
-                                    <td class="text-end align-middle fw-bold" style="color: #198754;">Bs. <?= number_format($total_fila, 2) ?></td>
+                                    <td class="text-end align-middle fw-bold">Bs. <?= number_format($total_fila, 2) ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -186,13 +213,13 @@ foreach ($fechas_rango as $fecha) {
                 </tbody>
                 
                 <?php if($hayRegistros): ?>
-                <tfoot style="border-top: 3px solid #333; background-color: #f8f9fa;">
+                <tfoot class="bg-light fw-bold" style="border-top: 2px solid #ccc;">
                     <tr>
-                        <td colspan="3" class="text-end text-uppercase fw-bold fs-6 pt-3 pb-3">Suma Total del Rango:</td>
+                        <td colspan="2" class="text-end">Suma Total del Rango:</td>
                         <?php foreach ($formas_pago as $forma_pago): ?>
-                            <td class="text-center fw-bold text-dark pt-3 pb-3 bg-light">Bs. <?= number_format($suma_footer_formas[$forma_pago['tipo']], 2) ?></td>
+                            <td class="text-center">Bs. <?= number_format($suma_footer_formas[$forma_pago['tipo']], 2) ?></td>
                         <?php endforeach; ?>
-                        <td class="text-end fw-bold text-white pt-3 pb-3" style="background-color: #198754; font-size: 1.1em;">
+                        <td class="text-end">
                             Bs. <?= number_format($suma_footer_total_general, 2) ?>
                         </td>
                     </tr>
@@ -207,6 +234,11 @@ foreach ($fechas_rango as $fecha) {
             const params = new URLSearchParams();
             params.set('fecha_inicio', document.getElementById('fecha_inicio').value);
             params.set('fecha_fin', document.getElementById('fecha_fin').value);
+            
+            const usuarioID = document.getElementById('usuarioID');
+            if (usuarioID) {
+                params.set('usuarioID', usuarioID.value);
+            }
             window.location.href = '?' + params.toString();
         }
     </script>

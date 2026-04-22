@@ -169,8 +169,19 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                                 <span class="badge-precio">Bs. <?php echo number_format($habitacion['precio'], 0); ?></span>
                             <?php else: ?>
                                 <!-- Otros estados: Texto simple -->
-                                <span
-                                    class="estado-label"><?php echo ($habitacion['estado'] === 'MANTENIMIENTO') ? 'MANT.' : $habitacion['estado']; ?></span>
+                                <span class="estado-label"><?php echo ($habitacion['estado'] === 'MANTENIMIENTO') ? 'MANT.' : $habitacion['estado']; ?></span>
+                                
+                                <?php if ($habitacion['estado'] === 'MANTENIMIENTO' && trim((string)$habitacion['descripcion']) !== ''): ?>
+                                    <div class="habitacion-info-tooltip">
+                                        <div class="tooltip-header" style="background-color: #343a40; color: white; border-color: #555;">
+                                            <i class="fas fa-tools"></i> MANTENIMIENTO
+                                        </div>
+                                        <div class="tooltip-body">
+                                            <p><strong>DESCRIPCIÓN:</strong><br>
+                                                <?php echo nl2br(htmlspecialchars($habitacion['descripcion'])); ?></p>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </button>
                     <?php endforeach; ?>
