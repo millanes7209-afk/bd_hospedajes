@@ -8,7 +8,11 @@ if (isset($_GET['habitacionID']) && isset($_GET['nuevoEstado'])) {
     $nuevoEstado = $_GET['nuevoEstado'];
 
     // Consulta SQL simple - solo cambiar estado
-    $sql = "UPDATE habitaciones SET estado = ? WHERE habitacionID = ?";
+    if ($nuevoEstado === 'LIMPIEZA') {
+        $sql = "UPDATE habitaciones SET estado = ?, descripcion = '' WHERE habitacionID = ?";
+    } else {
+        $sql = "UPDATE habitaciones SET estado = ? WHERE habitacionID = ?";
+    }
     
     // Ejecutar la consulta - USAR MÉTODO CORRECTO DE LA CLASE MiConexion
     try {

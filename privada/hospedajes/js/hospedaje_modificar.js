@@ -76,9 +76,12 @@ function cargarDatosHospedaje() {
         return;
     }
 
-    fetch(`api_obtener_hospedaje.php?hospedajeID=${window.hospedajeID}`)
+        fetch(`api_obtener_hospedaje.php?hospedajeID=${window.hospedajeID}`)
         .then(response => response.json())
         .then(data => {
+            console.log("=== DEPURADOR JS: DATOS DEL SERVIDOR ===");
+            console.log(data);
+
             if (data.error) {
                 alert("Error al cargar datos: " + data.error);
                 return;
@@ -88,11 +91,7 @@ function cargarDatosHospedaje() {
             window.esPropietario = data.es_propietario;
             
             if (!window.esPropietario) {
-                // Bloqueo total
-                document.getElementById('displayHabitacion').insertAdjacentHTML('beforebegin', '<div class="alert alert-danger fw-bold text-center mt-2"><i class="fas fa-ban"></i> ACCESO DENEGADO: Solo la caja y usuario original pueden modificar este hospedaje.</div>');
-            } else {
-                // Es propietario, solo un recordatorio
-                document.getElementById('displayHabitacion').insertAdjacentHTML('beforebegin', '<div class="alert alert-info py-1 small fw-bold text-center mt-2">EDICIÓN RESTRINGIDA: Solo puede modificar estado y fechas. El aspecto financiero queda sellado.</div>');
+                document.getElementById('displayHabitacion').insertAdjacentHTML('beforebegin', '<div class="alert alert-warning py-1 small fw-bold text-center mt-2"><i class="fas fa-lock"></i> Este registro pertenece a otro turno. Formulario financiero bloqueado (solo lectura).</div>');
             }
 
             renderizarFormulario(data);
@@ -119,19 +118,17 @@ function renderizarFormulario(data) {
         document.getElementById('checkout').value = h.checkout.replace(" ", "T").substring(0, 16);
     }
     
-    // Si no es propietario, bloquear hasta los básicos
-    if (!window.esPropietario) {
-        document.getElementById('estado').disabled = true;
-        document.getElementById('checkout').readOnly = true;
-        document.getElementById('descripcion').readOnly = true;
-        document.getElementById('btnGuardar').style.display = 'none';
-    }
-
+    // Activar bloqueo solo en finanzas si no es propietario
     const inputMonto = document.getElementById('monto_total');
     inputMonto.value = parseFloat(data.total_pagado).toFixed(2);
-    // FINANCIERO SIEMPRE BLOQUEADO PARA TODOS
-    inputMonto.readOnly = true;
-    inputMonto.classList.add('bg-light');
+    
+    if (!window.esPropietario) {
+        inputMonto.readOnly = true;
+        inputMonto.classList.add('bg-light');
+    } else {
+        inputMonto.readOnly = false;
+        inputMonto.classList.remove('bg-light');
+    }
 
     const contenedorClientes = document.getElementById('contenedorClientes');
     if (data.clientes && data.clientes.length > 0) {
@@ -163,7 +160,7 @@ function renderizarPagosEditables(movimientos) {
 
             divRow.innerHTML = `
                 <div class="col-md-7">
-                    <select class="form-control form-control-sm select-pago" name="pagos[${index}][formaPagoID]" tabindex="-1" style="pointer-events: none; background-color: #e9ecef;">
+                    <select class="form-control form-control-sm select-pago" name="pagos[${index}][formaPagoID]" required ${!window.esPropietario ? 'tabindex="-1" style="pointer-events: none; background-color: #e9ecef;"' : ''}>
                         ${template}
                     </select>
                 </div>
@@ -171,7 +168,7 @@ function renderizarPagosEditables(movimientos) {
                     <div class="input-group input-group-sm">
                         <span class="input-group-text">Bs</span>
                         <input type="number" class="form-control monto-pago" name="pagos[${index}][monto]" 
-                               value="${parseFloat(mov.monto).toFixed(2)}" step="0.5" readonly class="bg-light">
+                               value="${parseFloat(mov.monto).toFixed(2)}" step="0.5" required oninput="recalcularTotal()" ${!window.esPropietario ? 'readonly class="bg-light"' : ''}>
                     </div>
                 </div>
                 <input type="hidden" name="pagos[${index}][movimientoID]" value="${mov.movimientoID}">

@@ -63,8 +63,7 @@ if (!$hospedajeID) {
         }
     </style>
 </head>
-
-<body>
+<body class="bg-light">
     <div class="container mt-4 mb-5">
         <div class="row justify-content-center">
             <div class="col-md-11">
@@ -182,12 +181,15 @@ if (!$hospedajeID) {
             </div>
         </div>
     </div>
+    <!-- Modales -->
+<?php include('modal_modificar_hospedaje_precio.php'); ?>
 
-    <script>
-        // Pasar ID a JS
-        window.hospedajeID = <?php echo $hospedajeID; ?>;
-    </script>
-    <script src="js/hospedaje_modificar.js"></script>
+<script>
+    // DEPURADOR: MANDAR ID DE HOSPEDAJE DEL PHP AL JS CON RASTREO
+    window.hospedajeID = <?php echo json_encode($hospedajeID); ?>;
+    console.log("DEPURADOR [PHP a JS]: El ID del hospedaje a cargar es: " + window.hospedajeID);
+</script>
+<script src="js/hospedaje_modificar.js?v=<?php echo time(); ?>"></script>
 </body>
 
 </html>
