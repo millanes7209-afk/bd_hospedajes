@@ -1,0 +1,248 @@
+/* 
+ * Estilos para la interfaz interactiva de habitaciones 
+ */
+
+.btn-habitacion {
+    position: relative;
+    margin: 8px;
+    width: 110px;
+    height: 75px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    flex-direction: column;
+    padding: 2px;
+    border-radius: 8px;
+    box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    overflow: visible; /* Permitir que el tooltip sea visible fuera del botón */
+}
+
+.btn-habitacion:hover {
+    transform: scale(1.08);
+    z-index: 50;
+    box-shadow: 0px 8px 15px rgba(0,0,0,0.2);
+}
+
+.btn-habitacion strong {
+    font-size: 18px;
+    margin-bottom: 2px;
+}
+
+/* --- FICHA FLOTANTE (TOOLTIP NEGRO) --- */
+.habitacion-info-tooltip {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: 110%; /* Aparece arriba del botón */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #1a1a1a;
+    color: #ffffff;
+    padding: 12px;
+    border-radius: 8px;
+    width: 220px;
+    text-align: left;
+    box-shadow: 0px 5px 20px rgba(0,0,0,0.5);
+    z-index: 1000;
+    transition: opacity 0.3s, visibility 0.3s;
+    pointer-events: none; /* Que no interfiera con otros clicks */
+    border: 1px solid #444;
+}
+
+.btn-habitacion:hover .habitacion-info-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.tooltip-header {
+    font-weight: bold;
+    color: #ffc107;
+    border-bottom: 1px solid #444;
+    padding-bottom: 5px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.tooltip-body p {
+    margin: 2px 0;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.tooltip-body p strong {
+    font-size: 11px;
+    color: #bbb;
+    margin-right: 4px;
+}
+
+/* --- ELEMENTOS DE BOTÓN COMPACTO --- */
+.badge-precio {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+.estado-label {
+    font-size: 9px;
+    opacity: 0.8;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.modal-dialog {
+    max-width: 500px;
+}
+
+/* Reducción de ancho específicamente para el modal de opciones de habitación */
+#menu-opciones .modal-dialog {
+    max-width: 350px;
+    margin-top: 25vh; /* Bajar el modal para que no tape la cabecera */
+}
+
+.btn-close {
+    position: relative;
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-close:before {
+    content: 'X';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    color: black;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.estado-buttons-container {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.buttons-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-right: 20px;
+}
+
+.btn-ingreso, .btn-egreso {
+    width: 120px;
+    height: 30px;
+    font-size: 14px;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-ingreso {
+    background-color: #28a745;
+}
+
+.btn-egreso {
+    background-color: #dc3545;
+}
+
+/* Modal personalizado de notificaciones */
+#miModal .modal {
+    display: none;  
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+#miModal .modal-contenido {
+    background-color: #fff;
+    margin: 15% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 600px;
+    z-index: 10000;
+}
+
+#miModal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#miModal .modal-header h2 {
+    margin: 0;
+}
+
+#miModal .cerrar {
+    font-size: 30px;
+    cursor: pointer;
+}
+
+#miModal .modal-body {
+    margin: 20px 0;
+    font-size: 18px;
+}
+
+#miModal .modal-footer {
+    display: flex;
+    justify-content: space-between;
+}
+
+#miModal .modal-footer button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+}
+
+#miModal #facturaEmitidaBtn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+#miModal #posponerBtn {
+    background-color: #f44336;
+    color: white;
+}
+
+@keyframes mostrarModal {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+#miModal.modal.show {
+    display: block;
+    animation: mostrarModal 0.3s ease-out;
+}

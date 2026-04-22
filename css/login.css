@@ -1,0 +1,102 @@
+/* Estilos específicos para el login */
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f4f4f4;
+}
+
+.login-container {
+    background-color: #fff;
+    padding: 30px; /* Aumentar padding */
+    border-radius: 15px; /* Cambiar borde más redondeado */
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 400px; /* Aumentar el ancho */
+}
+
+.banner {
+    font-size: 28px; /* Aumentar tamaño de fuente */
+    margin-bottom: 20px;
+    color: #D27A48; /* Ajustar color al de la imagen */
+    font-weight: bold; /* Negrita */
+}
+
+.login-container h2 {
+    margin-bottom: 10px;
+    font-size: 16px; /* Ajustar tamaño de letra */
+    color: #2C2C2C; /* Color oscuro para los textos de los inputs */
+}
+
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.input-container {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.input-container input {
+    width: 100%;
+    padding: 10px 40px; /* Espacio extra para el icono */
+    font-size: 16px;
+    border-radius: 30px; /* Borde redondeado más pronunciado */
+    border: 1px solid #ccc;
+    transition: 0.3s;
+}
+
+.input-container input:focus {
+    border-color: #D27A48; /* Cambiar color de borde al hacer foco */
+    outline: none;
+}
+
+.input-icon {
+    position: absolute;
+    left: 15px; /* Ajustar posición de los iconos */
+}
+
+.input-icon img.icon {
+    width: 24px;
+    height: 24px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 15px; /* Ajustar posición del ojo */
+    top: 10px;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+button, .boton-atras {
+    background-color: #D27A48; /* Ajustar color de los botones */
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px; /* Borde redondeado más pronunciado */
+    font-size: 18px; /* Aumentar tamaño de letra */
+    cursor: pointer;
+    width: 300px;
+    transition: background-color 0.3s;
+}
+
+button:hover, .boton-atras:hover {
+    background-color: #b96c41; /* Cambiar el color al pasar el cursor */
+}
+
+.boton-atras {
+    display: inline-block;
+    margin-top: 10px;
+    background-color: #6b6b6b; /* Ajustar color del botón "Atrás" */
+}
+
+.avatar {
+    width: 100px; /* Aumentar tamaño del avatar */
+    height: 100px;
+    border-radius: 50%;
+    margin-bottom: 20px;
+}

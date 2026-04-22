@@ -1,0 +1,247 @@
+#header {
+  width: 180px; /* Ancho de la barra lateral */
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #eef1f3;
+  height: 100vh; /* Altura completa de la ventana */
+  position: fixed; /* Fijar la barra lateral */
+  top: 0;
+  left: 0;
+  border-right: 1px solid #101010;
+  overflow-y: auto; /* Permite desplazamiento vertical si el contenido es demasiado largo */
+}
+
+.cabecera {
+  text-align: center;
+  padding: 20px;
+  border-bottom: 1px solid #000000;
+}
+
+.cabecera img {
+  width: 5%; /* Ajustar el tamaño de la imagen */
+}
+
+.titulo {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.usuario {
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav > li {
+  display: block;
+}
+
+.nav li a {
+  display: block;
+  color: #090909;
+  text-decoration: none;
+  padding: 10px 20px;
+  transition: background-color 0.3s; /* Transición suave */
+}
+
+.nav li a:hover {
+  background-color: #53b7f5; /* Color de fondo al pasar el mouse */
+}
+
+/* Se elimina la visualización del submenú al pasar el mouse */
+.nav li:hover > ul {
+  display: none; /* Esta línea fue modificada para desactivar el hover */
+}
+
+/* Se mantiene el submenú oculto por defecto */
+.nav li ul {
+  width: 100%;
+  display: none;
+  position: absolute; /* Posición absoluta para submenú */
+  background-color: #d8e1e6; /* Color de fondo del menú desplegable */
+  box-shadow: none; /* Eliminar sombra */
+}
+
+/* Botón de cerrar sesión */
+.boton_cerrar {
+  position: fixed; /* Fijar la posición en la esquina superior derecha */
+  top: 10px;
+  right: 10px;
+  padding: 10px;
+  background-color: #ddd; /* Color de fondo del botón */
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.boton_cerrar:hover {
+  background-color: #020663; 
+  color: rgb(255, 255, 255);
+}
+
+/* Botón de iniciar sesión */
+.boton-iniciar-sesion {
+  position: fixed; /* Fijar la posición en la esquina superior derecha */
+  top: 10px;
+  right: 10px;
+  padding: 10px;
+  background-color: #fdf7f7; /* Color de fondo del botón */
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.boton-iniciar-sesion:hover {
+  background-color: #020663; 
+  color: rgb(255, 255, 255);
+}
+
+/* Botón de Atrás */
+.boton-atras {
+  position: fixed; /* Fijar la posición en la esquina superior izquierda */
+  top: 10px;
+  left: 10px;
+  padding: 10px;
+  background-color: #ddd; /* Color de fondo del botón */
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.boton-atras:hover {
+  background-color: #020663; 
+  color: rgb(255, 255, 255);
+}
+
+/* Estilos para el botón de hamburguesa y el anuncio "MENÚ" */
+.header-container {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.header-container .hamburger {
+  margin-right: 10px; /* Espacio entre el botón y el anuncio */
+}
+
+.header-container .menu-label {
+  font-size: 16px;
+  color: #fff;
+}
+
+.hamburger {
+  display: none; /* Ocultar por defecto */
+}
+
+@media (max-width: 768px) {
+  #header {
+    width: 100%;
+    height: auto;
+    position: relative;
+    border-right: none;
+    border-bottom: 1px solid #101010;
+  }
+
+  .nav {
+    display: none;
+    flex-direction: column;
+  }
+
+  .nav.active {
+    display: flex;
+  }
+
+  .nav > li {
+    text-align: center;
+  }
+
+  .nav li a {
+    padding: 10px;
+  }
+
+  .nav li ul {
+    position: relative;
+    width: 100%;
+  }
+
+  .hamburger {
+    display: block; /* Mostrar solo en pantallas pequeñas */
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    font-size: 30px;
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .menu-label {
+    display: inline; /* Mostrar solo en pantallas pequeñas */
+    position: fixed;
+    top: 10px;
+    left: 50px; /* Ajustar según el diseño */
+    color: #fff;
+    font-size: 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .boton_cerrar,
+  .boton-iniciar-sesion,
+  .boton-atras {
+    position: fixed;
+    margin: 5px;
+  }
+
+  .boton_cerrar {
+    width: 22%;
+    top: 10px;
+    right: 10px;
+  }
+
+  .boton-iniciar-sesion {
+    top: 50px; /* Ajusta el margen para evitar superposiciones si es necesario */
+    right: 10px;
+  }
+
+  .boton-atras {
+    top: 10px;
+    left: 10px;
+  }
+
+  .cabecera img {
+    width: 10%;
+  }
+}
+
+@media (max-width: 480px) {
+  .titulo {
+    font-size: 15px;
+  }
+
+  .usuario {
+    font-size: 12px;
+  }
+
+  .nav li a {
+    padding: 8px 16px;
+  }
+
+  .cabecera img {
+    width: 15%;
+  }
+}

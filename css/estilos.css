@@ -1,0 +1,216 @@
+body {
+	background-color: #b6e1f6;
+  }
+  
+  .banner {
+	font-size: 40px;
+	color: #171616;
+	text-align: center;
+  }
+  
+  .formu_ingreso {
+	width: 300px;
+	margin: 0 auto;
+	padding: 20px;
+	border-radius: 10px;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Sutil sombra */
+	background-color: #ffffff;	
+  }
+  
+  /* Estilo para los campos de entrada */
+  .formu_ingreso input {
+	width: 50%;
+	padding: 10px;
+	margin-bottom: 15px;
+	border: 1px solid #0d0d0d;
+	border-radius: 5px;
+	transition: border-color 0.3s, box-shadow 0.3s; /* Transiciones suaves */
+  }
+  
+  /* Estilo para el botón de inicio de sesión */
+  .formu_ingreso input[type="submit"] {
+	background-color: #24c7ec;
+	color: #ffffff;
+	border: none;
+	border-radius: 5px;
+	padding: 10px;
+	cursor: pointer;
+	transition: background-color 0.3s;
+  }
+  
+  /* Cambio de estilo al pasar el cursor sobre los campos de entrada y el botón */
+  .formu_ingreso input:focus,
+  .formu_ingreso input[type="submit"]:hover {
+	border-color: #24c7ec;
+	box-shadow: 0 0 5px rgba(36, 199, 236, 0.5); /* Sutil sombra al pasar el cursor */
+  }
+  
+  /* Estilo para el título */
+  .formu_ingreso h2 {
+	margin-top: 0;
+	font-size: 24px;
+	color: #333333;
+  }
+  
+  /* Estilo para el enlace de retroceso */
+  
+  /* Estilo para el menú */
+  a {
+	color: #111111;
+	text-decoration: none;
+	padding: 10px 12px;
+	line-height: 30px;
+  }
+  a:hover {
+	background-color: #24c7ec;
+  }
+  
+  .menu {
+	border: solid rgb(29, 30, 30);
+	width: 30%;
+	text-align: justify;
+	position: relative;
+	top: 15px;
+	left: 30%;
+  }
+  
+  .listado table {
+	width: auto;
+	border-collapse: collapse; /* Combina los bordes de las celdas */
+	border: 1px solid #39b0f0; /* Borde de la tabla */
+  }
+  
+  .listado th {
+	font-size: 16px;
+	color: #0e0e0e;
+	background: rgb(0, 204, 255);
+	border: 1px solid #42d1d5;
+  }
+  
+  .listado td {
+	padding: 10px;
+	font-size: 14px;
+	border: 1px solid #1eb1cf;
+	font-weight: bold;
+	color: #0a0a0a;
+  }
+  
+  .mensaje {
+	width: 450px;
+	height: 250px;
+	border: 0px solid #090909;
+	position: relative;
+	top: 150px;
+	left: 40%;
+	text-align: center;
+  }
+  
+  h3 {
+	font-size: 11px;
+	color: #f7f3f3;
+	font-family: Tahoma;
+	text-align: right;
+  }
+  
+  /* ESTILO PARA LA PARTE SUPERIOR */
+  .cabecera {
+	width: 100%;
+	height: 150px;
+	background-color: #1dbee2;
+  }
+  
+  .titulo {
+	font-size: 50px;
+	color: #ffffff;
+	font-family: Tahoma;
+	display: inline;
+	text-shadow: 2px 2px 2px rgb(24, 235, 239);
+  }
+  
+  .usuario {
+	font-size: 15px;
+	color: #ffffff;
+	font-family: Verdana, Geneva, Tahoma, sans-serif;
+	display: block;
+	right: 20px;
+  }
+  form table tr th h3 {
+    color: black;
+}
+
+
+  
+  /* Media Queries para responsividad */
+  @media (max-width: 768px) {
+	.formu_ingreso {
+	  width: 80%;
+	}
+  
+	.formu_ingreso input {
+	  width: 100%;
+	}
+  
+	.menu {
+	  width: 90%;
+	  left: 5%;
+	}
+  
+	.mensaje {
+	  width: 80%;
+	  left: 10%;
+	}
+  
+	.cabecera {
+	  height: auto;
+	  text-align: center;
+	}
+  
+	.titulo {
+	  font-size: 30px;
+	}
+  
+	.usuario {
+	  font-size: 12px;
+	}
+  
+	.listado table {
+	  width: 100%;
+	}
+  }
+  
+  @media (max-width: 480px) {
+	.banner {
+	  font-size: 30px;
+	}
+  
+	.formu_ingreso {
+	  width: 100%;
+	}
+  
+	.formu_ingreso input {
+	  width: 100%;
+	}
+  
+	.titulo {
+	  font-size: 24px;
+	}
+  
+	.usuario {
+	  font-size: 10px;
+	}
+  
+	.menu {
+	  width: 100%;
+	  left: 0;
+	}
+  
+	.mensaje {
+	  width: 100%;
+	  left: 0;
+	}
+  
+	h3 {
+	  font-size: 9px;
+	}
+  }
+  
