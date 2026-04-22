@@ -24,3 +24,6 @@ Este documento detalla los requerimientos y reglas de negocio para la fase actua
 
 ## 6. Refinamientos de Recepción
 - **Equipamiento en Mapa:** Mostrar TV/Baño/Ventilador en los botones de habitaciones DISPONIBLES en el mapa interactivo.
+
+## 8. Dudas y Errores Pendientes (NO ARREGLAR AÚN)
+- **Error de Cabeceras en Opciones:** Investigar y resolver el `Warning: Cannot modify header information - headers already sent` en `privada/sistema/opciones.php` (Línea 38). El error parece originarse por salida previa en `libreria_menu.php` (Línea 147).

@@ -10,7 +10,7 @@ require_once("../../libreria_menu.php");
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario de Inserción de Persona</title>
+    <title>Formulario de Inserción de Empleado</title>
     <style>
         thead {
             color: black;
@@ -38,7 +38,7 @@ require_once("../../libreria_menu.php");
                         <h3>AGREGAR EMPLEADO</h3>
                         </div>
                     <div class="card-body">
-                    <form class="needs-validation" novalidate action="persona_nuevo1.php" method="post" name="formu">
+                    <form class="needs-validation" novalidate action="Empleado_nuevo1.php" method="post" name="formu">
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="ci" class="form-label">(*) C.I.</label>
@@ -92,11 +92,11 @@ require_once("../../libreria_menu.php");
                                     <select class="form-control" name="cargoID" id="cargoID" required>
                                         <option value="">Seleccione un cargo</option>
                                         <?php
-                                        // Cargar opciones de personas desde la base de datos
+                                        // Cargar opciones de EMPLEADOS desde la base de datos
                                         $sql_cargos = $db->Prepare("SELECT cargoID,cargo FROM cargos");
                                         $rs_cargos = $db->GetAll($sql_cargos);
-                                        foreach ($rs_cargos as $persona) {
-                                            echo "<option value='{$persona['cargoID']}'>{$persona['cargo']}</option>";
+                                        foreach ($rs_cargos as $Empleado) {
+                                            echo "<option value='{$Empleado['cargoID']}'>{$Empleado['cargo']}</option>";
                                         }
                                         ?>
                                     </select>

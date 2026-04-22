@@ -25,5 +25,5 @@ $reg["genero"] = $genero1;
 $reg["_fec_insercion"] = date("Y-m-d H:i:s");
 $reg["_estado"] = 'A';
 $reg["_usuario"] = $_SESSION["sesion_id_usuario"];   
-$rs1 = $db->AutoExecute("personas", $reg, "INSERT"); 
+$rs1 = $db->AutoExecute("EMPLEADOS", $reg, "INSERT"); 
 ?>

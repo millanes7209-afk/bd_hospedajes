@@ -41,7 +41,7 @@ $rs = $db->GetAll($sql, array($empleadoID));
                     </div>
                     <div class="card-body">
                         <?php foreach ($rs as $fila) { ?>
-                        <form class="needs-validation" novalidate action="persona_modificar1.php" method="post" name="formu">
+                        <form class="needs-validation" novalidate action="Empleado_modificar1.php" method="post" name="formu">
                             <!-- Campos ocultos -->
                             <input type="hidden" name="empleadoID" value="<?= htmlspecialchars($fila['empleadoID']) ?>">
                             <div class="row mb-3">

@@ -58,7 +58,7 @@ $rs = $db->obtenerTodo($sql, array($empresaID));
             border-bottom: none;
         }
         
-        /* Estilo personalizado para todas las X de cerrar modales */
+        /* Estilo Empleadolizado para todas las X de cerrar modales */
         .btn-close, .modal-header button {
             background: none;
             border: none;
@@ -157,7 +157,7 @@ $rs = $db->obtenerTodo($sql, array($empresaID));
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <form method="post" action="persona_modificar.php">
+                                <form method="post" action="Empleado_modificar.php">
                                     <input type="hidden" name="empleadoID" value="<?php echo $fila['empleadoID']; ?>">
                                     <button type="submit" class="btn btn-sm btn-primary btn-accion">Modificar</button>
                                 </form>
@@ -185,7 +185,7 @@ $rs = $db->obtenerTodo($sql, array($empresaID));
                 <button id="closeModalBtn">X</button>
             </div>
             <div class="modal-body">
-                ¿Eliminar a <span id="personaNombre"></span>?
+                ¿Eliminar a <span id="EmpleadoNombre"></span>?
             </div>
             <div class="modal-footer">
                 <button id="cancelModalBtn">Cancelar</button>
@@ -207,19 +207,19 @@ function hideModal() {
     if (b) b.remove();
 }
 
-document.querySelectorAll('.eliminar-persona').forEach(btn => {
+document.querySelectorAll('.eliminar-Empleado').forEach(btn => {
     btn.addEventListener('click', function() {
         let id = this.dataset.id;
         let nombre = this.dataset.nombre;
 
-        document.getElementById('personaNombre').textContent = nombre;
+        document.getElementById('EmpleadoNombre').textContent = nombre;
         showModal();
 
         document.getElementById('confirmDeleteBtn').onclick = function() {
-            fetch('persona_eliminar.php', {
+            fetch('Empleado_eliminar.php', {
                 method: 'POST',
                 headers: {'Content-Type':'application/x-www-form-urlencoded'},
-                body: 'id_persona=' + id
+                body: 'id_Empleado=' + id
             })
             .then(r => r.json())
             .then(data => {

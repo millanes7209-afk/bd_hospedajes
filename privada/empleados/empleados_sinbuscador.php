@@ -13,22 +13,22 @@ echo"<html>
        <body>
        <p> &nbsp;</p>";
        
-       contarRegistros($db,"personas");
+       contarRegistros($db,"EMPLEADOS");
 
-paginacion("personas.php?");        
+paginacion("EMPLEADOS.php?");        
 
 $sql = $db->Prepare("SELECT     *
-                     FROM       personas
+                     FROM       EMPLEADOS
                      WHERE      _estado <> 'X' 
-                     AND        id_persona > 1
-                     ORDER BY   id_persona ASC                    
+                     AND        id_Empleado > 1
+                     ORDER BY   id_Empleado ASC                    
                      LIMIT      ? OFFSET ?
                         ") ;
 $rs = $db->GetAll($sql,array($nElem,$regIni));
    if ($rs) {
         echo"<center>
-              <h1>LISTADO DE PERSONAS</h1>
-              <b><a  href='persona_nuevo.php'>Nueva Persona>>>></a></b>
+              <h1>LISTADO DE EMPLEADOS</h1>
+              <b><a  href='Empleado_nuevo.php'>Nueva Empleado>>>></a></b>
               <table class='listado'>
                 <tr>                                    
                   <th>Nro</th><th>C.I.</th><th>PATERNO</th><th>MATERNO</th><th>NOMBRES</th>
@@ -46,17 +46,17 @@ $rs = $db->GetAll($sql,array($nElem,$regIni));
                         <td align='center'>".$fila['am']."</td>
                         <td>".$fila['nombres']."</td>
                         <td align='center'>
-                          <form name='formModif".$fila["id_persona"]."' method='post' action='persona_modificar.php'>
-                            <input type='hidden' name='id_persona' value='".$fila['id_persona']."'>
-                            <a href='javascript:document.formModif".$fila['id_persona'].".submit();' title='Modificar Persona Sistema'>
+                          <form name='formModif".$fila["id_Empleado"]."' method='post' action='Empleado_modificar.php'>
+                            <input type='hidden' name='id_Empleado' value='".$fila['id_Empleado']."'>
+                            <a href='javascript:document.formModif".$fila['id_Empleado'].".submit();' title='Modificar Empleado Sistema'>
                               Modificar>>
                             </a>
                           </form>
                         </td>
                         <td align='center'>  
-                          <form name='formElimi".$fila["id_persona"]."' method='post' action='persona_eliminar.php'>
-                            <input type='hidden' name='id_persona' value='".$fila["id_persona"]."'>
-                            <a href='javascript:document.formElimi".$fila['id_persona'].".submit();' title='Eliminar Persona Sistema' onclick='javascript:return(confirm(\"Desea realmente Eliminar a la persona ".$fila["nombres"]." ".$fila["ap"]." ".$fila["am"]." ?\"))'; location.href='persona_eliminar.php''> 
+                          <form name='formElimi".$fila["id_Empleado"]."' method='post' action='Empleado_eliminar.php'>
+                            <input type='hidden' name='id_Empleado' value='".$fila["id_Empleado"]."'>
+                            <a href='javascript:document.formElimi".$fila['id_Empleado'].".submit();' title='Eliminar Empleado Sistema' onclick='javascript:return(confirm(\"Desea realmente Eliminar a la Empleado ".$fila["nombres"]." ".$fila["ap"]." ".$fila["am"]." ?\"))'; location.href='Empleado_eliminar.php''> 
                               Eliminar>>
                             </a>
                           </form>                        

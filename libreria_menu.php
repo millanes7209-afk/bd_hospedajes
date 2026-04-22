@@ -7,6 +7,10 @@ error_reporting(E_ALL);
 
 require_once("conexion.php");
 require_once("funciones_caja.php");
+
+// Activar búfer de salida para permitir redirecciones después de incluir el menú
+ob_start();
+
 // Verificar si existe la sesión de rol
 if (isset($_SESSION["sesion_id_rol"])) {
     $usuarioID = $_SESSION['sesion_id_usuario'];
@@ -492,6 +496,10 @@ if (isset($_SESSION["sesion_id_rol"])) {
     </div>
 
     <?php
+    $saldos_json = json_encode([]);
+    $total_general_json = json_encode(0);
+    $fecha_apertura_json = json_encode("");
+
     if (isset($caja_abierta) && $caja_abierta && ($_SESSION["sesion_rol"] == 'RECEPCIONISTA' || $_SESSION["sesion_rol"] == 'ADMINISTRADOR')) {
         $saldos_modal = array_filter($saldos_forma_pago, function ($saldo) {
             return $saldo > 0;
