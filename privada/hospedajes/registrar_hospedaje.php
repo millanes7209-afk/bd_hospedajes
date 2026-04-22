@@ -46,11 +46,11 @@ try {
     }
 
     // 4. INSERTAR HOSPEDAJE
-    $sqlH = "INSERT INTO hospedajes (empresaID, habitacionID, checkin, checkout, monto, estado, observaciones, 
+    $sqlH = "INSERT INTO hospedajes (empresaID, habitacionID, cajaID, checkin, checkout, monto, estado, observaciones, 
                                    _fec_insercion, _fec_modificacion, _estado, _usuario) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $paramsH = [
-        $empresaID, $habitacionID, $ahora, $checkout, $monto_total, 
+        $empresaID, $habitacionID, $cajaID, $ahora, $checkout, $monto_total, 
         'ACTIVO', $descripcion, $ahora, $ahora, 'A', $usuarioID
     ];
     

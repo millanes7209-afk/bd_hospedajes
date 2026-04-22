@@ -84,6 +84,17 @@ function cargarDatosHospedaje() {
                 return;
             }
             montoOriginal = parseFloat(data.total_pagado); 
+            montoOriginal = parseFloat(data.total_pagado); 
+            window.esPropietario = data.es_propietario;
+            
+            if (!window.esPropietario) {
+                // Bloqueo total
+                document.getElementById('displayHabitacion').insertAdjacentHTML('beforebegin', '<div class="alert alert-danger fw-bold text-center mt-2"><i class="fas fa-ban"></i> ACCESO DENEGADO: Solo la caja y usuario original pueden modificar este hospedaje.</div>');
+            } else {
+                // Es propietario, solo un recordatorio
+                document.getElementById('displayHabitacion').insertAdjacentHTML('beforebegin', '<div class="alert alert-info py-1 small fw-bold text-center mt-2">EDICIÓN RESTRINGIDA: Solo puede modificar estado y fechas. El aspecto financiero queda sellado.</div>');
+            }
+
             renderizarFormulario(data);
             
             // Capturar estado inicial de los pagos DESPUÉS de renderizar
@@ -107,7 +118,20 @@ function renderizarFormulario(data) {
     if (h.checkout) {
         document.getElementById('checkout').value = h.checkout.replace(" ", "T").substring(0, 16);
     }
-    document.getElementById('monto_total').value = parseFloat(data.total_pagado).toFixed(2);
+    
+    // Si no es propietario, bloquear hasta los básicos
+    if (!window.esPropietario) {
+        document.getElementById('estado').disabled = true;
+        document.getElementById('checkout').readOnly = true;
+        document.getElementById('descripcion').readOnly = true;
+        document.getElementById('btnGuardar').style.display = 'none';
+    }
+
+    const inputMonto = document.getElementById('monto_total');
+    inputMonto.value = parseFloat(data.total_pagado).toFixed(2);
+    // FINANCIERO SIEMPRE BLOQUEADO PARA TODOS
+    inputMonto.readOnly = true;
+    inputMonto.classList.add('bg-light');
 
     const contenedorClientes = document.getElementById('contenedorClientes');
     if (data.clientes && data.clientes.length > 0) {
@@ -139,7 +163,7 @@ function renderizarPagosEditables(movimientos) {
 
             divRow.innerHTML = `
                 <div class="col-md-7">
-                    <select class="form-control form-control-sm select-pago" name="pagos[${index}][formaPagoID]" required>
+                    <select class="form-control form-control-sm select-pago" name="pagos[${index}][formaPagoID]" tabindex="-1" style="pointer-events: none; background-color: #e9ecef;">
                         ${template}
                     </select>
                 </div>
@@ -147,7 +171,7 @@ function renderizarPagosEditables(movimientos) {
                     <div class="input-group input-group-sm">
                         <span class="input-group-text">Bs</span>
                         <input type="number" class="form-control monto-pago" name="pagos[${index}][monto]" 
-                               value="${parseFloat(mov.monto).toFixed(2)}" step="0.5" required oninput="recalcularTotal()">
+                               value="${parseFloat(mov.monto).toFixed(2)}" step="0.5" readonly class="bg-light">
                     </div>
                 </div>
                 <input type="hidden" name="pagos[${index}][movimientoID]" value="${mov.movimientoID}">

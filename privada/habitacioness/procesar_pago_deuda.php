@@ -2,80 +2,75 @@
 session_start();
 require_once("../../conexion.php");
 
+$hospedajeID = $_POST["hospedajeID"] ?? null;
+$habitacionID = $_POST["habitacionID"] ?? null;
+$monto_deuda = floatval($_POST["monto_total"] ?? 0);
+$formaPagoID = $_POST["formaPagoID"] ?? null;
 
-$hospedajeID_anterior = $_POST["hospedajeID"];
-$habitacionID = $_POST["habitacionID"];
-$monto_pendiente = $_POST["monto_total"];
-$monto_total = $_POST["monto_total"];
-$numero = $_POST["habitacion_numero"];
-$formaPagoID = $_POST["formaPagoID"];
-$checkout = date("Y-m-d H:i:s"); //
+$usuarioID = $_SESSION["sesion_id_usuario"] ?? null;
+$empresaID = $_SESSION["empresaID"] ?? null;
 
-// Actualizar el estado del hospedaje anterior a 'INACTIVO'
-$updateData = array();
-$updateData["estado"] = 'INACTIVO';
-$reg["checkout"] = $checkout;
-$rs1 = $db->AutoExecute("hospedajes", $updateData, "UPDATE", "hospedajeID='" . $hospedajeID_anterior . "'");
+if (!$hospedajeID || !$habitacionID) {
+    die("Error: Datos incompletos.");
+}
 
-// Crear un arreglo con los datos para el nuevo hospedaje
-$reg = array();
-$reg["habitacionID"] = $habitacionID;
-$reg["checkout"] = $checkout;
-$reg["monto_pendiente"] = $monto_pendiente;
-$reg["monto_total"] = $monto_total;
-$reg["tipo"] = 'HOSPEDAJE';
-$reg["formaPagoID"] = $formaPagoID;
-$reg["estado"] = 'INACTIVO';
-$reg["hospedaje_anteriorID"] = $hospedajeID_anterior; //
+// Validar que exista una caja abierta
+$sql_caja = "SELECT cajaID FROM cajas WHERE estado = 'ABIERTA' AND usuarioID = ? AND empresaID = ?";
+$caja = $db->obtenerFila($sql_caja, [$usuarioID, $empresaID]);
 
-$reg["_usuario"] = $_SESSION["sesion_id_usuario"];
-$reg["_fec_insercion"] = date("Y-m-d H:i:s");
-$reg["_estado"] = 'A'; // Valor por defecto
+if (!$caja) {
+    echo "<script>alert('Error: Debe abrir una caja primero.'); window.location.href='habitaciones.php';</script>";
+    exit();
+}
+$cajaID = $caja['cajaID'];
 
+try {
+    if (!$db->beginTransaction()) throw new Exception("No se pudo iniciar la transacción.");
 
-$db->AutoExecute("hospedajes", $reg, "INSERT");
-// Obtener el ID del hospedaje recién generado
-$hospedajeID = $db->Insert_ID();
-        if ($monto_pendiente > 0) {
-        // Validar si hay una caja abierta
-        $cajaID = $_SESSION['caja_abierta_id'];
-        if (!$cajaID) {
-            echo "<p>Error: No hay una caja abierta. Por favor, abre una caja antes de registrar el hospedaje.</p>";
-            exit();
-        }
-
-        // Preparar los datos del ingreso
-        $reg_ingreso = array();
-        $reg_ingreso["_fec_insercion"] = date("Y-m-d H:i:s");
-        $reg_ingreso["_usuario"] = $_SESSION["sesion_id_usuario"];
-        $reg_ingreso["_estado"] = 'A';
-        $reg_ingreso["monto"] = $monto_pendiente;
-        $reg_ingreso["formaPagoID"] = $formaPagoID;
-        $reg_ingreso["fecha_pago"] = date("Y-m-d H:i:s");
-        $reg_ingreso["tipo"] = "HOSPEDAJE";
-        $reg_ingreso["descripcion"] = $numero;
-        $reg_ingreso["hospedajeID"] = $hospedajeID;
-        $reg_ingreso["cajaID"] = $cajaID;
-
-        // Insertar el ingreso en la tabla 'ingresos'
-        $rs3 = $db->AutoExecute("ingresos", $reg_ingreso, "INSERT");
-
-        // Verificar si la inserción fue exitosa
-        if (!$rs3) {
-            echo "<p>Error: No se pudo registrar el ingreso asociado. Por favor, inténtelo de nuevo.</p>";
-            exit();
-        }
-
+    // 1. Agregar el montón de la deuda al valor comercial del hospedaje y marcarlo como cerrado (INACTIVO)
+    $sql_update_hospedaje = "UPDATE hospedajes 
+                             SET monto = monto + ?, 
+                                 checkout = NOW(), 
+                                 estado = 'INACTIVO',
+                                 _fec_modificacion = NOW()
+                             WHERE hospedajeID = ?";
+    if ($db->ejecutar($sql_update_hospedaje, [$monto_deuda, $hospedajeID]) === false) {
+        throw new Exception("Error al actualizar la cuenta del hospedaje.");
     }
 
-// Cambiar el estado de la habitación a 'LIMPIEZA'
-$updateHabitacion = array();
-$updateHabitacion["estado"] = 'LIMPIEZA';
-$updateHabitacion["_usuario"] = $_SESSION["sesion_id_usuario"];
+    // 2. Registrar el movimiento de dinero en caja
+    if ($monto_deuda > 0) {
+        $reg_mov = array(
+            "cajaID" => $cajaID,
+            "referenciaID" => $hospedajeID,
+            "hospedajeID" => $hospedajeID,
+            "categoria" => 'HOSPEDAJE',
+            "tipo" => 'INGRESO',
+            "monto" => $monto_deuda,
+            "formapagoID" => $formaPagoID,
+            "descripcion" => 'PAGO POR DEUDA VENCIDA - DESOCUPACION',
+            "empresaID" => $empresaID,
+            "_usuario" => $usuarioID,
+            "_fec_insercion" => date("Y-m-d H:i:s"),
+            "_estado" => 'A'
+        );
+        if ($db->AutoExecute("movimientos", $reg_mov, "INSERT") === false) {
+            throw new Exception("Error registrando el ingreso del dinero.");
+        }
+    }
 
-$db->AutoExecute("habitaciones", $updateHabitacion, "UPDATE", "habitacionID='" . $habitacionID . "'");
+    // 3. Pasar la habitación a estado LIMPIEZA
+    $sql_limpieza = "UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ?";
+    if ($db->ejecutar($sql_limpieza, [$habitacionID]) === false) {
+        throw new Exception("Error al liberar la habitación.");
+    }
 
-// Redirigir a la página de habitaciones
-header("Location: habitaciones.php");
-exit();
-?>  
+    $db->commit();
+    header("Location: habitaciones.php");
+    exit();
+
+} catch (Exception $e) {
+    if ($db->inTransaction()) $db->rollBack();
+    die("<div style='color:red; font-weight:bold;'>Error crítico: " . $e->getMessage() . "</div>");
+}
+?>

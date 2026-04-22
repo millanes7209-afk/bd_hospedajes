@@ -13,7 +13,7 @@ if (!$hospedajeID) {
 
 try {
     // 1. Obtener datos básicos del hospedaje y número de habitación
-    $sqlH = "SELECT h.estado, h.checkout, h.observaciones, r.numero AS habitacion_numero
+    $sqlH = "SELECT h.estado, h.checkout, h.observaciones, r.numero AS habitacion_numero, h.cajaID, h.empresaID, h._usuario
              FROM hospedajes h
              JOIN habitaciones r ON h.habitacionID = r.habitacionID
              WHERE h.hospedajeID = ? AND h._estado <> 'X'";
@@ -21,6 +21,16 @@ try {
 
     if (!$hospedaje) {
         throw new Exception("Hospedaje no encontrado.");
+    }
+
+    // Determinar si el usuario actual es dueño de la misma caja/turno en la que se creó
+    $es_propietario = false;
+    $sesion_caja = $_SESSION['caja_abierta_id'] ?? null;
+    $sesion_empresa = $_SESSION['empresaID'] ?? null;
+    $sesion_usuario = $_SESSION['sesion_id_usuario'] ?? null;
+
+    if ($hospedaje['cajaID'] == $sesion_caja && $hospedaje['empresaID'] == $sesion_empresa && $hospedaje['_usuario'] == $sesion_usuario) {
+        $es_propietario = true;
     }
 
     // 2. Obtener nombres de clientes vinculados
@@ -49,7 +59,8 @@ try {
         'hospedaje' => $hospedaje,
         'clientes' => array_column($clientes, 'nombre_completo'),
         'total_pagado' => $total_pagado,
-        'movimientos' => $movimientosInfo
+        'movimientos' => $movimientosInfo,
+        'es_propietario' => $es_propietario
     ];
 
     echo json_encode($respuesta);
