@@ -5,6 +5,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 // ------------------------------
 
+require_once(__DIR__ . "/privada/seguridad/seguridad.php");
 require_once("conexion.php");
 require_once("funciones_caja.php");
 

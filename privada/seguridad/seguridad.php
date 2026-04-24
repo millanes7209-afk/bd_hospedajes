@@ -22,7 +22,7 @@ if (in_array($archivo_actual, $excepciones)) {
 }
 
 // 4. VERIFICAR PERMISO EN BASE DE DATOS
-$rolID = $_SESSION['sesion_rolID'] ?? null;
+$rolID = $_SESSION['sesion_id_rol'] ?? null;
 
 // Si no hay rol en sesión, lo recuperamos
 if (!$rolID) {
@@ -30,7 +30,7 @@ if (!$rolID) {
     $sql_rol = "SELECT rolID FROM usuarios_roles WHERE usuarioID = ? AND _estado <> 'X' LIMIT 1";
     $rs_rol = $db->obtenerTodo($sql_rol, [$uID]);
     $rolID = $rs_rol[0]['rolID'] ?? null;
-    $_SESSION['sesion_rolID'] = $rolID;
+    $_SESSION['sesion_id_rol'] = $rolID;
 }
 
 // Consultamos si el rol tiene acceso a la opción que contiene este archivo
