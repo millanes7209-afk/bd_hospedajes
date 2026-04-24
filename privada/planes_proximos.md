@@ -1,29 +1,14 @@
-# Planes Próximos - Tareas Inmediatas y Reglas
+# Planes Próximos - Gestión de Empleados y Seguridad
 
-Este documento detalla los requerimientos y reglas de negocio para la fase actual de desarrollo.
+## 🎯 Objetivos Inmediatos
+- [x] **Modificación de Usuarios (Contraseñas):** Reseteo de claves con llave 🔑 implementado.
+- [x] **Modificación de Empleados:** Edición de ficha personal implementada.
+- [x] **Modificación de Contratos:** Ajuste de sueldo y cargo (maletín 💼) implementado.
+- [/] **Seguridad Centralizada (Middleware):** Implementando restricción de acceso automática.
+- [ ] **Notificaciones para Factura:** Sistema de alertas para facturación.
 
-## 1. Auditoría y Seguridad Financiera
-- **Regla de Oro:** Un hospedaje solo se puede modificar si pertenece a la **caja del mismo turno**, al **mismo usuario** y a la **mismas empresa**. Esto es crítico para mantener la integridad de los cierres de caja.
-- **Detección de Cambios de Montos:** Implementar alertas visuales en el panel de auditoría cuando se detecten cambios manuales en el JSON de pagos.
-
-## 2. Optimización de Interfaz
-- **Mapa de Recepción:** Implementación de diseño compacto con hover informativo en habitaciones ocupadas para mejorar la visibilidad global.
-- **Registro de Momentáneos:** Desarrollo de módulo para estancias rápidas o clientes sin carnet.
-- **Agrupamiento:** Organizar el mapa de habitaciones agrupando por **piso** y por **tipo** de habitación para una búsqueda más lógica.
-- **Consistencia de Navegación:** Mantener el sistema de pestañas y sidebar automático en todos los nuevos módulos.
-
-## 3. Reglas de Reportes
-- **Filtros de Cajas Cerradas:** Los filtros y visualización de historial de cajas cerradas en `vista_cajas.php` están restringidos por Rol: Los recepcionistas solo ven sus propios cierres, mientras que los administradores/propietarios pueden auditar a todo el equipo.
-
-## 4. Automatización del Sistema (Back-end)
-- **Trigger de Accesos:** Implementar un disparador en la tabla `opciones` para que cada nueva funcionalidad creada sea visible automáticamente para el Desarrollador (Administrador).
-- **Módulo de Sistema:** Creación de grupo "SISTEMA" para la gestión dinámica de Menús (Grupos), Pestañas (Opciones) y Permisos (Accesos).
-
-## 5. Lógica Financiera
-- **Ingresos y Egresos:** Revisar y optimizar los botones de la lógica de ingresos y egresos, asegurando que se ajusten estrictamente a la estructura de la base de datos para evitar desajustes en los saldos de caja.
-
-## 6. Refinamientos de Recepción
-- **Equipamiento en Mapa:** Mostrar TV/Baño/Ventilador en los botones de habitaciones DISPONIBLES en el mapa interactivo.
-
-## 8. Dudas y Errores Pendientes (NO ARREGLAR AÚN)
-- **Error de Cabeceras en Opciones:** Investigar y resolver el `Warning: Cannot modify header information - headers already sent` en `privada/sistema/opciones.php` (Línea 38). El error parece originarse por salida previa en `libreria_menu.php` (Línea 147).
+## ✅ Logros Recientes
+- [x] **Gestión de Bajas Laborales:** Implementado sistema de "Dar de Baja" sin borrado físico.
+- [x] **Historial de Bajas:** Creado `bajas.php` para consulta de ex-empleados con fecha de fin de contrato.
+- [x] **Optimización de Búsqueda:** El buscador ahora ignora contratos inactivos, facilitando la recontratación de personal antiguo.
+- [x] **Seguridad Multi-empresa:** Filtros por `empresaID` y `estado_laboral` en selector y listados.

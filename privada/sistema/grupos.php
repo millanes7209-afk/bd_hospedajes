@@ -140,6 +140,26 @@ $grupos = $db->obtenerTodo($sql);
         </div>
     </div>
 
+    <!-- Modal de Confirmación de Eliminación -->
+    <div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-danger">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>CONFIRMAR ELIMINACIÓN</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="mb-0">¿Realmente desea eliminar el grupo: <br><b id="delGrupoNombre" class="text-danger fs-5"></b>?</p>
+                    <small class="text-muted mt-2 d-block">Nota: Esto ocultará todas sus opciones vinculadas.</small>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">CANCELAR</button>
+                    <button type="button" id="btnConfirmarBorrado" class="btn btn-danger fw-bold">SÍ, ELIMINAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Formulario oculto para eliminar -->
     <form id="formEliminar" method="post" style="display:none;">
         <input type="hidden" name="accion" value="eliminar">
@@ -164,11 +184,15 @@ $grupos = $db->obtenerTodo($sql);
         }
 
         function eliminarGrupo(id, nombre) {
-            if (confirm('¿Estás seguro de eliminar el grupo "' + nombre + '"?\nEsto ocultará todas sus opciones vinculadas.')) {
-                document.getElementById('delGrupoID').value = id;
-                document.getElementById('formEliminar').submit();
-            }
+            document.getElementById('delGrupoID').value = id;
+            document.getElementById('delGrupoNombre').innerText = nombre;
+            const modalEliminar = new bootstrap.Modal(document.getElementById('modalConfirmarEliminar'));
+            modalEliminar.show();
         }
+
+        document.getElementById('btnConfirmarBorrado').addEventListener('click', function() {
+            document.getElementById('formEliminar').submit();
+        });
     </script>
 </body>
 

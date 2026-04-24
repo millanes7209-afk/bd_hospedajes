@@ -49,6 +49,7 @@ try {
             WHERE ee.empleadoID = ? 
             AND emp._estado <> 'X'
             AND ee._estado <> 'X'
+            AND ee.estado_laboral = 'ACTIVO'
             ORDER BY emp.nombre";
             
     $stmt = $db->prepare($sql);

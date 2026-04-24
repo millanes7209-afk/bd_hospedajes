@@ -172,6 +172,26 @@ $accesos = $db->obtenerTodo($sql);
         </div>
     </div>
 
+    <!-- Modal de Confirmación de Revocación -->
+    <div class="modal fade" id="modalConfirmarRevocar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-danger">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-user-shield me-2"></i>CONFIRMAR REVOCACIÓN</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="mb-0">¿Realmente desea revocar el acceso del Rol:<br><b id="revRolNombre" class="text-danger fs-5"></b></p>
+                    <p class="mt-2">Para la pestaña: <b id="revOpcionNombre" class="text-primary"></b>?</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">CANCELAR</button>
+                    <button type="button" id="btnConfirmarRevocar" class="btn btn-danger fw-bold">SÍ, REVOCAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <form id="formRevocar" method="post" style="display:none;">
         <input type="hidden" name="accion" value="revocar">
         <input type="hidden" name="accesoID" id="revAccesoID">
@@ -185,11 +205,16 @@ $accesos = $db->obtenerTodo($sql);
         }
 
         function revocarAcceso(id, rol, opcion) {
-            if (confirm('¿Revocar acceso al Rol "' + rol + '" para la pestaña "' + opcion + '"?')) {
-                document.getElementById('revAccesoID').value = id;
-                document.getElementById('formRevocar').submit();
-            }
+            document.getElementById('revAccesoID').value = id;
+            document.getElementById('revRolNombre').innerText = rol;
+            document.getElementById('revOpcionNombre').innerText = opcion;
+            const modalRevocar = new bootstrap.Modal(document.getElementById('modalConfirmarRevocar'));
+            modalRevocar.show();
         }
+
+        document.getElementById('btnConfirmarRevocar').addEventListener('click', function() {
+            document.getElementById('formRevocar').submit();
+        });
     </script>
 </body>
 

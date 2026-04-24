@@ -1,29 +1,58 @@
 <?php
 session_start();
+header('Content-Type: application/json; charset=utf-8');
 require_once("../../conexion.php");
 
+$nombres          = trim($_POST['nombres'] ?? '');
+$apellidos        = trim($_POST['apellidos'] ?? '');
+$genero           = $_POST['genero'] ?? '';
+$ci               = trim($_POST['ci'] ?? '');
+$telefono         = trim($_POST['telefono'] ?? '');
+$fecha_nacimiento = $_POST['fecha_nacimiento'] ?? '';
 
-$ap1=$_POST["ap1"];
-$am1=$_POST["am1"];
-$nombres1=$_POST["nombres1"];
-$ci1=$_POST["ci1"];
-$direccion1=$_POST["direccion1"];
-$telefono1=$_POST["telefono1"];
-$genero1=$_POST["genero1"];
+// Validación mínima
+if (empty($nombres) || empty($apellidos) || empty($genero) || empty($ci)) {
+    echo json_encode(['status' => 'ERROR', 'message' => 'Faltan datos obligatorios']);
+    exit;
+}
 
-$reg = array();
-$reg["empresaID"] = 1;
-$reg["ap"] = $ap1;
-$reg["am"] = $am1;
-$reg["nombres"] = $nombres1;
-$reg["ci"] = $ci1;
-$reg["direccion"] = $direccion1;
-$reg["telefono"] = $telefono1;
-$reg["genero"] = $genero1;
+$usuarioLogueado = $_SESSION['sesion_id_usuario'] ?? 1;
 
+try {
+    // 1. Verificar que el CI no esté ya registrado
+    $sql_check = "SELECT empleadoID FROM empleados WHERE ci = ? AND _estado <> 'X'";
+    $rs_check  = $db->obtenerTodo($sql_check, [$ci]);
 
-$reg["_fec_insercion"] = date("Y-m-d H:i:s");
-$reg["_estado"] = 'A';
-$reg["_usuario"] = $_SESSION["sesion_id_usuario"];   
-$rs1 = $db->AutoExecute("EMPLEADOS", $reg, "INSERT"); 
+    if (count($rs_check) > 0) {
+        echo json_encode(['status' => 'ERROR', 'message' => "Ya existe un empleado con C.I. $ci"]);
+        exit;
+    }
+
+    // 2. Insertar usando el método ejecutar() de tu MiConexion (PDO)
+    $sql_ins = "INSERT INTO empleados 
+                (nombres, apellidos, genero, ci, telefono, fecha_nacimiento, _fec_insercion, _estado, _usuario)
+                VALUES (?, ?, ?, ?, ?, ?, NOW(), 'A', ?)";
+    
+    $params = [
+        strtoupper($nombres),
+        strtoupper($apellidos),
+        $genero,
+        $ci,
+        $telefono,
+        !empty($fecha_nacimiento) ? $fecha_nacimiento : null,
+        $usuarioLogueado
+    ];
+
+    $rs = $db->ejecutar($sql_ins, $params);
+
+    if ($rs) {
+        $nuevoID = $db->lastInsertId();
+        echo json_encode(['status' => 'SUCCESS', 'empleadoID' => $nuevoID]);
+    } else {
+        echo json_encode(['status' => 'ERROR', 'message' => 'Error al ejecutar la inserción en BD']);
+    }
+
+} catch (Exception $e) {
+    echo json_encode(['status' => 'ERROR', 'message' => $e->getMessage()]);
+}
 ?>

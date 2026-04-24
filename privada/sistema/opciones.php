@@ -168,6 +168,25 @@ $opciones = $db->obtenerTodo($sql);
         </div>
     </div>
 
+    <!-- Modal de Confirmación de Eliminación -->
+    <div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-danger">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>CONFIRMAR ELIMINACIÓN</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="mb-0">¿Realmente desea eliminar la opción: <br><b id="delOpcionNombre" class="text-danger fs-5"></b>?</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">CANCELAR</button>
+                    <button type="button" id="btnConfirmarBorrado" class="btn btn-danger fw-bold">SÍ, ELIMINAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <form id="formEliminar" method="post" style="display:none;">
         <input type="hidden" name="accion" value="eliminar">
         <input type="hidden" name="opcionID" id="delOpcionID">
@@ -196,11 +215,15 @@ $opciones = $db->obtenerTodo($sql);
         }
 
         function eliminarOpcion(id, nombre) {
-            if (confirm('¿Eliminar la opción "' + nombre + '"?')) {
-                document.getElementById('delOpcionID').value = id;
-                document.getElementById('formEliminar').submit();
-            }
+            document.getElementById('delOpcionID').value = id;
+            document.getElementById('delOpcionNombre').innerText = nombre;
+            const modalEliminar = new bootstrap.Modal(document.getElementById('modalConfirmarEliminar'));
+            modalEliminar.show();
         }
+
+        document.getElementById('btnConfirmarBorrado').addEventListener('click', function() {
+            document.getElementById('formEliminar').submit();
+        });
     </script>
 </body>
 

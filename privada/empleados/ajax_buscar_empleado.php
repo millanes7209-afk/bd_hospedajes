@@ -3,49 +3,75 @@ session_start();
 header('Content-Type: application/json; charset=utf-8');
 require_once("../../conexion.php");
 
-$ci = isset($_GET['ci']) ? $_GET['ci'] : '';
+$ci = isset($_GET['ci']) ? trim($_GET['ci']) : '';
 
 if (empty($ci)) {
     echo json_encode(['status' => 'ERROR', 'message' => 'C.I. vacío']);
     exit;
 }
 
+// ── Helper: verificar si el empleado ya tiene usuario (GLOBAL, sin filtro de empresa)
+function buscarUsuarioDeEmpleado($db, $empleadoID) {
+    $rs = $db->obtenerTodo(
+        "SELECT u.usuarioID, u.usuario FROM usuarios u
+         WHERE u.empleadoID = ? AND u._estado <> 'X'",
+        [$empleadoID]
+    );
+    return count($rs) > 0
+        ? ['tiene_usuario' => true,  'Usuario' => $rs[0]]
+        : ['tiene_usuario' => false, 'Usuario' => null];
+}
+
 try {
-    // 1. Buscar si la Empleado existe
-    $sql = "SELECT * FROM EMPLEADOS WHERE ci = ? AND estado = 'ACTIVO'";
-    $stmt = $db->prepare($sql);
-    $stmt->execute([$ci]);
-    $Empleado = $stmt->fetch(PDO::FETCH_ASSOC);
+    // 1. Buscar en empleados
+    $rs = $db->obtenerTodo(
+        "SELECT * FROM empleados WHERE ci = ? AND _estado <> 'X'",
+        [$ci]
+    );
 
-    if ($Empleado) {
-        // 2. Si existe la Empleado, buscar si ya es empleado
-        $sql_emp = "SELECT * FROM empleados WHERE EmpleadoID = ? AND estado = 'ACTIVO'";
-        $stmt_emp = $db->prepare($sql_emp);
-        $stmt_emp->execute([$Empleado['EmpleadoID']]);
-        $empleado = $stmt_emp->fetch(PDO::FETCH_ASSOC);
+    if (count($rs) > 0) {
+        $empleado  = $rs[0];
+        $empresaID = $_SESSION['empresaID'];
 
-        if ($empleado) {
-            // Ya es empleado, devolver datos para mostrar contrato/usuario
+        // Verificar usuario (global — sin filtro de empresa)
+        $infoUsuario = buscarUsuarioDeEmpleado($db, $empleado['empleadoID']);
+
+        // 2. Buscar contrato activo en ESTA empresa (JOIN roles para texto)
+        $rs_c = $db->obtenerTodo(
+            "SELECT ee.*, r.rol AS rol_texto
+             FROM empleado_empresas ee
+             INNER JOIN roles r ON ee.rolID = r.rolID
+             WHERE ee.empleadoID = ?
+               AND ee.empresaID  = ?
+               AND ee._estado   <> 'X'
+               AND ee.estado_laboral = 'ACTIVO'
+             ORDER BY ee.empleadoempresaID DESC",
+            [$empleado['empleadoID'], $empresaID]
+        );
+
+        if (count($rs_c) > 0) {
+            // TIENE CONTRATO en esta empresa
             echo json_encode([
-                'status' => 'FOUND_EMPLOYEE',
-                'Empleado' => $Empleado,
-                'empleado' => $empleado
+                'status'        => 'YA_TIENE_CONTRATO',
+                'Empleado'      => $empleado,
+                'Contrato'      => $rs_c[0],
+                'tiene_usuario' => $infoUsuario['tiene_usuario'],
+                'Usuario'       => $infoUsuario['Usuario']
             ]);
         } else {
-            // Existe como Empleado pero no es empleado, autocompletar formulario de registro
+            // EXISTE pero SIN CONTRATO en esta empresa
             echo json_encode([
-                'status' => 'FOUND_PERSON',
-                'Empleado' => $Empleado,
-                'message' => 'La Empleado existe pero no es empleado aún.'
+                'status'        => 'EXISTE_SIN_CONTRATO',
+                'Empleado'      => $empleado,
+                'tiene_usuario' => $infoUsuario['tiene_usuario'],
+                'Usuario'       => $infoUsuario['Usuario']
             ]);
         }
     } else {
-        // No existe la Empleado, mostrar formulario vacío
-        echo json_encode([
-            'status' => 'NOT_FOUND',
-            'message' => 'No se encontró ninguna Empleado con ese C.I.'
-        ]);
+        echo json_encode(['status' => 'NO_EXISTE']);
     }
+
 } catch (Exception $e) {
     echo json_encode(['status' => 'ERROR', 'message' => $e->getMessage()]);
 }
+?>
