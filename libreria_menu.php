@@ -15,95 +15,90 @@ ob_start();
 // Verificar si existe la sesión de rol
 if (isset($_SESSION["sesion_id_rol"])) {
     $usuarioID = $_SESSION['sesion_id_usuario'];
-    $caja_abierta_id = verificarCajaAbierta($db, $usuarioID, $_SESSION['empresaID']);
-    if ($caja_abierta_id) {
-        $_SESSION['caja_abierta_id'] = $caja_abierta_id;
-        $caja_abierta = true;
-    } else {
-        $_SESSION['caja_abierta_id'] = null;
-        $caja_abierta = false;
-    }
-    // Verificar si hay una caja abierta para el usuario actual
+    $rolID = $_SESSION["sesion_id_rol"];
+    $empresaID = $_SESSION['empresaID'] ?? null;
+    $is_global = ($empresaID === null || $empresaID == 0);
 
-    $empresaID = $_SESSION['empresaID'];
+    // --- LÓGICA DE SUCURSAL ---
+    if (!$is_global) {
+        $caja_abierta_id = verificarCajaAbierta($db, $usuarioID, $empresaID);
+        $_SESSION['caja_abierta_id'] = $caja_abierta_id ?: null;
+        $caja_abierta = (bool) $caja_abierta_id;
 
+        $saldos_forma_pago = [];
+        if ($caja_abierta) {
+            // Obtener todas las formas de pago disponibles
+            $sql_formas_pago = "SELECT tipo FROM formas_pago WHERE _estado <> 'X'";
+            $rs_formas_pago = $db->obtenerTodo($sql_formas_pago);
+            foreach ($rs_formas_pago as $forma_pago)
+                $saldos_forma_pago[$forma_pago['tipo']] = 0.00;
 
-    $sql_caja_abierta = "SELECT * FROM cajas WHERE estado = 'ABIERTA' AND usuarioID = ? AND empresaID = ?";
-    $rs_caja_abierta = $db->obtenerTodo($sql_caja_abierta, [$usuarioID, $empresaID]);
+            // Obtener sumatoria real de movimientos
+            $sql_saldos = "SELECT fp.tipo AS forma_pago_tipo,
+                            SUM(CASE WHEN m.tipo = 'INGRESO' THEN m.monto ELSE 0 END) AS total_ingresos,
+                            SUM(CASE WHEN m.tipo = 'EGRESO' THEN m.monto ELSE 0 END) AS total_egresos
+                           FROM movimientos m
+                           INNER JOIN formas_pago fp ON m.formapagoID = fp.formapagoID
+                           WHERE m.cajaID = ? AND m.usuarioID = ? AND m.empresaID = ? AND m._estado = 'A'
+                           GROUP BY fp.tipo";
+            $rs_saldo_acumulado = $db->obtenerTodo($sql_saldos, [$caja_abierta_id, $usuarioID, $empresaID]);
 
-    $caja_abierta = (count($rs_caja_abierta) > 0);
-    if (!$rs_caja_abierta) {
-        $rs_caja_abierta = [];
-    }
-    $saldos_forma_pago = [];
-    if ($caja_abierta) {
-        $caja_id_abierta = $rs_caja_abierta[0]['cajaID'] ?? null;
-
-        // Obtener todas las formas de pago disponibles
-        $sql_formas_pago = "SELECT tipo FROM formas_pago WHERE _estado <> 'X'";
-        $rs_formas_pago = $db->obtenerTodo($sql_formas_pago);
-
-        // Inicializar todos los saldos en 0 para cada forma de pago
-        foreach ($rs_formas_pago as $forma_pago) {
-            $saldos_forma_pago[$forma_pago['tipo']] = 0.00;
-        }
-
-        // Obtener sumatoria real de la tabla movimientos para esta caja puntual
-        $sql_saldos = "SELECT 
-                        fp.tipo AS forma_pago_tipo,
-                        SUM(CASE WHEN m.tipo = 'INGRESO' THEN m.monto ELSE 0 END) AS total_ingresos,
-                        SUM(CASE WHEN m.tipo = 'EGRESO' THEN m.monto ELSE 0 END) AS total_egresos
-                       FROM movimientos m
-                       INNER JOIN formas_pago fp ON m.formapagoID = fp.formapagoID
-                       WHERE m.cajaID = ? AND m.usuarioID = ? AND m.empresaID = ? AND m._estado = 'A'
-                       GROUP BY fp.tipo";
-
-        $rs_saldo_acumulado = $db->obtenerTodo($sql_saldos, [$caja_id_abierta, $usuarioID, $empresaID]);
-
-        // Procesar los saldos y actualizar el arreglo final
-        if ($rs_saldo_acumulado) {
-            foreach ($rs_saldo_acumulado as $saldo) {
-                $formaPagoTipo = $saldo['forma_pago_tipo'];
-                $total_ingresos = $saldo['total_ingresos'];
-                $total_egresos = $saldo['total_egresos'];
-
-                // Calcular el saldo acumulado real
-                $saldo_acumulado = $total_ingresos - $total_egresos;
-
-                // Actualizar el saldo por forma de pago en el arreglo
-                $saldos_forma_pago[$formaPagoTipo] = $saldo_acumulado;
+            if ($rs_saldo_acumulado) {
+                foreach ($rs_saldo_acumulado as $saldo) {
+                    $saldos_forma_pago[$saldo['forma_pago_tipo']] = $saldo['total_ingresos'] - $saldo['total_egresos'];
+                }
             }
         }
+
+        // Información de la empresa
+        $sql1 = "SELECT nombre, logo_agencia FROM empresa WHERE empresaID = ?";
+        $rs1 = $db->obtenerTodo($sql1, array($empresaID));
+        $nombre = $rs1[0]["nombre"] ?? "Empresa";
+        $logo_agencia = $rs1[0]["logo_agencia"] ?? "default.png";
+
+        // SQL PARA MENÚ DE SUCURSAL (Filtrado por funcionalidades pagadas)
+        // Ocultamos la funcionalidad 5 (SISTEMA) y mostramos solo lo pagado
+        $sql = "SELECT ac.*, op.opcionID, op.orden, op.contenido, gr.grupoID, gr.grupo, op.opcion 
+                FROM accesos ac
+                INNER JOIN opciones op ON ac.opcionID = op.opcionID
+                INNER JOIN grupos gr ON op.grupoID = gr.grupoID
+                LEFT JOIN empresa_funcionalidades ef ON (op.funcionalidadID = ef.funcionalidadID AND ef.empresaID = ? AND ef.estado = 'ACTIVO')
+                WHERE ac.rolID = ?
+                AND op.funcionalidadID <> 5
+                AND (op.funcionalidadID IS NULL OR ef.empresafuncionID IS NOT NULL)
+                AND ac._estado <> 'X' AND op._estado <> 'X' AND gr._estado <> 'X'
+                ORDER BY op.grupoID, op.orden";
+        $params = [$empresaID, $rolID];
     }
-    // Obtener empresaID desde la sesión
-    $empresaID = $_SESSION['empresaID'];
+    // --- LÓGICA PANEL GLOBAL ---
+    else {
+        $nombre = "PANEL MAESTRO DE SISTEMA";
+        $logo_agencia = "logo_global.png"; // Icono genérico
+        $caja_abierta = false;
+        $saldos_forma_pago = [];
 
-    // Información de la empresa (filtrada por empresa de la sesión)
-    $sql1 = "SELECT nombre, logo_agencia FROM empresa WHERE empresaID = ?";
-    $rs1 = $db->obtenerTodo($sql1, array($empresaID));
-    $nombre = $rs1[0]["nombre"];
-    $logo_agencia = $rs1[0]["logo_agencia"];
+        // SQL PARA MENÚ GLOBAL (Solo funcionalidad 5: SISTEMA)
+        $sql = "SELECT ac.*, op.opcionID, op.orden, op.contenido, gr.grupoID, gr.grupo, op.opcion 
+                FROM accesos ac
+                INNER JOIN opciones op ON ac.opcionID = op.opcionID
+                INNER JOIN grupos gr ON op.grupoID = gr.grupoID
+                WHERE ac.rolID = ?
+                AND op.funcionalidadID = 5
+                AND ac._estado <> 'X' AND op._estado <> 'X' AND gr._estado <> 'X'
+                ORDER BY op.grupoID, op.orden";
+        $params = [$rolID];
+    }
 
+    $rs = $db->obtenerTodo($sql, $params);
+    $nick = $_SESSION["sesion_usuario"];
     $dir_php = $_SERVER["PHP_SELF"];
     $cuerp = strpos($dir_php, "listado_tablas.php");
 
-    // Determinar la ruta correcta para la imagen
+    // Ruta de imagen
     $img_path1 = '../img/' . $logo_agencia;
     $img_path2 = '../../../img/' . $logo_agencia;
     $img_path = file_exists($img_path1) ? $img_path1 : $img_path2;
 
-    // Información del usuario y sus opciones de navegación
-    $sql = "SELECT ac.*, op.opcionID, op.orden, op.contenido, gr.grupoID, gr.grupo, op.opcion 
-                         FROM accesos ac
-                         INNER JOIN opciones op ON ac.opcionID = op.opcionID
-                         INNER JOIN grupos gr ON op.grupoID = gr.grupoID
-                         WHERE ac.rolID = ?
-                         AND ac._estado <> 'X'
-                         AND op._estado <> 'X'
-                         AND gr._estado <> 'X'
-                         ORDER BY op.grupoID, op.orden";
-    $rs = $db->obtenerTodo($sql, [$_SESSION["sesion_id_rol"]]);
-    $nick = $_SESSION["sesion_usuario"];
 } else {
     $rs = "";
     $nick = "";
@@ -240,11 +235,21 @@ if (isset($_SESSION["sesion_id_rol"])) {
         }
 
         /* AJUSTE DE LEGIBILIDAD SOLICITADO: TEXTO NEGRO PURO */
-        table, th, td, 
-        .card-header, .card-body, 
-        .usuario, .saldo-info,
-        h1, h2, h3, h4, h5, h6,
-        .text-muted, .header-leyenda {
+        table,
+        th,
+        td,
+        .card-header,
+        .card-body,
+        .usuario,
+        .saldo-info,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        .text-muted,
+        .header-leyenda {
             color: #000000 !important;
         }
 
@@ -380,7 +385,7 @@ if (isset($_SESSION["sesion_id_rol"])) {
             </button>
 
             <div class='collapse navbar-collapse' id='navbarSupportedContent'>
-                <ul class='navbar-nav'>
+                <ul class="navbar-nav">
                     <?php
                     // Pre-procesar para encontrar la primera opción de cada grupo para el link directo
                     $primeras_opciones = [];

@@ -95,8 +95,8 @@ try {
                         </div>
                         <div class='d-flex gap-2'>
                             <?php if (strtoupper($_SESSION['sesion_rol'] ?? '') === 'ADMINISTRADOR'): ?>
-                                <a href='privada/empresas/empresa_nuevo.php' class='btn btn-success btn-sm'>
-                                    <i class='fas fa-plus-circle me-2'></i>Nueva
+                                <a href='privada/sistema/index.php' class='btn btn-dark btn-sm'>
+                                    <i class='fas fa-cog me-2'></i>Panel Maestro
                                 </a>
                             <?php endif; ?>
                             <form method='post' action='' class='mb-0'>

@@ -1,10 +1,10 @@
 <?php
 session_start();
 require_once("../../conexion.php");
-require_once("../../libreria_menu.php");
+require_once("libreria_sistema.php");
 
-// Proteger acceso: Solo ADMINISTRADOR y PROPIETARIO
-if (!isset($_SESSION['sesion_rol']) || !in_array($_SESSION['sesion_rol'], ['ADMINISTRADOR', 'PROPIETARIO'])) {
+// Proteger acceso: Solo ADMINISTRADOR (Sistema Global)
+if (!isset($_SESSION['sesion_rol']) || $_SESSION['sesion_rol'] !== 'ADMINISTRADOR') {
     header("Location: ../../index.php");
     exit();
 }

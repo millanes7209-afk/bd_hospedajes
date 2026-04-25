@@ -30,12 +30,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 }
 
 // 2. PROTECCIÓN DE ACCESO
-if (!isset($_SESSION['sesion_rol']) || !in_array($_SESSION['sesion_rol'], ['ADMINISTRADOR', 'PROPIETARIO'])) {
+if (!isset($_SESSION['sesion_rol']) || $_SESSION['sesion_rol'] !== 'ADMINISTRADOR') {
     header("Location: ../../index.php");
     exit();
 }
 
-require_once("../../libreria_menu.php");
+require_once("libreria_sistema.php");
 
 // 3. CONSULTAS PARA LA VISTA
 // Filtrar el rol 1 (Administrador) ya que tiene trigger/permisos fijos
