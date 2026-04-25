@@ -89,14 +89,19 @@ document.addEventListener("DOMContentLoaded", function () {
                             <td>${fila.habitacion_numero}</td>
                             <td>${fila.monto}</td>
                             <td>${fila.estado}</td>
-                            <td>
-                                <form name="formModif${fila.hospedajeID}" method="post" action="hospedaje_modificar.php" style="display:inline;">
-                                    <input type="hidden" name="hospedajeID" value="${fila.hospedajeID}">
-                                    <button type="submit" class="btn btn-sm btn-primary btn-accion">Modificar</button>
-                                </form>
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-danger btn-accion eliminar-hospedaje" data-hospedajeid="${fila.hospedajeID}" data-clientes="${fila.clientes}">Eliminar</button>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-4">
+                                    <form name="formModif${fila.hospedajeID}" method="post" action="hospedaje_modificar.php" style="display:inline;">
+                                        <input type="hidden" name="hospedajeID" value="${fila.hospedajeID}">
+                                        <input type="hidden" name="auth" value="hospedajes.php">
+                                        <button type="submit" style="background:none; border:none; color:#0d6efd; padding:0; cursor:pointer;" title="Modificar">
+                                            <i class="fas fa-pencil-alt fa-lg"></i>
+                                        </button>
+                                    </form>
+                                    <button class="btn-accion-limpia" style="background:none; border:none; color:#dc3545; padding:0; cursor:pointer;" onclick="eliminarHospedaje(${fila.hospedajeID})" title="Eliminar">
+                                        <i class="fas fa-trash-alt fa-lg"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     `;
@@ -116,25 +121,15 @@ document.addEventListener("DOMContentLoaded", function () {
     // Búsqueda automática con debounce
     const busquedaAutomatica = debounce(filtrarDatos, 500);
 
-    // Agregar eventos a los campos de búsqueda
-    buscarNombres.addEventListener("input", () => {
-        if (buscarNombres.value.length >= 3 || buscarApellidos.value.length >= 3 || buscarCI.value.length >= 1) {
-            busquedaAutomatica();
-        }
-    });
-
-    buscarApellidos.addEventListener("input", () => {
-        if (buscarNombres.value.length >= 3 || buscarApellidos.value.length >= 3 || buscarCI.value.length >= 1) {
-            busquedaAutomatica();
-        }
-    });
-
-    buscarCI.addEventListener("input", () => {
-        if (buscarNombres.value.length >= 3 || buscarApellidos.value.length >= 3 || buscarCI.value.length >= 1) {
-            busquedaAutomatica();
-        }
-    });
-
     // Búsqueda inmediata al presionar el botón Buscar
     document.getElementById("botonBuscar").addEventListener("click", filtrarDatos);
+
+    // Búsqueda al presionar ENTER en cualquier campo
+    [buscarNombres, buscarApellidos, buscarCI].forEach(input => {
+        input.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                filtrarDatos();
+            }
+        });
+    });
 });

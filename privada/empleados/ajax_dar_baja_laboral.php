@@ -1,7 +1,6 @@
 <?php
-session_start();
+require_once("../seguridad/seguridad_ajax.php");
 header('Content-Type: application/json; charset=utf-8');
-require_once("../../conexion.php");
 
 $empleadoID = $_POST['empleadoID'] ?? '';
 $empresaID  = $_SESSION['empresaID'] ?? null;

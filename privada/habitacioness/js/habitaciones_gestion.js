@@ -81,7 +81,8 @@ function hospedar_ocupar(action, numero, tipo, precio, habitacionID) {
         'numero': numero,
         'tipo': tipo,
         'precio': precio,
-        'habitacionID': habitacionID
+        'habitacionID': habitacionID,
+        'auth': 'habitaciones.php'
     };
 
     for (var key in params) {
@@ -98,7 +99,7 @@ function hospedar_ocupar(action, numero, tipo, precio, habitacionID) {
 
 function agregar_huesped(action, numero, tipo, habitacionID) {
     // Redirección profesional usando POST enviando hospedajeID real
-    fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID)
+    fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&auth=habitaciones.php')
         .then(response => response.json())
         .then(data => {
             if (data.error) {
@@ -112,7 +113,8 @@ function agregar_huesped(action, numero, tipo, habitacionID) {
                     'numero': numero,
                     'tipo': tipo,
                     'habitacionID': habitacionID,
-                    'hospedajeID': data.hospedajeID
+                    'hospedajeID': data.hospedajeID,
+                    'auth': 'habitaciones.php'
                 };
 
                 for (var key in params) {
@@ -130,19 +132,19 @@ function agregar_huesped(action, numero, tipo, habitacionID) {
 }
 
 function cambiarEstado(habitacionID, nuevoEstado) {
-    window.location.href = 'cambiar_estado.php?habitacionID=' + habitacionID + '&nuevoEstado=' + nuevoEstado;
+    window.location.href = 'cambiar_estado.php?habitacionID=' + habitacionID + '&nuevoEstado=' + nuevoEstado + '&auth=habitaciones.php';
 }
 
 function desocupar(habitacionID) {
-    window.location.href = 'desocupar.php?habitacionID=' + habitacionID;
+    window.location.href = 'desocupar.php?habitacionID=' + habitacionID + '&auth=habitaciones.php';
 }
 
 function desocupar1(habitacionID) {
-    window.location.href = 'desocupar1.php?habitacionID=' + habitacionID;
+    window.location.href = 'desocupar1.php?habitacionID=' + habitacionID + '&auth=habitaciones.php';
 }
 
 function liberar(habitacionID) {
-    window.location.href = 'liberar.php?habitacionID=' + habitacionID;
+    window.location.href = 'liberar.php?habitacionID=' + habitacionID + '&auth=habitaciones.php';
 }
 
 /**
@@ -162,7 +164,7 @@ function mostrarModalPermanencia(habitacionID) {
     input.name = 'hospedajeID';
     
     // Obtener el hospedajeID actual vía API antes de saltar
-    fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID)
+    fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&auth=habitaciones.php')
         .then(response => response.json())
         .then(data => {
             if (data.error) {
@@ -170,6 +172,13 @@ function mostrarModalPermanencia(habitacionID) {
             } else {
                 input.value = data.hospedajeID;
                 form.appendChild(input);
+
+                var authInput = document.createElement('input');
+                authInput.type = 'hidden';
+                authInput.name = 'auth';
+                authInput.value = 'habitaciones.php';
+                form.appendChild(authInput);
+
                 document.body.appendChild(form);
                 form.submit();
             }
@@ -184,7 +193,7 @@ function mostrarModalCambioHabitacion(habitacionID) {
     if (modalOpciones) modalOpciones.hide();
 
     const vStamp = new Date().getTime();
-    fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&v=' + vStamp)
+    fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&auth=habitaciones.php&v=' + vStamp)
         .then(response => response.text())
         .then(text => {
             try {
@@ -203,7 +212,7 @@ function mostrarModalCambioHabitacion(habitacionID) {
                 document.getElementById('cambio-texto-actual').innerText = data.numero;
 
                 // Llenar combo disponibles evitando cache
-                fetch('get_habitaciones_disponibles.php?v=' + vStamp)
+                fetch('get_habitaciones_disponibles.php?auth=habitaciones.php&v=' + vStamp)
                     .then(res => res.text())
                     .then(text2 => {
                         try {
@@ -266,13 +275,13 @@ function ocuparDesdeReserva(habitacionID) {
     var modalOpciones = bootstrap.Modal.getInstance(document.getElementById('menu-opciones'));
     if (modalOpciones) modalOpciones.hide();
 
-    fetch('obtener_datos_reserva.php?habitacionID=' + habitacionID)
+    fetch('obtener_datos_reserva.php?habitacionID=' + habitacionID + '&auth=habitaciones.php')
         .then(response => response.json())
         .then(data => {
             if (data.error) {
                 alert('Error al obtener los datos de la reserva.');
             } else {
-                const url = `hospedaje_reserva.php?numero=${data.numero}&tipo=${data.tipo}&precio=${data.precio}&habitacionID=${data.habitacionID}&reservaID=${data.reservaID}&monto_total=${data.monto_total}&monto_pagado=${data.monto_pagado}&monto_pendiente=${data.monto_pendiente}&clienteID=${data.clienteID}`;
+                const url = `hospedaje_reserva.php?numero=${data.numero}&tipo=${data.tipo}&precio=${data.precio}&habitacionID=${data.habitacionID}&reservaID=${data.reservaID}&monto_total=${data.monto_total}&monto_pagado=${data.monto_pagado}&monto_pendiente=${data.monto_pendiente}&clienteID=${data.clienteID}&auth=habitaciones.php`;
                 window.location.href = url;
             }
         })
@@ -283,7 +292,7 @@ function ocuparDesdeReserva(habitacionID) {
  * ACTUALIZACIÓN AUTOMÁTICA DE ESTADOS (Polling)
  */
 function actualizarEstadoHabitaciones() {
-    fetch('obtener_estados_habitaciones.php')
+    fetch('obtener_estados_habitaciones.php?auth=habitaciones.php')
     .then(response => response.json())
     .then(data => {
         data.forEach(function(habitacion) {
@@ -334,7 +343,7 @@ function mostrarModalPagoDeuda(habitacionID) {
     var modalOpciones = bootstrap.Modal.getInstance(document.getElementById('menu-opciones'));
     if (modalOpciones) modalOpciones.hide();
 
-    fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID)
+    fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&auth=habitaciones.php')
     .then(response => response.json())
     .then(data => {
         if (data.error) {

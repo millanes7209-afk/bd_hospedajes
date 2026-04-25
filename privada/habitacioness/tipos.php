@@ -87,13 +87,15 @@ $tipos = $db->obtenerTodo($sql, [$empresaID]);
                                     <td><small><?= $t['descripcion'] ? htmlspecialchars($t['descripcion']) : '' ?></small></td>
                                     <td class="text-end monto">Bs. <?= number_format($t['precio'], 2) ?></td>
                                     <td class="text-center">
-                                        <button class="btn btn-info btn-sm text-white px-2 fw-bold" 
-                                            onclick="editarTipo(<?= $t['tipohabitacionID'] ?>, '<?= addslashes($t['nombre']) ?>', <?= $t['precio'] ?>, '<?= addslashes($t['descripcion']) ?>')">
-                                            <i class="fas fa-edit"></i> Modificar
-                                        </button>
-                                        <button class="btn btn-danger btn-sm px-2 fw-bold" onclick="eliminarTipo(<?= $t['tipohabitacionID'] ?>, '<?= addslashes($t['nombre']) ?>')">
-                                            <i class="fas fa-trash"></i> Eliminar
-                                        </button>
+                                        <div class="d-flex justify-content-center gap-4">
+                                            <button style="background:none; border:none; color:#17a2b8; padding:0; cursor:pointer;" title="Modificar" 
+                                                onclick="editarTipo(<?= $t['tipohabitacionID'] ?>, '<?= addslashes($t['nombre']) ?>', <?= $t['precio'] ?>, '<?= addslashes($t['descripcion']) ?>')">
+                                                <i class="fas fa-pencil-alt fa-lg"></i>
+                                            </button>
+                                            <button style="background:none; border:none; color:#dc3545; padding:0; cursor:pointer;" title="Eliminar" onclick="eliminarTipo(<?= $t['tipohabitacionID'] ?>, '<?= addslashes($t['nombre']) ?>')">
+                                                <i class="fas fa-trash-alt fa-lg"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>

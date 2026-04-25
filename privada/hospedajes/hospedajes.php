@@ -39,33 +39,33 @@ $rs = $db->obtenerTodo($sql, [$_SESSION['empresaID']]);
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h3 class="mb-0">GESTIÓN HOSPEDAJES</h3>
-            <?php if (in_array($_SESSION["sesion_rol"], ['ADMINISTRADOR', 'PROPIETARIO'])): ?>
-                <a href="hospedajes_auditoria.php" class="btn btn-outline-danger btn-sm fw-bold">
-                    <i class="fas fa-shield-alt"></i> PANEL AUDITORÍA
-                </a>
-            <?php endif; ?>
         </div>
 
         <div class="card-body">
-            <div class="form-group row">
-                <div class="col-md-4">
-                    <input type="text" id="buscarNombres" class="form-control" placeholder="Buscar Nombre">
+            <div class="form-group row align-items-end">
+                <div class="col-md-3">
+                    <label class="small fw-bold">Nombre:</label>
+                    <input type="text" id="buscarNombres" class="form-control form-control-sm" placeholder="Buscar...">
                 </div>
-                <div class="col-md-4">
-                    <input type="text" id="buscarApellidos" class="form-control" placeholder="Buscar Apellidos">
+                <div class="col-md-3">
+                    <label class="small fw-bold">Apellidos:</label>
+                    <input type="text" id="buscarApellidos" class="form-control form-control-sm"
+                        placeholder="Buscar...">
                 </div>
-                <div class="col-md-4">
-                    <input type="text" id="buscarCI" class="form-control" placeholder="Buscar CI">
+                <div class="col-md-3">
+                    <label class="small fw-bold">C.I.:</label>
+                    <input type="text" id="buscarCI" class="form-control form-control-sm" placeholder="Buscar...">
+                </div>
+                <div class="col-md-3">
+                    <button type="button" id="botonBuscar" class="btn btn-primary btn-sm w-100 fw-bold">
+                        <i class="fas fa-search"></i> BUSCAR
+                    </button>
                 </div>
             </div>
-            <div class="form-group row mt-2">
-                <div class="col-md-12">
-                    <button type="button" id="botonBuscar" class="btn btn-primary">Buscar</button>
-                </div>
-            </div>
+
             <div id="mensaje"></div>
-            <div class="table-responsive">
-                <table class="table table-striped">
+            <div class="table-responsive mt-3">
+                <table class="table table-striped table-hover">
                     <thead>
                         <tr>
                             <th scope="col">Usuario</th>
@@ -76,8 +76,7 @@ $rs = $db->obtenerTodo($sql, [$_SESSION['empresaID']]);
                             <th scope="col">Monto</th>
                             <th scope="col">Formas de Pago</th>
                             <th scope="col">Estado</th>
-                            <th scope="col"><img src='../../imagenes/modificar.gif' alt='Modificar'></th>
-                            <th scope="col"><img src='../../imagenes/borrar.jpeg' alt='Eliminar'></th>
+                            <th colspan="2" class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -88,20 +87,25 @@ $rs = $db->obtenerTodo($sql, [$_SESSION['empresaID']]);
                                     <td><?= htmlspecialchars($fila['clientes']) ?></td>
                                     <td><?= date('d/m/Y H:i', strtotime($fila['checkin'])) ?></td>
                                     <td><?= date('d/m/Y H:i', strtotime($fila['checkout'])) ?></td>
-                                    <td style="text-align: center;"><?= htmlspecialchars($fila['habitacion_numero']) ?></td>
-                                    <td style="text-align: center;"><?= htmlspecialchars($fila['monto']) ?></td>
-                                    <td style="text-align: center;"><?= obtenerFormasPago($fila['formapagoIDs']) ?></td>
-                                    <td style="text-align: center;"><?= htmlspecialchars($fila['estado']) ?></td>
-                                    <td>
-                                        <form name="formModif<?= $fila['hospedajeID'] ?>" method="post"
-                                            action="hospedaje_modificar.php" style="display:inline;">
-                                            <input type="hidden" name="hospedajeID" value="<?= $fila['hospedajeID'] ?>">
-                                            <button type="submit" class="btn btn-sm btn-primary btn-accion">Modificar</button>
-                                        </form>
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-danger btn-accion"
-                                            onclick="eliminarHospedaje(<?= $fila['hospedajeID'] ?>)">Eliminar</button>
+                                    <td class="text-center"><?= htmlspecialchars($fila['habitacion_numero']) ?></td>
+                                    <td class="text-center">Bs. <?= number_format($fila['monto'], 2) ?></td>
+                                    <td class="text-center"><?= obtenerFormasPago($fila['formapagoIDs']) ?></td>
+                                    <td class="text-center"><?= htmlspecialchars($fila['estado']) ?></td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-4">
+                                            <form name="formModif<?= $fila['hospedajeID'] ?>" method="post" action="hospedaje_modificar.php" style="display:inline;">
+                                                <input type="hidden" name="hospedajeID" value="<?= $fila['hospedajeID'] ?>">
+                                                <input type="hidden" name="auth" value="hospedajes.php">
+                                                <button type="submit" style="background:none; border:none; color:#0d6efd; padding:0; cursor:pointer;" title="Modificar">
+                                                    <i class="fas fa-pencil-alt fa-lg"></i>
+                                                </button>
+                                            </form>
+                                            <button type="button"
+                                                style="background:none; border:none; color:#dc3545; padding:0; cursor:pointer;"
+                                                onclick="eliminarHospedaje(<?= $fila['hospedajeID'] ?>)" title="Eliminar">
+                                                <i class="fas fa-trash-alt fa-lg"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -115,6 +119,7 @@ $rs = $db->obtenerTodo($sql, [$_SESSION['empresaID']]);
     <form id="formEliminar" method="post" action="hospedaje_eliminar.php">
         <input type="hidden" name="hospedajeID" id="eliminarID">
         <input type="hidden" name="motivo" id="eliminarMotivo">
+        <input type="hidden" name="auth" value="hospedajes.php">
     </form>
 
     <!-- MODAL PARA ELIMINACIÓN -->

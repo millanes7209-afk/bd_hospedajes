@@ -81,12 +81,12 @@ try {
         if ($monto_pago > 0) {
             // Restaurado el campo 'tipo'='INGRESO' a petición tuya
             $sqlM = "INSERT INTO movimientos (cajaID, empresaID, formapagoID, usuarioID, recaudacionID, referenciaID, 
-                                            tipo, categoria, monto, concepto, entregado, 
+                                            tipo, categoria, monto, concepto, detalle, entregado, 
                                             _fec_insercion, _fec_modificacion, _estado, _usuario) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $paramsM = [
                 $cajaID, $empresaID, $pago['formaPagoID'], $usuarioID, null, $hospedajeID, 
-                'INGRESO', 'HOSPEDAJE', $monto_pago, "HOSPEDAJE HAB. " . $habitacion_numero, 0,
+                'INGRESO', 'HOSPEDAJE', $monto_pago, "HOSPEDAJE HAB. " . $habitacion_numero, $descripcion, 0,
                 $ahora, $ahora, 'A', $usuarioID
             ];
             

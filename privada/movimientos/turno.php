@@ -23,6 +23,7 @@ $sql = "SELECT
             m.movimientoID,
             m.tipo,
             m.concepto AS descripcion,
+            m.detalle,
             fp.tipo AS forma_pago,
             m.monto,
             m._fec_insercion AS fecha_registro
@@ -110,6 +111,9 @@ $saldo_final = $total_ingresos - $total_egresos;
                                         </td>
                                         <td class="td-concepto text-dark text-uppercase">
                                             <?php echo htmlspecialchars($mov['descripcion']); ?>
+                                            <?php if (!empty($mov['detalle'])): ?>
+                                                <br><small class="text-muted text-lowercase" style="font-style: italic;"><i class="fas fa-comment-dots text-secondary"></i> <?php echo htmlspecialchars($mov['detalle']); ?></small>
+                                            <?php endif; ?>
                                         </td>
                                         <td class=" text-secondary font-weight-bold">
                                             <i class="fas fa-money-bill-wave"></i> <?php echo mb_strtoupper($mov['forma_pago']); ?>
@@ -136,26 +140,23 @@ $saldo_final = $total_ingresos - $total_egresos;
                                 </tr>
                             <?php endif; ?>
                         </tbody>
-                        <tfoot class="bg-light">
-                            <!-- Sumatoria de Ingresos -->
+                        <tfoot class="bg-light border-top">
                             <tr>
-                                <th colspan="6" class="text-right font-weight-bold align-middle">TOTAL INGRESOS RECAUDADOS:</th>
-                                <th class="text-right text-success font-weight-bold h5 mb-0 px-3 py-3">
-                                    + <?php echo number_format($total_ingresos, 2, '.', ','); ?> <small>Bs.</small>
+                                <th colspan="5" class="text-right align-middle text-muted">TOTAL INGRESOS:</th>
+                                <th class="text-right font-weight-bold">
+                                    <?php echo number_format($total_ingresos, 2, '.', ','); ?> Bs.
                                 </th>
                             </tr>
-                            <!-- Sumatoria de Egresos -->
                             <tr>
-                                <th colspan="6" class="text-right font-weight-bold align-middle">TOTAL EGRESOS / GASTOS:</th>
-                                <th class="text-right text-danger font-weight-bold h5 mb-0 px-3 py-3">
-                                    - <?php echo number_format($total_egresos, 2, '.', ','); ?> <small>Bs.</small>
+                                <th colspan="5" class="text-right align-middle text-muted">TOTAL EGRESOS / GASTOS:</th>
+                                <th class="text-right font-weight-bold">
+                                    - <?php echo number_format($total_egresos, 2, '.', ','); ?> Bs.
                                 </th>
                             </tr>
-                            <!-- Saldo Líquido -->
-                            <tr class="">
-                                <th colspan="6" class="text-right font-weight-bold h4 mb-0 align-middle border-0">SALDO TOTAL DEL TURNO:</th>
-                                <th class="text-right font-weight-bold h3 mb-0 text-warning px-3 py-3 border-0">
-                                    <?php echo number_format($saldo_final, 2, '.', ','); ?> <small>Bs.</small>
+                            <tr class="bg-white">
+                                <th colspan="5" class="text-right align-middle font-weight-bold">SALDO LÍQUIDO DEL TURNO:</th>
+                                <th class="text-right font-weight-bold" style="border-top: 2px solid #000; font-size: 1.1rem;">
+                                    <?php echo number_format($saldo_final, 2, '.', ','); ?> Bs.
                                 </th>
                             </tr>
                         </tfoot>

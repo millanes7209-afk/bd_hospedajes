@@ -62,6 +62,7 @@
             <input type="number" class="form-control" name="monto" step="1" required placeholder="0.00">
           </div>
           <input type="hidden" name="tipo_movimiento" value="INGRESO">
+          <input type="hidden" name="auth" value="habitaciones.php">
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary font-weight-bold">REGISTRAR INGRESO</button>
@@ -111,6 +112,7 @@
             <input type="number" class="form-control" name="monto" step="1" required placeholder="0.00">
           </div>
           <input type="hidden" name="tipo_movimiento" value="EGRESO">
+          <input type="hidden" name="auth" value="habitaciones.php">
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-danger font-weight-bold">REGISTRAR EGRESO</button>
@@ -137,6 +139,7 @@
             <input type="text" class="form-control" id="momentaneo-habitacion" name="descripcion" readonly>
           </div>
           <input type="hidden" id="momentaneo-habitacionID" name="habitacionID">
+          <input type="hidden" name="auth" value="habitaciones.php">
           <div class="mb-3">
             <label class="form-label">Tipo</label>
             <input type="text" class="form-control" name="tipo" value="MOMENTANEO" readonly>
@@ -176,6 +179,7 @@
             <input type="text" class="form-control" id="mantenimiento-habitacion" name="numero" readonly>
           </div>
           <input type="hidden" id="mantenimiento-habitacionID" name="habitacionID">
+          <input type="hidden" name="auth" value="habitaciones.php">
           <div class="mb-3">
             <label class="form-label">Descripción</label>
             <input type="text" class="form-control" id="mantenimiento-descripcion" name="descripcion" onkeyup="this.value=this.value.toUpperCase()">
@@ -202,6 +206,7 @@
             <input type="hidden" id="cambio-hospedajeID" name="hospedajeID" value="">
             <input type="hidden" id="cambio-habitacionID-actual" name="habitacionID_actual" value="">
             <input type="hidden" id="cambio-nueva-habitacion" name="nueva_habitacionID" value="">
+            <input type="hidden" name="auth" value="habitaciones.php">
 
             <p class="text-muted mb-2" style="font-size:0.85em;">Selecciona la habitación destino:</p>
             <div id="grid-habitaciones-disponibles" class="d-flex flex-wrap gap-2"></div>

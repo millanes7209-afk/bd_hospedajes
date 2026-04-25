@@ -46,11 +46,11 @@ try {
     $db->ejecutar($sqlOld, [$hospedajeID_anterior]);
 
     // 2. CREAR NUEVO HOSPEDAJE (LA PERMANENCIA)
-    $sqlNew = "INSERT INTO hospedajes (empresaID, habitacionID, checkin, checkout, monto, estado, observaciones, 
+    $sqlNew = "INSERT INTO hospedajes (empresaID, habitacionID, cajaID, checkin, checkout, monto, estado, observaciones, 
                                      _fec_insercion, _fec_modificacion, _estado, _usuario) 
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $paramsNew = [
-        $empresaID, $habitacionID, $ahora, $checkout, $monto_total, 
+        $empresaID, $habitacionID, $cajaID, $ahora, $checkout, $monto_total, 
         'ACTIVO', $descripcion, $ahora, $ahora, 'A', $usuarioID
     ];
     $db->ejecutar($sqlNew, $paramsNew);
@@ -70,12 +70,12 @@ try {
             if ($monto_pago > 0) {
                 // ESTRUCTURA DE 15 COLUMNAS PARA COINCIDIR CON registrar_hospedaje.php
                 $sqlM = "INSERT INTO movimientos (cajaID, empresaID, formapagoID, usuarioID, recaudacionID, referenciaID, 
-                                                tipo, categoria, monto, concepto, entregado, 
+                                                tipo, categoria, monto, concepto, detalle, entregado, 
                                                 _fec_insercion, _fec_modificacion, _estado, _usuario) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 $paramsM = [
                     $cajaID, $empresaID, $pago['formaPagoID'], $usuarioID, null, $nuevoHospedajeID, 
-                    'INGRESO', 'HOSPEDAJE', $monto_pago, "HOSPEDAJE (EXTENSIÓN) HAB. " . $habitacion_numero, 0,
+                    'INGRESO', 'HOSPEDAJE', $monto_pago, "HOSPEDAJE (EXTENSIÓN) HAB. " . $habitacion_numero, $descripcion, 0,
                     $ahora, $ahora, 'A', $usuarioID
                 ];
                 $db->ejecutar($sqlM, $paramsM);

@@ -155,7 +155,7 @@ $rs = $db->obtenerTodo($sql, array($empresaID));
         <div class="card-body">
             <div id="mensaje"></div>
             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                <a href="empleado_nuevo.php" class="btn btn-success mb-3" role="button">🔍 Agregar Empleado</a>
+                <a href="empleado_nuevo.php?auth=empleados.php" class="btn btn-success mb-3" role="button">🔍 Agregar Empleado</a>
             </div>
             <div class="table-responsive">
                 <table class="table table-striped align-middle">
@@ -224,16 +224,21 @@ $rs = $db->obtenerTodo($sql, array($empresaID));
                                             <span class="text-muted small">Sin usuario</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td>
+                                    <td class="text-center">
                                         <form method="post" action="Empleado_modificar.php">
                                             <input type="hidden" name="empleadoID" value="<?php echo $fila['empleadoID']; ?>">
-                                            <button type="submit" class="btn btn-sm btn-primary">Modificar</button>
+                                            <input type="hidden" name="auth" value="empleados.php">
+                                            <button type="submit" style="background:none; border:none; color:#0d6efd; padding:0; cursor:pointer;" title="Modificar Ficha">
+                                                <i class="fas fa-pencil-alt fa-lg"></i>
+                                            </button>
                                         </form>
                                     </td>
-                                    <td>
-                                        <button class="btn btn-sm btn-danger dar-baja"
+                                    <td class="text-center">
+                                        <button class="dar-baja" style="background:none; border:none; color:#dc3545; padding:0; cursor:pointer;"
                                             data-empleadoid="<?php echo $fila['empleadoID']; ?>"
-                                            data-nombre="<?php echo $fila['empleado']; ?>">Dar de Baja</button>
+                                            data-nombre="<?php echo $fila['empleado']; ?>" title="Dar de Baja Laboral">
+                                            <i class="fas fa-user-minus fa-lg"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

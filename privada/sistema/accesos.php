@@ -47,7 +47,7 @@ $opciones_select = $db->obtenerTodo("SELECT o.opcionID, o.opcion, g.grupo
                                     ORDER BY g.grupo, o.opcion");
 
 // Listado de accesos actuales
-$sql = "SELECT a.accesoID, r.rol, o.opcion, g.grupo
+$sql = "SELECT a.accesoID, r.rolID, r.rol, o.opcionID, o.opcion, g.grupo
         FROM accesos a
         INNER JOIN roles r ON a.rolID = r.rolID
         INNER JOIN opciones o ON a.opcionID = o.opcionID
@@ -142,7 +142,8 @@ $accesos = $db->obtenerTodo($sql);
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">1. Seleccione un Rol:</label>
-                            <select name="rolID" class="form-control" required>
+                            <select name="rolID" id="selectRol" class="form-control" required>
+                                <option value="">-- Seleccione un Rol --</option>
                                 <?php foreach ($roles_select as $rs): ?>
                                     <option value="<?= $rs['rolID'] ?>"><?= htmlspecialchars($rs['rol']) ?></option>
                                 <?php endforeach; ?>
@@ -150,12 +151,8 @@ $accesos = $db->obtenerTodo($sql);
                         </div>
                         <div class="mb-4">
                             <label class="form-label fw-bold">2. Seleccione la Pestaña a mostrar:</label>
-                            <select name="opcionID" class="form-control" required>
-                                <?php foreach ($opciones_select as $os): ?>
-                                    <option value="<?= $os['opcionID'] ?>">[<?= htmlspecialchars($os['grupo']) ?>] -
-                                        <?= htmlspecialchars($os['opcion']) ?>
-                                    </option>
-                                <?php endforeach; ?>
+                            <select name="opcionID" id="selectOpcion" class="form-control" required>
+                                <option value="">-- Primero seleccione un rol --</option>
                             </select>
                         </div>
                         <div class="alert alert-info py-2 small">
@@ -199,10 +196,49 @@ $accesos = $db->obtenerTodo($sql);
 
     <script>
         const modal = new bootstrap.Modal(document.getElementById('modalAcceso'));
+        
+        // Datos PHP pasados a JS
+        const accesosActuales = <?= json_encode($accesos) ?>;
+        const todasLasOpciones = <?= json_encode($opciones_select) ?>;
 
         function abrirModal() {
+            document.getElementById('selectRol').value = "";
+            document.getElementById('selectOpcion').innerHTML = '<option value="">-- Primero seleccione un rol --</option>';
             modal.show();
         }
+
+        // Lógica de filtrado dinámico
+        document.getElementById('selectRol').addEventListener('change', function() {
+            const rolID = this.value;
+            const selectOpcion = document.getElementById('selectOpcion');
+            selectOpcion.innerHTML = ''; // Limpiar
+
+            if (!rolID) {
+                selectOpcion.innerHTML = '<option value="">-- Primero seleccione un rol --</option>';
+                return;
+            }
+
+            // Obtener IDs de las opciones que este rol YA TIENE
+            const opcionesYaAsignadas = accesosActuales
+                .filter(a => String(a.rolID) === String(rolID))
+                .map(a => String(a.opcionID));
+
+            // Filtrar las opciones disponibles
+            let opcionesHTML = '';
+            todasLasOpciones.forEach(opt => {
+                if (!opcionesYaAsignadas.includes(String(opt.opcionID))) {
+                    opcionesHTML += `<option value="${opt.opcionID}">[${opt.grupo}] - ${opt.opcion}</option>`;
+                }
+            });
+
+            if (opcionesHTML === '') {
+                selectOpcion.innerHTML = '<option value="">Este rol ya tiene TODOS los accesos disponibles</option>';
+                document.querySelector('#modalAcceso button[type="submit"]').disabled = true;
+            } else {
+                selectOpcion.innerHTML = opcionesHTML;
+                document.querySelector('#modalAcceso button[type="submit"]').disabled = false;
+            }
+        });
 
         function revocarAcceso(id, rol, opcion) {
             document.getElementById('revAccesoID').value = id;

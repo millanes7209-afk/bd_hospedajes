@@ -182,7 +182,6 @@ if (!$hospedajeID) {
         </div>
     </div>
     <!-- Modales -->
-<?php include('modal_modificar_hospedaje_precio.php'); ?>
 
 <script>
     // DEPURADOR: MANDAR ID DE HOSPEDAJE DEL PHP AL JS CON RASTREO

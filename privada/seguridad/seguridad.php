@@ -33,7 +33,14 @@ if (!$rolID) {
     $_SESSION['sesion_id_rol'] = $rolID;
 }
 
-// Consultamos si el rol tiene acceso a la opción que contiene este archivo
+// 🌟 LÓGICA DE HERENCIA DE PERMISOS (PARÁMETRO auth)
+// Si el archivo no tiene acceso directo, verificamos si viene con un "padre" autorizado
+$archivo_a_validar = $archivo_actual;
+if (isset($_REQUEST['auth']) && !empty($_REQUEST['auth'])) {
+    $archivo_a_validar = basename($_REQUEST['auth']);
+}
+
+// Consultamos si el rol tiene acceso a la opción (ya sea el archivo actual o su padre autorizado)
 $sql_acceso = "SELECT a.accesoID 
                FROM accesos a
                INNER JOIN opciones o ON a.opcionID = o.opcionID
@@ -42,11 +49,11 @@ $sql_acceso = "SELECT a.accesoID
                AND a._estado <> 'X'
                AND o._estado <> 'X'";
 
-$acceso = $db->obtenerTodo($sql_acceso, [$rolID, "%$archivo_actual%"]);
+$acceso = $db->obtenerTodo($sql_acceso, [$rolID, "%$archivo_a_validar%"]);
 
 // 5. VEREDICTO
 if (empty($acceso)) {
-    // Si no tiene permiso, lo mandamos a la página de error
+    // Si no tiene permiso ni directo ni por herencia, lo mandamos a la página de error
     header("Location: /dulces/sis_segundo_2023/privada/seguridad/acceso_denegado.php");
     exit();
 }

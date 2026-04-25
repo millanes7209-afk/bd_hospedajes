@@ -28,7 +28,7 @@
                 fetch('ajax_dar_baja_laboral.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'empleadoID=' + id
+                    body: 'empleadoID=' + id + '&auth=empleados.php'
                 })
                 .then(r => r.json())
                 .then(data => {
@@ -85,7 +85,7 @@
             fetch('ajax_reset_password.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'empleadoID=' + empleadoIDReset
+                body: 'empleadoID=' + empleadoIDReset + '&auth=empleados.php'
             })
             .then(r => r.json())
             .then(data => {
@@ -125,6 +125,7 @@
     document.getElementById('btnGuardarContrato').addEventListener('click', function () {
         const formData = new FormData(document.getElementById('formContrato'));
 
+        formData.append('auth', 'empleados.php');
         fetch('ajax_contrato_actualizar.php', {
             method: 'POST',
             body: formData

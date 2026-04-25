@@ -116,10 +116,10 @@ $rs = $db->obtenerTodo($sql, array($empresaID));
                                         <?php echo htmlspecialchars($fila['cargo']); ?>
                                     </td>
                                     <td class="text-center">
-                                        <button class="btn btn-sm btn-warning fw-bold btn-reset"
+                                        <button class="btn-reset" style="background:none; border:none; color:#ffc107; padding:0; cursor:pointer;"
                                             data-id="<?php echo $fila['usuarioID']; ?>"
-                                            data-user="<?php echo htmlspecialchars($fila['usuario']); ?>">
-                                            RESETEAR CLAVE
+                                            data-user="<?php echo htmlspecialchars($fila['usuario']); ?>" title="Resetear Contraseña">
+                                            <i class="fas fa-key fa-lg"></i>
                                         </button>
                                     </td>
                                 </tr>

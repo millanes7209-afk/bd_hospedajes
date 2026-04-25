@@ -1,12 +1,6 @@
 <?php
-session_start();
+require_once("../seguridad/seguridad_ajax.php");
 header('Content-Type: application/json; charset=utf-8');
-require_once("../../conexion.php");
-
-if (!isset($_SESSION["sesion_id_usuario"])) {
-    echo json_encode(['status' => 'ERROR', 'message' => 'Sesión no válida.']);
-    exit;
-}
 
 $usuarioID = $_SESSION['sesion_id_usuario'];
 $empleadoID = $_POST['empleadoID'] ?? '';
