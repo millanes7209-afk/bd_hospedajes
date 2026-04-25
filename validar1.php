@@ -13,10 +13,15 @@ if (!isset($_SESSION["sesion_id_usuario"])) {
     exit();
 }
 
-// Procesar selección de empresa
+// Procesar selección de empresa (Soporta POST normal o GET para Salto Maestro de Admin)
+$empresaID = null;
 if (isset($_POST['empresaID'])) {
     $empresaID = $_POST['empresaID'];
-    
+} elseif (isset($_GET['id']) && strtoupper($_SESSION['sesion_rol'] ?? '') === 'ADMINISTRADOR') {
+    $empresaID = $_GET['id'];
+}
+
+if ($empresaID) {
     // Guardar empresaID en sesión
     $_SESSION['empresaID'] = $empresaID;
     

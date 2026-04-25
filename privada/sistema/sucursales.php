@@ -86,8 +86,11 @@ foreach ($res as $r) {
                                 ?>
                             </td>
                             <td class="text-end">
+                                <a href="../../validar1.php?id=<?php echo $e['empresaID']; ?>" class="btn btn-sm btn-success me-1" title="Entrar a esta sucursal">
+                                    <i class="fas fa-door-open"></i>
+                                </a>
                                 <button class="btn btn-sm btn-outline-primary" onclick='abrirModulos(<?php echo $e['empresaID']; ?>, "<?php echo $e['nombre']; ?>", <?php echo json_encode($activos); ?>)'>
-                                    <i class="fas fa-boxes me-1"></i> Configurar Módulos
+                                    <i class="fas fa-boxes me-1"></i> Configurar
                                 </button>
                             </td>
                         </tr>
