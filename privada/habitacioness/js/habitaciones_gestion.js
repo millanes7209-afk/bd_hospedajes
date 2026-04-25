@@ -46,7 +46,7 @@ function handleHabitacionClick(estado, numero, tipo, precio, habitacionID) {
         modal.show();
     } else if (estado === 'DEUDA') {
         modalFooter.innerHTML = `
-            <button type="button" class="btn btn-primary" onclick="mostrarModalPermanencia('${habitacionID}', 'OCUPADA')">PAGAR Y OCUPAR</button>
+            <button type="button" class="btn btn-primary" onclick="mostrarModalPermanencia('${habitacionID}', '${precio}')">PAGAR Y OCUPAR</button>
             <button type="button" class="btn btn-secondary" onclick="mostrarModalPagoDeuda('${habitacionID}', 'LIMPIEZA')">PAGAR Y DESOCUPAR</button>
         `;
         modal.show();
@@ -150,7 +150,7 @@ function liberar(habitacionID) {
 /**
  * GESTIÓN DE PERMANENCIA - Redirección a pantalla completa
  */
-function mostrarModalPermanencia(habitacionID) {
+function mostrarModalPermanencia(habitacionID, monto_deuda = 0) {
     var modalOpciones = bootstrap.Modal.getInstance(document.getElementById('menu-opciones'));
     if (modalOpciones) modalOpciones.hide();
 
@@ -178,6 +178,14 @@ function mostrarModalPermanencia(habitacionID) {
                 authInput.name = 'auth';
                 authInput.value = 'habitaciones.php';
                 form.appendChild(authInput);
+
+                if (monto_deuda > 0) {
+                    var montoInput = document.createElement('input');
+                    montoInput.type = 'hidden';
+                    montoInput.name = 'monto_deuda';
+                    montoInput.value = monto_deuda;
+                    form.appendChild(montoInput);
+                }
 
                 document.body.appendChild(form);
                 form.submit();

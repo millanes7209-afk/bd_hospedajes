@@ -31,7 +31,9 @@ $sqlC = "SELECT c.* FROM hospedajes_clientes hc
 $clientes_actuales = $db->obtenerTodo($sqlC, [$hospedajeID]);
 
 // 3. Lógica de Permanencia: Calcular nueva fecha (Checkout Anterior + 1 día)
-$monto_defecto = $hospedaje['monto'];
+$monto_deuda_transferida = $_POST['monto_deuda'] ?? 0;
+$monto_defecto = ($monto_deuda_transferida > 0) ? $monto_deuda_transferida : $hospedaje['monto'];
+
 $checkout_anterior = $hospedaje['checkout'];
 $nueva_fecha_checkout = date('Y-m-d\TH:i', strtotime($checkout_anterior . ' +1 day'));
 ?>
@@ -183,7 +185,7 @@ $nueva_fecha_checkout = date('Y-m-d\TH:i', strtotime($checkout_anterior . ' +1 d
 
                                     <div class="row mb-3">
                                         <div class="col-md-6">
-                                            <label for="checkout" class="form-label"><b>(*) Nueva Fecha Salida</b></label>
+                                            <label for="checkout" class="form-label"><b>(*) SALIDA</b> <small class="text-muted ms-2">(Pagado hasta: <?php echo date('d/m/Y H:i', strtotime($checkout_anterior)); ?>)</small></label>
                                             <input type="datetime-local" class="form-control" name="checkout" id="checkout" 
                                                 value="<?php echo $nueva_fecha_checkout; ?>" required onchange="actualizarResumenPagos()">
                                         </div>

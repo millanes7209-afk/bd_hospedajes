@@ -141,7 +141,7 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                         ?>
                         <button id="habitacion-<?php echo $habitacion['habitacionID']; ?>" class="<?php echo $btnClass; ?>"
                             <?php echo $boton_estado; ?>
-                            onclick="handleHabitacionClick('<?php echo $habitacion['estado']; ?>', '<?php echo $habitacion['numero']; ?>', '<?php echo $habitacion['nombre']; ?>', '<?php echo $habitacion['precio']; ?>', '<?php echo $habitacion['habitacionID']; ?>')">
+                            onclick="handleHabitacionClick('<?php echo $habitacion['estado']; ?>', '<?php echo $habitacion['numero']; ?>', '<?php echo $habitacion['nombre']; ?>', '<?php echo ($habitacion['estado'] === 'DEUDA' ? $habitacion['precio_pactado'] : $habitacion['precio']); ?>', '<?php echo $habitacion['habitacionID']; ?>')">
 
                             <strong><?php echo $habitacion['numero']; ?></strong>
 
