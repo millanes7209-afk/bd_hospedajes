@@ -43,64 +43,74 @@ $totalIngresos = 0;
 $totalEgresos = 0;
 $cajaID_ref = $movimientos ? $movimientos[0]['cajaID'] : 'N/A';
 ?>
-<div class="row mb-3">
-    <div class="col-md-6">
-        <p class="mb-1"><strong>Recepcionista (Entregó):</strong> <?= htmlspecialchars($recInfo['recepcionista']) ?></p>
-        <p class="mb-0"><strong>Propietario (Recibió):</strong> <?= htmlspecialchars($recInfo['propietario']) ?></p>
+<!-- Datos de la Recaudación Estilo Card -->
+<div class="card mb-3 shadow-none border">
+    <div class="card-header bg-light py-2">
+        <h6 class="mb-0 fw-bold">COMPROBANTE DE RECAUDACIÓN #<?= $recInfo['comprobante_nro'] ?></h6>
     </div>
-    <div class="col-md-6 text-end">
-        <p class="mb-1"><strong>Nro Comprobante:</strong> <span class="fw-bold"><?= $recInfo['comprobante_nro'] ?></span></p>
-        <p class="mb-0"><strong>Turno Origen:</strong> #<?= $cajaID_ref ?></p>
+    <div class="card-body py-2">
+        <div class="row">
+            <div class="col-md-6">
+                <p class="mb-1 text-dark"><strong>Recepcionista (Entregó):</strong> <?= htmlspecialchars($recInfo['recepcionista']) ?></p>
+                <p class="mb-0 text-dark"><strong>Propietario (Recibió):</strong> <?= htmlspecialchars($recInfo['propietario']) ?></p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <p class="mb-1 text-dark"><strong>Fecha Recaudación:</strong> <?= date('d/m/Y H:i', strtotime($recInfo['fecha'])) ?></p>
+                <p class="mb-0 text-dark"><strong>Referencia:</strong> Turno #<?= $cajaID_ref ?></p>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-sm table-bordered table-striped" style="font-size: 0.9rem;">
-        <thead class="table-dark">
+<!-- Tabla de Movimientos Limpia -->
+<div class="table-responsive mb-3">
+    <table class="table table-hover border" style="font-size: 0.85rem;">
+        <thead class="bg-light text-dark">
             <tr>
-                <th>Fecha/Hora</th>
-                <th>Tipo</th>
-                <th>Concepto y Detalle</th>
-                <th>F. Pago</th>
-                <th class="text-end">Monto (Bs.)</th>
+                <th class="border-bottom">Fecha/Hora</th>
+                <th class="border-bottom">Tipo</th>
+                <th class="border-bottom">Concepto</th>
+                <th class="border-bottom text-center">F. Pago</th>
+                <th class="border-bottom text-end">Monto (Bs.)</th>
             </tr>
         </thead>
         <tbody>
             <?php if (empty($movimientos)): ?>
-                <tr><td colspan="5" class="text-center py-3 text-muted">No hay movimientos registrados en este comprobante.</td></tr>
+                <tr><td colspan="5" class="text-center py-4 text-muted">No hay movimientos vinculados.</td></tr>
             <?php else: ?>
                 <?php foreach ($movimientos as $mov): 
                     if ($mov['tipo'] === 'INGRESO') $totalIngresos += $mov['monto'];
                     if ($mov['tipo'] === 'EGRESO') $totalEgresos += $mov['monto'];
                 ?>
                 <tr>
-                    <td class="align-middle text-muted"><?= date('d/m H:i', strtotime($mov['_fec_insercion'])) ?></td>
-                    <td class="align-middle">
-                        <?php if($mov['tipo'] === 'INGRESO'): ?>
-                            <span class="badge bg-success">INGRESO</span>
-                        <?php else: ?>
-                            <span class="badge bg-danger">EGRESO</span>
-                        <?php endif; ?>
+                    <td class="text-muted small"><?= date('d/m H:i', strtotime($mov['_fec_insercion'])) ?></td>
+                    <td>
+                        <small class="fw-bold <?= $mov['tipo'] === 'INGRESO' ? 'text-success' : 'text-danger' ?>">
+                            <?= $mov['tipo'] ?>
+                        </small>
                     </td>
-                    <td class="align-middle">
-                        <strong><?= htmlspecialchars($mov['concepto']) ?></strong>
-                        <?php if(!empty($mov['detalle'])): ?>
-                            <br><small class="text-muted fst-italic"><i class="fas fa-comment-dots"></i> <?= htmlspecialchars($mov['detalle']) ?></small>
-                        <?php endif; ?>
+                    <td>
+                        <span class="text-dark"><strong><?= htmlspecialchars($mov['concepto']) ?></strong></span>
                     </td>
-                    <td class="align-middle text-center"><small><?= htmlspecialchars($mov['forma_pago']) ?></small></td>
-                    <td class="align-middle text-end fw-bold <?= $mov['tipo'] === 'INGRESO' ? 'text-success' : 'text-danger' ?>">
-                        <?= $mov['tipo'] === 'INGRESO' ? '+' : '-' ?><?= number_format($mov['monto'], 2) ?>
+                    <td class="text-center text-dark small"><?= htmlspecialchars($mov['forma_pago']) ?></td>
+                    <td class="text-end fw-bold text-dark">
+                        <?= number_format($mov['monto'], 2) ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
         </tbody>
-        <tfoot class="table-light fw-bold">
-            <tr class="table-success">
-                <td colspan="4" class="text-end fs-5">TOTAL RECAUDADO LÍQUIDO:</td>
-                <td class="text-end fs-5 text-dark">Bs. <?= number_format($recInfo['monto'], 2) ?></td>
-            </tr>
-        </tfoot>
     </table>
+</div>
+
+<!-- Total Recaudado -->
+<div class="row justify-content-end">
+    <div class="col-md-5">
+        <div class="card border-0 bg-light">
+            <div class="card-body p-3 text-center">
+                <span class="text-muted small d-block mb-1">TOTAL RECAUDADO LÍQUIDO:</span>
+                <span class="h4 mb-0 text-dark fw-bold">Bs. <?= number_format($recInfo['monto'], 2) ?></span>
+            </div>
+        </div>
+    </div>
 </div>

@@ -29,7 +29,7 @@ $sql = "SELECT
             m._fec_insercion AS fecha_registro
         FROM movimientos m
         INNER JOIN formas_pago fp ON m.formapagoID = fp.formapagoID
-        WHERE m.cajaID = ? AND m.empresaID = ? AND m._estado = 'A'
+        WHERE m.cajaID = ? AND m.empresaID = ? AND m._estado <> 'X'
         ORDER BY m.movimientoID DESC";
 
 $movimientos_caja = $db->obtenerTodo($sql, [$caja_abierta_id, $empresaID]);

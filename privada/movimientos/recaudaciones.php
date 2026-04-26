@@ -2,6 +2,7 @@
 session_start();
 require_once("../../conexion.php");
 require_once("../../libreria_menu.php");
+require_once("../hospedajes/utils/hospedajes_utilidades.php");
 
 // Seguridad básica
 if (!isset($_SESSION['sesion_id_usuario']) || !in_array($_SESSION['sesion_rol'], ['ADMINISTRADOR', 'PROPIETARIO'])) {
@@ -33,32 +34,52 @@ $recaudaciones = $db->obtenerTodo($sql, [$empresaID, $fecha_inicio, $fecha_fin])
 <head>
     <meta charset="UTF-8">
     <title>Historial de Recaudaciones</title>
+    <style>
         @media print {
-            body { background: white !important; padding: 0 !important; margin: 0 !important; }
-            #sidebar-wrapper, .sidebar, nav, .navbar, .btn, .filtros, #sideNav, .modal { display: none !important; }
-            #page-content-wrapper { padding: 0 !important; margin: 0 !important; width: 100% !important; }
-            .card { margin: 0; box-shadow: none; border: none; }
-            .container-fluid { width: 100% !important; padding: 0 !important; }
+            /* Ocultar TODO por defecto */
+            body * { visibility: hidden; }
+            
+            /* Mostrar solo el contenedor del reporte y sus hijos */
+            #area-impresion, #area-impresion * { visibility: visible; }
+            
+            /* Posicionar el área de impresión al inicio de la página */
+            #area-impresion {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100% !important;
+            }
+
+            /* Ajustes de estilo para la tabla */
             .table { font-size: 11px; width: 100% !important; border-collapse: collapse !important; }
-            .table th, .table td { border: 1px solid #ddd !important; }
-            .card-header h3 { font-size: 16px !important; }
+            .table th, .table td { border: 1px solid #ddd !important; padding: 4px !important; }
+            
+            /* Ocultar elementos específicos dentro del área de impresión que no queremos */
+            .no-print, .btn, .card-header, .filtros, .modal {
+                display: none !important;
+                visibility: hidden !important;
+            }
+
+            body { background: white !important; }
         }
+
+        thead {
+            color: black !important;
+            background: #b5b5b5 !important;
+        }
+        .card {
+            margin: 20px;
+            box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+            border: 0 !important;
+        }
+        .tabla-turno th, .tabla-turno td { vertical-align: middle !important; }
     </style>
-<style>
-    thead {
-        color: black !important;
-        background: #b5b5b5 !important;
-    }
-    .card {
-        margin: 20px;
-        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
-        border: 0 !important;
-    }
-    .tabla-turno th, .tabla-turno td { vertical-align: middle !important; }
-</style>
 </head>
 <body>
-<div class="container-fluid mt-4">
+<div class="container-fluid mt-4" id="area-impresion">
+    <!-- Encabezado de Impresión -->
+    <?= generarEncabezadoImpresion('HISTORIAL DE RECAUDACIONES', $fecha_inicio, $fecha_fin) ?>
+
     <div class="card shadow-sm border-0">
         <div class="card-header d-flex justify-content-between align-items-center py-3">
             <h3 class="mb-0 m-0" style="font-size: 1.4rem;">
@@ -67,7 +88,7 @@ $recaudaciones = $db->obtenerTodo($sql, [$empresaID, $fecha_inicio, $fecha_fin])
             <button onclick="window.print()" class="btn btn-outline-dark btn-sm"><i class="fas fa-print"></i> IMPRIMIR REPORTE</button>
         </div>
         <div class="card-body">
-            <form class="row mb-4 filtros">
+            <form class="row mb-4 filtros no-print">
                 <div class="col-md-3">
                     <label>Desde:</label>
                     <input type="date" name="fecha_inicio" class="form-control" value="<?= $fecha_inicio ?>">
@@ -136,9 +157,9 @@ $recaudaciones = $db->obtenerTodo($sql, [$empresaID, $fecha_inicio, $fecha_fin])
 <div class="modal fade" id="modalDetalleRecaudacion" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title"><i class="fas fa-receipt me-2"></i> DETALLE DE RECAUDACIÓN</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">DETALLE DE RECAUDACIÓN</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="modalRecaudacionContenido">
                 <div class="text-center py-5">

@@ -102,7 +102,7 @@ $rs = $db->obtenerTodo($sql, [$_SESSION['empresaID']]);
                                             </form>
                                             <button type="button"
                                                 style="background:none; border:none; color:#dc3545; padding:0; cursor:pointer;"
-                                                onclick="eliminarHospedaje(<?= $fila['hospedajeID'] ?>)" title="Eliminar">
+                                                onclick="eliminarHospedaje(<?= $fila['hospedajeID'] ?>, '<?= $fila['habitacion_numero'] ?>')" title="Eliminar">
                                                 <i class="fas fa-trash-alt fa-lg"></i>
                                             </button>
                                         </div>
@@ -130,8 +130,9 @@ $rs = $db->obtenerTodo($sql, [$_SESSION['empresaID']]);
                     <h5 class="modal-title fw-bold"><i class="fas fa-trash-alt"></i> ELIMINAR HOSPEDAJE</h5>
                 </div>
                 <div class="modal-body">
-                    <p class="text-black">¿Está seguro de que desea eliminar este hospedaje? Esta acción enviará la
-                        habitación a <b>LIMPIEZA</b>.</p>
+                    <p class="text-black lead text-center">¿Está seguro de que desea eliminar el hospedaje de la <br>
+                        <strong class="text-danger">Habitación <span id="numHabEliminar"></span></strong>?</p>
+                    <p class="text-muted small text-center">Esta acción enviará la habitación a <b>LIMPIEZA</b>.</p>
                     <label class="form-label fw-bold small text-black">Motivo de la eliminación (Obligatorio):</label>
                     <textarea class="form-control" id="txtMotivoEliminar" rows="3"
                         placeholder="Ej: Error en el registro, cancelación por parte del cliente..."
@@ -154,8 +155,9 @@ $rs = $db->obtenerTodo($sql, [$_SESSION['empresaID']]);
         let hospedajeIDEliminar = null;
         const modalEliminar = new bootstrap.Modal(document.getElementById('modalEliminarHospedaje'));
 
-        function eliminarHospedaje(hospedajeID) {
+        function eliminarHospedaje(hospedajeID, numeroHab) {
             hospedajeIDEliminar = hospedajeID;
+            document.getElementById('numHabEliminar').innerText = numeroHab;
             document.getElementById('txtMotivoEliminar').value = '';
             document.getElementById('errorEliminar').style.display = 'none';
             modalEliminar.show();

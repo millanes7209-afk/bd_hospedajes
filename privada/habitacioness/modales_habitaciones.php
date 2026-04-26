@@ -236,3 +236,36 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para Eliminar Hospedaje -->
+<div class="modal fade" id="modal-eliminar-hospedaje" tabindex="-1" aria-labelledby="modal-eliminar-label" aria-hidden="true">
+  <div class="modal-dialog">
+    <form action="eliminar_hospedaje.php" method="post">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="modal-eliminar-label"><i class="fas fa-trash-alt"></i> Eliminar Registro de Hospedaje</h5>
+          <button type="button" class="close text-white" data-bs-dismiss="modal" style="border:none; background:none; font-size: 1.5rem; line-height: 1;">&times;</button>
+        </div>
+        <div class="modal-body text-center">
+            <input type="hidden" id="eliminar-hospedajeID" name="hospedajeID" value="">
+            <input type="hidden" id="eliminar-habitacionID" name="habitacionID" value="">
+            <input type="hidden" name="auth" value="habitaciones.php">
+            
+            <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
+            <h4 class="mb-3">¿Está seguro?</h4>
+            <p class="lead">Se eliminará el hospedaje de la <strong>Habitación <span id="eliminar-numero-hab"></span></strong>.</p>
+            <p class="text-muted small">Esta acción anulará el registro y pondrá la habitación en estado LIMPIEZA.</p>
+            
+            <div class="mb-3">
+                <label class="form-label font-weight-bold">MOTIVO DE ELIMINACIÓN:</label>
+                <textarea class="form-control" name="motivo" rows="2" placeholder="Explique brevemente por qué se elimina este hospedaje..." required oninput="this.value = this.value.toUpperCase()"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-danger font-weight-bold">ELIMINAR AHORA</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCELAR</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

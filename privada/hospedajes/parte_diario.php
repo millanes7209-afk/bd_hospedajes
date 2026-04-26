@@ -68,7 +68,7 @@ $hospedajes_dia = $db->obtenerTodo($sql, [$empresaID, $fecha_inicio, $fecha_fin]
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>Habitación</th>
+                        <th>Hab</th>
                         <th>Cliente(s)</th>
                         <th>CI</th>
                         <th>Edad</th>
@@ -85,15 +85,15 @@ $hospedajes_dia = $db->obtenerTodo($sql, [$empresaID, $fecha_inicio, $fecha_fin]
                         <?php foreach ($hospedajes_dia as $h): ?>
                             <tr>
                                 <td style="text-align: center;"><?= htmlspecialchars($h['habitacion_numero']) ?></td>
-                                <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($h['clientes_nombres'])) ?></td>
-                                <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($h['clientes_ci'])) ?></td>
-                                <td><?= calcularEdad($h['clientes_fechas_nac'], '<br>') ?></td>
-                                <td><?= str_replace('|', '<br>', htmlspecialchars($h['clientes_estados_civiles'])) ?></td>
-                                <td><?= str_replace('|', '<br>', htmlspecialchars($h['clientes_profesiones'])) ?></td>
-                                <td><?= str_replace('|', '<br>', htmlspecialchars($h['clientes_procedencias'])) ?></td>
+                                <td>- <?= str_replace('[NEXT]', '<br>- ', htmlspecialchars($h['clientes_nombres'])) ?></td>
+                                <td>- <?= str_replace('[NEXT]', '<br>- ', htmlspecialchars($h['clientes_ci'])) ?></td>
+                                <td>- <?= calcularEdad($h['clientes_fechas_nac'], '<br>- ') ?></td>
+                                <td>- <?= str_replace('|', '<br>- ', htmlspecialchars($h['clientes_estados_civiles'])) ?></td>
+                                <td>- <?= str_replace('|', '<br>- ', htmlspecialchars($h['clientes_profesiones'])) ?></td>
+                                <td>- <?= str_replace('|', '<br>- ', htmlspecialchars($h['clientes_procedencias'])) ?></td>
                                 <td><?= date('d/m/Y H:i', strtotime($h['checkin'])) ?></td>
                                 <td><?= $h['checkout'] ? date('d/m/Y H:i', strtotime($h['checkout'])) : '-' ?></td>
-                                <td style="text-align: center;"><?= htmlspecialchars($h['estado']) ?></td>
+                                <td style="text-align: center;"><?= ($h['estado'] === 'ACTIVO' || $h['estado'] === 'ABIERTO') ? 'A' : 'I' ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>

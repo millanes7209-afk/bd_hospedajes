@@ -35,7 +35,8 @@ function handleHabitacionClick(estado, numero, tipo, precio, habitacionID) {
             <button type="button" class="btn btn-primary w-100" onclick="mostrarModalPermanencia('${habitacionID}')"><i class="fas fa-calendar-plus"></i> PERMANENCIA</button>
             <button type="button" class="btn btn-success w-100 font-weight-bold" onclick="mostrarModalCambioHabitacion('${habitacionID}')"><i class="fas fa-exchange-alt"></i> CAMBIAR HABITACIÓN</button>
             <button type="button" class="btn btn-info w-100" onclick="agregar_huesped('aumentar', '${numero}', '${tipo}', '${habitacionID}')"><i class="fas fa-user-plus"></i> AGREGAR HUESPED</button>
-            <button type="button" class="btn btn-secondary w-100" onclick="desocupar('${habitacionID}')"><i class="fas fa-sign-out-alt"></i> DESOCUPAR</button>
+            <button type="button" class="btn btn-secondary w-100 mb-2" onclick="desocupar('${habitacionID}')"><i class="fas fa-sign-out-alt"></i> DESOCUPAR</button>
+            <button type="button" class="btn btn-danger w-100" onclick="abrirModalEliminar('${habitacionID}', '${numero}')"><i class="fas fa-trash-alt"></i> ELIMINAR HOSPEDAJE</button>
         `;
         modal.show();
     } else if (estado === 'LIMPIEZA') {

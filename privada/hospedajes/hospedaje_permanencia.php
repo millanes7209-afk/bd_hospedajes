@@ -185,7 +185,7 @@ $nueva_fecha_checkout = date('Y-m-d\TH:i', strtotime($checkout_anterior . ' +1 d
 
                                     <div class="row mb-3">
                                         <div class="col-md-6">
-                                            <label for="checkout" class="form-label"><b>(*) SALIDA</b> <small class="text-muted ms-2">(Pagado hasta: <?php echo date('d/m/Y H:i', strtotime($checkout_anterior)); ?>)</small></label>
+                                            <label for="checkout" class="form-label"><b>(*) SALIDA</b> <small class="text-muted ms-2">(Pagó hasta: <?php echo date('d/m/Y H:i', strtotime($checkout_anterior)); ?>)</small></label>
                                             <input type="datetime-local" class="form-control" name="checkout" id="checkout" 
                                                 value="<?php echo $nueva_fecha_checkout; ?>" required onchange="actualizarResumenPagos()">
                                         </div>

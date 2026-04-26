@@ -86,7 +86,7 @@ try {
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $paramsM = [
                 $cajaID, $empresaID, $pago['formaPagoID'], $usuarioID, null, $hospedajeID, 
-                'INGRESO', 'HOSPEDAJE', $monto_pago, "HOSPEDAJE HAB. " . $habitacion_numero, $descripcion, 0,
+                'INGRESO', $tipo_estadia, $monto_pago, $tipo_estadia . " HAB. " . $habitacion_numero, $descripcion, 0,
                 $ahora, $ahora, 'A', $usuarioID
             ];
             

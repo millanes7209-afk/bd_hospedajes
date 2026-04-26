@@ -19,7 +19,7 @@ if (!$cajaID) {
 $sqlCaja = "SELECT c.cajaID, u.usuario as recepcionista, c.fecha_apertura, c.fecha_cierre
             FROM cajas c
             INNER JOIN usuarios u ON c.usuarioID = u.usuarioID
-            WHERE c.cajaID = ? AND c.empresaID = ?";
+            WHERE c.cajaID = ? AND c.empresaID = ? AND c._estado <> 'X'";
 $cajaInfo = $db->obtenerFila($sqlCaja, [$cajaID, $empresaID]);
 
 if (!$cajaInfo) {
@@ -41,72 +41,87 @@ $movimientos = $db->obtenerTodo($sqlMovs, [$cajaID, $empresaID]);
 $totalIngresos = 0;
 $totalEgresos = 0;
 ?>
-<div class="row mb-3">
-    <div class="col-md-6">
-        <p class="mb-1"><strong>Recepcionista:</strong> <?= htmlspecialchars($cajaInfo['recepcionista']) ?></p>
-        <p class="mb-0"><strong>Apertura:</strong> <?= date('d/m/Y H:i', strtotime($cajaInfo['fecha_apertura'])) ?></p>
+<!-- Encabezado del Turno Estilo Formulario -->
+<div class="card mb-3 shadow-none border">
+    <div class="card-header bg-light py-2">
+        <h6 class="mb-0 fw-bold">DATOS DEL TURNO #<?= $cajaInfo['cajaID'] ?></h6>
     </div>
-    <div class="col-md-6 text-end">
-        <p class="mb-1"><strong>Cierre:</strong> <?= $cajaInfo['fecha_cierre'] ? date('d/m/Y H:i', strtotime($cajaInfo['fecha_cierre'])) : '<span class="text-warning fw-bold">EN CURSO</span>' ?></p>
-        <p class="mb-0"><strong>Turno #</strong> <?= $cajaInfo['cajaID'] ?></p>
+    <div class="card-body py-2">
+        <div class="row">
+            <div class="col-md-6">
+                <p class="mb-1 text-dark"><strong>Recepcionista:</strong> <?= htmlspecialchars($cajaInfo['recepcionista']) ?></p>
+                <p class="mb-0 text-dark"><strong>Apertura:</strong> <?= date('d/m/Y H:i', strtotime($cajaInfo['fecha_apertura'])) ?></p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <p class="mb-1 text-dark"><strong>Cierre:</strong> <?= $cajaInfo['fecha_cierre'] ? date('d/m/Y H:i', strtotime($cajaInfo['fecha_cierre'])) : '<span class="text-danger fw-bold">TURNO ABIERTO</span>' ?></p>
+                <p class="mb-0 text-dark"><strong>Empresa ID:</strong> <?= $empresaID ?></p>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-sm table-bordered table-striped" style="font-size: 0.9rem;">
-        <thead class="table-dark">
+<!-- Tabla de Movimientos Limpia -->
+<div class="table-responsive mb-3">
+    <table class="table table-hover border" style="font-size: 0.85rem;">
+        <thead class="bg-light text-dark">
             <tr>
-                <th>Hora</th>
-                <th>Tipo</th>
-                <th>Concepto y Detalle</th>
-                <th>F. Pago</th>
-                <th class="text-end">Monto (Bs.)</th>
+                <th class="border-bottom">Hora</th>
+                <th class="border-bottom">Tipo</th>
+                <th class="border-bottom">Concepto y Detalle</th>
+                <th class="border-bottom text-center">F. Pago</th>
+                <th class="border-bottom text-end">Monto (Bs.)</th>
             </tr>
         </thead>
         <tbody>
             <?php if (empty($movimientos)): ?>
-                <tr><td colspan="5" class="text-center py-3 text-muted">No hay movimientos registrados en este turno.</td></tr>
+                <tr><td colspan="5" class="text-center py-4 text-muted">No hay movimientos registrados.</td></tr>
             <?php else: ?>
                 <?php foreach ($movimientos as $mov): 
                     if ($mov['tipo'] === 'INGRESO') $totalIngresos += $mov['monto'];
                     if ($mov['tipo'] === 'EGRESO') $totalEgresos += $mov['monto'];
                 ?>
                 <tr>
-                    <td class="align-middle text-muted"><?= date('H:i', strtotime($mov['_fec_insercion'])) ?></td>
-                    <td class="align-middle">
-                        <?php if($mov['tipo'] === 'INGRESO'): ?>
-                            <span class="badge bg-success">INGRESO</span>
-                        <?php else: ?>
-                            <span class="badge bg-danger">EGRESO</span>
-                        <?php endif; ?>
+                    <td class="text-muted"><?= date('H:i', strtotime($mov['_fec_insercion'])) ?></td>
+                    <td>
+                        <small class="fw-bold <?= $mov['tipo'] === 'INGRESO' ? 'text-success' : 'text-danger' ?>">
+                            <?= $mov['tipo'] ?>
+                        </small>
                     </td>
-                    <td class="align-middle">
-                        <strong><?= htmlspecialchars($mov['concepto']) ?></strong>
+                    <td>
+                        <span class="text-dark"><strong><?= htmlspecialchars($mov['concepto']) ?></strong></span>
                         <?php if(!empty($mov['detalle'])): ?>
-                            <br><small class="text-muted fst-italic"><i class="fas fa-comment-dots"></i> <?= htmlspecialchars($mov['detalle']) ?></small>
+                            <br><small class="text-muted"><?= htmlspecialchars($mov['detalle']) ?></small>
                         <?php endif; ?>
                     </td>
-                    <td class="align-middle text-center"><small><?= htmlspecialchars($mov['forma_pago']) ?></small></td>
-                    <td class="align-middle text-end fw-bold <?= $mov['tipo'] === 'INGRESO' ? 'text-success' : 'text-danger' ?>">
-                        <?= $mov['tipo'] === 'INGRESO' ? '+' : '-' ?><?= number_format($mov['monto'], 2) ?>
+                    <td class="text-center text-dark"><?= htmlspecialchars($mov['forma_pago']) ?></td>
+                    <td class="text-end fw-bold text-dark">
+                        <?= number_format($mov['monto'], 2) ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
         </tbody>
-        <tfoot class="table-light fw-bold">
-            <tr>
-                <td colspan="4" class="text-end">TOTAL INGRESOS:</td>
-                <td class="text-end text-success">+<?= number_format($totalIngresos, 2) ?></td>
-            </tr>
-            <tr>
-                <td colspan="4" class="text-end">TOTAL EGRESOS:</td>
-                <td class="text-end text-danger">-<?= number_format($totalEgresos, 2) ?></td>
-            </tr>
-            <tr class="table-warning">
-                <td colspan="4" class="text-end fs-5">SALDO LÍQUIDO DEL TURNO:</td>
-                <td class="text-end fs-5 text-dark">Bs. <?= number_format($totalIngresos - $totalEgresos, 2) ?></td>
-            </tr>
-        </tfoot>
     </table>
+</div>
+
+<!-- Resumen de Totales Estilo Card -->
+<div class="row justify-content-end">
+    <div class="col-md-6">
+        <div class="card border-0 bg-light">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-dark">Total Ingresos:</span>
+                    <span class="fw-bold text-success">Bs. <?= number_format($totalIngresos, 2) ?></span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-dark">Total Egresos:</span>
+                    <span class="fw-bold text-danger">Bs. <?= number_format($totalEgresos, 2) ?></span>
+                </div>
+                <div class="d-flex justify-content-between border-top pt-2">
+                    <span class="h5 mb-0 text-dark fw-bold">SALDO LÍQUIDO:</span>
+                    <span class="h5 mb-0 text-dark fw-bold">Bs. <?= number_format($totalIngresos - $totalEgresos, 2) ?></span>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

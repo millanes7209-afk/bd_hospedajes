@@ -2,6 +2,7 @@
 session_start();
 require_once("../../conexion.php");
 require_once("../../libreria_menu.php");
+require_once("../hospedajes/utils/hospedajes_utilidades.php");
 
 // Verificar si el usuario está logueado
 if (!isset($_SESSION['sesion_usuario'])) {
@@ -90,6 +91,8 @@ foreach ($fechas_rango as $fecha) {
                             WHERE DATE(c.fecha_cierre) = ? 
                               AND c.empresaID = ? 
                               AND c.estado = 'CERRADA'
+                              AND c._estado <> 'X'
+                              AND cc._estado <> 'X'
                               $where_user
                               $where_entrega
                             ORDER BY c.fecha_cierre DESC";
@@ -168,21 +171,39 @@ foreach ($fechas_rango as $fecha) {
     }
 
     @media print {
-        body { background: white !important; padding: 0 !important; margin: 0 !important; }
-        #sidebar-wrapper, .sidebar, nav, .navbar, .btn, .row.mb-4, .card-header button, #sideNav, #recaudacion-bar, .col-recaudar, .modal {
-            display: none !important;
+        /* Ocultar TODO por defecto */
+        body * { visibility: hidden; }
+        
+        /* Mostrar solo el contenedor del reporte y sus hijos */
+        #area-impresion, #area-impresion * { visibility: visible; }
+        
+        /* Posicionar el área de impresión al inicio de la página */
+        #area-impresion {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
         }
-        #page-content-wrapper { padding: 0 !important; margin: 0 !important; width: 100% !important; }
-        .card { margin: 0; box-shadow: none; border: none; }
-        .container-fluid { width: 100% !important; padding: 0 !important; }
+
+        /* Ajustes de estilo para la tabla */
         .table { font-size: 11px; width: 100% !important; border-collapse: collapse !important; }
-        .table th, .table td { border: 1px solid #ddd !important; }
-        .card-header h3 { font-size: 16px !important; }
+        .table th, .table td { border: 1px solid #ddd !important; padding: 4px !important; }
+        
+        /* Ocultar elementos específicos dentro del área de impresión que no queremos */
+        .no-print, .btn, .card-header, .row.mb-4, .col-recaudar, .check-recaudar {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        body { background: white !important; }
     }
 </style>
 
 <body>
-    <div class="container-fluid mt-4 mb-5">
+    <div class="container-fluid mt-4 mb-5" id="area-impresion">
+        <!-- Encabezado de Impresión -->
+        <?= generarEncabezadoImpresion('REPORTE DE CAJAS (DINERO PENDIENTE)', $fecha_inicio, $fecha_fin) ?>
+        
         <div class="row justify-content-center">
             <div class="col-lg-11">
                 <div class="card shadow-sm border-0">
@@ -196,7 +217,7 @@ foreach ($fechas_rango as $fecha) {
                     </div>
                     <div class="card-body">
                         <!-- Filtros -->
-                        <div class="row mb-4">
+                        <div class="row mb-4 no-print">
                             <div class="col-md-3">
                                 <label for="fecha_inicio">Fecha Inicio:</label>
                                 <input type="date" id="fecha_inicio" class="form-control" value="<?= $fecha_inicio ?>">
@@ -345,11 +366,9 @@ foreach ($fechas_rango as $fecha) {
     <div class="modal fade" id="modalDetalleCaja" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title"><i class="fas fa-search-dollar me-2"></i> AUDITORÍA DE MOVIMIENTOS DEL TURNO
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">AUDITORÍA DE MOVIMIENTOS DEL TURNO</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="modalDetalleContenido">
                     <div class="text-center py-5">
@@ -366,8 +385,74 @@ foreach ($fechas_rango as $fecha) {
         </div>
     </div>
 
+    <!-- Modal de Confirmación (Bootstrap Estilo Card) -->
+    <div class="modal fade" id="modalConfirmarRecaudacion" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-sm">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-dark">CONFIRMAR RECAUDACIÓN</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <div class="card border-0 bg-light mb-0">
+                        <div class="card-body p-3">
+                            <p class="text-dark mb-0 fs-5" id="txtConfirmarCuerpo">
+                                ¿Confirma que ha recibido físicamente el dinero de los turnos seleccionados?
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">CANCELAR</button>
+                    <button type="button" class="btn btn-primary px-4 fw-bold" id="btnAceptarRecaudacion">CONFIRMAR ENTREGA</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Mensaje (Bootstrap) -->
+    <div class="modal fade" id="modalMensajeApp" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+            <div class="modal-content border-0 shadow-lg">
+                <div id="modalMensajeHeader" class="modal-header">
+                    <h5 class="modal-title fw-bold" id="modalMensajeTitulo"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div id="modalMensajeIcono" class="mb-3" style="font-size: 3.5rem;"></div>
+                    <p id="modalMensajeTexto" class="fs-5 mb-0 px-3"></p>
+                </div>
+                <div class="modal-footer border-0 justify-content-center pb-4">
+                    <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">ACEPTAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const modalAuditoria = new bootstrap.Modal(document.getElementById('modalDetalleCaja'));
+        const modalMensaje = new bootstrap.Modal(document.getElementById('modalMensajeApp'));
+        const modalConfirmar = new bootstrap.Modal(document.getElementById('modalConfirmarRecaudacion'));
+
+        function mostrarMensaje(titulo, texto, tipo = 'success') {
+            const header = document.getElementById('modalMensajeHeader');
+            const tituloEl = document.getElementById('modalMensajeTitulo');
+            const textoEl = document.getElementById('modalMensajeTexto');
+            const iconoEl = document.getElementById('modalMensajeIcono');
+
+            tituloEl.innerText = titulo;
+            textoEl.innerText = texto;
+
+            if (tipo === 'success') {
+                header.className = 'modal-header bg-success text-white py-3';
+                iconoEl.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
+            } else {
+                header.className = 'modal-header bg-danger text-white py-3';
+                iconoEl.innerHTML = '<i class="fas fa-exclamation-circle text-danger"></i>';
+            }
+
+            modalMensaje.show();
+        }
 
         function verDetalleCaja(cajaID) {
             const contenedor = document.getElementById('modalDetalleContenido');
@@ -407,36 +492,67 @@ foreach ($fechas_rango as $fecha) {
         }
 
         function procesarRecaudacion() {
-            const ids = Array.from(document.querySelectorAll('.check-recaudar:checked')).map(chk => chk.dataset.cajaid);
+            const seleccionados = Array.from(document.querySelectorAll('.check-recaudar:checked'));
+            const ids = seleccionados.map(chk => chk.dataset.cajaid);
+            
+            // Extraer fechas únicas
+            const fechasUnicas = [...new Set(seleccionados.map(chk => {
+                const fila = chk.closest('tr');
+                return fila.cells[0].innerText.split(' ')[0];
+            }))];
 
-            if (confirm('¿Confirma que ha recibido físicamente el dinero de los ' + ids.length + ' turnos seleccionados?')) {
-                const btn = document.getElementById('btn-confirmar-recaudacion');
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESANDO...';
+            // Ordenar fechas
+            fechasUnicas.sort((a, b) => {
+                const [da, ma, ya] = a.split('/');
+                const [db, mb, yb] = b.split('/');
+                return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
+            });
 
-                fetch('ajax_recaudar.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ cajaIDs: ids })
-                })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.status === 'SUCCESS') {
-                            alert(data.message);
-                            location.reload();
-                        } else {
-                            alert('Error: ' + data.message);
-                            btn.disabled = false;
-                            btn.innerHTML = '<i class="fas fa-hand-holding-usd"></i> CONFIRMAR ENTREGA DE DINERO';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Error en la conexión con el servidor.');
+            const listaFechas = fechasUnicas.join('<br>');
+
+            document.getElementById('txtConfirmarCuerpo').innerHTML = `
+                ¿Confirma que ha recibido el dinero de los <b>${ids.length}</b> turnos seleccionados?<br><br>
+                <div class="text-center fw-bold">
+                    ${listaFechas}
+                </div>
+            `;
+            
+            // Asignar el evento al botón de aceptar del modal
+            document.getElementById('btnAceptarRecaudacion').onclick = function() {
+                modalConfirmar.hide();
+                ejecutarRecaudacion(ids);
+            };
+
+            modalConfirmar.show();
+        }
+
+        function ejecutarRecaudacion(ids) {
+            const btn = document.getElementById('btn-confirmar-recaudacion');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESANDO...';
+
+            fetch('ajax_recaudar.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cajaIDs: ids })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'SUCCESS') {
+                        mostrarMensaje('¡Éxito!', data.message, 'success');
+                        setTimeout(() => { location.reload(); }, 2000);
+                    } else {
+                        mostrarMensaje('Error', data.message, 'error');
                         btn.disabled = false;
                         btn.innerHTML = '<i class="fas fa-hand-holding-usd"></i> CONFIRMAR ENTREGA DE DINERO';
-                    });
-            }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarMensaje('Fallo Crítico', 'Error en la conexión con el servidor.', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-hand-holding-usd"></i> CONFIRMAR ENTREGA DE DINERO';
+                });
         }
 
         function filtrar() {
