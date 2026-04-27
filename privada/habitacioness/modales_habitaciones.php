@@ -269,3 +269,53 @@
     </form>
   </div>
 </div>
+
+<!-- Modal Pago de Deuda y Desocupar -->
+<div class="modal fade" id="modal-pago-deuda" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form action="procesar_pago_deuda.php" method="post">
+      <div class="modal-content shadow-sm">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">PAGAR DEUDA Y DESOCUPAR</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" style="border:none; background:none; font-size: 1.5rem; line-height: 1;">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="card border-0 bg-light mb-3">
+            <div class="card-body py-2">
+              <p class="mb-1 text-dark"><strong>Habitación:</strong> <span id="pago-deuda-habitacion"></span></p>
+              <p class="mb-0 text-dark text-muted small">El monto es referencial. El recepcionista puede modificarlo según acuerdo con el cliente.</p>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">(*) Monto a Cobrar (Bs):</label>
+            <input type="number" class="form-control" name="monto_total" id="pago-deuda-monto_total"
+                   min="0" step="0.5" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">(*) Forma de Pago:</label>
+            <select class="form-control" name="formaPagoID" required>
+              <option value="">-- SELECCIONE --</option>
+              <?php
+              $rs_fp_deuda = $db->obtenerTodo("SELECT formaPagoID, tipo FROM formas_pago WHERE _estado = 'A' AND empresaID = ?", [$empresaID ?? 0]);
+              foreach ($rs_fp_deuda as $fp) {
+                  echo "<option value='{$fp['formaPagoID']}'>{$fp['tipo']}</option>";
+              }
+              ?>
+            </select>
+          </div>
+
+          <!-- Campos ocultos -->
+          <input type="hidden" name="habitacionID" id="pago-deuda-habitacionID">
+          <input type="hidden" name="hospedajeID" id="pago-deuda-hospedajeID">
+          <input type="hidden" name="habitacion_numero" id="pago-deuda-habitacion-numero">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCELAR</button>
+          <button type="submit" class="btn btn-primary fw-bold">REGISTRAR PAGO Y DESOCUPAR</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

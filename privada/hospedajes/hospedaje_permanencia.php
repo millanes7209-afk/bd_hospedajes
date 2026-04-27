@@ -250,8 +250,9 @@ $nueva_fecha_checkout = date('Y-m-d\TH:i', strtotime($checkout_anterior . ' +1 d
     <div id="templateFormaPago" style="display: none;">
         <option value="">Seleccione Pago</option>
         <?php
-        $sql_fp = "SELECT formaPagoID, tipo FROM formas_pago WHERE _estado='A'";
-        $rs_fp = $db->obtenerTodo($sql_fp);
+        $empresa_actual = $_SESSION['empresaID'] ?? 0;
+        $sql_fp = "SELECT formaPagoID, tipo FROM formas_pago WHERE _estado='A' AND empresaID = ?";
+        $rs_fp = $db->obtenerTodo($sql_fp, [$empresa_actual]);
         foreach ($rs_fp as $fp) echo "<option value='{$fp['formaPagoID']}'>{$fp['tipo']}</option>";
         ?>
     </div>
@@ -260,6 +261,7 @@ $nueva_fecha_checkout = date('Y-m-d\TH:i', strtotime($checkout_anterior . ' +1 d
         function autocompletarCheckout() {
             // En permanencia ya viene seteado por PHP (anterior + 1 día)
             // Solo disparamos el recálculo de saldo
+            agregarFilaPago(); // Asegurar que exista la primera fila de pagos
             actualizarResumenPagos();
         }
 

@@ -37,7 +37,7 @@ try {
     $sqlPagos = "SELECT fp.tipo, m.monto 
                  FROM movimientos m 
                  INNER JOIN formas_pago fp ON m.formapagoID = fp.formapagoID 
-                 WHERE m.referenciaID = ? AND m.categoria = 'HOSPEDAJE' AND m._estado = 'A'";
+                 WHERE m.referenciaID = ? AND m.categoria IN ('HOSPEDAJE', 'MOMENTANEO') AND m._estado = 'A'";
     $pagosOriginales = $db->obtenerTodo($sqlPagos, [$hospedajeID]);
     $detalleOriginal = json_encode($pagosOriginales);
 

@@ -14,7 +14,7 @@ $sql = "SELECT usu.usuario,h.hospedajeID,h.estado as estado,
         JOIN clientes c ON hc.clienteID = c.clienteID
         join usuarios usu ON usu.usuarioID=h._usuario
         JOIN habitaciones r ON h.habitacionID = r.habitacionID
-        LEFT JOIN movimientos m ON h.hospedajeID = m.referenciaID AND m.categoria = 'HOSPEDAJE'
+        LEFT JOIN movimientos m ON h.hospedajeID = m.referenciaID AND m.categoria IN ('HOSPEDAJE', 'MOMENTANEO')
         WHERE h._estado <> 'X'
         AND hc._estado <> 'X'
         AND c._estado <> 'X'

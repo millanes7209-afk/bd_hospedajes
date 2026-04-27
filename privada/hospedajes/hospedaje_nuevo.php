@@ -291,8 +291,9 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
                                     <div id="templateFormaPago" style="display: none;">
                                         <option value="">Seleccione Pago</option>
                                         <?php
-                                        $sql_fp = "SELECT formaPagoID, tipo FROM formas_pago WHERE _estado='A'";
-                                        $rs_fp = $db->obtenerTodo($sql_fp);
+                                        $empresa_actual = $_SESSION['empresaID'] ?? 0;
+                                        $sql_fp = "SELECT formaPagoID, tipo FROM formas_pago WHERE _estado='A' AND empresaID = ?";
+                                        $rs_fp = $db->obtenerTodo($sql_fp, [$empresa_actual]);
                                         foreach ($rs_fp as $fp) {
                                             echo "<option value='{$fp['formaPagoID']}'>{$fp['tipo']}</option>";
                                         }

@@ -20,8 +20,13 @@ $cajaID = $_SESSION['caja_abierta_id'];
 $ahora = date("Y-m-d H:i:s");
 
 // Listas de Clientes y Pagos
-$clientes = $_POST['clientesSeleccionados']; // Incluye los viejos y los nuevos añadidos
-$pagos = $_POST['pagos'];
+$clientes = $_POST['clientesSeleccionados'] ?? [];
+$pagos = $_POST['pagos'] ?? [];
+
+if ($monto_total > 0 && empty($pagos)) {
+    echo "Error: Debe registrar al menos una forma de pago para el monto ingresado.";
+    exit;
+}
 
 if (!$hospedajeID_anterior || !$habitacionID || empty($clientes) || !$cajaID) {
     echo "Error: Datos incompletos para procesar la permanencia.";

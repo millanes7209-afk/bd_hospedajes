@@ -48,7 +48,7 @@ function handleHabitacionClick(estado, numero, tipo, precio, habitacionID) {
     } else if (estado === 'DEUDA') {
         modalFooter.innerHTML = `
             <button type="button" class="btn btn-primary" onclick="mostrarModalPermanencia('${habitacionID}', '${precio}')">PAGAR Y OCUPAR</button>
-            <button type="button" class="btn btn-secondary" onclick="mostrarModalPagoDeuda('${habitacionID}', 'LIMPIEZA')">PAGAR Y DESOCUPAR</button>
+            <button type="button" class="btn btn-secondary" onclick="mostrarModalPagoDeuda('${habitacionID}', '${precio}')">PAGAR Y DESOCUPAR</button>
         `;
         modal.show();
     } else if (estado === 'RESERVADA') {
@@ -348,26 +348,28 @@ setInterval(actualizarEstadoHabitaciones, 60000);
 /**
  * PAGO DE DEUDA
  */
-function mostrarModalPagoDeuda(habitacionID) {
+function mostrarModalPagoDeuda(habitacionID, monto) {
     var modalOpciones = bootstrap.Modal.getInstance(document.getElementById('menu-opciones'));
     if (modalOpciones) modalOpciones.hide();
 
+    // Usar el monto ya calculado, sin necesidad de fetch
+    document.getElementById('pago-deuda-monto_total').value = parseFloat(monto) || 0;
+    document.getElementById('pago-deuda-habitacionID').value = habitacionID;
+
+    // Buscar el hospedajeID y número de la habitación desde los datos ya cargados
     fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&auth=habitaciones.php')
     .then(response => response.json())
     .then(data => {
-        if (data.error) {
-            alert('Error.');
-        } else {
-            document.getElementById('pago-deuda-habitacion').value = data.numero;
+        if (!data.error) {
+            document.getElementById('pago-deuda-habitacion').innerText = data.numero;
             document.getElementById('pago-deuda-habitacion-numero').value = data.numero;
-            document.getElementById('pago-deuda-monto_total').value = data.monto_total;
-            document.getElementById('pago-deuda-habitacionID').value = data.habitacionID;
             document.getElementById('pago-deuda-hospedajeID').value = data.hospedajeID;
-            var modalPagoDeuda = new bootstrap.Modal(document.getElementById('modal-pago-deuda'));
-            modalPagoDeuda.show();
         }
     })
     .catch(error => console.error('Error:', error));
+
+    var modalPagoDeuda = new bootstrap.Modal(document.getElementById('modal-pago-deuda'));
+    modalPagoDeuda.show();
 }
 
 /**

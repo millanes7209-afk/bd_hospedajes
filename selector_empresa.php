@@ -40,20 +40,34 @@ try {
         $color_secundario = $colores['color_secundario'] ?? $color_secundario;
     }
 
-    // 3. CONSULTA DE EMPRESAS (Revisa que 'sesion_id_empleado' esté definido en tu login)
-    $id_empleado_busqueda = $_SESSION["sesion_id_empleado"] ?? 0;
+    // 3. CONSULTA DE EMPRESAS
+    // Opción C: El ADMINISTRADOR ve todas las empresas sin necesitar contrato laboral.
+    // Para el resto de roles, se valida normalmente con empleado_empresas.
+    $rol_sesion = strtoupper($_SESSION['sesion_rol'] ?? '');
 
-    $sql = "SELECT DISTINCT emp.empresaID, emp.nombre, emp.color_primario, emp.color_secundario, emp.logo_agencia
-            FROM empresa emp
-            INNER JOIN empleado_empresas ee ON emp.empresaID = ee.empresaID
-            WHERE ee.empleadoID = ? 
-            AND emp._estado <> 'X'
-            AND ee._estado <> 'X'
-            AND ee.estado_laboral = 'ACTIVO'
-            ORDER BY emp.nombre";
-            
-    $stmt = $db->prepare($sql);
-    $stmt->execute([$id_empleado_busqueda]);
+    if ($rol_sesion === 'ADMINISTRADOR') {
+        // ADMINISTRADOR: acceso directo a todas las empresas activas
+        $sql = "SELECT DISTINCT emp.empresaID, emp.nombre, emp.color_primario, emp.color_secundario, emp.logo_agencia
+                FROM empresa emp
+                WHERE emp._estado <> 'X'
+                ORDER BY emp.nombre";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([]);
+    } else {
+        // OTROS ROLES: validación normal por contrato laboral
+        $id_empleado_busqueda = $_SESSION["sesion_id_empleado"] ?? 0;
+        $sql = "SELECT DISTINCT emp.empresaID, emp.nombre, emp.color_primario, emp.color_secundario, emp.logo_agencia
+                FROM empresa emp
+                INNER JOIN empleado_empresas ee ON emp.empresaID = ee.empresaID
+                WHERE ee.empleadoID = ? 
+                AND emp._estado <> 'X'
+                AND ee._estado <> 'X'
+                AND ee.estado_laboral = 'ACTIVO'
+                ORDER BY emp.nombre";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$id_empleado_busqueda]);
+    }
+
     $empresas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 } catch (Exception $e) {

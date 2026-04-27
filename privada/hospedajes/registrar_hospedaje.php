@@ -21,14 +21,14 @@ $cajaID = $_SESSION['caja_abierta_id'];
 $ahora = date("Y-m-d H:i:s");
 
 // Listas de Clientes y Pagos
-$clientes = $_POST['clientesSeleccionados'];
-$pagos = $_POST['pagos'];
+$clientes = $_POST['clientesSeleccionados'] ?? [];
+$pagos = $_POST['pagos'] ?? [];
 
 // 3. VALIDACIONES BÁSICAS DE SEGURIDAD
-if (!$habitacionID || empty($clientes) || empty($pagos) || !$empresaID || !$usuarioID) {
-    $_SESSION['mensaje'] = "Error: Datos de registro o sesión incompletos.";
+if (!$habitacionID || empty($clientes) || ($monto_total > 0 && empty($pagos)) || !$empresaID || !$usuarioID) {
+    $_SESSION['mensaje'] = "Error: Datos de registro incompletos o falta registrar forma de pago.";
     $_SESSION['mensaje_tipo'] = "danger";
-    header("Location: ../habitacioness/hospedajes.php");
+    header("Location: ../habitacioness/habitaciones.php");
     exit();
 }
 

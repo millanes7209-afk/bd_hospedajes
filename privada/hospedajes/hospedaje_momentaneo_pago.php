@@ -172,7 +172,8 @@ if ($es_deuda) {
     <!-- Template Formas de Pago -->
     <div id="templateFormaPago" style="display: none;">
         <?php
-        $rs_fp = $db->obtenerTodo("SELECT formapagoID, tipo FROM formas_pago WHERE _estado='A'");
+        $empresa_actual = $_SESSION['empresaID'] ?? 0;
+        $rs_fp = $db->obtenerTodo("SELECT formapagoID, tipo FROM formas_pago WHERE _estado='A' AND empresaID = ?", [$empresa_actual]);
         foreach ($rs_fp as $fp) echo "<option value='{$fp['formapagoID']}'>{$fp['tipo']}</option>";
         ?>
     </div>

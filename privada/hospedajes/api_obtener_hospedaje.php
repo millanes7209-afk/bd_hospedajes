@@ -44,7 +44,7 @@ try {
     $sqlM = "SELECT m.movimientoID, m.monto, m.formapagoID
              FROM movimientos m
              WHERE m.referenciaID = ? 
-             AND m.categoria = 'HOSPEDAJE' 
+             AND m.categoria IN ('HOSPEDAJE', 'MOMENTANEO') 
              AND m._estado <> 'X'";
     $movimientosInfo = $db->obtenerTodo($sqlM, [$hospedajeID]);
 

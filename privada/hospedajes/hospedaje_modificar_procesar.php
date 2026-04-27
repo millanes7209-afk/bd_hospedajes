@@ -41,7 +41,7 @@ try {
     $sqlPagOrig = "SELECT fp.tipo, m.monto 
                    FROM movimientos m 
                    INNER JOIN formas_pago fp ON m.formapagoID = fp.formapagoID 
-                   WHERE m.referenciaID = ? AND m.categoria = 'HOSPEDAJE' AND m._estado = 'A'";
+                   WHERE m.referenciaID = ? AND m.categoria IN ('HOSPEDAJE', 'MOMENTANEO') AND m._estado = 'A'";
     $pagos_originales = $db->obtenerTodo($sqlPagOrig, [$hospedajeID]);
     
     // Normalizar montos originales
