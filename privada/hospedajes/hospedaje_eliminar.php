@@ -22,8 +22,8 @@ try {
         throw new Exception("No se pudo iniciar la transacción.");
     }
 
-    // 1. Obtener datos previos para la auditoría (Monto, Habitación y Pagos)
-    $sqlHosp = "SELECT habitacionID, monto FROM hospedajes WHERE hospedajeID = ? AND empresaID = ? AND _estado <> 'X'";
+    // 1. Obtener datos previos para la auditoría (Monto, Habitación e ingresoID)
+    $sqlHosp = "SELECT habitacionID, monto, ingresoID FROM hospedajes WHERE hospedajeID = ? AND empresaID = ? AND _estado <> 'X'";
     $hospedaje = $db->obtenerFila($sqlHosp, [$hospedajeID, $empresaID]);
 
     if (!$hospedaje) {
@@ -32,13 +32,14 @@ try {
 
     $habitacionID = $hospedaje['habitacionID'];
     $montoAnterior = $hospedaje['monto'];
+    $ingresoID = $hospedaje['ingresoID'];
 
-    // Obtener desglose de pagos para auditoría
-    $sqlPagos = "SELECT fp.tipo, m.monto 
-                 FROM movimientos m 
-                 INNER JOIN formas_pago fp ON m.formapagoID = fp.formapagoID 
-                 WHERE m.referenciaID = ? AND m.categoria IN ('HOSPEDAJE', 'MOMENTANEO') AND m._estado = 'A'";
-    $pagosOriginales = $db->obtenerTodo($sqlPagos, [$hospedajeID]);
+    // Obtener desglose de pagos desde ingreso_pagos para auditoría
+    $sqlPagos = "SELECT fp.tipo, ip.monto 
+                 FROM ingreso_pagos ip 
+                 INNER JOIN formas_pago fp ON ip.formapagoID = fp.formapagoID 
+                 WHERE ip.ingresoID = ?";
+    $pagosOriginales = $db->obtenerTodo($sqlPagos, [$ingresoID]);
     $detalleOriginal = json_encode($pagosOriginales);
 
     // 2. Registrar en la Tabla de Auditoría (Antes de borrar)
@@ -50,20 +51,23 @@ try {
         throw new Exception("No se pudo registrar la auditoría de eliminación.");
     }
 
-    // 3. Marcar Hospedaje como eliminado (_estado = 'X')
-    // Nota: Como pidió el usuario, NO modificamos el campo observaciones aquí.
+    // 3. Anular contablemente el INGRESO maestro
+    $sqlAnularI = "UPDATE ingresos SET _estado = 'X', _fec_modificacion = ? WHERE ingresoID = ?";
+    if ($db->ejecutar($sqlAnularI, [$ahora, $ingresoID]) === false) {
+        throw new Exception("Error al anular el ingreso financiero relacionado.");
+    }
+
+    // 4. Marcar Hospedaje como eliminado (_estado = 'X')
     $sqlDel = "UPDATE hospedajes SET _estado = 'X', _fec_modificacion = ? WHERE hospedajeID = ? AND empresaID = ?";
     if ($db->ejecutar($sqlDel, [$ahora, $hospedajeID, $empresaID]) === false) {
         throw new Exception("Error al anular el registro de hospedaje.");
     }
 
-    // 4. Pasar habitación a estado LIMPIEZA
+    // 5. Pasar habitación a estado LIMPIEZA
     $sqlHab = "UPDATE habitaciones SET estado = 'LIMPIEZA', _fec_modificacion = ? WHERE habitacionID = ?";
     if ($db->ejecutar($sqlHab, [$ahora, $habitacionID]) === false) {
         throw new Exception("Error al actualizar estado de la habitación.");
     }
-
-    // Nota: El trigger 'tr_eliminar_movimientos_hospedaje' se encarga de los movimientos de caja.
 
     $db->commit();
 

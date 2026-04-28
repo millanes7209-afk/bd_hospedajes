@@ -35,8 +35,7 @@ function handleHabitacionClick(estado, numero, tipo, precio, habitacionID) {
             <button type="button" class="btn btn-primary w-100" onclick="mostrarModalPermanencia('${habitacionID}')"><i class="fas fa-calendar-plus"></i> PERMANENCIA</button>
             <button type="button" class="btn btn-success w-100 font-weight-bold" onclick="mostrarModalCambioHabitacion('${habitacionID}')"><i class="fas fa-exchange-alt"></i> CAMBIAR HABITACIÓN</button>
             <button type="button" class="btn btn-info w-100" onclick="agregar_huesped('aumentar', '${numero}', '${tipo}', '${habitacionID}')"><i class="fas fa-user-plus"></i> AGREGAR HUESPED</button>
-            <button type="button" class="btn btn-secondary w-100 mb-2" onclick="desocupar('${habitacionID}')"><i class="fas fa-sign-out-alt"></i> DESOCUPAR</button>
-            <button type="button" class="btn btn-danger w-100" onclick="abrirModalEliminar('${habitacionID}', '${numero}')"><i class="fas fa-trash-alt"></i> ELIMINAR HOSPEDAJE</button>
+            <button type="button" class="btn btn-secondary w-100" onclick="desocupar('${habitacionID}')"><i class="fas fa-sign-out-alt"></i> DESOCUPAR</button>
         `;
         modal.show();
     } else if (estado === 'LIMPIEZA') {
@@ -47,7 +46,7 @@ function handleHabitacionClick(estado, numero, tipo, precio, habitacionID) {
         modal.show();
     } else if (estado === 'DEUDA') {
         modalFooter.innerHTML = `
-            <button type="button" class="btn btn-primary" onclick="mostrarModalPermanencia('${habitacionID}', '${precio}')">PAGAR Y OCUPAR</button>
+            <button type="button" class="btn btn-primary" onclick="mostrarModalPermanencia('${habitacionID}')">PAGAR Y OCUPAR</button>
             <button type="button" class="btn btn-secondary" onclick="mostrarModalPagoDeuda('${habitacionID}', '${precio}')">PAGAR Y DESOCUPAR</button>
         `;
         modal.show();
@@ -318,6 +317,8 @@ function actualizarEstadoHabitaciones() {
                     default: btnClass += ' btn btn-dark';
                 }
                 btnHabitacion.className = btnClass;
+                // Actualizar el atributo onclick con el precio inteligente
+                btnHabitacion.setAttribute('onclick', `handleHabitacionClick('${habitacion.estado}', '${habitacion.numero}', '${habitacion.tipo}', '${habitacion.precio_inteligente}', '${habitacion.habitacionID}')`);
 
                 if (habitacion.estado === 'OCUPADA' && habitacion.cliente_activo) {
                     // Renderizado Smart (Ocupada)
@@ -335,7 +336,15 @@ function actualizarEstadoHabitaciones() {
                     `;
                 } else {
                     // Renderizado Estándar
-                    btnHabitacion.innerHTML = `<span>${habitacion.estado}</span><strong>${habitacion.numero}</strong>`;
+                    let contenido = `<span>${habitacion.estado}</span>`;
+                    
+                    // LÓGICA SMART: Si hay deuda, mostrar el monto real del hospedaje
+                    if (habitacion.estado === 'DEUDA') {
+                        contenido = `<span>DEUDA</span><strong>${habitacion.numero}</strong><div style="font-size: 0.75em; font-weight: bold; margin-top: 2px; opacity: 0.9;">Bs. ${habitacion.precio_inteligente}</div>`;
+                        btnHabitacion.innerHTML = contenido;
+                    } else {
+                        btnHabitacion.innerHTML = `<span>${habitacion.estado}</span><strong>${habitacion.numero}</strong>`;
+                    }
                 }
             }
         });

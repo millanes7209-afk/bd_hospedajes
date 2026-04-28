@@ -8,13 +8,14 @@ require_once("utils/hospedajes_utilidades.php");
 $sql = "SELECT usu.usuario,h.hospedajeID,h.estado as estado,
         GROUP_CONCAT(DISTINCT CONCAT_WS(' ', c.apellido1, apellido2, c.nombres) SEPARATOR ', ') as clientes,
         h.checkin,h.checkout,r.numero AS habitacion_numero, h.monto,
-        GROUP_CONCAT(DISTINCT m.formapagoID SEPARATOR ', ') as formapagoIDs
+        GROUP_CONCAT(DISTINCT ip.formapagoID SEPARATOR ', ') as formapagoIDs
         FROM hospedajes h
         JOIN hospedajes_clientes hc ON h.hospedajeID = hc.hospedajeID
         JOIN clientes c ON hc.clienteID = c.clienteID
-        join usuarios usu ON usu.usuarioID=h._usuario
+        JOIN usuarios usu ON usu.usuarioID=h._usuario
         JOIN habitaciones r ON h.habitacionID = r.habitacionID
-        LEFT JOIN movimientos m ON h.hospedajeID = m.referenciaID AND m.categoria IN ('HOSPEDAJE', 'MOMENTANEO')
+        LEFT JOIN ingresos i ON h.ingresoID = i.ingresoID
+        LEFT JOIN ingreso_pagos ip ON i.ingresoID = ip.ingresoID
         WHERE h._estado <> 'X'
         AND hc._estado <> 'X'
         AND c._estado <> 'X'

@@ -27,14 +27,13 @@ if (!$cajaInfo) {
     exit();
 }
 
-// 2. Obtener Movimientos
+// 2. Obtener Movimientos desde la vista unificada
 $sqlMovs = "SELECT 
-                m.movimientoID, m.tipo, m.concepto, m.detalle, m.monto, m._fec_insercion,
-                fp.tipo AS forma_pago
-            FROM movimientos m
-            INNER JOIN formas_pago fp ON m.formapagoID = fp.formapagoID
-            WHERE m.cajaID = ? AND m.empresaID = ? AND m._estado <> 'X'
-            ORDER BY m.movimientoID ASC";
+                movimientoID, tipo, concepto, monto, fecha as _fec_insercion,
+                forma_pago
+            FROM v_movimientos_caja
+            WHERE cajaID = ? AND empresaID = ?
+            ORDER BY movimientoID ASC";
 $movimientos = $db->obtenerTodo($sqlMovs, [$cajaID, $empresaID]);
 
 // 3. Renderizar Vista (HTML)

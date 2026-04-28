@@ -17,19 +17,18 @@ try {
     $datos = [];
 
     // 1. Ingresos vs Egresos por día (Curva Financiera)
-    $sql_finanzas = "SELECT DATE(_fec_insercion) as fecha, tipo, SUM(monto) as total
-                     FROM movimientos
-                     WHERE empresaID = ? AND DATE(_fec_insercion) BETWEEN ? AND ? AND _estado <> 'X'
-                     GROUP BY DATE(_fec_insercion), tipo
+    $sql_finanzas = "SELECT DATE(fecha) as fecha, tipo, SUM(monto) as total
+                     FROM v_movimientos_caja
+                     WHERE empresaID = ? AND DATE(fecha) BETWEEN ? AND ?
+                     GROUP BY DATE(fecha), tipo
                      ORDER BY fecha ASC";
     $datos['finanzas'] = $db->obtenerTodo($sql_finanzas, [$empresaID, $fecha_inicio, $fecha_fin]);
 
     // 2. Métodos de Pago
-    $sql_pagos = "SELECT fp.tipo as metodo, SUM(m.monto) as total
-                  FROM movimientos m
-                  INNER JOIN formas_pago fp ON m.formapagoID = fp.formapagoID
-                  WHERE m.empresaID = ? AND m.tipo = 'INGRESO' AND DATE(m._fec_insercion) BETWEEN ? AND ? AND m._estado <> 'X'
-                  GROUP BY fp.tipo";
+    $sql_pagos = "SELECT forma_pago as metodo, SUM(monto) as total
+                  FROM v_movimientos_caja
+                  WHERE empresaID = ? AND tipo = 'INGRESO' AND DATE(fecha) BETWEEN ? AND ?
+                  GROUP BY forma_pago";
     $datos['metodos_pago'] = $db->obtenerTodo($sql_pagos, [$empresaID, $fecha_inicio, $fecha_fin]);
 
     // 3. Tipos de Habitación más usados
@@ -43,14 +42,20 @@ try {
     $datos['tipos_habitacion'] = $db->obtenerTodo($sql_habs, [$empresaID, $fecha_inicio, $fecha_fin]);
 
     // 4. Rendimiento de Personal (Productividad)
-    $sql_personal = "SELECT u.usuario as recepcionista, COUNT(m.movimientoID) as operaciones, SUM(m.monto) as dinero_ingresado
-                     FROM movimientos m
+    $sql_personal = "SELECT u.usuario as recepcionista, 
+                            COUNT(m.movimientoID) as operaciones, 
+                            SUM(CASE WHEN m.tipo = 'INGRESO' THEN m.monto ELSE 0 END) as ingresos,
+                            SUM(CASE WHEN m.tipo = 'EGRESO' THEN m.monto ELSE 0 END) as egresos,
+                            (SUM(CASE WHEN m.tipo = 'INGRESO' THEN m.monto ELSE 0 END) - SUM(CASE WHEN m.tipo = 'EGRESO' THEN m.monto ELSE 0 END)) as neto
+                     FROM v_movimientos_caja m
                      INNER JOIN usuarios u ON m.usuarioID = u.usuarioID
-                     WHERE m.empresaID = ? AND m.tipo = 'INGRESO' AND DATE(m._fec_insercion) BETWEEN ? AND ? AND m._estado <> 'X'
+                     WHERE m.empresaID = ? AND DATE(m.fecha) BETWEEN ? AND ?
                      GROUP BY m.usuarioID
-                     ORDER BY dinero_ingresado DESC";
+                     ORDER BY neto DESC";
     $datos['personal'] = $db->obtenerTodo($sql_personal, [$empresaID, $fecha_inicio, $fecha_fin]);
 
+    // ... (Consultas 5, 6, 7 no requieren cambios ya que no usan movimientos) ...
+    // [COPIANDO DE VUELTA PARA MANTENER ESTRUCTURA]
     // 5. Clientes Más Frecuentes
     $sql_clientes = "SELECT CONCAT(c.nombres, ' ', c.apellido1) as cliente, COUNT(hc.hospedajeID) as visitas
                      FROM hospedajes_clientes hc
@@ -86,19 +91,19 @@ try {
                         LIMIT 10";
     $datos['procedencia_depto'] = $db->obtenerTodo($sql_procedencia_depto, [$empresaID, $fecha_inicio, $fecha_fin]);
 
-    // 8. Categorías de Movimientos (Ingresos)
-    $sql_categorias_in = "SELECT categoria, SUM(monto) as total
-                       FROM movimientos
-                       WHERE empresaID = ? AND tipo = 'INGRESO' AND DATE(_fec_insercion) BETWEEN ? AND ? AND _estado <> 'X'
-                       GROUP BY categoria
+    // 8. Categorías de Movimientos (Ingresos) - Usando cuenta_nombre
+    $sql_categorias_in = "SELECT cuenta_nombre as categoria, SUM(monto) as total
+                       FROM v_movimientos_caja
+                       WHERE empresaID = ? AND tipo = 'INGRESO' AND DATE(fecha) BETWEEN ? AND ?
+                       GROUP BY cuenta_nombre
                        ORDER BY total DESC";
     $datos['categorias_ingreso'] = $db->obtenerTodo($sql_categorias_in, [$empresaID, $fecha_inicio, $fecha_fin]);
 
-    // 9. Categorías de Movimientos (Egresos)
-    $sql_categorias_out = "SELECT categoria, SUM(monto) as total
-                       FROM movimientos
-                       WHERE empresaID = ? AND tipo = 'EGRESO' AND DATE(_fec_insercion) BETWEEN ? AND ? AND _estado <> 'X'
-                       GROUP BY categoria
+    // 9. Categorías de Movimientos (Egresos) - Usando cuenta_nombre
+    $sql_categorias_out = "SELECT cuenta_nombre as categoria, SUM(monto) as total
+                       FROM v_movimientos_caja
+                       WHERE empresaID = ? AND tipo = 'EGRESO' AND DATE(fecha) BETWEEN ? AND ?
+                       GROUP BY cuenta_nombre
                        ORDER BY total DESC";
     $datos['categorias_egreso'] = $db->obtenerTodo($sql_categorias_out, [$empresaID, $fecha_inicio, $fecha_fin]);
 

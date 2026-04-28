@@ -45,17 +45,48 @@ try {
         throw new Exception("No se pudo iniciar la transacción en la base de datos.");
     }
 
-    // 4. INSERTAR HOSPEDAJE
-    $sqlH = "INSERT INTO hospedajes (empresaID, habitacionID, cajaID, checkin, checkout, monto, estado, observaciones, 
+    // 4. DETERMINAR LA CUENTA CONTABLE
+    $codigo_cuenta = ($tipo_estadia == 'MOMENTANEO') ? '402' : '401';
+    $cuenta = $db->obtenerFila("SELECT cuentaID FROM cuentas WHERE codigo = ? AND empresaID = ?", [$codigo_cuenta, $empresaID]);
+    
+    if (!$cuenta) {
+        throw new Exception("Error Contable: No se encontró la cuenta [$codigo_cuenta] configurada para esta empresa.");
+    }
+    $cuentaID = $cuenta['cuentaID'];
+
+    // 5. INSERTAR EN LA SUPER-TABLA INGRESOS (Cabecera única)
+    $sqlI = "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    $concepto_ingreso = "$tipo_estadia HAB. $habitacion_numero" . ($descripcion ? " - $descripcion" : "");
+    $paramsI = [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto_total, $concepto_ingreso, $ahora, $usuarioID];
+    
+    if ($db->ejecutar($sqlI, $paramsI) === false) {
+        throw new Exception("Error BD: No se pudo registrar el ingreso maestro.");
+    }
+    $ingresoID = $db->lastInsertId();
+
+    // 6. DETALLE DE PAGOS (ingreso_pagos)
+    foreach ($pagos as $pago) {
+        $monto_pago = floatval(str_replace(',', '.', $pago['monto']));
+        if ($monto_pago > 0) {
+            $sqlIP = "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto) VALUES (?, ?, ?)";
+            if ($db->ejecutar($sqlIP, [$ingresoID, $pago['formaPagoID'], $monto_pago]) === false) {
+                throw new Exception("Error BD: No se pudo registrar el desglose del pago.");
+            }
+        }
+    }
+
+    // 7. INSERTAR HOSPEDAJE (Vinculado al ingresoID)
+    $sqlH = "INSERT INTO hospedajes (empresaID, habitacionID, cajaID, ingresoID, checkin, checkout, monto, estado, observaciones, 
                                    _fec_insercion, _fec_modificacion, _estado, _usuario) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $paramsH = [
-        $empresaID, $habitacionID, $cajaID, $ahora, $checkout, $monto_total, 
+        $empresaID, $habitacionID, $cajaID, $ingresoID, $ahora, $checkout, $monto_total, 
         'ACTIVO', $descripcion, $ahora, $ahora, 'A', $usuarioID
     ];
     
     if ($db->ejecutar($sqlH, $paramsH) === false) {
-        throw new Exception("Error al ejecutar la consulta de hospedaje.");
+        throw new Exception("Error BD: No se pudo registrar el hospedaje vinculado.");
     }
     
     $hospedajeID = $db->lastInsertId();
@@ -64,7 +95,7 @@ try {
         throw new Exception("No se pudo obtener el ID del hospedaje registrado.");
     }
 
-    // 5. VINCULAR CLIENTES
+    // 8. VINCULAR CLIENTES
     foreach ($clientes as $clienteID) {
         $sqlC = "INSERT INTO hospedajes_clientes (empresaID, hospedajeID, clienteID, 
                                                 _fec_insercion, _fec_modificacion, _estado, _usuario) 
@@ -72,28 +103,6 @@ try {
                  
         if ($db->ejecutar($sqlC, [$empresaID, $hospedajeID, $clienteID, $ahora, $ahora, 'A', $usuarioID]) === false) {
             throw new Exception("Error al vincular el cliente ID: {$clienteID}");
-        }
-    }
-
-    // 6. GENERAR MOVIMIENTOS FINANCIEROS (PAGOS HÍBRIDOS)
-    foreach ($pagos as $pago) {
-        $monto_pago = floatval(str_replace(',', '.', $pago['monto']));
-        if ($monto_pago > 0) {
-            // Restaurado el campo 'tipo'='INGRESO' a petición tuya
-            $sqlM = "INSERT INTO movimientos (cajaID, empresaID, formapagoID, usuarioID, recaudacionID, referenciaID, 
-                                            tipo, categoria, monto, concepto, detalle, entregado, 
-                                            _fec_insercion, _fec_modificacion, _estado, _usuario) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            $paramsM = [
-                $cajaID, $empresaID, $pago['formaPagoID'], $usuarioID, null, $hospedajeID, 
-                'INGRESO', $tipo_estadia, $monto_pago, $tipo_estadia . " HAB. " . $habitacion_numero, $descripcion, 0,
-                $ahora, $ahora, 'A', $usuarioID
-            ];
-            
-            if ($db->ejecutar($sqlM, $paramsM) === false) {
-                // Obtenemos el error directo de PDO si es posible o damos uno genérico
-                throw new Exception("Error BD: No se pudo registrar el pago. Asegúrate de que las columnas de 'movimientos' coinciden.");
-            }
         }
     }
 

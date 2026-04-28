@@ -33,12 +33,16 @@
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <label for="tipo" class="form-label font-weight-bold">TIPO DE INGRESO:</label>
-            <select class="form-control" id="tipo" name="tipo" required>
-                <option value="">--SELECCIONE--</option>
-                <option value="BANO">BAÑO / DUCHA</option>
-                <option value="VISITA">VISITA</option>
-                <option value="OTRO">OTRO SERVICIO</option>
+            <label for="cuentaID" class="form-label font-weight-bold">TIPO DE INGRESO (CUENTA):</label>
+            <select class="form-control" id="cuentaID" name="cuentaID" required>
+                <option value="">--SELECCIONE CUENTA--</option>
+                <?php
+                $cuentas_ingreso = $db->obtenerTodo("SELECT cuentaID, nombre FROM cuentas WHERE tipo = 'INGRESO' AND empresaID = ? AND _estado <> 'X' AND codigo NOT IN ('401', '402')", [$empresaID]);
+                foreach ($cuentas_ingreso as $c) {
+                    $nombre_limpio = str_ireplace('INGRESO ', '', $c['nombre']);
+                    echo "<option value='{$c['cuentaID']}'>" . mb_strtoupper($nombre_limpio) . "</option>";
+                }
+                ?>
             </select>
           </div>
           <div class="mb-3">
@@ -79,17 +83,21 @@
     <form action="procesar_movimiento.php" method="post">
       <div class="modal-content">
         <div class="modal-header bg-danger text-white">
-          <h5 class="modal-title" id="modal-egreso-label">Registrar Egreso / Gasto</h5>
+          <h5 class="modal-title" id="modal-egreso-label">Registrar Egreso</h5>
           <button type="button" class="close text-white" data-bs-dismiss="modal" style="border:none; background:none; font-size: 1.5rem; line-height: 1;">&times;</button>
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label font-weight-bold">CATEGORÍA DE GASTO:</label>
-            <select class="form-control" name="tipo" required>
-                <option value="">--SELECCIONE--</option>
-                <option value="MANTENIMIENTO">MANTENIMIENTO</option>
-                <option value="INSUMOS">INSUMOS (LIMPIEZA, OTROS)</option>
-                <option value="OTRO">OTRO GASTO</option>
+            <label class="form-label font-weight-bold">CATEGORÍA (CUENTA):</label>
+            <select class="form-control" name="cuentaID" required>
+                <option value="">--SELECCIONE CUENTA--</option>
+                <?php
+                $cuentas_egreso = $db->obtenerTodo("SELECT cuentaID, nombre FROM cuentas WHERE tipo = 'EGRESO' AND empresaID = ? AND _estado <> 'X'", [$empresaID]);
+                foreach ($cuentas_egreso as $c) {
+                    $nombre_limpio = str_ireplace(['EGRESO ', 'GASTO '], '', $c['nombre']);
+                    echo "<option value='{$c['cuentaID']}'>" . mb_strtoupper($nombre_limpio) . "</option>";
+                }
+                ?>
             </select>
           </div>
           <div class="mb-3">
@@ -104,8 +112,8 @@
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label font-weight-bold">Descripción del Gasto:</label>
-            <input type="text" class="form-control" name="descripcion" placeholder="Ej: Foco para pasillo" oninput="this.value = this.value.toUpperCase()">
+            <label class="form-label font-weight-bold">Descripción / Detalle:</label>
+            <input type="text" class="form-control" name="descripcion" placeholder="Ej: Pago de luz" oninput="this.value = this.value.toUpperCase()">
           </div>
           <div class="mb-3">
             <label class="form-label font-weight-bold">Monto a Retirar (Bs.):</label>

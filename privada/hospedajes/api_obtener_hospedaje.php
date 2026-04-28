@@ -40,12 +40,13 @@ try {
              WHERE hc.hospedajeID = ? AND hc._estado <> 'X'";
     $clientes = $db->obtenerTodo($sqlC, [$hospedajeID]);
 
-    // 3. Obtener detalle de movimientos financieros (pagos)
-    $sqlM = "SELECT m.movimientoID, m.monto, m.formapagoID
-             FROM movimientos m
-             WHERE m.referenciaID = ? 
-             AND m.categoria IN ('HOSPEDAJE', 'MOMENTANEO') 
-             AND m._estado <> 'X'";
+    // 3. Obtener detalle de pagos desde la nueva estructura (Join con ingresos e ingreso_pagos)
+    $sqlM = "SELECT ip.ingresopagoID as movimientoID, ip.monto, ip.formapagoID
+             FROM ingreso_pagos ip
+             JOIN ingresos i ON ip.ingresoID = i.ingresoID
+             JOIN hospedajes h ON h.ingresoID = i.ingresoID
+             WHERE h.hospedajeID = ? AND i._estado <> 'X'";
+             
     $movimientosInfo = $db->obtenerTodo($sqlM, [$hospedajeID]);
 
     // Calcular suma total para el resumen
@@ -59,7 +60,7 @@ try {
         'hospedaje' => $hospedaje,
         'clientes' => array_column($clientes, 'nombre_completo'),
         'total_pagado' => $total_pagado,
-        'movimientos' => $movimientosInfo,
+        'movimientos' => $movimientosInfo, // ip.ingresopagoID como movimientoID
         'es_propietario' => $es_propietario
     ];
 

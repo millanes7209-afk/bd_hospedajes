@@ -17,59 +17,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $monto = (float)$_POST['monto'];
     $tipo_mov = $_POST['tipo_movimiento']; // INGRESO o EGRESO
-    $tipo_categoria = $_POST['tipo']; // Ej: BAÑO, MANTENIMIENTO, etc.
+    $cuentaID = (int)$_POST['cuentaID'];
     $descripcion = strtoupper(trim($_POST['descripcion']));
     $formaPagoID = (int)$_POST['formaPagoID'];
     
     // Iniciar Transacción
-    $db->ejecutar("START TRANSACTION");
+    $db->beginTransaction();
 
     try {
-        $referenciaID = null;
-        $categoria_master = ($tipo_mov === 'INGRESO') ? 'SERVICIO_EXTRA' : 'GASTO';
-
-        // 1. REGISTRO EN TABLAS DE DETALLE
         if ($tipo_mov === 'INGRESO') {
-            // Mapear tipos a la tabla servicios_extra (ENUM: VISITA, MOMENTANEO, BANO)
-            $tipo_se = null;
-            if ($tipo_categoria === 'BANO') $tipo_se = 'BANO';
-            elseif ($tipo_categoria === 'VISITA') $tipo_se = 'VISITA';
-            elseif ($tipo_categoria === 'MOMENTANEO') $tipo_se = 'MOMENTANEO';
-            elseif ($tipo_categoria === 'OTRO') $tipo_se = 'VISITA'; 
+            // 1. INSERTAR INGRESO MAESTRO
+            $sqlI = "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario) 
+                     VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)";
+            $db->ejecutar($sqlI, [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto, $descripcion, $usuarioID]);
+            $ingresoID = $db->lastInsertId();
 
-            if ($tipo_se) {
-                $sql_se = "INSERT INTO servicios_extra (empresaID, tipo, descripcion, monto, fecha, _fec_insercion, _usuario, _estado) 
-                           VALUES (?, ?, ?, ?, NOW(), NOW(), ?, 'A')";
-                $db->ejecutar($sql_se, [$empresaID, $tipo_se, $descripcion, $monto, $usuarioID]);
-                $referenciaID = $db->ultimoInsertId();
-            }
+            // 2. DETALLE DE PAGO
+            $db->ejecutar("INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto) VALUES (?, ?, ?)", [$ingresoID, $formaPagoID, $monto]);
+
+            // 3. VINCULAR A SERVICIOS EXTRA (Opcional, manteniendo compatibilidad con histórico)
+            $sql_se = "INSERT INTO servicios_extra (empresaID, ingresoID, tipo, descripcion, monto, fecha, _fec_insercion, _usuario, _estado) 
+                       VALUES (?, ?, ?, ?, ?, NOW(), NOW(), ?, 'A')";
+            $db->ejecutar($sql_se, [$empresaID, $ingresoID, 'OTROS', $descripcion, $monto, $usuarioID]);
+
         } else {
-            // Mapear tipos a la tabla gastos (ENUM: MANTENIMIENTO, INSUMOS, OTRO)
-            $tipo_ga = 'OTRO';
-            if ($tipo_categoria === 'MANTENIMIENTO') $tipo_ga = 'MANTENIMIENTO';
-            elseif ($tipo_categoria === 'INSUMOS' || $tipo_categoria === 'LIMPIEZA') $tipo_ga = 'INSUMOS';
+            // 1. INSERTAR EGRESO MAESTRO
+            $sqlE = "INSERT INTO egresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario) 
+                     VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)";
+            $db->ejecutar($sqlE, [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto, $descripcion, $usuarioID]);
+            $egresoID = $db->lastInsertId();
 
-            $sql_ga = "INSERT INTO gastos (empresaID, tipo, descripcion, monto, fecha, _fec_insercion, _usuario, _estado) 
-                       VALUES (?, ?, ?, ?, NOW(), NOW(), ?, 'A')";
-            $db->ejecutar($sql_ga, [$empresaID, $tipo_ga, $descripcion, $monto, $usuarioID]);
-            $referenciaID = $db->ultimoInsertId();
+            // 2. DETALLE DE PAGO
+            $db->ejecutar("INSERT INTO egreso_pagos (egresoID, formapagoID, monto) VALUES (?, ?, ?)", [$egresoID, $formaPagoID, $monto]);
         }
 
-        // 2. REGISTRO MAESTRO EN MOVIMIENTOS
-        $sql_mov = "INSERT INTO movimientos (empresaID, cajaID, formaPagoID, monto, categoria, concepto, detalle, referenciaID, usuarioID, tipo, _fec_insercion, _usuario, _estado) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, 'A')";
-        
-        $concepto = $tipo_mov . ": " . $tipo_categoria;
-        $db->ejecutar($sql_mov, [
-            $empresaID, $cajaID, $formaPagoID, $monto, $categoria_master, $concepto, $descripcion, $referenciaID, $usuarioID, $tipo_mov, $usuarioID
-        ]);
-
-        $db->ejecutar("COMMIT");
+        $db->commit();
         $_SESSION['mensaje'] = "Movimiento de $tipo_mov registrado correctamente.";
         $_SESSION['mensaje_tipo'] = "success";
 
     } catch (Exception $e) {
-        $db->ejecutar("ROLLBACK");
+        if ($db->inTransaction()) $db->rollBack();
         $_SESSION['mensaje'] = "Error al procesar: " . $e->getMessage();
         $_SESSION['mensaje_tipo'] = "danger";
     }

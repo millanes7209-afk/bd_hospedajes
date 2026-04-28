@@ -18,16 +18,15 @@ try {
     $sql_caja = "SELECT cajaID, fecha_apertura FROM cajas WHERE cajaID = ? AND empresaID = ?";
     $info_caja = $db->obtenerFila($sql_caja, array($caja_id, $empresaID));
     
-    // Consulta SQL para obtener saldos SOLO de formas de pago usadas en esta caja
-    $sql = "SELECT fp.formapagoID, fp.tipo, fp.descripcion, SUM(m.monto) as total_monto
-            FROM movimientos m
-            INNER JOIN formas_pago fp ON m.formapagoID = fp.formapagoID
-            WHERE m.cajaID = ? AND m.empresaID = ?
-            GROUP BY fp.formapagoID
-            HAVING SUM(m.monto) > 0
-            ORDER BY fp.tipo";
+    // Consulta SQL para obtener saldos netos desde la vista unificada
+    $sql = "SELECT formapagoID, forma_pago as tipo, 
+                   SUM(CASE WHEN tipo = 'INGRESO' THEN monto ELSE -monto END) as total_monto
+            FROM v_movimientos_caja
+            WHERE cajaID = ?
+            GROUP BY formapagoID, forma_pago
+            ORDER BY forma_pago";
     
-    $saldos = $db->obtenerTodo($sql, array($caja_id, $empresaID));
+    $saldos = $db->obtenerTodo($sql, array($caja_id));
     
     // Calcular total general
     $total_general = 0;

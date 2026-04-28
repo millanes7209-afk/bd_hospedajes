@@ -30,9 +30,9 @@ $sqlC = "SELECT c.* FROM hospedajes_clientes hc
          WHERE hc.hospedajeID = ? AND hc._estado <> 'X'";
 $clientes_actuales = $db->obtenerTodo($sqlC, [$hospedajeID]);
 
-// 3. Lógica de Permanencia: Calcular nueva fecha (Checkout Anterior + 1 día)
-$monto_deuda_transferida = $_POST['monto_deuda'] ?? 0;
-$monto_defecto = ($monto_deuda_transferida > 0) ? $monto_deuda_transferida : $hospedaje['monto'];
+// 3. Lógica de Permanencia: El monto por defecto SIEMPRE será el del hospedaje anterior
+// (Ya sea momentáneo o normal, para mantener la coherencia de lo que se pactó originalmente)
+$monto_defecto = $hospedaje['monto'];
 
 $checkout_anterior = $hospedaje['checkout'];
 $nueva_fecha_checkout = date('Y-m-d\TH:i', strtotime($checkout_anterior . ' +1 day'));
@@ -185,12 +185,12 @@ $nueva_fecha_checkout = date('Y-m-d\TH:i', strtotime($checkout_anterior . ' +1 d
 
                                     <div class="row mb-3">
                                         <div class="col-md-6">
-                                            <label for="checkout" class="form-label"><b>(*) SALIDA</b> <small class="text-muted ms-2">(Pagó hasta: <?php echo date('d/m/Y H:i', strtotime($checkout_anterior)); ?>)</small></label>
+                                            <label for="checkout" class="form-label"><b>(*) NUEVA SALIDA</b> <small class="text-muted ms-2">(Venció: <?php echo date('d/m/Y H:i', strtotime($checkout_anterior)); ?>)</small></label>
                                             <input type="datetime-local" class="form-control" name="checkout" id="checkout" 
                                                 value="<?php echo $nueva_fecha_checkout; ?>" required onchange="actualizarResumenPagos()">
                                         </div>
                                         <div class="col-md-6">
-                                            <label for="monto_total" class="form-label"><b>(*) Monto Extensión (Bs)</b></label>
+                                            <label for="monto_total" class="form-label"><b>(*) Monto a Cobrar (Bs)</b></label>
                                             <input type="number" class="form-control" name="monto_total" id="monto_total" 
                                                 value="<?php echo $monto_defecto; ?>" min="0" step="0.5" 
                                                 oninput="actualizarResumenPagos()"

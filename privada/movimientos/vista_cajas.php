@@ -60,8 +60,9 @@ while ($fecha_actual <= $fecha_fin_obj) {
 
 // Para cada fecha, obtener movimientos
 foreach ($fechas_rango as $fecha) {
-    // FILTRO ESTRICTO: Solo lo no entregado (Pendiente)
-    $where_entrega = " AND EXISTS (SELECT 1 FROM movimientos m2 WHERE m2.cajaID = c.cajaID AND m2.entregado = 0) ";
+    // FILTRO ESTRICTO: Solo cajas que tengan al menos un ingreso o egreso no entregado
+    $where_entrega = " AND (EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.cajaID AND i.entregado = 0 AND i._estado <> 'X') 
+                         OR EXISTS (SELECT 1 FROM egresos e WHERE e.cajaID = c.cajaID AND e.entregado = 0 AND e._estado <> 'X')) ";
 
     // Armar consulta según el rol (Filtrar por el RESPONSABLE DEL CIERRE)
     if ($rol_usuario === 'RECEPCIONISTA') {

@@ -18,19 +18,17 @@ if (!$caja_abierta_id) {
     exit;
 }
 
-// 1. Obtención ESTRICA de la base de datos (SÓLO la caja actual identificada)
+// 1. Obtención ESTRICA de la base de datos desde la vista unificada
 $sql = "SELECT 
-            m.movimientoID,
-            m.tipo,
-            m.concepto AS descripcion,
-            m.detalle,
-            fp.tipo AS forma_pago,
-            m.monto,
-            m._fec_insercion AS fecha_registro
-        FROM movimientos m
-        INNER JOIN formas_pago fp ON m.formapagoID = fp.formapagoID
-        WHERE m.cajaID = ? AND m.empresaID = ? AND m._estado <> 'X'
-        ORDER BY m.movimientoID DESC";
+            movimientoID,
+            tipo,
+            concepto AS descripcion,
+            forma_pago,
+            monto,
+            fecha AS fecha_registro
+        FROM v_movimientos_caja
+        WHERE cajaID = ? AND empresaID = ?
+        ORDER BY fecha DESC";
 
 $movimientos_caja = $db->obtenerTodo($sql, [$caja_abierta_id, $empresaID]);
 

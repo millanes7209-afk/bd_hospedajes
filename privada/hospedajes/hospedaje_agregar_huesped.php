@@ -5,7 +5,6 @@ require_once("../../libreria_menu.php");
 
 /**
  * PANTALLA: AGREGAR HUÉSPED A ESTANCIA ACTIVA
- * Permite registrar nuevos acompañantes sin afectar cobros ni tiempos.
  */
 
 $hospedajeID = $_POST['hospedajeID'] ?? $_GET['hospedajeID'] ?? 0;
@@ -40,33 +39,33 @@ $clientes_actuales = $db->obtenerTodo($sqlC, [$hospedajeID]);
 <head>
     <meta charset="UTF-8">
     <title>Añadir Huésped - Hab. <?php echo $hospedaje['numero']; ?></title>
+    
+    <!-- Librerías -->
     <script type='text/javascript' src='../../ajax.js'></script>
     <script src="../js/hospedaje_buscadores.js"></script>
+    <script src="../js/hospedaje_gestion.js"></script>
+
+    <style>
+        /* ESTÉTICA EXACTA A HOSPEDAJE_NUEVO.PHP */
+        body, label, input, select, textarea, .form-control, h5, h4, h3, strong, p, span {
+            color: #000 !important;
+        }
+        .card-header h4 { text-align: left; }
+    </style>
+
     <script>
-        // SEGURIDAD: Evitar que el 'Enter' registre formularios por accidente
         // NAVEGACIÓN CON ENTER (Enter como Tab)
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Enter') {
                 var element = event.target;
-
-                // Si es el buscador de CI, que siga funcionando el Enter para buscar
                 if (element.id === 'ci') return;
-
-                // Para cualquier otro input, select o textarea, saltar al siguiente
                 if (['INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName)) {
-                    event.preventDefault(); // Evitar envío del formulario
-
-                    // Lista de elementos navegables (excluyendo el botón submit)
+                    event.preventDefault();
                     var form = element.form;
                     if (!form) return;
-
                     var elements = Array.from(form.elements).filter(el =>
-                        !el.disabled &&
-                        el.type !== 'hidden' &&
-                        el.type !== 'submit' &&
-                        el.tagName !== 'BUTTON'
+                        !el.disabled && el.type !== 'hidden' && el.type !== 'submit' && el.tagName !== 'BUTTON'
                     );
-
                     var index = elements.indexOf(element);
                     if (index > -1 && index < elements.length - 1) {
                         elements[index + 1].focus();
@@ -76,63 +75,29 @@ $clientes_actuales = $db->obtenerTodo($sqlC, [$hospedajeID]);
             }
         });
     </script>
-    <style>
-        body, label, input, select, textarea, .form-control, h5, strong { color: #000 !important; }
-        .cliente-badge { 
-            background: #f8f9fa; 
-            border: 1px solid #dee2e6; 
-            padding: 8px 12px; 
-            border-radius: 6px; 
-            margin-bottom: 8px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .header-premium {
-            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 8px 8px 0 0;
-        }
-    </style>
 </head>
-<body>
-    <div class="container mt-4 mb-5">
+<body class="bg-light">
+    <div class="container mt-2 mb-5">
         <div class="row justify-content-center">
-            <div class="col-md-11">
-                <div class="card shadow-lg border-0">
-                    <div class="header-premium d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0 text-white"><i class="fas fa-user-plus mr-2"></i> AÑADIR HUÉSPED / ACOMPAÑANTE</h4>
-                        <span class="badge bg-light text-primary fs-6">Habitación <?php echo $hospedaje['numero']; ?></span>
+            <div class="col-md-12">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h4 class="mb-0">AÑADIR HUÉSPED / ACOMPAÑANTE</h4>
                     </div>
-                    <div class="card-body p-4">
+                    <div class="card-body">
                         <form action="procesar_agregar_huesped.php" method="post" id="formHospedaje">
                             <input type="hidden" name="hospedajeID" value="<?php echo $hospedajeID; ?>">
                             <input type="hidden" name="habitacion_numero" value="<?php echo $hospedaje['numero']; ?>">
 
                             <div class="row">
-                                <!-- SECCIÓN IZQUIERDA: GESTIÓN DE PERSONAS -->
-                                <div class="col-md-6 border-end">
-                                    <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary">HUÉSPEDES EN LA HABITACIÓN</h5>
-                                    
-                                    <div id="listaClientesActuales" class="mb-4">
-                                        <?php if(empty($clientes_actuales)): ?>
-                                            <p class="text-muted italic">No hay huéspedes registrados.</p>
-                                        <?php endif; ?>
-                                        <?php foreach($clientes_actuales as $c): ?>
-                                            <div class="cliente-badge">
-                                                <span><i class="fas fa-check-circle text-success mr-2"></i> <strong><?php echo $c['ci']; ?></strong> - <?php echo $c['nombres']; ?> <?php echo $c['apellido1']; ?></span>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </div>
+                                <!-- LADO IZQUIERDO: CLIENTES (COPIA EXACTA DE HOSPEDAJE_NUEVO.PHP) -->
+                                <div class="col-md-5 border-end">
+                                    <h5 class="border-bottom pb-2 mb-3">SELECCIONAR CLIENTE(S)</h5>
 
-                                    <h5 class="fw-bold mb-3 border-bottom pb-2 text-success">BUSCAR / REGISTRAR NUEVO ACOMPAÑANTE</h5>
-                                    
-                                    <div class="row g-2 mb-3">
-                                        <div class="col-md-5">
-                                            <label class="form-label small fw-bold">País</label>
-                                            <select class="form-control" name="paisID" id="paisID">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-md-6">
+                                            <label for="paisID" class="form-label small fw-bold">País de Origen</label>
+                                            <select class="form-control" name="paisID" id="paisID" autofocus>
                                                 <?php
                                                 $sql_p = "SELECT paisID, nombre FROM paises WHERE _estado <> 'X' ORDER BY nombre ASC";
                                                 $paises = $db->obtenerTodo($sql_p);
@@ -141,53 +106,64 @@ $clientes_actuales = $db->obtenerTodo($sqlC, [$hospedajeID]);
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
-                                        <div class="col-md-7">
-                                            <label class="form-label small fw-bold">C.I. / Documento</label>
+                                        <div class="col-md-6">
+                                            <label for="ci" class="form-label small fw-bold">C.I. / Documento</label>
                                             <div class="input-group">
-                                                <input type="text" class="form-control" name="ci" id="ci" placeholder="Número de CI..." onkeydown="if(event.key==='Enter'){event.preventDefault(); buscarCliente();}">
-                                                <button type="button" class="btn btn-dark" onclick="buscarCliente()"><i class="fas fa-search"></i></button>
+                                                <input type="text" class="form-control" name="ci" id="ci" placeholder="CI..." onkeydown="if(event.key==='Enter'){event.preventDefault(); buscarCliente();}">
+                                                <button type="button" class="btn btn-primary" onclick="buscarCliente()"><i class="fas fa-search"></i></button>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- Contenedor para resultados de búsqueda -->
-                                    <div id="resultadosBusqueda" class="mb-3"></div>
+                                    <div id="resultadosBusqueda" class="mb-2"></div>
 
-                                    <!-- Contenedor para alerta de errores en búsqueda -->
-                                    <div id="mensajeAlertaCliente" class="alert alert-danger py-1 small" style="display:none;"></div>
+                                    <!-- Registro de cliente -->
+                                    <div id="seccionRegistro">
+                                        <?php include("formulario_registro_cliente.php"); ?>
+                                    </div>
 
-                                    <!-- Lista de clientes a añadir (JS inyectará aquí) -->
-                                    <div id="cardClientesSeleccionados" class="card bg-light mb-3" style="display:none;">
-                                        <div class="card-header py-1 bg-success text-white small fw-bold">PERSONAS POR AÑADIR</div>
+                                    <!-- LISTA DE CLIENTES SELECCIONADOS (Unified Card) -->
+                                    <div id="cardClientesSeleccionados" class="card mb-3" style="display: none;">
+                                        <div class="card-header py-1">
+                                            <small class="fw-bold">CLIENTES POR AÑADIR</small>
+                                        </div>
                                         <div class="list-group list-group-flush" id="listaClientesSeleccionados"></div>
                                     </div>
 
-                                    <!-- Formulario oculto para registro rápido de cliente -->
-                                    <div id="seccionRegistro" style="display:none;" class="bg-light p-3 border rounded">
-                                        <?php include("formulario_registro_cliente.php"); ?>
-                                    </div>
+                                    <div id="mensajeAlertaCliente" class="alert alert-danger mt-2 py-1 small" style="display: none;"></div>
                                 </div>
 
-                                <!-- SECCIÓN DERECHA: RESUMEN Y CONFIRMACIÓN -->
-                                <div class="col-md-6 ps-4">
-                                    <div class="bg-light p-3 rounded mb-4">
-                                        <h5 class="fw-bold text-dark"><i class="fas fa-info-circle mr-2"></i> RESUMEN ACTUAL</h5>
-                                        <ul class="list-unstyled mb-0">
-                                            <li class="mb-2"><strong>Tipo de Habitación:</strong> <?php echo $hospedaje['tipo_nombre']; ?></li>
-                                            <li class="mb-2"><strong>Ingreso:</strong> <?php echo date('d/m/Y H:i', strtotime($hospedaje['checkin'])); ?></li>
-                                            <li class="mb-2"><strong>Salida Pactada:</strong> <span class="text-danger fw-bold"><?php echo date('d/m/Y H:i', strtotime($hospedaje['checkout'])); ?></span></li>
-                                            <li><strong>Monto Total Pactado:</strong> Bs. <?php echo number_format($hospedaje['monto'], 2); ?></li>
-                                        </ul>
+                                <!-- LADO DERECHO: RESUMEN Y HUÉSPEDES ACTUALES -->
+                                <div class="col-md-7 ps-md-4">
+                                    <h5 class="border-bottom pb-2 mb-3">DATOS DE LA ESTANCIA - HAB. <?php echo $hospedaje['numero']; ?></h5>
+                                    
+                                    <div class="bg-light p-3 rounded mb-3 border">
+                                        <h6 class="fw-bold text-muted mb-2">HUÉSPEDES ACTUALMENTE EN HABITACIÓN:</h6>
+                                        <?php foreach($clientes_actuales as $c): ?>
+                                            <div class="mb-1">
+                                                <i class="fas fa-check-circle text-success me-2"></i> 
+                                                <strong><?php echo $c['ci']; ?></strong> - <?php echo $c['nombres']; ?> <?php echo $c['apellido1']; ?>
+                                            </div>
+                                        <?php endforeach; ?>
                                     </div>
 
-                                    <div class="alert alert-warning border-warning shadow-sm">
-                                        <h6 class="fw-bold"><i class="fas fa-exclamation-triangle"></i> IMPORTANTE</h6>
-                                        <p class="mb-0 small">Este proceso solo registra la entrada de nuevos acompañantes. <strong>No genera cargos adicionales</strong> ni modifica la fecha de salida. Si desea cobrar extra o extender el tiempo, use el módulo de <strong>Permanencia</strong>.</p>
+                                    <div class="alert alert-warning border-warning shadow-sm py-2">
+                                        <h6 class="fw-bold mb-1"><i class="fas fa-exclamation-triangle"></i> IMPORTANTE:</h6>
+                                        <p class="mb-0 small">Este proceso solo registra nuevos acompañantes. <b>No genera cargos adicionales</b> ni modifica la fecha de salida.</p>
                                     </div>
 
-                                    <div class="mt-5 d-flex justify-content-end gap-3">
-                                        <a href="../habitacioness/habitaciones.php" class="btn btn-outline-secondary px-4 fw-bold">CANCELAR</a>
-                                        <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm">CONFIRMAR REGISTRO</button>
+                                    <div class="mt-4 bg-white p-3 border rounded">
+                                        <div class="row">
+                                            <div class="col-6 mb-1 text-muted small">Ingreso:</div>
+                                            <div class="col-6 mb-1 fw-bold small"><?php echo date('d/m/Y H:i', strtotime($hospedaje['checkin'])); ?></div>
+                                            <div class="col-6 mb-1 text-muted small">Salida Pactada:</div>
+                                            <div class="col-6 mb-1 fw-bold text-danger small"><?php echo date('d/m/Y H:i', strtotime($hospedaje['checkout'])); ?></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-end gap-3 mt-5">
+                                        <button class="btn btn-secondary px-4" type="button" onclick="window.location.href='../habitacioness/habitaciones.php'">CANCELAR</button>
+                                        <button class="btn btn-primary px-5 fw-bold" type="submit">GUARDAR ACOMPAÑANTES</button>
                                     </div>
                                 </div>
                             </div>
@@ -200,24 +176,16 @@ $clientes_actuales = $db->obtenerTodo($sqlC, [$hospedajeID]);
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // CORRECCIÓN PARA EL ERROR "NOT FOCUSABLE": Deshabilitar campos ocultos (Sin bucle infinito)
             const observer = new MutationObserver(function(mutations) {
                 const frmReg = document.getElementById('formularioRegistro');
                 if (frmReg) {
                     const isHidden = (window.getComputedStyle(frmReg).display === 'none');
-                    const inputs = frmReg.querySelectorAll('input, select, textarea');
-                    inputs.forEach(input => {
-                        if (input.disabled !== isHidden) {
-                            input.disabled = isHidden;
-                        }
-                    });
+                    frmReg.querySelectorAll('input, select, textarea').forEach(i => i.disabled = isHidden);
                 }
             });
-            const config = { attributes: true, attributeFilter: ['style'] }; // Solo observar cambios de estilo
             const frmRegDiv = document.getElementById('formularioRegistro');
             if (frmRegDiv) {
-                observer.observe(frmRegDiv, config);
-                // Ejecutar una vez al inicio para sincronizar
+                observer.observe(frmRegDiv, { attributes: true, attributeFilter: ['style'] });
                 const isHidden = (window.getComputedStyle(frmRegDiv).display === 'none');
                 frmRegDiv.querySelectorAll('input, select, textarea').forEach(i => i.disabled = isHidden);
             }

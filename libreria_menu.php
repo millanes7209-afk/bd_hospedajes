@@ -33,15 +33,14 @@ if (isset($_SESSION["sesion_id_rol"])) {
             foreach ($rs_formas_pago as $forma_pago)
                 $saldos_forma_pago[$forma_pago['tipo']] = 0.00;
 
-            // Obtener sumatoria real de movimientos
-            $sql_saldos = "SELECT fp.tipo AS forma_pago_tipo,
-                            SUM(CASE WHEN m.tipo = 'INGRESO' THEN m.monto ELSE 0 END) AS total_ingresos,
-                            SUM(CASE WHEN m.tipo = 'EGRESO' THEN m.monto ELSE 0 END) AS total_egresos
-                           FROM movimientos m
-                           INNER JOIN formas_pago fp ON m.formapagoID = fp.formapagoID
-                           WHERE m.cajaID = ? AND m.usuarioID = ? AND m.empresaID = ? AND m._estado = 'A'
-                           GROUP BY fp.tipo";
-            $rs_saldo_acumulado = $db->obtenerTodo($sql_saldos, [$caja_abierta_id, $usuarioID, $empresaID]);
+            // Obtener sumatoria real de movimientos desde la vista unificada
+            $sql_saldos = "SELECT forma_pago AS forma_pago_tipo,
+                            SUM(CASE WHEN tipo = 'INGRESO' THEN monto ELSE 0 END) AS total_ingresos,
+                            SUM(CASE WHEN tipo = 'EGRESO' THEN monto ELSE 0 END) AS total_egresos
+                           FROM v_movimientos_caja
+                           WHERE cajaID = ? AND empresaID = ?
+                           GROUP BY forma_pago";
+            $rs_saldo_acumulado = $db->obtenerTodo($sql_saldos, [$caja_abierta_id, $empresaID]);
 
             if ($rs_saldo_acumulado) {
                 foreach ($rs_saldo_acumulado as $saldo) {

@@ -28,14 +28,13 @@ if (!$recInfo) {
     exit();
 }
 
-// 2. Obtener Movimientos de esta recaudación
+// 2. Obtener Movimientos de esta recaudación desde la vista unificada
 $sqlMovs = "SELECT 
-                m.movimientoID, m.tipo, m.concepto, m.detalle, m.monto, m._fec_insercion,
-                fp.tipo AS forma_pago, m.cajaID
-            FROM movimientos m
-            INNER JOIN formas_pago fp ON m.formapagoID = fp.formapagoID
-            WHERE m.recaudacionID = ? AND m.empresaID = ? AND m._estado <> 'X'
-            ORDER BY m.movimientoID ASC";
+                movimientoID, tipo, concepto, monto, fecha as _fec_insercion,
+                forma_pago, cajaID
+            FROM v_movimientos_caja
+            WHERE recaudacionID = ? AND empresaID = ?
+            ORDER BY movimientoID ASC";
 $movimientos = $db->obtenerTodo($sqlMovs, [$recaudacionID, $empresaID]);
 
 // 3. Renderizar Vista

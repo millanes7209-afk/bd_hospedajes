@@ -31,45 +31,54 @@ try {
 
     $nuevo_monto_total = $h_actual['monto'] + $monto_adicional;
 
-    // 3. Registrar los Movimientos de Caja
+    // 2. REGISTRO CONTABLE (ingresos + ingreso_pagos)
+    $cuenta = $db->obtenerFila("SELECT cuentaID FROM cuentas WHERE codigo = '402' AND empresaID = ?", [$empresaID]);
+    if (!$cuenta) throw new Exception("Error Contable: No se encontró la cuenta [402] para esta empresa.");
+    $cuentaID = $cuenta['cuentaID'];
+
+    // Determinar concepto y estado según la acción
+    $concepto = ($tipo_accion === 'SALIR') ? "COBRO EXTRA SALIDA MOMENTÁNEO" : "EXTENSIÓN MOMENTÁNEO (+1 Hora)";
+    $estado_h = ($tipo_accion === 'SALIR') ? 'FINALIZADO' : 'ACTIVO';
+    $ahora = date("Y-m-d H:i:s");
+
+    // 5. INSERTAR EN LA SUPER-TABLA INGRESOS
+    $sqlI = "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    $paramsI = [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto_adicional, $concepto . " HAB. " . $habitacionID, $ahora, $usuarioID];
+    
+    if ($db->ejecutar($sqlI, $paramsI) === false) throw new Exception("Error al registrar el ingreso maestro.");
+    $ingresoID = $db->lastInsertId();
+
+    // 6. DETALLE DE PAGOS
     foreach ($pagos as $pago) {
         $monto_pago = floatval(str_replace(',', '.', $pago['monto']));
         $formaPagoID = $pago['formapagoID'] ?? null;
-
         if ($monto_pago > 0 && $formaPagoID) {
-            $sql_mov = "INSERT INTO movimientos (
-                            cajaID, empresaID, formapagoID, usuarioID, 
-                            referenciaID, tipo, categoria, monto, 
-                            concepto, detalle, _fec_insercion, _estado, _usuario
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'A', ?)";
-            
-            $concepto = ($tipo_accion === 'SALIR') ? "COBRO DEUDA MOMENTÁNEO" : "EXTENSIÓN MOMENTÁNEO";
-            $detalle = "Habitación " . $habitacionID . " - " . ($tipo_accion === 'SALIR' ? "Salida" : "Extensión hasta $nueva_salida");
-
-            $params_mov = [
-                $cajaID, $empresaID, $formaPagoID, $usuarioID,
-                $hospedajeID, 'INGRESO', 'MOMENTANEO', $monto_pago,
-                $concepto, $detalle, $usuarioID
-            ];
-
-            $res_mov = $db->ejecutar($sql_mov, $params_mov);
-            if (!$res_mov) throw new Exception("Error al registrar el movimiento de pago.");
+            $sqlIP = "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto) VALUES (?, ?, ?)";
+            if ($db->ejecutar($sqlIP, [$ingresoID, $formaPagoID, $monto_pago]) === false) {
+                throw new Exception("Error al registrar el desglose del pago.");
+            }
         }
     }
 
-    // 4. Actualizar el Hospedaje
-    $estado_h = ($tipo_accion === 'SALIR') ? 'FINALIZADO' : 'ACTIVO';
-    $sql_upd_h = "UPDATE hospedajes SET 
-                    monto = ?, 
-                    checkout = ?, 
-                    estado = ?, 
-                    _fec_modificacion = NOW() 
-                  WHERE hospedajeID = ?";
-    $res_upd_h = $db->ejecutar($sql_upd_h, [$nuevo_monto_total, $nueva_salida, $estado_h, $hospedajeID]);
-    if (!$res_upd_h) throw new Exception("Error al actualizar el registro de hospedaje.");
+    // 7. ACTUALIZAR HOSPEDAJE ANTERIOR (INACTIVAR)
+    $db->ejecutar("UPDATE hospedajes SET estado = 'INACTIVO' WHERE hospedajeID = ?", [$hospedajeID]);
 
-    // 5. Actualizar la Habitación
-    $estado_hab = ($tipo_accion === 'SALIR') ? 'LIMPIEZA' : 'MOMENTANEO';
+    // 8. CREAR NUEVO HOSPEDAJE (Técnico para el pago)
+    $sqlNewH = "INSERT INTO hospedajes (empresaID, habitacionID, cajaID, ingresoID, checkin, checkout, monto, estado, observaciones, 
+                                      _fec_insercion, _fec_modificacion, _estado, _usuario) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $paramsNewH = [
+        $empresaID, $habitacionID, $cajaID, $ingresoID, $ahora, $nueva_salida, $monto_adicional, 
+        $estado_h, $concepto, $ahora, $ahora, 'A', $usuarioID
+    ];
+    
+    if ($db->ejecutar($sqlNewH, $paramsNewH) === false) {
+        throw new Exception("Error al registrar el nuevo registro de hospedaje vinculado al pago.");
+    }
+
+    // 9. Actualizar la Habitación
+    $estado_hab = ($tipo_accion === 'SALIR') ? 'LIMPIEZA' : 'OCUPADA'; // Cambiado de MOMENTANEO a OCUPADA para consistencia
     $sql_upd_hab = "UPDATE habitaciones SET estado = ? WHERE habitacionID = ?";
     $res_upd_hab = $db->ejecutar($sql_upd_hab, [$estado_hab, $habitacionID]);
     if (!$res_upd_hab) throw new Exception("Error al actualizar el estado de la habitación.");

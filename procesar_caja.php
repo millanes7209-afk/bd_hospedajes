@@ -61,14 +61,22 @@ if (isset($_POST['accion'])) {
         $result = $db->ejecutar($sql_cerrar_caja, array($fecha_cierre, $caja_abierta_id, $usuarioID, $empresaID));
     
         if ($result) {
-            // Obtener saldos por forma de pago antes de cerrar
-            $sql_saldos = "SELECT fp.formapagoID, fp.tipo, SUM(m.monto) as total_monto
-                           FROM movimientos m
-                           INNER JOIN formas_pago fp ON m.formapagoID = fp.formapagoID
-                           WHERE m.cajaID = ? AND m.empresaID = ?
-                           GROUP BY fp.formapagoID
-                           HAVING SUM(m.monto) > 0";
-            $saldos = $db->obtenerTodo($sql_saldos, array($caja_abierta_id, $empresaID));
+            // Obtener saldos netos por forma de pago (Ingresos - Egresos) antes de cerrar
+            $sql_saldos = "SELECT formapagoID, SUM(monto_neto) as total_monto 
+                            FROM (
+                                SELECT ip.formapagoID, SUM(ip.monto) as monto_neto 
+                                FROM ingreso_pagos ip 
+                                JOIN ingresos i ON ip.ingresoID = i.ingresoID 
+                                WHERE i.cajaID = ? AND i._estado <> 'X' 
+                                GROUP BY ip.formapagoID
+                                UNION ALL
+                                SELECT ep.formapagoID, SUM(ep.monto) * -1 as monto_neto 
+                                FROM egreso_pagos ep 
+                                JOIN egresos e ON ep.egresoID = e.egresoID 
+                                WHERE e.cajaID = ? AND e._estado <> 'X' 
+                                GROUP BY ep.formapagoID
+                            ) as t GROUP BY formapagoID";
+            $saldos = $db->obtenerTodo($sql_saldos, array($caja_abierta_id, $caja_abierta_id));
             
             // Crear snapshots en cierre_cajas con auditoría completa
             foreach ($saldos as $saldo) {

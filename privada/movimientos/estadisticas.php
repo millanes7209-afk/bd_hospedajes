@@ -175,7 +175,7 @@ if (!isset($_SESSION['sesion_id_usuario']) || !in_array($_SESSION['sesion_rol'],
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover table-stat mb-0" id="tablaPersonal">
-                            <thead><tr><th>RECEPCIONISTA</th><th class="text-center">OP.</th><th class="text-end">RECAUDADO</th></tr></thead>
+                            <thead><tr><th>RECEPCIONISTA</th><th class="text-center">OP.</th><th class="text-end">ING.</th><th class="text-end">EGR.</th><th class="text-end">NETO</th></tr></thead>
                             <tbody></tbody>
                         </table>
                     </div>
@@ -433,7 +433,9 @@ function renderizarTablas(data) {
             tbodyPersonal.innerHTML += `<tr>
                 <td><i class="fas fa-user-tie text-muted me-2"></i> ${p.recepcionista}</td>
                 <td class="text-center">${p.operaciones}</td>
-                <td class="text-end fw-bold text-success">Bs. ${parseFloat(p.dinero_ingresado).toFixed(2)}</td>
+                <td class="text-end text-success">${parseFloat(p.ingresos).toFixed(0)}</td>
+                <td class="text-end text-danger">${parseFloat(p.egresos).toFixed(0)}</td>
+                <td class="text-end fw-bold ${p.neto >= 0 ? 'text-primary' : 'text-danger'}">${parseFloat(p.neto).toFixed(0)}</td>
             </tr>`;
         });
     }

@@ -50,18 +50,59 @@ try {
                WHERE hospedajeID = ?";
     $db->ejecutar($sqlOld, [$hospedajeID_anterior]);
 
-    // 2. CREAR NUEVO HOSPEDAJE (LA PERMANENCIA)
-    $sqlNew = "INSERT INTO hospedajes (empresaID, habitacionID, cajaID, checkin, checkout, monto, estado, observaciones, 
+    // 2. REGISTRO CONTABLE INTELIGENTE (Hereda el tipo del hospedaje anterior)
+    // Buscamos el código de cuenta del ingreso anterior (401 o 402)
+    $sqlTipoAnterior = "SELECT c.codigo, c.cuentaID 
+                        FROM hospedajes h
+                        JOIN ingresos i ON h.ingresoID = i.ingresoID
+                        JOIN cuentas c ON i.cuentaID = c.cuentaID
+                        WHERE h.hospedajeID = ?";
+    $tipoAnterior = $db->obtenerFila($sqlTipoAnterior, [$hospedajeID_anterior]);
+    
+    if (!$tipoAnterior) {
+        // Fallback si no se encuentra (por registros antiguos): usar Hospedaje (401)
+        $codigo_cuenta = '401';
+        $cuenta = $db->obtenerFila("SELECT cuentaID FROM cuentas WHERE codigo = '401' AND empresaID = ?", [$empresaID]);
+        $cuentaID = $cuenta['cuentaID'];
+    } else {
+        $codigo_cuenta = $tipoAnterior['codigo'];
+        $cuentaID = $tipoAnterior['cuentaID'];
+    }
+
+    $tipo_label = ($codigo_cuenta == '402') ? 'MOMENTANEO' : 'HOSPEDAJE';
+
+    // Cabecera de Ingreso
+    $sqlI = "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    $concepto_i = "EXTENSIÓN $tipo_label HAB. $habitacion_numero" . ($descripcion ? " - $descripcion" : "");
+    $paramsI = [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto_total, $concepto_i, $ahora, $usuarioID];
+    
+    if ($db->ejecutar($sqlI, $paramsI) === false) throw new Exception("Error al registrar el ingreso maestro.");
+    $ingresoID = $db->lastInsertId();
+
+    // Detalle de Pagos
+    foreach ($pagos as $pago) {
+        $monto_pago = floatval(str_replace(',', '.', $pago['monto']));
+        if ($monto_pago > 0) {
+            $sqlIP = "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto) VALUES (?, ?, ?)";
+            if ($db->ejecutar($sqlIP, [$ingresoID, $pago['formaPagoID'], $monto_pago]) === false) {
+                throw new Exception("Error al registrar el desglose del pago.");
+            }
+        }
+    }
+
+    // 3. CREAR NUEVO HOSPEDAJE (LA PERMANENCIA) vinculado al ingresoID
+    $sqlNew = "INSERT INTO hospedajes (empresaID, habitacionID, cajaID, ingresoID, checkin, checkout, monto, estado, observaciones, 
                                      _fec_insercion, _fec_modificacion, _estado, _usuario) 
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $paramsNew = [
-        $empresaID, $habitacionID, $cajaID, $ahora, $checkout, $monto_total, 
+        $empresaID, $habitacionID, $cajaID, $ingresoID, $ahora, $checkout, $monto_total, 
         'ACTIVO', $descripcion, $ahora, $ahora, 'A', $usuarioID
     ];
     $db->ejecutar($sqlNew, $paramsNew);
     $nuevoHospedajeID = $db->lastInsertId();
 
-    // 3. VINCULAR TODOS LOS CLIENTES AL NUEVO REGISTRO
+    // 4. VINCULAR TODOS LOS CLIENTES AL NUEVO REGISTRO
     foreach ($clientes as $clienteID) {
         $sqlC = "INSERT INTO hospedajes_clientes (empresaID, hospedajeID, clienteID, 
                                                 _fec_insercion, _fec_modificacion, _estado, _usuario) 
@@ -69,26 +110,12 @@ try {
         $db->ejecutar($sqlC, [$empresaID, $nuevoHospedajeID, $clienteID, $ahora, $ahora, 'A', $usuarioID]);
     }
 
-    // 4. REGISTRAR LOS NUEVOS PAGOS
-    foreach ($pagos as $pago) {
-            $monto_pago = floatval(str_replace(',', '.', $pago['monto']));
-            if ($monto_pago > 0) {
-                // ESTRUCTURA DE 15 COLUMNAS PARA COINCIDIR CON registrar_hospedaje.php
-                $sqlM = "INSERT INTO movimientos (cajaID, empresaID, formapagoID, usuarioID, recaudacionID, referenciaID, 
-                                                tipo, categoria, monto, concepto, detalle, entregado, 
-                                                _fec_insercion, _fec_modificacion, _estado, _usuario) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                $paramsM = [
-                    $cajaID, $empresaID, $pago['formaPagoID'], $usuarioID, null, $nuevoHospedajeID, 
-                    'INGRESO', 'HOSPEDAJE', $monto_pago, "HOSPEDAJE (EXTENSIÓN) HAB. " . $habitacion_numero, $descripcion, 0,
-                    $ahora, $ahora, 'A', $usuarioID
-                ];
-                $db->ejecutar($sqlM, $paramsM);
-            }
-    }
+    // 5. ASEGURAR QUE LA HABITACIÓN VUELVA A ESTADO OCUPADA (Limpiar DEUDA)
+    $sqlHab = "UPDATE habitaciones SET estado = 'OCUPADA' WHERE habitacionID = ?";
+    $db->ejecutar($sqlHab, [$habitacionID]);
 
     $db->commit();
-    $_SESSION['mensaje'] = "Permanencia registrada correctamente en Habitación " . $habitacion_numero;
+    $_SESSION['mensaje'] = "Permanencia ($tipo_label) registrada correctamente en Habitación " . $habitacion_numero;
     $_SESSION['mensaje_tipo'] = "success";
     header("Location: ../habitacioness/habitaciones.php");
 

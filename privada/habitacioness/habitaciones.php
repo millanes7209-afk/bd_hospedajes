@@ -14,16 +14,16 @@ $sql = "SELECT  thab.tipohabitacionID, hab.habitacionID, hab.bano, hab.tv, hab.v
                  JOIN hospedajes_clientes hc ON h.hospedajeID = hc.hospedajeID 
                  JOIN clientes c ON hc.clienteID = c.clienteID 
                  WHERE h.habitacionID = hab.habitacionID 
-                 AND h.estado = 'ACTIVO' AND h._estado <> 'X' AND hc._estado <> 'X' AND c._estado <> 'X') AS cliente_activo,
+                 AND h.estado IN ('ACTIVO', 'DEUDA') AND h._estado <> 'X' AND hc._estado <> 'X' AND c._estado <> 'X') AS cliente_activo,
                 (SELECT h.checkout 
                  FROM hospedajes h 
                  WHERE h.habitacionID = hab.habitacionID 
-                 AND h.estado = 'ACTIVO' AND h._estado <> 'X'
+                 AND h.estado IN ('ACTIVO', 'DEUDA') AND h._estado <> 'X'
                  ORDER BY h.hospedajeID DESC LIMIT 1) AS checkout_activo,
                 (SELECT h.monto 
                  FROM hospedajes h 
                  WHERE h.habitacionID = hab.habitacionID 
-                 AND h.estado = 'ACTIVO' AND h._estado <> 'X'
+                 AND h.estado IN ('ACTIVO', 'DEUDA') AND h._estado <> 'X'
                  ORDER BY h.hospedajeID DESC LIMIT 1) AS precio_pactado
         FROM    habitaciones hab
         JOIN    tipo_habitaciones thab ON hab.tipohabitacionID = thab.tipohabitacionID
@@ -110,7 +110,9 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                                 $iter_date_limite->modify('+1 day');
                             }
                             
-                            $deuda_final = $dias_cobro * $habitacion['precio']; 
+                            // Si no hay precio pactado (raro), usamos el precio base
+                            $precio_diario = !empty($habitacion['precio_pactado']) ? $habitacion['precio_pactado'] : $habitacion['precio'];
+                            $deuda_final = $dias_cobro * $precio_diario; 
                             $habitacion['precio_pactado'] = $deuda_final; // Sobrescribimos visualmente para el botón
                         }
 
@@ -141,9 +143,18 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                         ?>
                         <button id="habitacion-<?php echo $habitacion['habitacionID']; ?>" class="<?php echo $btnClass; ?>"
                             <?php echo $boton_estado; ?>
-                            onclick="handleHabitacionClick('<?php echo $habitacion['estado']; ?>', '<?php echo $habitacion['numero']; ?>', '<?php echo $habitacion['nombre']; ?>', '<?php echo ($habitacion['estado'] === 'DEUDA' ? $habitacion['precio_pactado'] : $habitacion['precio']); ?>', '<?php echo $habitacion['habitacionID']; ?>')">
+                            onclick="handleHabitacionClick('<?php echo $habitacion['estado']; ?>', '<?php echo $habitacion['numero']; ?>', '<?php echo $habitacion['nombre']; ?>', '<?php echo ($habitacion['estado'] === 'DEUDA' ? $habitacion['precio_pactado'] : (!empty($habitacion['precio_pactado']) ? $habitacion['precio_pactado'] : $habitacion['precio'])); ?>', '<?php echo $habitacion['habitacionID']; ?>')">
 
-                            <strong><?php echo $habitacion['numero']; ?></strong>
+                            <?php if ($habitacion['estado'] === 'DEUDA'): ?>
+                                <span>DEUDA</span>
+                                <strong><?php echo $habitacion['numero']; ?></strong>
+                                <div style="font-size: 0.75em; font-weight: bold; margin-top: 2px; opacity: 0.9;">
+                                    Bs. <?php echo $habitacion['precio_pactado']; ?>
+                                </div>
+                            <?php else: ?>
+                                <span><?php echo $habitacion['estado']; ?></span>
+                                <strong><?php echo $habitacion['numero']; ?></strong>
+                            <?php endif; ?>
 
                             <?php if (($habitacion['estado'] === 'OCUPADA' || $habitacion['estado'] === 'DEUDA') && !empty($habitacion['cliente_activo'])): ?>
                                 <!-- Ficha Flotante (Tooltip) para OCUPADAS y DEUDAS -->
