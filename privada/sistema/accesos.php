@@ -195,8 +195,6 @@ $accesos = $db->obtenerTodo($sql);
     </form>
 
     <script>
-        const modal = new bootstrap.Modal(document.getElementById('modalAcceso'));
-        
         // Datos PHP pasados a JS
         const accesosActuales = <?= json_encode($accesos) ?>;
         const todasLasOpciones = <?= json_encode($opciones_select) ?>;
@@ -204,6 +202,7 @@ $accesos = $db->obtenerTodo($sql);
         function abrirModal() {
             document.getElementById('selectRol').value = "";
             document.getElementById('selectOpcion').innerHTML = '<option value="">-- Primero seleccione un rol --</option>';
+            let modal = new bootstrap.Modal(document.getElementById('modalAcceso'));
             modal.show();
         }
 
@@ -244,7 +243,7 @@ $accesos = $db->obtenerTodo($sql);
             document.getElementById('revAccesoID').value = id;
             document.getElementById('revRolNombre').innerText = rol;
             document.getElementById('revOpcionNombre').innerText = opcion;
-            const modalRevocar = new bootstrap.Modal(document.getElementById('modalConfirmarRevocar'));
+            let modalRevocar = new bootstrap.Modal(document.getElementById('modalConfirmarRevocar'));
             modalRevocar.show();
         }
 

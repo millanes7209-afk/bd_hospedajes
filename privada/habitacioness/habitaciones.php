@@ -5,7 +5,10 @@ require_once("../../libreria_menu.php");
 
 $empresaID = $_SESSION['empresaID'];
 
-// Consulta SQL para obtener habitaciones filtradas por empresa actual
+// Ajustar orden según preferencia del usuario
+$orderBy = (isset($_GET['orden']) && $_GET['orden'] == 'tipo') ? "thab.nombre, hab.numero ASC" : "hab.numero ASC";
+
+// Consulta SQL actualizada
 $sql = "SELECT  thab.tipohabitacionID, hab.habitacionID, hab.bano, hab.tv, hab.ventilador, 
                 thab.nombre, thab.precio, hab.estado as estado, hab.numero as numero, 
                 hab.descripcion as descripcion,
@@ -30,9 +33,7 @@ $sql = "SELECT  thab.tipohabitacionID, hab.habitacionID, hab.bano, hab.tv, hab.v
         WHERE   thab._estado <> 'X'
         AND     hab._estado <> 'X'
         AND     hab.empresaID = ?
-        ORDER BY hab.numero ASC";
-
-
+        ORDER BY $orderBy";
 
 $rs = $db->obtenerTodo($sql, array($empresaID));
 
@@ -73,7 +74,15 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
         <div class="card-body">
             <div class="d-flex flex-wrap justify-content-center">
                 <?php if ($rs): ?>
-                    <?php foreach ($rs as $habitacion): ?>
+                    <?php 
+                    $tipoActual = "";
+                    foreach ($rs as $habitacion): 
+                        // Lógica de Títulos por Agrupación
+                        if (isset($_GET['orden']) && $_GET['orden'] == 'tipo' && $tipoActual != $habitacion['nombre']) {
+                            $tipoActual = $habitacion['nombre'];
+                            echo '<div class="w-100 mt-4 mb-2"><h4 class="text-primary border-bottom pb-2 fw-bold"><i class="fas fa-tag"></i> ' . mb_strtoupper($tipoActual) . '</h4></div>';
+                        }
+                    ?>
                         <?php
                         // LÓGICA SMART BIDIRECCIONAL: Sincronización Real de Ocupación
                 
@@ -141,7 +150,10 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                                 $btnClass .= ' btn btn-dark';
                         }
                         ?>
-                        <button id="habitacion-<?php echo $habitacion['habitacionID']; ?>" class="<?php echo $btnClass; ?>"
+                        <button id="habitacion-<?php echo $habitacion['habitacionID']; ?>" 
+                            class="<?php echo $btnClass; ?> habitacion-card"
+                            data-tipo-id="<?php echo $habitacion['tipohabitacionID']; ?>"
+                            data-tipo-nombre="<?php echo $habitacion['nombre']; ?>"
                             <?php echo $boton_estado; ?>
                             onclick="handleHabitacionClick('<?php echo $habitacion['estado']; ?>', '<?php echo $habitacion['numero']; ?>', '<?php echo $habitacion['nombre']; ?>', '<?php echo ($habitacion['estado'] === 'DEUDA' ? $habitacion['precio_pactado'] : (!empty($habitacion['precio_pactado']) ? $habitacion['precio_pactado'] : $habitacion['precio'])); ?>', '<?php echo $habitacion['habitacionID']; ?>')">
 
@@ -220,6 +232,20 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
 
     <!-- LÓGICA DE GESTIÓN (Modular) -->
     <script src="js/habitaciones_gestion.js?v=<?php echo time(); ?>"></script>
+    <script>
+        function filtrarHabitacionesPorTipo(tipoID) {
+            const habitaciones = document.querySelectorAll('.habitacion-card');
+            habitaciones.forEach(hab => {
+                if (tipoID === 'TODOS' || hab.getAttribute('data-tipo-id') === tipoID) {
+                    hab.style.display = ''; 
+                    hab.classList.remove('d-none');
+                } else {
+                    hab.style.display = 'none';
+                    hab.classList.add('d-none');
+                }
+            });
+        }
+    </script>
 </body>
 
 </html>

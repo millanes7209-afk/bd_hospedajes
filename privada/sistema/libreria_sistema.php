@@ -15,6 +15,7 @@ if (!isset($_SESSION['sesion_id_usuario']) || strtoupper($_SESSION['sesion_rol']
 <head>
     <meta charset="UTF-8">
     <link href="../../bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <script src="../../bootstrap/js/bootstrap.bundle.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }

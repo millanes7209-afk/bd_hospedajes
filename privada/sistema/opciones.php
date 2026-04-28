@@ -18,17 +18,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         $opcion = strtoupper(trim($_POST['opcion']));
         $contenido = trim($_POST['contenido']);
         $grupoID = (int) $_POST['grupoID'];
+        $funcionalidadID = (int) $_POST['funcionalidadID'];
         $orden = (int) $_POST['orden'];
         $opcionID = $_POST['opcionID'] ?? null;
 
         if ($opcionID) {
             // Actualizar
-            $sql = "UPDATE opciones SET grupoID = ?, opcion = ?, contenido = ?, orden = ?, _fec_modificacion = NOW(), _usuario = ? WHERE opcionID = ?";
-            $db->ejecutar($sql, [$grupoID, $opcion, $contenido, $orden, $usuarioID, $opcionID]);
+            $sql = "UPDATE opciones SET grupoID = ?, funcionalidadID = ?, opcion = ?, contenido = ?, orden = ?, _fec_modificacion = NOW(), _usuario = ? WHERE opcionID = ?";
+            $db->ejecutar($sql, [$grupoID, $funcionalidadID, $opcion, $contenido, $orden, $usuarioID, $opcionID]);
         } else {
-            // Insertar - EL TRIGGER HARÁ EL RESTO PARA EL ADMIN
-            $sql = "INSERT INTO opciones (grupoID, opcion, contenido, orden, _fec_insercion, _usuario, _estado) VALUES (?, ?, ?, ?, NOW(), ?, 'A')";
-            $db->ejecutar($sql, [$grupoID, $opcion, $contenido, $orden, $usuarioID]);
+            // Insertar
+            $sql = "INSERT INTO opciones (grupoID, funcionalidadID, opcion, contenido, orden, _fec_insercion, _usuario, _estado) VALUES (?, ?, ?, ?, ?, NOW(), ?, 'A')";
+            $db->ejecutar($sql, [$grupoID, $funcionalidadID, $opcion, $contenido, $orden, $usuarioID]);
         }
     } elseif ($accion === 'eliminar') {
         $opcionID = $_POST['opcionID'];
@@ -42,10 +43,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 // Obtener listado de grupos para el select
 $grupos_select = $db->obtenerTodo("SELECT grupoID, grupo FROM grupos WHERE _estado <> 'X' ORDER BY grupo");
 
+// Obtener listado de funcionalidades para el select
+$funcionalidades_select = $db->obtenerTodo("SELECT funcionalidadID, nombre FROM funcionalidades WHERE _estado <> 'X' ORDER BY nombre");
+
 // Obtener listado de opciones
-$sql = "SELECT o.*, g.grupo 
+$sql = "SELECT o.*, g.grupo, f.nombre as funcionalidad
         FROM opciones o 
         INNER JOIN grupos g ON o.grupoID = g.grupoID
+        LEFT JOIN funcionalidades f ON o.funcionalidadID = f.funcionalidadID
         WHERE o._estado <> 'X' 
         ORDER BY g.grupo, o.orden ASC";
 $opciones = $db->obtenerTodo($sql);
@@ -92,6 +97,7 @@ $opciones = $db->obtenerTodo($sql);
                                     <th>Grupo</th>
                                     <th>Nombre Opción (Tab)</th>
                                     <th>Archivo (Contenido)</th>
+                                    <th>Módulo / Funcionalidad</th>
                                     <th class="text-center">Orden</th>
                                     <th width="15%" class="text-center">Acciones</th>
                                 </tr>
@@ -102,10 +108,11 @@ $opciones = $db->obtenerTodo($sql);
                                         <td><span class=""><?= htmlspecialchars($o['grupo']) ?></span></td>
                                         <td class="fw-bold"><?= htmlspecialchars($o['opcion']) ?></td>
                                         <td><code><?= htmlspecialchars($o['contenido']) ?></code></td>
+                                        <td><span class="badge bg-light text-dark border"><?= $o['funcionalidad'] ? htmlspecialchars($o['funcionalidad']) : 'BÁSICO' ?></span></td>
                                         <td class="text-center"><?= $o['orden'] ?></td>
                                         <td class="text-center">
                                             <button class="btn btn-info btn-sm text-white"
-                                                onclick="editarOpcion(<?= $o['opcionID'] ?>, <?= $o['grupoID'] ?>, '<?= addslashes($o['opcion']) ?>', '<?= addslashes($o['contenido']) ?>', <?= $o['orden'] ?>)">
+                                                onclick="editarOpcion(<?= $o['opcionID'] ?>, <?= $o['grupoID'] ?>, '<?= addslashes($o['opcion']) ?>', '<?= addslashes($o['contenido']) ?>', <?= $o['orden'] ?>, <?= (int)$o['funcionalidadID'] ?>)">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button class="btn btn-danger btn-sm"
@@ -130,7 +137,7 @@ $opciones = $db->obtenerTodo($sql);
                 <form method="post">
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalTitle">Nueva Opción</h5>
-                        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="border:none; background:none; font-size:1.5rem;">&times;</button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <input type="hidden" name="accion" value="guardar">
@@ -141,6 +148,14 @@ $opciones = $db->obtenerTodo($sql);
                             <select name="grupoID" id="selGrupo" class="form-control" required>
                                 <?php foreach ($grupos_select as $gs): ?>
                                     <option value="<?= $gs['grupoID'] ?>"><?= htmlspecialchars($gs['grupo']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Módulo / Funcionalidad:</label>
+                            <select name="funcionalidadID" id="selFuncionalidad" class="form-control" required>
+                                <?php foreach ($funcionalidades_select as $fs): ?>
+                                    <option value="<?= $fs['funcionalidadID'] ?>"><?= htmlspecialchars($fs['nombre']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -193,31 +208,34 @@ $opciones = $db->obtenerTodo($sql);
     </form>
 
     <script>
-        const modal = new bootstrap.Modal(document.getElementById('modalOpcion'));
-
         function abrirModal() {
             document.getElementById('modalTitle').innerText = 'Nueva Opción';
             document.getElementById('opcionID').value = '';
+            document.getElementById('selGrupo').selectedIndex = 0;
+            document.getElementById('selFuncionalidad').value = '1'; // Por defecto Operación Base
             document.getElementById('txtOpcion').value = '';
             document.getElementById('txtContenido').value = '';
             document.getElementById('txtOrden').value = '10';
+            let modal = new bootstrap.Modal(document.getElementById('modalOpcion'));
             modal.show();
         }
 
-        function editarOpcion(id, grupoId, nombre, archivo, orden) {
+        function editarOpcion(id, grupoId, nombre, archivo, orden, funcId) {
             document.getElementById('modalTitle').innerText = 'Editar Opción';
             document.getElementById('opcionID').value = id;
             document.getElementById('selGrupo').value = grupoId;
+            document.getElementById('selFuncionalidad').value = funcId;
             document.getElementById('txtOpcion').value = nombre;
             document.getElementById('txtContenido').value = archivo;
             document.getElementById('txtOrden').value = orden;
+            let modal = new bootstrap.Modal(document.getElementById('modalOpcion'));
             modal.show();
         }
 
         function eliminarOpcion(id, nombre) {
             document.getElementById('delOpcionID').value = id;
             document.getElementById('delOpcionNombre').innerText = nombre;
-            const modalEliminar = new bootstrap.Modal(document.getElementById('modalConfirmarEliminar'));
+            let modalEliminar = new bootstrap.Modal(document.getElementById('modalConfirmarEliminar'));
             modalEliminar.show();
         }
 

@@ -453,6 +453,19 @@ if (isset($_SESSION["sesion_id_rol"])) {
                         <div class="leyenda-item"><span class="leyenda-dot dot-mantenimiento"></span> MANTENIMIENTO</div>
                     </div>
 
+                    <!-- Botón de Agrupación -->
+                    <div class="header-filter mx-3">
+                        <?php if (isset($_GET['orden']) && $_GET['orden'] == 'tipo'): ?>
+                            <a href="habitaciones.php" class="btn btn-sm btn-outline-primary fw-bold">
+                                <i class="fas fa-sort-numeric-down"></i> VER GENERAL
+                            </a>
+                        <?php else: ?>
+                            <a href="habitaciones.php?orden=tipo" class="btn btn-sm btn-outline-primary fw-bold">
+                                <i class="fas fa-layer-group"></i> VER POR TIPO
+                            </a>
+                        <?php endif; ?>
+                    </div>
+
                     <!-- Botones de Acción -->
                     <div class="header-actions">
                         <button type="button" class="btn-header-acc btn-header-ingreso" onclick="mostrarModalIngreso()"

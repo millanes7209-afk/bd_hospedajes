@@ -167,12 +167,11 @@ $grupos = $db->obtenerTodo($sql);
     </form>
 
     <script>
-        const modal = new bootstrap.Modal(document.getElementById('modalGrupo'));
-
         function abrirModal() {
             document.getElementById('modalTitle').innerText = 'Nuevo Grupo';
             document.getElementById('grupoID').value = '';
             document.getElementById('txtGrupo').value = '';
+            let modal = new bootstrap.Modal(document.getElementById('modalGrupo'));
             modal.show();
         }
 
@@ -180,13 +179,14 @@ $grupos = $db->obtenerTodo($sql);
             document.getElementById('modalTitle').innerText = 'Editar Grupo';
             document.getElementById('grupoID').value = id;
             document.getElementById('txtGrupo').value = nombre;
+            let modal = new bootstrap.Modal(document.getElementById('modalGrupo'));
             modal.show();
         }
 
         function eliminarGrupo(id, nombre) {
             document.getElementById('delGrupoID').value = id;
             document.getElementById('delGrupoNombre').innerText = nombre;
-            const modalEliminar = new bootstrap.Modal(document.getElementById('modalConfirmarEliminar'));
+            let modalEliminar = new bootstrap.Modal(document.getElementById('modalConfirmarEliminar'));
             modalEliminar.show();
         }
 

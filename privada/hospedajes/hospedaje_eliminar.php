@@ -11,10 +11,11 @@ $hospedajeID = $_POST['hospedajeID'] ?? null;
 $motivo = $_POST['motivo'] ?? 'Motivo no especificado';
 $usuarioID = $_SESSION["sesion_id_usuario"] ?? null;
 $empresaID = $_SESSION["empresaID"] ?? null;
+$caja_abierta_id = $_SESSION["caja_abierta_id"] ?? null;
 $ahora = date("Y-m-d H:i:s");
 
-if (!$hospedajeID || !$usuarioID || !$empresaID) {
-    die("Error: Sesión expirada o datos insuficientes.");
+if (!$hospedajeID || !$usuarioID || !$empresaID || !$caja_abierta_id) {
+    die("Error: No tiene una caja abierta o su sesión ha expirado.");
 }
 
 try {
@@ -22,12 +23,17 @@ try {
         throw new Exception("No se pudo iniciar la transacción.");
     }
 
-    // 1. Obtener datos previos para la auditoría (Monto, Habitación e ingresoID)
-    $sqlHosp = "SELECT habitacionID, monto, ingresoID FROM hospedajes WHERE hospedajeID = ? AND empresaID = ? AND _estado <> 'X'";
+    // 1. Obtener datos previos para la auditoría y validación de seguridad
+    $sqlHosp = "SELECT habitacionID, monto, ingresoID, cajaID FROM hospedajes WHERE hospedajeID = ? AND empresaID = ? AND _estado <> 'X'";
     $hospedaje = $db->obtenerFila($sqlHosp, [$hospedajeID, $empresaID]);
 
     if (!$hospedaje) {
         throw new Exception("Hospedaje no encontrado o ya eliminado.");
+    }
+
+    // BLOQUEO DE SEGURIDAD: Solo se puede eliminar si pertenece a la caja abierta actual
+    if ($hospedaje['cajaID'] != $caja_abierta_id) {
+        throw new Exception("ACCESO DENEGADO: No puede eliminar un registro que pertenece a otro turno o caja. Por favor, contacte con el administrador.");
     }
 
     $habitacionID = $hospedaje['habitacionID'];
@@ -43,7 +49,7 @@ try {
     $detalleOriginal = json_encode($pagosOriginales);
 
     // 2. Registrar en la Tabla de Auditoría (Antes de borrar)
-    $sqlAudit = "INSERT INTO hospedajes_auditoria_montos 
+    $sqlAudit = "INSERT INTO auditorias 
                  (hospedajeID, tipo_auditoria, monto_anterior, monto_nuevo, detalle_original, detalle_nuevo, motivo, usuarioID, fecha, empresaID) 
                  VALUES (?, 'ELIMINACION', ?, 0, ?, 'CANCELADO', ?, ?, ?, ?)";
     

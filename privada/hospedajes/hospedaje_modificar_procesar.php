@@ -81,7 +81,7 @@ try {
              throw new Exception("Error de Seguridad: Se detectó un cambio financiero sin justificación.");
         }
 
-        $sqlLog = "INSERT INTO hospedajes_auditoria_montos 
+        $sqlLog = "INSERT INTO auditorias 
                    (hospedajeID, tipo_auditoria, monto_anterior, monto_nuevo, detalle_original, detalle_nuevo, motivo, usuarioID, fecha, empresaID) 
                    VALUES (?, 'MODIFICACION', ?, ?, ?, ?, ?, ?, ?, ?)";
         

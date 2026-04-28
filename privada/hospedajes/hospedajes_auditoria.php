@@ -15,7 +15,7 @@ $verHistorial = isset($_GET['historial']) && $_GET['historial'] == '1';
 $estadoBusqueda = $verHistorial ? 1 : 0;
 
 $sql = "SELECT a.*, u.usuario, h.hospedajeID 
-        FROM hospedajes_auditoria_montos a
+        FROM auditorias a
         INNER JOIN usuarios u ON a.usuarioID = u.usuarioID
         LEFT JOIN hospedajes h ON a.hospedajeID = h.hospedajeID
         WHERE a.empresaID = ? AND a.estado_revision = ?

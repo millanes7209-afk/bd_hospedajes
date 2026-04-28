@@ -7,7 +7,7 @@ require_once("utils/hospedajes_utilidades.php");
 // Consulta para obtener los datos de los hospedajes
 $sql = "SELECT usu.usuario,h.hospedajeID,h.estado as estado,
         GROUP_CONCAT(DISTINCT CONCAT_WS(' ', c.apellido1, apellido2, c.nombres) SEPARATOR ', ') as clientes,
-        h.checkin,h.checkout,r.numero AS habitacion_numero, h.monto,
+        h.checkin,h.checkout,r.numero AS habitacion_numero, h.monto, h.cajaID,
         GROUP_CONCAT(DISTINCT ip.formapagoID SEPARATOR ', ') as formapagoIDs
         FROM hospedajes h
         JOIN hospedajes_clientes hc ON h.hospedajeID = hc.hospedajeID
@@ -24,6 +24,7 @@ $sql = "SELECT usu.usuario,h.hospedajeID,h.estado as estado,
         GROUP BY h.hospedajeID
         ORDER BY h.hospedajeID DESC";
 
+$caja_abierta_id = $_SESSION['caja_abierta_id'] ?? null;
 $rs = $db->obtenerTodo($sql, [$_SESSION['empresaID']]);
 ?>
 
@@ -103,7 +104,7 @@ $rs = $db->obtenerTodo($sql, [$_SESSION['empresaID']]);
                                             </form>
                                             <button type="button"
                                                 style="background:none; border:none; color:#dc3545; padding:0; cursor:pointer;"
-                                                onclick="eliminarHospedaje(<?= $fila['hospedajeID'] ?>, '<?= $fila['habitacion_numero'] ?>')" title="Eliminar">
+                                                onclick="eliminarHospedaje(<?= $fila['hospedajeID'] ?>, '<?= $fila['habitacion_numero'] ?>', <?= $fila['cajaID'] ?>)" title="Eliminar">
                                                 <i class="fas fa-trash-alt fa-lg"></i>
                                             </button>
                                         </div>
@@ -152,11 +153,42 @@ $rs = $db->obtenerTodo($sql, [$_SESSION['empresaID']]);
         </div>
     </div>
 
+    <!-- Modal Acceso Denegado -->
+    <div class="modal fade" id="modalAccesoDenegado" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-danger">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title font-weight-bold text-danger"><i class="fas fa-ban"></i> ACCESO DENEGADO</h5>
+                    <button type="button" class="close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-hand-paper fa-3x text-danger mb-3"></i>
+                    <p class="mb-0 fw-bold">¡Acción Prohibida!</p>
+                    <p class="text-muted">No puede eliminar registros que no pertenecen a su turno actual.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal" data-bs-dismiss="modal">Entendido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let hospedajeIDEliminar = null;
         const modalEliminar = new bootstrap.Modal(document.getElementById('modalEliminarHospedaje'));
 
-        function eliminarHospedaje(hospedajeID, numeroHab) {
+        const CAJA_ABIERTA_ID = <?= json_encode($caja_abierta_id) ?>;
+        const modalAccesoDenegado = new bootstrap.Modal(document.getElementById('modalAccesoDenegado'));
+
+        function eliminarHospedaje(hospedajeID, numeroHab, registroCajaID) {
+            // BLOQUEO PREVENTIVO FRONTEND
+            if (registroCajaID != CAJA_ABIERTA_ID) {
+                modalAccesoDenegado.show();
+                return;
+            }
+
             hospedajeIDEliminar = hospedajeID;
             document.getElementById('numHabEliminar').innerText = numeroHab;
             document.getElementById('txtMotivoEliminar').value = '';

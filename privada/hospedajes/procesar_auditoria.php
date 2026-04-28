@@ -20,7 +20,7 @@ if (!$id || !$empresaID) {
     die("Datos insuficientes.");
 }
 
-$sql = "UPDATE hospedajes_auditoria_montos 
+$sql = "UPDATE auditorias 
         SET estado_revision = 1 
         WHERE id = ? AND empresaID = ?";
 
