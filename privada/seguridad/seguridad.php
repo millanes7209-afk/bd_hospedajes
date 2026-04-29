@@ -3,6 +3,23 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// --- VERIFICACIÓN DE LICENCIA (KILL-SWITCH) ---
+$archivo_lic = __DIR__ . '/.lic.key';
+if (file_exists($archivo_lic)) {
+    $lic_data = base64_decode(file_get_contents($archivo_lic));
+    $partes = explode("|", $lic_data);
+    if (count($partes) == 2 && $partes[0] === "EXPIRATION_LIMIT") {
+        if (date('Y-m-d') > $partes[1]) {
+            die("<div style='font-family:sans-serif; text-align:center; padding-top:100px; color:#c0392b; background:#111; height:100vh;'>
+                    <h1>⚠️ ACCESO BLOQUEADO</h1>
+                    <p style='font-size:18px;'>El período de prueba ha finalizado.</p>
+                    <p style='color:#777;'>Contacte al proveedor del software para extender su licencia.</p>
+                 </div>");
+        }
+    }
+}
+// ----------------------------------------------
+
 // 1. VERIFICACIÓN DE SESIÓN
 if (!isset($_SESSION["sesion_id_usuario"])) {
     header("Location: /dulces/sis_segundo_2023/index.php");

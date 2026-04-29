@@ -94,10 +94,15 @@ foreach ($res as $r) {
 
 <div class="card shadow-sm">
     <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-        <h4 class="mb-0">Gestión de Sucursales y Módulos</h4>
-        <button class="btn btn-success btn-sm fw-bold" onclick="abrirModalSucursal()">
-            <i class="fas fa-plus-circle me-1"></i> NUEVA SUCURSAL
-        </button>
+        <h4 class="mb-0">Panel Maestro y Empresas</h4>
+        <div>
+            <a href="../seguridad/licenciador.php" class="btn btn-warning btn-sm fw-bold text-dark me-2">
+                <i class="fas fa-key me-1"></i> LICENCIAS (KILL-SWITCH)
+            </a>
+            <button class="btn btn-success btn-sm fw-bold" onclick="abrirModalSucursal()">
+                <i class="fas fa-plus-circle me-1"></i> NUEVA EMPRESA
+            </button>
+        </div>
     </div>
     <div class="card-body">
         <?php if (isset($mensaje)): ?>

@@ -49,11 +49,20 @@ if (isset($_SESSION["sesion_id_rol"])) {
             }
         }
 
-        // Información de la empresa
-        $sql1 = "SELECT nombre, logo_agencia FROM empresa WHERE empresaID = ?";
+        // Información de la empresa y tematización
+        $sql1 = "SELECT nombre, logo_agencia, color_primario, color_secundario FROM empresa WHERE empresaID = ?";
         $rs1 = $db->obtenerTodo($sql1, array($empresaID));
-        $nombre = $rs1[0]["nombre"] ?? "Empresa";
+        $nombre = $rs1[0]["nombre"] ?? "SISTEMA GLOBAL";
         $logo_agencia = $rs1[0]["logo_agencia"] ?? "default.png";
+        
+        // Si es global (selector de empresa), usamos colores neutros elegantes. Si no, colores de empresa.
+        if ($is_global) {
+            $color_primario = "#212529"; // Gris muy oscuro neutro
+            $color_secundario = "#6c757d"; // Gris claro
+        } else {
+            $color_primario = !empty($rs1[0]["color_primario"]) ? $rs1[0]["color_primario"] : "#bd5d38"; // Ladrillo
+            $color_secundario = !empty($rs1[0]["color_secundario"]) ? $rs1[0]["color_secundario"] : "#ffffff";
+        }
 
         // SQL PARA MENÚ DE SUCURSAL (Filtrado por funcionalidades pagadas)
         // Ocultamos la funcionalidad 5 (SISTEMA) y mostramos solo lo pagado
@@ -366,6 +375,32 @@ if (isset($_SESSION["sesion_id_rol"])) {
             });
         });
     </script>
+    
+    <!-- TEMATIZACIÓN DINÁMICA POR EMPRESA -->
+    <?php if (isset($color_primario) && isset($color_secundario)): ?>
+    <style>
+        :root {
+            --color-primario: <?php echo $color_primario; ?>;
+            --color-secundario: <?php echo $color_secundario; ?>;
+        }
+        
+        /* Modificar el Navbar / Menú Lateral */
+        #sideNav.bg-primary {
+            background-color: var(--color-primario) !important;
+        }
+        
+        /* Efecto Hover en los enlaces del menú usando el color secundario */
+        #sideNav .nav-link:hover {
+            color: var(--color-secundario) !important;
+            opacity: 0.9;
+        }
+        
+        /* Si quieres que el título SISTEMA EMPRESA resalte con el primario */
+        h4 .text-primary {
+            color: var(--color-primario) !important;
+        }
+    </style>
+    <?php endif; ?>
 </head>
 
 <body>

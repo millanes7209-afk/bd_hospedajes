@@ -27,19 +27,10 @@ if (!isset($_SESSION["sesion_id_usuario"])) {
 /** * OPTIMIZACIÓN DE RENDIMIENTO: 
  * Consultamos los colores y las empresas en un solo bloque para evitar múltiples llamadas.
  */
-$color_primario = '#7e65e2';
+$color_primario = '#212529'; // Gris oscuro neutro
 $color_secundario = '#ffffff';
 
 try {
-    // Obtener colores de diseño
-    $sql_color = "SELECT color_primario, color_secundario FROM empresa WHERE _estado <> 'X' LIMIT 1";
-    $stmt_color = $db->prepare($sql_color);
-    $stmt_color->execute();
-    if ($colores = $stmt_color->fetch()) {
-        $color_primario = $colores['color_primario'] ?? $color_primario;
-        $color_secundario = $colores['color_secundario'] ?? $color_secundario;
-    }
-
     // 3. CONSULTA DE EMPRESAS
     // Opción C: El ADMINISTRADOR ve todas las empresas sin necesitar contrato laboral.
     // Para el resto de roles, se valida normalmente con empleado_empresas.
