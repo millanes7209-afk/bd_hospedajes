@@ -54,7 +54,7 @@ if (isset($_SESSION["sesion_id_rol"])) {
         $rs1 = $db->obtenerTodo($sql1, array($empresaID));
         $nombre = $rs1[0]["nombre"] ?? "SISTEMA GLOBAL";
         $logo_agencia = $rs1[0]["logo_agencia"] ?? "default.png";
-        
+
         // Si es global (selector de empresa), usamos colores neutros elegantes. Si no, colores de empresa.
         if ($is_global) {
             $color_primario = "#212529"; // Gris muy oscuro neutro
@@ -375,31 +375,35 @@ if (isset($_SESSION["sesion_id_rol"])) {
             });
         });
     </script>
-    
+
     <!-- TEMATIZACIÓN DINÁMICA POR EMPRESA -->
     <?php if (isset($color_primario) && isset($color_secundario)): ?>
-    <style>
-        :root {
-            --color-primario: <?php echo $color_primario; ?>;
-            --color-secundario: <?php echo $color_secundario; ?>;
-        }
-        
-        /* Modificar el Navbar / Menú Lateral */
-        #sideNav.bg-primary {
-            background-color: var(--color-primario) !important;
-        }
-        
-        /* Efecto Hover en los enlaces del menú usando el color secundario */
-        #sideNav .nav-link:hover {
-            color: var(--color-secundario) !important;
-            opacity: 0.9;
-        }
-        
-        /* Si quieres que el título SISTEMA EMPRESA resalte con el primario */
-        h4 .text-primary {
-            color: var(--color-primario) !important;
-        }
-    </style>
+        <style>
+            :root {
+                --color-primario:
+                    <?php echo $color_primario; ?>
+                ;
+                --color-secundario:
+                    <?php echo $color_secundario; ?>
+                ;
+            }
+
+            /* Modificar el Navbar / Menú Lateral */
+            #sideNav.bg-primary {
+                background-color: var(--color-primario) !important;
+            }
+
+            /* Efecto Hover en los enlaces del menú usando el color secundario */
+            #sideNav .nav-link:hover {
+                color: var(--color-secundario) !important;
+                opacity: 0.9;
+            }
+
+            /* Si quieres que el título SISTEMA EMPRESA resalte con el primario */
+            h4 .text-primary {
+                color: var(--color-primario) !important;
+            }
+        </style>
     <?php endif; ?>
 </head>
 
@@ -488,8 +492,8 @@ if (isset($_SESSION["sesion_id_rol"])) {
                         <div class="leyenda-item"><span class="leyenda-dot dot-mantenimiento"></span> MANTENIMIENTO</div>
                     </div>
 
-                    <!-- Botón de Agrupación -->
-                    <div class="header-filter mx-3">
+                    <!-- Botón de Agrupación y Novedades -->
+                    <div class="header-filter mx-3 d-flex flex-column gap-2" style="row-gap: 4px;">
                         <?php if (isset($_GET['orden']) && $_GET['orden'] == 'tipo'): ?>
                             <a href="habitaciones.php" class="btn btn-sm btn-outline-primary fw-bold">
                                 <i class="fas fa-sort-numeric-down"></i> VER GENERAL
@@ -499,6 +503,13 @@ if (isset($_SESSION["sesion_id_rol"])) {
                                 <i class="fas fa-layer-group"></i> VER POR TIPO
                             </a>
                         <?php endif; ?>
+
+                        <!-- Botón de Libreta de Turno -->
+                        <button type="button" class="btn btn-sm btn-outline-secondary fw-bold" id="btnNovedades"
+                            onclick="abrirNovedades()">
+                            <i class="fas fa-book"></i> NOTAS <span id="badgeNovedades"
+                                class="badge bg-danger rounded-pill d-none">0</span>
+                        </button>
                     </div>
 
                     <!-- Botones de Acción -->
@@ -547,6 +558,156 @@ if (isset($_SESSION["sesion_id_rol"])) {
                     id="posponerBtn">Posponer</button></div>
         </div>
     </div>
+
+    <!-- MODAL LIBRETA DE NOVEDADES -->
+    <div class="modal fade" id="modalNovedades" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-book-open"></i> Bitácora de Turno</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal"
+                        style="background:none; border:none; font-size:1.5rem;">&times;</button>
+                </div>
+                <div class="modal-body bg-light">
+                    <!-- Formulario para nueva nota -->
+                    <form id="formNuevaNota" class="mb-4">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="txtNotaMensaje"
+                                placeholder="Anotar pendiente para el siguiente turno..." required>
+                            <button class="btn btn-dark" type="submit">Anotar</button>
+                        </div>
+                        <div id="msgNotaError" class="text-danger small mt-1 d-none"></div>
+                    </form>
+
+                    <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">Pendientes Actuales</h6>
+                    <ul class="list-group" id="listaNovedades">
+                        <!-- Las notas se inyectan por AJAX -->
+                        <li class="list-group-item text-center text-muted border-0 bg-transparent">Cargando...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LÓGICA AJAX DE NOVEDADES -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (document.getElementById('btnNovedades')) {
+                cargarNovedades();
+                // Refrescar cada minuto en silencio
+                setInterval(cargarNovedades, 60000);
+            }
+        });
+
+        let notasPendientes = [];
+
+        function cargarNovedades() {
+            fetch('ajax_notificaciones.php?accion=listar')
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status === 'ok') {
+                        notasPendientes = res.data;
+                        actualizarBotonNovedades();
+                        renderizarListaNovedades();
+                    }
+                });
+        }
+
+        function actualizarBotonNovedades() {
+            const btn = document.getElementById('btnNovedades');
+            const badge = document.getElementById('badgeNovedades');
+            if (notasPendientes.length > 0) {
+                btn.classList.remove('btn-outline-secondary');
+                btn.classList.add('btn-danger', 'text-white');
+                badge.innerText = notasPendientes.length;
+                badge.classList.remove('d-none');
+            } else {
+                btn.classList.remove('btn-danger', 'text-white');
+                btn.classList.add('btn-outline-secondary');
+                badge.classList.add('d-none');
+            }
+        }
+
+        function renderizarListaNovedades() {
+            const lista = document.getElementById('listaNovedades');
+            if (!lista) return;
+            lista.innerHTML = '';
+            if (notasPendientes.length === 0) {
+                lista.innerHTML = '<li class="list-group-item text-center text-muted border-0 bg-transparent"><i class="fas fa-check-circle text-success fs-4 mb-2 d-block"></i> Todo está al día</li>';
+                return;
+            }
+
+            notasPendientes.forEach(nota => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-start shadow-sm mb-2 rounded border-start border-warning border-4';
+                li.innerHTML = `
+                <div class="ms-2 me-auto">
+                    <div class="fw-bold">${nota.mensaje}</div>
+                    <small class="text-muted"><i class="fas fa-user-edit"></i> ${nota.autor} &nbsp;|&nbsp; <i class="fas fa-clock"></i> ${nota.hora} (${nota.dia})</small>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary border-0" onclick="completarNota(${nota.notificacionID})" title="Marcar como completado">
+                    <i class="far fa-square fs-5"></i>
+                </button>
+            `;
+                lista.appendChild(li);
+            });
+        }
+
+        function abrirNovedades() {
+            cargarNovedades();
+            let myModal = new bootstrap.Modal(document.getElementById('modalNovedades'));
+            myModal.show();
+        }
+
+        function completarNota(id) {
+            let fd = new FormData();
+            fd.append('accion', 'completar');
+            fd.append('notificacionID', id);
+
+            fetch('ajax_notificaciones.php', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status === 'ok') {
+                        cargarNovedades();
+                    } else {
+                        mostrarError(res.message);
+                    }
+                });
+        }
+
+        function mostrarError(msg) {
+            const errDiv = document.getElementById('msgNotaError');
+            errDiv.innerText = msg;
+            errDiv.classList.remove('d-none');
+            setTimeout(() => errDiv.classList.add('d-none'), 4000);
+        }
+
+        // Interceptar envío de nueva nota
+        const formNota = document.getElementById('formNuevaNota');
+        if (formNota) {
+            formNota.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const input = document.getElementById('txtNotaMensaje');
+                let msj = input.value;
+                if (!msj) return;
+
+                let fd = new FormData();
+                fd.append('accion', 'guardar');
+                fd.append('mensaje', msj);
+
+                fetch('ajax_notificaciones.php', { method: 'POST', body: fd })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.status === 'ok') {
+                            input.value = '';
+                            cargarNovedades();
+                        } else {
+                            mostrarError(res.message);
+                        }
+                    });
+            });
+        }
+    </script>
 
     <?php
     $saldos_json = json_encode([]);
