@@ -4,49 +4,40 @@ require_once("../../conexion.php");
 
 // Obtener los datos del formulario
 $ci = $_POST['ci'];
-$nombres = $_POST['nombres'];
-$apellidos = $_POST['apellidos'];
+$nombres = strtoupper($_POST['nombres']);
+$apellidos = strtoupper($_POST['apellidos']);
 $fecha_nacimiento = $_POST['fecha_nacimiento'];
-$lugar_nacimiento = $_POST['lugar_nacimiento'];
+$lugar_nacimiento = strtoupper($_POST['lugar_nacimiento']);
 $est_civil = $_POST['estado_civil'];
-$profesion = $_POST['profesion'];
+$profesion = strtoupper($_POST['profesion']);
+$empresaID = $_SESSION['empresaID'];
+$usuarioID = $_SESSION["sesion_id_usuario"];
 
 try {
-    // Comprobar si el C.I. ya está registrado
+    // 1. Comprobar si el C.I. ya está registrado
     $sql_verificar = "SELECT clienteID FROM clientes WHERE ci = ?";
-    $stmt_verificar = $db->Prepare($sql_verificar);
-    $rs_verificar = $db->Execute($stmt_verificar, array($ci));
+    $cliente_existente = $db->obtenerFila($sql_verificar, [$ci]);
 
-    if ($rs_verificar && !$rs_verificar->EOF) {
-        // Si el C.I. ya existe, devolver un mensaje de error específico
+    if ($cliente_existente) {
         echo "error_ci_duplicado";
     } else {
-        // Proceder con la inserción del nuevo cliente si el C.I. no existe
-        $reg = array();
-        $reg["empresaID"]=1;
-        $reg["ci"] = $ci;
-        $reg["nombres"] = $nombres;
-        $reg["apellidos"] = $apellidos;
-        $reg["fecha_nacimiento"] = $fecha_nacimiento;
-        $reg["lugar_nacimiento"] = $lugar_nacimiento;
-        $reg["est_civil"] = $est_civil;
-        $reg["profesion"] = $profesion;
-        $reg["_fec_insercion"] = date("Y-m-d H:i:s");
-        $reg["_usuario"] = $_SESSION["sesion_id_usuario"];
-        $reg["_estado"] = "A";
+        // 2. Insertar nuevo cliente
+        $sql_insert = "INSERT INTO clientes (empresaID, ci, nombres, apellidos, fecha_nacimiento, lugar_nacimiento, est_civil, profesion, _fec_insercion, _usuario, _estado) 
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, 'A')";
+        
+        $params = [
+            $empresaID, $ci, $nombres, $apellidos, $fecha_nacimiento, 
+            $lugar_nacimiento, $est_civil, $profesion, $usuarioID
+        ];
 
-        // Intentar insertar el cliente usando AutoExecute
-        $rs1 = $db->AutoExecute("clientes", $reg, "INSERT");
-
-        if ($rs1) {
-            $clienteID=$db->Insert_ID();
+        if ($db->ejecutar($sql_insert, $params)) {
+            $clienteID = $db->ultimoID();
             echo "success:$clienteID";
         } else {
             echo "error: No se pudo registrar el cliente. Inténtelo de nuevo.";
         }
     }
 } catch (Exception $e) {
-    // Manejar cualquier otro error inesperado
     echo "error: " . $e->getMessage();
 }
 ?>

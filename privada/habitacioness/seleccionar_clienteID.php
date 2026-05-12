@@ -12,7 +12,7 @@ $clienteID = $_POST['clienteID'];
 
 // Consulta para buscar el cliente por su ID en la base de datos
 $sql = "SELECT clienteID, ci, nombres, apellidos FROM clientes WHERE clienteID = ? AND _estado = 'A'";
-$rs = $db->GetAll($sql, array($clienteID));
+$rs = $db->obtenerTodo($sql, [$clienteID]);
 
 if ($rs && count($rs) > 0) {
     // Mostrar la información del cliente encontrado

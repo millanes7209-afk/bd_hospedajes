@@ -35,10 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // 2. DETALLE DE PAGO
             $db->ejecutar("INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto) VALUES (?, ?, ?)", [$ingresoID, $formaPagoID, $monto]);
 
-            // 3. VINCULAR A SERVICIOS EXTRA (Opcional, manteniendo compatibilidad con histórico)
-            $sql_se = "INSERT INTO servicios_extra (empresaID, ingresoID, tipo, descripcion, monto, fecha, _fec_insercion, _usuario, _estado) 
-                       VALUES (?, ?, ?, ?, ?, NOW(), NOW(), ?, 'A')";
-            $db->ejecutar($sql_se, [$empresaID, $ingresoID, 'OTROS', $descripcion, $monto, $usuarioID]);
+            // 3. Registro completado
 
         } else {
             // 1. INSERTAR EGRESO MAESTRO

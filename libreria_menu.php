@@ -490,6 +490,12 @@ if (isset($_SESSION["sesion_id_rol"])) {
                         <div class="leyenda-item"><span class="leyenda-dot dot-deuda"></span> DEUDA</div>
                         <div class="leyenda-item"><span class="leyenda-dot dot-limpieza"></span> LIMPIEZA</div>
                         <div class="leyenda-item"><span class="leyenda-dot dot-mantenimiento"></span> MANTENIMIENTO</div>
+                        
+                        <!-- BOTONES DE BAÑOS MOVIDOS AQUÍ -->
+                        <div class="d-flex gap-1 ms-3 border-start ps-3">
+                            <button type="button" class="btn btn-xs btn-primary py-0 px-2 fw-bold" onclick="mostrarModalBano('INGRESO')" style="font-size: 10px; height: 20px;">+ BAÑO</button>
+                            <button type="button" class="btn btn-xs btn-danger py-0 px-2 fw-bold" onclick="mostrarModalBano('EGRESO')" style="font-size: 10px; height: 20px;">- BAÑO</button>
+                        </div>
                     </div>
 
                     <!-- Botón de Agrupación y Novedades -->
@@ -513,11 +519,9 @@ if (isset($_SESSION["sesion_id_rol"])) {
                     </div>
 
                     <!-- Botones de Acción -->
-                    <div class="header-actions">
-                        <button type="button" class="btn-header-acc btn-header-ingreso" onclick="mostrarModalIngreso()"
-                            <?= $boton_header_estado ?>>Otros Ingresos</button>
-                        <button type="button" class="btn-header-acc btn-header-egreso" onclick="mostrarModalEgreso()"
-                            <?= $boton_header_estado ?>>Registrar Egreso</button>
+                    <div class="header-actions d-flex align-items-center">
+                            <button type="button" class="btn-header-acc btn-header-ingreso" onclick="mostrarModalIngreso()" title="Ingreso que no es hospedaje" <?= $boton_header_estado ?>>Otros Ingresos</button>
+                            <button type="button" class="btn-header-acc btn-header-egreso" onclick="mostrarModalEgreso()" title="Gasto de caja" <?= $boton_header_estado ?>>Registrar Egreso</button>
                     </div>
                 <?php endif; ?>
 

@@ -22,10 +22,13 @@ $usuarioID_actual = $_SESSION['sesion_id_usuario'] ?? $_SESSION['usuarioID'] ?? 
 
 // Obtener usuarios para filtro si tiene privilegios
 $usuarios_mov = [];
-if ($rol_usuario === 'PROPIETARIO' || $rol_usuario === 'ADMINISTRADOR') {
-    $sql_usuarios = "SELECT usuarioID, usuario FROM usuarios WHERE _estado <> 'X' ORDER BY usuario";
-    $usuarios_mov = $db->obtenerTodo($sql_usuarios);
-}
+    // Obtener usuarios solo de la empresa actual
+    $sql_usuarios = "SELECT DISTINCT u.usuarioID, u.usuario 
+                     FROM usuarios u
+                     INNER JOIN empleado_empresas ee ON u.empleadoID = ee.empleadoID
+                     WHERE u._estado <> 'X' AND ee.empresaID = ? AND ee._estado <> 'X'
+                     ORDER BY u.usuario";
+    $usuarios_mov = $db->obtenerTodo($sql_usuarios, [$empresaID_filtro]);
 
 // Obtener formas de pago disponibles
 $sql_formas_pago = "SELECT fp.formapagoID, fp.tipo 

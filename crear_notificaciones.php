@@ -58,7 +58,7 @@ function generarNotificaciones($db) {
 
         try {
             // Usamos el método Execute() de ADODB para insertar la notificación
-            $db->Execute($query);
+            $db->ejecutar($query);
             
             // Depuración para saber si la inserción fue exitosa
             error_log("Notificación creada para la hora: " . $fecha_programada_str);

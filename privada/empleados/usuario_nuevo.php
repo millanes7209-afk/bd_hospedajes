@@ -49,9 +49,12 @@ $empresaID = $_SESSION['empresaID'];
                                         <select class="form-control" name="empleadoID" id="empleadoID" required>
                                             <option value="">Seleccione un empleado</option>
                                             <?php
-                                            // Cargar opciones de empleados desde la base de datos
-                                            $sql_empleados = $db->Prepare("SELECT empleadoID,CONCAT_WS(' ', nombres, apellidos) as empleado FROM empleados WHERE _estado='A' AND empleadoID>1");
-                                            $rs_empleados = $db->GetAll($sql_empleados);
+                                            // Cargar opciones de empleados de la empresa actual
+                                            $sql_empleados = "SELECT e.empleadoID, CONCAT_WS(' ', e.nombres, e.apellidos) as empleado 
+                                                              FROM empleados e
+                                                              INNER JOIN empleado_empresas ee ON e.empleadoID = ee.empleadoID
+                                                              WHERE e._estado='A' AND ee.empresaID = ? AND ee._estado <> 'X' AND e.empleadoID > 1";
+                                            $rs_empleados = $db->obtenerTodo($sql_empleados, [$empresaID]);
                                             foreach ($rs_empleados as $empleado) {
                                                 echo "<option value='{$empleado['empleadoID']}'>{$empleado['empleado']}</option>";
                                             }

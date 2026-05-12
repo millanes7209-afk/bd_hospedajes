@@ -7,6 +7,9 @@ class MiConexion extends PDO {
             $dsn = "mysql:host=$host;dbname=$db;charset=utf8mb4";
             parent::__construct($dsn, $user, $pass);
             
+            date_default_timezone_set('America/La_Paz');
+            $this->exec("SET time_zone = '-04:00'");
+            
             // Configuraciones de seguridad y comportamiento
             $this->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);

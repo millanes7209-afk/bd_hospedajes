@@ -17,15 +17,18 @@ $sql = "SELECT  thab.tipohabitacionID, hab.habitacionID, hab.bano, hab.tv, hab.v
                  JOIN hospedajes_clientes hc ON h.hospedajeID = hc.hospedajeID 
                  JOIN clientes c ON hc.clienteID = c.clienteID 
                  WHERE h.habitacionID = hab.habitacionID 
+                 AND h.empresaID = ?
                  AND h.estado IN ('ACTIVO', 'DEUDA') AND h._estado <> 'X' AND hc._estado <> 'X' AND c._estado <> 'X') AS cliente_activo,
                 (SELECT h.checkout 
                  FROM hospedajes h 
                  WHERE h.habitacionID = hab.habitacionID 
+                 AND h.empresaID = ?
                  AND h.estado IN ('ACTIVO', 'DEUDA') AND h._estado <> 'X'
                  ORDER BY h.hospedajeID DESC LIMIT 1) AS checkout_activo,
                 (SELECT h.monto 
                  FROM hospedajes h 
                  WHERE h.habitacionID = hab.habitacionID 
+                 AND h.empresaID = ?
                  AND h.estado IN ('ACTIVO', 'DEUDA') AND h._estado <> 'X'
                  ORDER BY h.hospedajeID DESC LIMIT 1) AS precio_pactado
         FROM    habitaciones hab
@@ -35,7 +38,7 @@ $sql = "SELECT  thab.tipohabitacionID, hab.habitacionID, hab.bano, hab.tv, hab.v
         AND     hab.empresaID = ?
         ORDER BY $orderBy";
 
-$rs = $db->obtenerTodo($sql, array($empresaID));
+$rs = $db->obtenerTodo($sql, array($empresaID, $empresaID, $empresaID, $empresaID));
 
 
 // Guardar en sesión para ver después de redirección
@@ -98,10 +101,24 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                             $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ?", [$habitacion['habitacionID']]);
                         }
 
+                        // CASO C: SINCRONIZACIÓN DE DEUDA (Si el checkout ya pasó)
+                        if ($habitacion['estado'] === 'OCUPADA' && !empty($habitacion['checkout_activo'])) {
+                            $now_stamp = time();
+                            if (strtotime($habitacion['checkout_activo']) < $now_stamp) {
+                                $habitacion['estado'] = 'DEUDA';
+                                // Persistencia real en la base de datos
+                                $db->ejecutar("UPDATE habitaciones SET estado = 'DEUDA' WHERE habitacionID = ?", [$habitacion['habitacionID']]);
+                                // También actualizamos el hospedaje para que sea coherente
+                                $db->ejecutar("UPDATE hospedajes SET estado = 'DEUDA' WHERE habitacionID = ? AND estado = 'ACTIVO' AND empresaID = ?", [$habitacion['habitacionID'], $empresaID]);
+                            }
+                        }
+
                         // CASO C: DEUDA (Tiempo vencido) - La deuda final se calcula cruzando las 13:00
                         $now_stamp = time();
                         if ($habitacion['estado'] === 'OCUPADA' && !empty($habitacion['checkout_activo']) && strtotime($habitacion['checkout_activo']) < $now_stamp) {
                             $habitacion['estado'] = 'DEUDA';
+                            // Sincronización Real con la Base de Datos
+                            $db->ejecutar("UPDATE habitaciones SET estado = 'DEUDA' WHERE habitacionID = ?", [$habitacion['habitacionID']]);
                             
                             // Regla de Hotelería: cobrar 1 día por pasarse de la hora.
                             // Cobrar días adicionales al sobrepasar la barrera de las 13:00 los días siguientes.
@@ -246,6 +263,49 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
             });
         }
     </script>
+    <!-- PANEL DE DEPURACIÓN FORENSE -->
+    <div class="container-fluid mt-5 mb-5" style="border-top: 3px solid #333; padding-top: 20px;">
+        <div class="card border-dark shadow">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">DEPURADOR: ESTADO REAL EN DB</h4>
+                <button class="btn btn-sm btn-outline-light" onclick="location.reload()">REFRESCAR</button>
+            </div>
+            <div class="card-body bg-light">
+                <div class="row">
+                    <div class="col-md-7">
+                        <table class="table table-bordered table-sm bg-white">
+                            <thead><tr><th>Hab</th><th>Estado DB</th><th>Clase</th></tr></thead>
+                            <tbody>
+                                <?php foreach ($rs as $h): 
+                                    $c = 'btn-dark';
+                                    if($h['estado'] == 'DISPONIBLE') $c = 'btn-success';
+                                    if($h['estado'] == 'OCUPADA') $c = 'btn-primary';
+                                    if($h['estado'] == 'DEUDA') $c = 'btn-danger';
+                                    if($h['estado'] == 'LIMPIEZA') $c = 'btn-secondary';
+                                    if($h['estado'] == 'MOMENTANEO') $c = 'btn-warning';
+                                ?>
+                                <tr>
+                                    <td><?= $h['numero'] ?></td>
+                                    <td><span class="badge <?= str_replace('btn-','bg-',$c) ?>"><?= $h['estado'] ?></span></td>
+                                    <td><code><?= $c ?></code></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-5 border-start">
+                        <h5>Última Operación:</h5>
+                        <?php if (isset($_SESSION['debug_last_op'])): ?>
+                            <pre class="bg-white p-2 border"><?= print_r($_SESSION['debug_last_op'], true) ?></pre>
+                            <?php unset($_SESSION['debug_last_op']); ?>
+                        <?php else: ?>
+                            <p class="text-muted">Sin operaciones recientes.</p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

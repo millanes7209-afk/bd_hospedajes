@@ -48,18 +48,24 @@ if ((isset($_POST["accion"])) and ($_POST["accion"] == "Ingresar")) {
         $rs = $db->obtenerTodo($sql, array($nick));
 
         if ($rs) {
-            // Guardamos datos en la sesión con los nuevos nombres de columna
-            foreach ($rs as $linea) {
-                $_SESSION["sesion_id_usuario"] = $linea["usuarioID"];
-                $_SESSION["sesion_usuario"] = $linea["usuario"];
-                $_SESSION["sesion_id_rol"] = $linea["rolID"];
-                $_SESSION["sesion_rol"] = $linea["rol"];
-                $_SESSION["sesion_nom_completo"] = $nom_completo;
-                $_SESSION["sesion_id_empleado"] = $linea["empleadoID"];
-            }
+            // Guardamos datos comunes
+            $_SESSION["sesion_id_usuario"] = $rs[0]["usuarioID"];
+            $_SESSION["sesion_usuario"] = $rs[0]["usuario"];
+            $_SESSION["sesion_nom_completo"] = $nom_completo;
+            $_SESSION["sesion_id_empleado"] = $rs[0]["empleadoID"];
+            
+            // Guardamos la lista de todos los roles disponibles
+            $_SESSION["sesion_roles_disponibles"] = $rs;
 
-            // Redirigir SIEMPRE al selector de empresas
-            header("Location: selector_empresa.php");
+            if (count($rs) > 1) {
+                // Múltiples roles: Al selector
+                header("Location: selector_rol.php");
+            } else {
+                // Un solo rol: Seteamos y entramos
+                $_SESSION["sesion_id_rol"] = $rs[0]["rolID"];
+                $_SESSION["sesion_rol"] = $rs[0]["rol"];
+                header("Location: selector_empresa.php");
+            }
             exit();
         }
     } else {

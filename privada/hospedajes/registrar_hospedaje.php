@@ -48,7 +48,7 @@ try {
     // 4. DETERMINAR LA CUENTA CONTABLE
     $codigo_cuenta = ($tipo_estadia == 'MOMENTANEO') ? '402' : '401';
     $cuenta = $db->obtenerFila("SELECT cuentaID FROM cuentas WHERE codigo = ? AND empresaID = ?", [$codigo_cuenta, $empresaID]);
-    
+
     if (!$cuenta) {
         throw new Exception("Error Contable: No se encontró la cuenta [$codigo_cuenta] configurada para esta empresa.");
     }
@@ -59,7 +59,7 @@ try {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     $concepto_ingreso = "$tipo_estadia HAB. $habitacion_numero" . ($descripcion ? " - $descripcion" : "");
     $paramsI = [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto_total, $concepto_ingreso, $ahora, $usuarioID];
-    
+
     if ($db->ejecutar($sqlI, $paramsI) === false) {
         throw new Exception("Error BD: No se pudo registrar el ingreso maestro.");
     }
@@ -81,14 +81,25 @@ try {
                                    _fec_insercion, _fec_modificacion, _estado, _usuario) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $paramsH = [
-        $empresaID, $habitacionID, $cajaID, $ingresoID, $ahora, $checkout, $monto_total, 
-        'ACTIVO', $descripcion, $ahora, $ahora, 'A', $usuarioID
+        $empresaID,
+        $habitacionID,
+        $cajaID,
+        $ingresoID,
+        $ahora,
+        $checkout,
+        $monto_total,
+        'ACTIVO',
+        $descripcion,
+        $ahora,
+        $ahora,
+        'A',
+        $usuarioID
     ];
-    
+
     if ($db->ejecutar($sqlH, $paramsH) === false) {
         throw new Exception("Error BD: No se pudo registrar el hospedaje vinculado.");
     }
-    
+
     $hospedajeID = $db->lastInsertId();
 
     if (!$hospedajeID) {
@@ -100,16 +111,19 @@ try {
         $sqlC = "INSERT INTO hospedajes_clientes (empresaID, hospedajeID, clienteID, 
                                                 _fec_insercion, _fec_modificacion, _estado, _usuario) 
                  VALUES (?, ?, ?, ?, ?, ?, ?)";
-                 
+
         if ($db->ejecutar($sqlC, [$empresaID, $hospedajeID, $clienteID, $ahora, $ahora, 'A', $usuarioID]) === false) {
             throw new Exception("Error al vincular el cliente ID: {$clienteID}");
         }
     }
 
     // 7. ACTUALIZAR ESTADO DE LA HABITACIÓN
+    // DESPUÉS (diagnóstico)
     $sqlHab = "UPDATE habitaciones SET estado = 'OCUPADA' WHERE habitacionID = ?";
-    if ($db->ejecutar($sqlHab, [$habitacionID]) === false) {
-        throw new Exception("Error BD: No se pudo actualizar el estado de la habitación.");
+    $stmtHab = $db->ejecutar($sqlHab, [$habitacionID]);
+    $filasAfectadas = $stmtHab->rowCount();
+    if ($filasAfectadas === 0) {
+        throw new Exception("UPDATE afectó 0 filas. HabitacionID recibido: $habitacionID");
     }
 
     // TODO SALIÓ BIEN - CONFIRMAMOS CAMBIOS
@@ -117,7 +131,19 @@ try {
 
     $_SESSION['mensaje'] = "Hospedaje registrado correctamente en Habitacion " . $habitacion_numero;
     $_SESSION['mensaje_tipo'] = "success";
-    
+
+    // CAPTURA PARA EL DEPURADOR
+    $_SESSION['debug_last_op'] = [
+        'accion' => 'REGISTRO_HOSPEDAJE',
+        'habitacionID' => $habitacionID,
+        'numero' => $habitacion_numero,
+        'estado_enviado' => 'OCUPADA',
+        'checkin' => $ahora,
+        'checkout' => $checkout,
+        'monto' => $monto_total,
+        'clientes_ids' => $clientes
+    ];
+
     // Redirección exitosa usando explícitamente habitacioness
     header("Location: ../habitacioness/habitaciones.php");
     exit();
@@ -127,7 +153,7 @@ try {
     if ($db->inTransaction()) {
         $db->rollBack();
     }
-    
+
     // ==========================================
     // DEPURADOR EN PANTALLA (DETIENE LA REDIRECCIÓN)
     // ==========================================

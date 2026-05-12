@@ -57,8 +57,8 @@ try {
     $detalle_original = json_encode($pagos_audit_orig);
 
     // 3. CONSTRUIR SNAPSHOT NUEVO
-    $sqlFP = "SELECT formaPagoID, tipo FROM formas_pago WHERE _estado <> 'X'";
-    $rsFP = $db->obtenerTodo($sqlFP);
+    $sqlFP = "SELECT formaPagoID, tipo FROM formas_pago WHERE _estado <> 'X' AND empresaID = ?";
+    $rsFP = $db->obtenerTodo($sqlFP, [$empresaID]);
     $nombresFP = [];
     foreach($rsFP as $f) $nombresFP[$f['formaPagoID']] = $f['tipo'];
 

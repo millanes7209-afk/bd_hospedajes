@@ -169,8 +169,8 @@ if (!$hospedajeID) {
                         <div id="templateFormaPago" style="display: none;">
                             <option value="">Seleccione Pago</option>
                             <?php
-                            $sql_fp = "SELECT formaPagoID, tipo FROM formas_pago WHERE _estado='A'";
-                            $rs_fp = $db->obtenerTodo($sql_fp);
+                            $sql_fp = "SELECT formaPagoID, tipo FROM formas_pago WHERE _estado='A' AND empresaID = ?";
+                            $rs_fp = $db->obtenerTodo($sql_fp, [$empresaID]);
                             foreach ($rs_fp as $fp) {
                                 echo "<option value='{$fp['formaPagoID']}'>{$fp['tipo']}</option>";
                             }

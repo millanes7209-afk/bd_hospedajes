@@ -7,7 +7,7 @@ $fecha_actual = date("Y-m-d H:i:s");
 
 // Consultar notificaciones pendientes cuya fecha programada sea igual o anterior a la fecha actual
 $sql = "SELECT * FROM notificaciones WHERE estado = 'pendiente' AND fecha_programada <= ? ORDER BY fecha_programada ASC";
-$rs = $db->GetAll($sql, array($fecha_actual));
+$rs = $db->obtenerTodo($sql, array($fecha_actual));
 
 if ($rs) {
     // Devolver las notificaciones pendientes en formato JSON

@@ -12,6 +12,22 @@ function mostrarModalIngreso() {
     modalIngreso.show();
 }
 
+function mostrarModalBano(tipo) {
+    document.getElementById('bano-tipo-titulo').innerText = (tipo === 'INGRESO') ? 'INGRESO BAÑO' : 'EGRESO BAÑO';
+    document.getElementById('bano-tipo-input').value = tipo;
+    
+    // Cambiar color del botón según el tipo
+    const btn = document.getElementById('btn-guardar-bano');
+    if (tipo === 'INGRESO') {
+        btn.className = 'btn btn-primary font-weight-bold';
+    } else {
+        btn.className = 'btn btn-danger font-weight-bold';
+    }
+
+    var modalBano = new bootstrap.Modal(document.getElementById('modal-bano'));
+    modalBano.show();
+}
+
 /**
  * CLICK EN HABITACIÓN - DETERMINA ACCIÓN SEGÚN ESTADO
  */

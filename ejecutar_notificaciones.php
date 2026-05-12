@@ -8,11 +8,10 @@ require_once 'conexion.php';
 $archivo_notificaciones = 'crear_notificaciones.php';
 
 // Comprobar si ya se ha ejecutado hoy
-$query = "SELECT * FROM notificaciones WHERE _fec_insercion >= CURDATE() LIMIT 1";
-$result = $db->Execute($query);
-
+$result = $db->obtenerTodo($query);
+ 
 // Si no hay notificaciones creadas hoy, ejecutamos el archivo
-if ($result->RecordCount() == 0) {
+if (count($result) == 0) {
     // Ejecutar el archivo PHP que genera las notificaciones
     include($archivo_notificaciones);
     echo "Notificaciones creadas correctamente.";

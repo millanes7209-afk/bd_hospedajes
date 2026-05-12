@@ -8,9 +8,9 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
     $tipo_habitacion = $_REQUEST['tipo'];
     $precio_habitacion = $_REQUEST['precio'];
 
-    $sql = "SELECT habitacionID FROM habitaciones WHERE numero = ? AND _estado <> 'X'";
-    // Usamos el método de tu clase. Si agregaste los alias arriba, esto funcionará.
-    $fila = $db->obtenerFila($sql, [$habitacion_numero]);
+    $empresaID = $_SESSION['empresaID'];
+    $sql = "SELECT habitacionID FROM habitaciones WHERE numero = ? AND empresaID = ? AND _estado <> 'X'";
+    $fila = $db->obtenerFila($sql, [$habitacion_numero, $empresaID]);
 
     if ($fila) {
         $habitacionID = $fila['habitacionID'];

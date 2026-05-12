@@ -50,7 +50,7 @@
             <select class="form-control" name="formaPagoID" id="formaPagoID" required>
                 <option value="">-- SELECCIONE --</option>
                 <?php
-                $rs_fp2 = $db->obtenerTodo("SELECT formaPagoID,tipo FROM formas_pago WHERE _estado='A'");
+                $rs_fp2 = $db->obtenerTodo("SELECT formaPagoID, tipo FROM formas_pago WHERE _estado='A' AND empresaID = ?", [$empresaID]);
                 foreach ($rs_fp2 as $fp) {
                     echo "<option value='{$fp['formaPagoID']}'>{$fp['tipo']}</option>";
                 }
@@ -322,6 +322,34 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCELAR</button>
           <button type="submit" class="btn btn-primary fw-bold">REGISTRAR PAGO Y DESOCUPAR</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal para Baños -->
+<div class="modal fade" id="modal-bano" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <form action="procesar_bano.php" method="post">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="bano-tipo-titulo">BAÑO</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="border:none; background:none; font-size: 1.5rem; line-height: 1;">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Monto (Bs.):</label>
+            <input type="number" class="form-control form-control-lg text-center fw-bold" name="monto" value="1" step="0.5" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Descripción:</label>
+            <input type="text" class="form-control" name="descripcion" placeholder="Opcional" oninput="this.value = this.value.toUpperCase()">
+          </div>
+          <input type="hidden" name="tipo" id="bano-tipo-input">
+        </div>
+        <div class="modal-footer">
+          <button type="submit" id="btn-guardar-bano" class="btn btn-primary w-100">GUARDAR</button>
         </div>
       </div>
     </form>

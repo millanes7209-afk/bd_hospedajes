@@ -2,45 +2,48 @@
 session_start();
 require_once("../../conexion.php");
 
-// Verificar limpieza de sesión de caja (opcional, pero útil si lo restringen a usuarios con caja)
-$empresaID = $_SESSION['empresaID'] ?? 0;
+/**
+ * DESOCUPAR HABITACIÓN
+ * Finaliza el hospedaje (ACTIVO o DEUDA) y pasa la habitación a LIMPIEZA.
+ */
 
 if (isset($_GET['habitacionID'])) {
     $habitacionID = $_GET['habitacionID'];
+    $usuarioID = $_SESSION["sesion_id_usuario"];
+    $empresaID = $_SESSION["empresaID"];
 
     try {
         $db->beginTransaction();
 
-        // Buscar hospedaje ACTIVO en esta habitación
-        $sql = "SELECT hospedajeID FROM hospedajes WHERE habitacionID = ? AND estado = 'ACTIVO'";
-        $hospedaje = $db->obtenerFila($sql, [$habitacionID]);
+        // 1. Buscar el hospedaje activo o en deuda EN ESTA EMPRESA
+        $sql = "SELECT hospedajeID FROM hospedajes 
+                WHERE habitacionID = ? AND empresaID = ? AND estado IN ('ACTIVO', 'DEUDA') AND _estado <> 'X'
+                ORDER BY hospedajeID DESC LIMIT 1";
+        $hospedaje = $db->obtenerFila($sql, [$habitacionID, $empresaID]);
 
         if ($hospedaje) {
-            // 1. Cerrar el hospedaje: marcar como INACTIVO con fecha de checkout real
-            $db->ejecutar(
-                "UPDATE hospedajes SET estado = 'INACTIVO', checkout = NOW() WHERE hospedajeID = ?",
-                [$hospedaje['hospedajeID']]
-            );
+            // 2. Finalizar el hospedaje (Estado unificado: FINALIZADO)
+            $db->ejecutar("UPDATE hospedajes SET estado = 'FINALIZADO', checkout = NOW(), _fec_modificacion = NOW(), _usuario = ? 
+                          WHERE hospedajeID = ?", [$usuarioID, $hospedaje['hospedajeID']]);
 
-            // 2. Habitación → LIMPIEZA
-            $db->ejecutar(
-                "UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ?",
-                [$habitacionID]
-            );
+            // 3. Cambiar habitación a LIMPIEZA (Base de datos real)
+            $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ?", [$habitacionID]);
 
-            $db->commit();
-            $_SESSION['message'] = 'La habitación se desocupó con éxito y entró en etapa de LIMPIEZA.';
+            $_SESSION['mensaje'] = "Habitación desocupada con éxito. Estado: LIMPIEZA.";
+            $_SESSION['mensaje_tipo'] = "success";
         } else {
-            $db->rollBack();
-            $_SESSION['message'] = 'Advertencia: No se encontró hospedaje activo en esta habitación.';
+            // Limpieza de seguridad por si la habitación quedó trabada visualmente
+            $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ?", [$habitacionID]);
+            $_SESSION['mensaje'] = "La habitación fue reseteada a LIMPIEZA.";
+            $_SESSION['mensaje_tipo'] = "warning";
         }
 
+        $db->commit();
     } catch (Exception $e) {
-        $db->rollBack();
-        $_SESSION['error'] = 'Error crítico al desocupar: ' . $e->getMessage();
+        if ($db->inTransaction()) $db->rollBack();
+        $_SESSION['mensaje'] = "Error al desocupar: " . $e->getMessage();
+        $_SESSION['mensaje_tipo'] = "danger";
     }
-} else {
-    $_SESSION['error'] = 'Petición rechazada: Faltan variables obligatorias.';
 }
 
 header("Location: habitaciones.php");

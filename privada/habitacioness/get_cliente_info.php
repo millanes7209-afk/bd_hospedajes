@@ -7,14 +7,14 @@ if (isset($_GET['habitacionID'])) {
     $habitacionID = $_GET['habitacionID'];
 
     // Consulta SQL para obtener la información de todos los clientes asociados al hospedaje activo
-    $sql = $db->Prepare("SELECT GROUP_CONCAT(CONCAT(c.nombres, ' ', c.apellidos) SEPARATOR ', ') AS cliente, 
-                                h.checkout, h.monto_total AS precio, h.descripcion as descripcion
-                          FROM hospedajes h 
-                          JOIN hospedajes_clientes hc ON h.hospedajeID = hc.hospedajeID
-                          JOIN clientes c ON hc.clienteID = c.clienteID
-                          WHERE h.habitacionID = ? AND h.estado = 'ACTIVO'");
+    $sql = "SELECT GROUP_CONCAT(CONCAT(c.nombres, ' ', c.apellidos) SEPARATOR ', ') AS cliente, 
+                   h.checkout, h.monto_total AS precio, h.descripcion as descripcion
+            FROM hospedajes h 
+            JOIN hospedajes_clientes hc ON h.hospedajeID = hc.hospedajeID
+            JOIN clientes c ON hc.clienteID = c.clienteID
+            WHERE h.habitacionID = ? AND h.estado IN ('ACTIVO', 'DEUDA') AND h._estado <> 'X'";
 
-    $hospedajeInfo = $db->GetRow($sql, array($habitacionID));
+    $hospedajeInfo = $db->obtenerFila($sql, [$habitacionID]);
 
     if ($hospedajeInfo) {
         // Devolver la información como JSON
@@ -24,7 +24,6 @@ if (isset($_GET['habitacionID'])) {
         echo json_encode([]);
     }
 } else {
-    // Si no se proporciona un ID de habitación, devolver un error
     echo json_encode(['error' => 'Faltan datos necesarios.']);
 }
 ?>

@@ -11,7 +11,7 @@ $ci = $_POST['ci'];
 
 // Consulta para buscar coincidencias en la base de datos
 $sql = "SELECT clienteID, ci, nombres, apellidos FROM clientes WHERE ci LIKE ? AND _estado = 'A'";
-$rs = $db->GetAll($sql, array($ci . '%')); // Utilizamos LIKE para buscar coincidencias parciales al inicio
+$rs = $db->obtenerTodo($sql, array($ci . '%')); // Utilizamos LIKE para buscar coincidencias parciales al inicio
 
 if ($rs && count($rs) > 0) {
     echo "<div class='alert alert-success'>Coincidencias encontradas:</div>";

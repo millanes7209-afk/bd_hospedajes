@@ -2,54 +2,37 @@
 session_start();
 require_once("../../conexion.php");
 
-$id_usuario = $_POST["id_usuario"];
+$usuarioID = $_POST["usuarioID"] ?? $_POST["id_usuario"] ?? null;
+$usuarioLogueado = $_SESSION["sesion_id_usuario"];
 
-// Obtener el nombre de usuario
-$sqlNombreUsuario = $db->Prepare("SELECT usuario FROM usuarios WHERE id_usuario = ?");
-$rsNombreUsuario = $db->GetAll($sqlNombreUsuario, array($id_usuario));
-
-if ($rsNombreUsuario) {
-    $nombreUsuario = $rsNombreUsuario[0]['usuario'];
-} else {
-    $nombreUsuario = "desconocido"; // Manejo en caso de error
+if (!$usuarioID) {
+    echo json_encode(['tipo' => 'danger', 'mensaje' => 'ID de usuario no proporcionado.']);
+    exit;
 }
 
-// Verificar si el usuario tiene registros en la tabla 'usuarios_roles'
-$sqlUsuariosRoles = $db->Prepare("SELECT * FROM usuarios_roles WHERE id_usuario = ? AND _estado <> 'X'");
-$rsUsuariosRoles = $db->GetAll($sqlUsuariosRoles, array($id_usuario));
+try {
+    // 1. Obtener el nombre del usuario para el mensaje
+    $sql_u = "SELECT usuario FROM usuarios WHERE usuarioID = ?";
+    $user = $db->obtenerFila($sql_u, [$usuarioID]);
+    $nombre = $user ? $user['usuario'] : "Desconocido";
 
-// Crear una lista de tablas donde se encuentra la herencia
-$tablas = [];
+    // 2. Borrado Lógico del Usuario
+    $sql_del_u = "UPDATE usuarios SET _estado = 'X', _fec_modificacion = NOW(), _usuario = ? WHERE usuarioID = ?";
+    $db->ejecutar($sql_del_u, [$usuarioLogueado, $usuarioID]);
 
-if ($rsUsuariosRoles) {
-    $tablas[] = 'usuarios_roles';
-}
+    // 3. Borrado Lógico de sus Roles (Cascada lógica)
+    $sql_del_r = "UPDATE usuarios_roles SET _estado = 'X', _fec_modificacion = NOW(), _usuario = ? WHERE usuarioID = ?";
+    $db->ejecutar($sql_del_r, [$usuarioLogueado, $usuarioID]);
 
-// Verificar si tiene registros en alguna de las tablas
-if (!empty($tablas)) {
-    // Formatear las tablas en formato de lista
-    $tablaHerencia = '<ul>';
-    foreach ($tablas as $tabla) {
-        $tablaHerencia .= "<li>$tabla</li>";
-    }
-    $tablaHerencia .= '</ul>';
-    
-    // Enviar mensaje de error en JSON con el nombre de usuario
-    echo json_encode([
-        'tipo' => 'danger',
-        'mensaje' => "No se pudo eliminar al usuario $nombreUsuario porque tiene registros en las siguientes tablas:" . $tablaHerencia
-    ]);
-} else {
-    // Eliminar (marcar como 'X') el usuario
-    $reg = array();
-    $reg["_estado"] = 'X';
-    $reg["_usuario"] = $_SESSION["sesion_id_usuario"];
-    $rs1 = $db->AutoExecute("usuarios", $reg, "UPDATE", "id_usuario = '".$id_usuario."'");
-
-    // Enviar mensaje de éxito en JSON con el nombre de usuario
     echo json_encode([
         'tipo' => 'success',
-        'mensaje' => "El usuario $nombreUsuario ha sido eliminado correctamente."
+        'mensaje' => "El usuario $nombre ha sido eliminado correctamente del sistema."
+    ]);
+
+} catch (Exception $e) {
+    echo json_encode([
+        'tipo' => 'danger',
+        'mensaje' => "Error al eliminar: " . $e->getMessage()
     ]);
 }
 ?>

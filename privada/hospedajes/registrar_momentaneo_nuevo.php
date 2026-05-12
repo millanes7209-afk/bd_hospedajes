@@ -62,6 +62,16 @@ try {
     $db->commit();
     $_SESSION['mensaje'] = "Registro Momentáneo completado en Habitación " . $habitacion_numero;
     $_SESSION['mensaje_tipo'] = "success";
+
+    $_SESSION['debug_last_op'] = [
+        'accion' => 'REGISTRO_MOMENTANEO',
+        'habitacionID' => $habitacionID,
+        'numero' => $habitacion_numero,
+        'estado_en_db' => 'MOMENTANEO',
+        'checkout' => $checkout,
+        'monto' => $monto_total
+    ];
+
     header("Location: ../habitacioness/habitaciones.php");
     exit();
 

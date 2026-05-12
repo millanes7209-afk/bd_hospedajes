@@ -1,15 +1,18 @@
 <?php
+session_start();
 require_once("../../conexion.php");
 
-// Consulta para obtener el estado actual de todas las habitaciones
-$sql = $db->Prepare("SELECT h.habitacionID, h.numero, t.tipo, h.estado, t.precio 
-                      FROM habitaciones h
-                      JOIN tipo_habitaciones t ON h.tipohabitacionID = t.tipohabitacionID
-                      WHERE h._estado <> 'X'
-                      ORDER BY h.numero ASC");
-$rs = $db->GetAll($sql);
+$empresaID = $_SESSION['empresaID'];
 
-// Crear un array con los datos
+// Consulta para obtener el estado actual de todas las habitaciones de la empresa
+$sql = "SELECT h.habitacionID, h.numero, t.nombre as tipo, h.estado, t.precio 
+        FROM habitaciones h
+        JOIN tipo_habitaciones t ON h.tipohabitacionID = t.tipohabitacionID
+        WHERE h._estado <> 'X' AND h.empresaID = ?
+        ORDER BY h.numero ASC";
+
+$rs = $db->obtenerTodo($sql, [$empresaID]);
+
 $habitaciones = [];
 foreach ($rs as $habitacion) {
     $habitaciones[] = [
@@ -21,6 +24,5 @@ foreach ($rs as $habitacion) {
     ];
 }
 
-// Devolver los datos en formato JSON
 echo json_encode($habitaciones);
 ?>
