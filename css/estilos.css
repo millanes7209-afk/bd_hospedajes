@@ -1,0 +1,46 @@
+#header {
+    margin: auto;
+    width: 100%;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #f1f1f1; /* Color de fondo */
+    border-bottom: 1px solid #ccc; /* Borde inferior */
+    padding: 10px 0; /* Espaciado interno */
+}
+
+.nav > li {
+    display: inline-block;
+    position: relative; /* Añade posición relativa para los elementos con menús desplegables */
+}
+
+.nav li a {
+    display: block;
+    color: #333333; /* Color del texto */
+    text-decoration: none;
+    padding: 10px 20px; /* Espaciado entre elementos */
+    transition: background-color 0.3s; /* Transición suave */
+}
+
+.nav li a:hover {
+    background-color: #ddd; /* Color de fondo al pasar el mouse */
+}
+
+.nav li ul {
+    display: none;
+    position: absolute;
+    top: 100%; /* Alinea el menú desplegable debajo del elemento padre */
+    left: 0;
+    background-color: #fff; /* Color de fondo del menú desplegable */
+    box-shadow: 0px 8px 16px 0px rgba(10, 246, 246, 0.2); /* Sombra */
+}
+
+.nav li:hover > ul {
+    display: block;
+}
+
+.nav li ul li {
+    display: block;
+}
+
+.nav li ul li:hover {
+    background-color: #f2f2f2; /* Color de fondo al pasar el mouse en el menú desplegable */
+}

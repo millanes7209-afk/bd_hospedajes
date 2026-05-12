@@ -1,0 +1,85 @@
+header {
+  margin: auto;
+  width: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #f1f1f1; /* Color de fondo */
+  border-bottom: 1px solid #ccc; /* Borde inferior */
+  padding: 10px 0; /* Espaciado interno */
+}
+
+/* Estilos para la navegación */
+.nav > li {
+  display: inline-block;
+  position: relative; /* Añade posición relativa para los elementos con menús desplegables */
+}
+
+.nav li a {
+  display: block;
+  color: #333333; /* Color del texto */
+  text-decoration: none;
+  padding: 10px 20px; /* Espaciado entre elementos */
+  transition: background-color 0.3s; /* Transición suave */
+}
+
+.nav li a:hover {
+  background-color: #ddd; /* Color de fondo al pasar el mouse */
+}
+
+.nav li ul {
+  display: none;
+  position: absolute;
+  top: 100%; /* Alinea el menú desplegable debajo del elemento padre */
+  background-color: #fff; /* Color de fondo del menú desplegable */
+  box-shadow: 0px 8px 16px 0px rgba(10, 246, 246, 0.2); /* Sombra */
+}
+
+.nav li:hover > ul {
+  display: block;
+}
+
+.nav li ul li {
+  display: block;
+}
+
+.nav li ul li:hover {
+  background-color: #f2f2f2; /* Color de fondo al pasar el mouse en el menú desplegable */
+}
+
+/* Estilos para el botón de iniciar sesión */
+button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  margin-top: 20px; /* Ajusta el margen superior */
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+/* Estilos para el título y el texto */
+h1, p {
+  text-align: center;
+}
+
+h1 {
+  font-size: 24px; /* Tamaño del título */
+}
+
+p {
+  color: #666; /* Color del texto */
+  font-size: 16px; /* Tamaño del texto */
+}
+
+/* Estilos para el pie de página */
+footer {
+  text-align: center;
+  margin-top: 50px; /* Ajusta el margen superior */
+  padding: 20px 0; /* Espaciado interno */
+  background-color: #f1f1f1; /* Color de fondo */
+  border-top: 1px solid #ccc; /* Borde superior */
+}

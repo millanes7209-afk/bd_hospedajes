@@ -1,0 +1,16 @@
+# Habilitar reescritura de URLs
+RewriteEngine On
+
+# Permitir acceso a todos
+Options +Indexes
+DirectoryIndex index.php index.html
+
+# Evitar problemas con archivos ocultos
+<Files .htaccess>
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Configuración PHP por si acaso
+php_flag display_errors on
+php_value error_reporting E_ALL
