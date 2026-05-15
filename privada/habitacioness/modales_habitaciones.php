@@ -37,7 +37,11 @@
             <select class="form-control" id="cuentaID" name="cuentaID" required>
                 <option value="">--SELECCIONE CUENTA--</option>
                 <?php
-                $cuentas_ingreso = $db->obtenerTodo("SELECT cuentaID, nombre FROM cuentas WHERE tipo = 'INGRESO' AND empresaID = ? AND _estado <> 'X' AND codigo NOT IN ('401', '402')", [$empresaID]);
+                $extra_filter = "";
+                if (isset($tieneModuloBanos) && $tieneModuloBanos) {
+                    $extra_filter = " AND nombre NOT LIKE '%BAÑO%' AND nombre NOT LIKE '%BANO%' ";
+                }
+                $cuentas_ingreso = $db->obtenerTodo("SELECT cuentaID, nombre FROM cuentas WHERE tipo = 'INGRESO' AND empresaID = ? AND _estado <> 'X' AND codigo NOT IN ('401', '402') $extra_filter", [$empresaID]);
                 foreach ($cuentas_ingreso as $c) {
                     $nombre_limpio = str_ireplace('INGRESO ', '', $c['nombre']);
                     echo "<option value='{$c['cuentaID']}'>" . mb_strtoupper($nombre_limpio) . "</option>";
@@ -131,7 +135,7 @@
   </div>
 </div>
 
-<!-- OTROS MODALES (Sin cambios en lógica pero con X arreglada) -->
+<!-- OTROS MODALES -->
 <!-- Modal Registrar Momentáneo -->
 <div class="modal fade" id="modal-momentaneo" tabindex="-1" aria-labelledby="modalmomentaneolabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -142,31 +146,55 @@
       </div>
       <div class="modal-body">
         <form id="form-momentaneo" action="registrar_momentaneo.php" method="POST">
-          <div class="mb-3">
-            <label class="form-label">Habitación</label>
-            <input type="text" class="form-control" id="momentaneo-habitacion" name="descripcion" readonly>
-          </div>
           <input type="hidden" id="momentaneo-habitacionID" name="habitacionID">
           <input type="hidden" name="auth" value="habitaciones.php">
+
           <div class="mb-3">
-            <label class="form-label">Tipo</label>
-            <input type="text" class="form-control" name="tipo" value="MOMENTANEO" readonly>
+            <label class="form-label fw-bold">Habitación</label>
+            <input type="text" class="form-control bg-light" id="momentaneo-habitacion" name="descripcion" readonly>
           </div>
+
           <div class="mb-3">
-            <label class="form-label">Precio</label>
-            <input type="number" class="form-control" name="monto" placeholder="Precio">
+            <label class="form-label fw-bold">(*) Monto Total (Bs.)</label>
+            <input type="number" class="form-control" name="monto_total" id="mom-monto_total"
+                   step="0.5" min="1" required placeholder="0.00"
+                   oninput="actualizarResumenMom()">
           </div>
-          <div class="mb-3">
-            <label class="form-label">Forma de Pago</label>
-            <select class="form-control" name="formaPagoID" required>
-                <option value="">-- SELECCIONE --</option>
-                <?php foreach ($rs_fp2 as $fp) echo "<option value='{$fp['formaPagoID']}'>{$fp['tipo']}</option>"; ?>
-            </select>
+
+          <!-- Sección de pagos mixtos -->
+          <div class="card border-primary shadow-sm mb-3">
+            <div class="card-header py-1 d-flex justify-content-between align-items-center">
+              <small class="fw-bold">FORMA(S) DE PAGO</small>
+              <button type="button" class="btn btn-xs btn-light py-0 px-1" onclick="agregarFilaPagoMom()" style="font-size: 0.65rem;">
+                <i class="fas fa-plus"></i> AÑADIR
+              </button>
+            </div>
+            <div class="card-body p-2">
+              <div id="contenedorPagosMom"></div>
+              <div class="border-top mt-2 pt-1">
+                <div class="d-flex justify-content-between align-items-center small mb-0">
+                  <span class="text-muted small">Pagado:</span>
+                  <span class="fw-bold small">Bs <span id="momDisplayPagado">0.00</span></span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="fw-bold small">SALDO:</span>
+                  <span class="fw-bold small text-danger">Bs <span id="momDisplaySaldo">0.00</span></span>
+                </div>
+                <div id="momAlertaSaldo" class="alert alert-danger py-1 px-2 small mb-0 text-center fw-bold" style="display:none;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Template oculto de formas de pago para este modal -->
+          <div id="templateFormaPagoMom" style="display:none;">
+            <option value="">Seleccione Pago</option>
+            <?php foreach ($rs_fp2 as $fp) echo "<option value='{$fp['formaPagoID']}'>{$fp['tipo']}</option>"; ?>
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-info" id="guardar-momentaneo">REGISTRAR</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCELAR</button>
+        <button type="button" class="btn btn-info fw-bold" id="guardar-momentaneo">REGISTRAR</button>
       </div>
     </div>
   </div>

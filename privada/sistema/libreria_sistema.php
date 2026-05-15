@@ -2,8 +2,8 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once("../../conexion.php");
 
-// Seguridad: Solo ADMINISTRADOR
-if (!isset($_SESSION['sesion_id_usuario']) || strtoupper($_SESSION['sesion_rol']) !== 'ADMINISTRADOR') {
+// Seguridad: Solo ADMINISTRADOR GLOBAL
+if (!isset($_SESSION['sesion_id_usuario']) || !($_SESSION['sesion_es_admin'] ?? false)) {
     header("Location: ../../index.php");
     exit();
 }
@@ -49,6 +49,7 @@ if (!isset($_SESSION['sesion_id_usuario']) || strtoupper($_SESSION['sesion_rol']
     <div class="container-fluid px-4 d-flex justify-content-between align-items-center">
         <ul class="nav-master">
             <li><a href="sucursales.php" class="<?php echo $actual == 'sucursales.php' ? 'active' : ''; ?>"><i class="fas fa-city me-2"></i>SUCURSALES</a></li>
+            <li><a href="funcionalidades.php" class="<?php echo $actual == 'funcionalidades.php' ? 'active' : ''; ?>"><i class="fas fa-cubes me-2"></i>MÓDULOS</a></li>
             <li><a href="grupos.php" class="<?php echo $actual == 'grupos.php' ? 'active' : ''; ?>"><i class="fas fa-layer-group me-2"></i>GRUPOS</a></li>
             <li><a href="opciones.php" class="<?php echo $actual == 'opciones.php' ? 'active' : ''; ?>"><i class="fas fa-list-ul me-2"></i>OPCIONES</a></li>
             <li><a href="accesos.php" class="<?php echo $actual == 'accesos.php' ? 'active' : ''; ?>"><i class="fas fa-key me-2"></i>PERMISOS</a></li>

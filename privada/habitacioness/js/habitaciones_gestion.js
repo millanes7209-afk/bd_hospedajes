@@ -43,7 +43,7 @@ function handleHabitacionClick(estado, numero, tipo, precio, habitacionID) {
     if (estado === 'DISPONIBLE') {
         modalFooter.innerHTML = `
             <button type="button" class="btn btn-primary" onclick="hospedar_ocupar('hospedar', '${numero}', '${tipo}', '${precio}', '${habitacionID}')">HOSPEDAR</button>
-            <button type="button" class="btn btn-info" onclick="momentaneo('${numero}', '${habitacionID}')">SIN CARNET</button>
+            <button type="button" class="btn btn-info" onclick="momentaneo('${numero}', '${habitacionID}', '${precio}')">SIN CARNET</button>
         `;
         modal.show();
     } else if (estado === 'OCUPADA') {
@@ -400,15 +400,79 @@ function mostrarModalPagoDeuda(habitacionID, monto) {
 /**
  * REGISTROS MOMENTÁNEOS Y MANTENIMIENTO
  */
-function momentaneo(numero, habitacionID) {
+function momentaneo(numero, habitacionID, precio) {
     const modalOpciones = bootstrap.Modal.getInstance(document.getElementById('menu-opciones'));
     if (modalOpciones) modalOpciones.hide();
 
     document.getElementById('momentaneo-habitacion').value = numero;
     document.getElementById('momentaneo-habitacionID').value = habitacionID;
-    
+
+    // Limpiar campo monto y pagos al abrir
+    const campoMonto = document.getElementById('mom-monto_total');
+    if (campoMonto) campoMonto.value = '';
+
+    const contenedor = document.getElementById('contenedorPagosMom');
+    if (contenedor) {
+        contenedor.innerHTML = '';
+        // Agregar la primera fila de pago automáticamente
+        agregarFilaPagoMom();
+    }
+    actualizarResumenMom();
+
     const modalmomentaneo = new bootstrap.Modal(document.getElementById('modal-momentaneo'));
     modalmomentaneo.show();
+}
+
+// ---- PAGOS MÚLTIPLES MOMENTÁNEO ----
+function agregarFilaPagoMom() {
+    const contenedor = document.getElementById('contenedorPagosMom');
+    const index = contenedor.children.length;
+    const selectTemplate = document.getElementById('templateFormaPagoMom').innerHTML;
+
+    const div = document.createElement('div');
+    div.className = 'row g-2 mb-2 align-items-center fila-pago-mom';
+    div.innerHTML = `
+        <div class="col-md-7">
+            <select class="form-control form-control-sm" name="pagos[${index}][formaPagoID]" required onchange="actualizarResumenMom()">
+                ${selectTemplate}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <input type="number" class="form-control form-control-sm input-monto-mom"
+                   name="pagos[${index}][monto]" placeholder="Monto" step="0.5" required
+                   oninput="actualizarResumenMom()">
+        </div>
+        <div class="col-md-1 text-end">
+            <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="eliminarFilaPagoMom(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    contenedor.appendChild(div);
+    actualizarResumenMom();
+}
+
+function eliminarFilaPagoMom(btn) {
+    const contenedor = document.getElementById('contenedorPagosMom');
+    if (contenedor.children.length > 1) {
+        btn.closest('.fila-pago-mom').remove();
+        actualizarResumenMom();
+    }
+}
+
+function actualizarResumenMom() {
+    const total = parseFloat(document.getElementById('mom-monto_total')?.value) || 0;
+    let pagado = 0;
+    document.querySelectorAll('.input-monto-mom').forEach(i => { pagado += parseFloat(i.value) || 0; });
+    const saldo = total - pagado;
+
+    const elPagado = document.getElementById('momDisplayPagado');
+    const elSaldo  = document.getElementById('momDisplaySaldo');
+    if (elPagado) elPagado.innerText = pagado.toFixed(2);
+    if (elSaldo) {
+        elSaldo.innerText = saldo.toFixed(2);
+        elSaldo.className = (Math.abs(saldo) < 0.01) ? 'text-success fw-bold' : 'text-danger fw-bold fs-5';
+    }
 }
 
 function mantenimiento(numero, habitacionID) {

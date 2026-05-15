@@ -63,9 +63,10 @@ while ($fecha_actual <= $fecha_fin_obj) {
 
 // Para cada fecha, obtener movimientos
 foreach ($fechas_rango as $fecha) {
-    // FILTRO ESTRICTO: Solo cajas que tengan al menos un ingreso o egreso no entregado
+    // FILTRO ESTRICTO: Cajas con ingresos/egresos de habitaciones O de baños pendientes de entrega
     $where_entrega = " AND (EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.cajaID AND i.entregado = 0 AND i._estado <> 'X') 
-                         OR EXISTS (SELECT 1 FROM egresos e WHERE e.cajaID = c.cajaID AND e.entregado = 0 AND e._estado <> 'X')) ";
+                         OR EXISTS (SELECT 1 FROM egresos e WHERE e.cajaID = c.cajaID AND e.entregado = 0 AND e._estado <> 'X')
+                         OR EXISTS (SELECT 1 FROM banos b WHERE b.cajaID = c.cajaID AND b.entregado = 0)) ";
 
     // Armar consulta según el rol (Filtrar por el RESPONSABLE DEL CIERRE)
     if ($rol_usuario === 'RECEPCIONISTA') {
@@ -134,7 +135,19 @@ foreach ($fechas_rango as $fecha) {
         $agrupados[$clave]['movimientos_count']++;
     }
 
-    $vista_semanal[$fecha]['movimientos'] = array_values($agrupados);
+    $agrupados_final = array_values($agrupados);
+
+    // NUEVO: Obtener saldo de BAÑOS por cada cajaID encontrada
+    foreach ($agrupados_final as &$caja_data) {
+        $cid = $caja_data['cajaID'];
+        $sql_b = "SELECT SUM(CASE WHEN tipo = 'INGRESO' THEN monto ELSE 0 END) - 
+                         SUM(CASE WHEN tipo = 'EGRESO' THEN monto ELSE 0 END) as saldo
+                  FROM banos WHERE cajaID = ? AND entregado = 0";
+        $rb = $db->obtenerFila($sql_b, [$cid]);
+        $caja_data['saldo_bano'] = (float)($rb['saldo'] ?? 0);
+    }
+
+    $vista_semanal[$fecha]['movimientos'] = $agrupados_final;
 }
 ?>
 
@@ -258,6 +271,7 @@ foreach ($fechas_rango as $fecha) {
                                         <?php foreach ($formas_pago as $forma_pago): ?>
                                             <th class="text-center"><?= $forma_pago['tipo'] ?></th>
                                         <?php endforeach; ?>
+                                        <th class="text-center text-info">BAÑOS</th>
                                         <th class="text-end">Total</th>
                                         <?php if ($rol_usuario !== 'RECEPCIONISTA'): ?>
                                             <th width="4%"></th>
@@ -297,7 +311,14 @@ foreach ($fechas_rango as $fecha) {
                                                         <td class="text-center align-middle">Bs. <?= number_format($monto, 2) ?></td>
                                                     <?php endforeach; ?>
 
-                                                    <?php $suma_footer_total_general += $total_fila; ?>
+                                                    <td class="text-center align-middle text-info fw-bold">
+                                                        Bs. <?= number_format($movimiento['saldo_bano'], 2) ?>
+                                                    </td>
+
+                                                    <?php 
+                                                    $total_fila += $movimiento['saldo_bano'];
+                                                    $suma_footer_total_general += $total_fila; 
+                                                    ?>
                                                     <td class="text-end align-middle fw-bold">Bs.
                                                         <?= number_format($total_fila, 2) ?>
                                                     </td>
@@ -311,10 +332,10 @@ foreach ($fechas_rango as $fecha) {
                                                             </button>
                                                         </td>
                                                         <td class="text-center align-middle col-recaudar" style="width: 40px; border-left: 1px solid #dee2e6;">
-                                                            <input type="checkbox" class="check-recaudar form-check-input m-0 d-block mx-auto"
+                                                                <input type="checkbox" class="check-recaudar form-check-input m-0 d-block mx-auto"
                                                                 style="width: 18px; height: 18px; cursor: pointer; border: 1px solid #adb5bd;"
                                                                 data-cajaid="<?= $movimiento['cajaID'] ?>"
-                                                                data-monto="<?= array_sum($movimiento['saldos']) ?>"
+                                                                data-monto="<?= array_sum($movimiento['saldos']) + $movimiento['saldo_bano'] ?>"
                                                                 onclick="actualizarTotal()">
                                                         </td>
                                                     <?php endif; ?>
@@ -333,6 +354,13 @@ foreach ($fechas_rango as $fecha) {
                                                     <?= number_format($suma_footer_formas[$forma_pago['tipo']], 2) ?> Bs.
                                                 </th>
                                             <?php endforeach; ?>
+                                            <th class="text-center text-info">
+                                                <?php 
+                                                $total_banos_footer = 0;
+                                                foreach($vista_semanal as $d) foreach($d['movimientos'] as $m) $total_banos_footer += $m['saldo_bano'];
+                                                echo number_format($total_banos_footer, 2);
+                                                ?> Bs.
+                                            </th>
                                             <th class="text-end" style="font-size: 1.1rem; border-left: 1px solid #dee2e6;">
                                                 <?= number_format($suma_footer_total_general, 2) ?> Bs.
                                             </th>

@@ -7,14 +7,15 @@ require_once("../../libreria_menu.php");
 $habitacionID = $_REQUEST['habitacionID'] ?? 0;
 $modo = $_REQUEST['modo'] ?? 'deuda'; // 'deuda' o 'extension'
 
-// Obtener datos del hospedaje activo (Momentáneo)
+// Obtener datos del hospedaje activo (Momentáneo) de esta empresa
+$empresaID = $_SESSION['empresaID'];
 $sql = "SELECT h.*, hab.numero as habitacion_numero, thab.nombre as tipo_habitacion, thab.precio as precio_base
         FROM hospedajes h
         JOIN habitaciones hab ON h.habitacionID = hab.habitacionID
         JOIN tipo_habitaciones thab ON hab.tipohabitacionID = thab.tipohabitacionID
-        WHERE h.habitacionID = ? AND h.estado = 'ACTIVO' AND h._estado <> 'X'
+        WHERE h.habitacionID = ? AND h.empresaID = ? AND h.estado = 'ACTIVO' AND h._estado <> 'X'
         ORDER BY h.hospedajeID DESC LIMIT 1";
-$hospedaje = $db->obtenerFila($sql, [$habitacionID]);
+$hospedaje = $db->obtenerFila($sql, [$habitacionID, $empresaID]);
 
 if (!$hospedaje) {
     echo "<div class='alert alert-danger'>Error: No se encontró un registro activo para esta habitación.</div>";

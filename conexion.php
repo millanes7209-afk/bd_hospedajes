@@ -9,6 +9,8 @@ class MiConexion extends PDO {
             
             date_default_timezone_set('America/La_Paz');
             $this->exec("SET time_zone = '-04:00'");
+            $this->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+
             
             // Configuraciones de seguridad y comportamiento
             $this->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

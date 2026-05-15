@@ -19,8 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        $sql = "INSERT INTO banos (empresaID, cajaID, usuarioID, monto, tipo, descripcion, fecha, _estado) 
-                VALUES (?, ?, ?, ?, ?, ?, NOW(), 'A')";
+        $sql = "INSERT INTO banos (empresaID, cajaID, usuarioID, monto, tipo, descripcion, fecha) 
+                VALUES (?, ?, ?, ?, ?, ?, NOW())";
         $db->ejecutar($sql, [$empresaID, $cajaID, $usuarioID, $monto, $tipo, $descripcion]);
 
         $_SESSION['mensaje'] = "Registro de Baño ($tipo) guardado correctamente.";

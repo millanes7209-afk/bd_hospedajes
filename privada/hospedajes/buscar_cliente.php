@@ -8,18 +8,23 @@ $paisID = isset($_POST['paisID']) ? $_POST['paisID'] : '';
 
 if (!empty($ci) && !empty($paisID)) {
     
-    // 2. Consulta buscando la combinación exacta de CI y País, verificando si tiene hospedaje activo
+    // 2. Consulta buscando la combinación exacta de CI y País, verificando si tiene hospedaje activo EN ESTA EMPRESA
+    $empresaID = $_SESSION['empresaID'];
     $sql = "SELECT c.*, p.nombre AS nombre_pais,
             (SELECT hab.numero FROM hospedajes_clientes hc 
              JOIN hospedajes h ON hc.hospedajeID = h.hospedajeID 
              JOIN habitaciones hab ON h.habitacionID = hab.habitacionID
-             WHERE hc.clienteID = c.clienteID AND h.estado = 'ACTIVO' AND h._estado <> 'X' AND hc._estado <> 'X' LIMIT 1) AS habitacion_activa
+             WHERE hc.clienteID = c.clienteID 
+             AND h.empresaID = ? 
+             AND h.estado = 'ACTIVO' 
+             AND h._estado <> 'X' 
+             AND hc._estado <> 'X' LIMIT 1) AS habitacion_activa
             FROM clientes c
             INNER JOIN paises p ON c.paisID = p.paisID
             WHERE c.ci = ? 
             AND c.paisID = ? 
             AND c._estado <> 'X'";
-    $fila =$db->obtenerFila($sql, [$ci, $paisID]);
+    $fila =$db->obtenerFila($sql, [$empresaID, $ci, $paisID]);
 
     if ($fila) {
         if (!empty($fila['habitacion_activa'])) {

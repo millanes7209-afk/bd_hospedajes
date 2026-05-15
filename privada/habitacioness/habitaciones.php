@@ -77,15 +77,15 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
         <div class="card-body">
             <div class="d-flex flex-wrap justify-content-center">
                 <?php if ($rs): ?>
-                    <?php 
+                    <?php
                     $tipoActual = "";
-                    foreach ($rs as $habitacion): 
+                    foreach ($rs as $habitacion):
                         // Lógica de Títulos por Agrupación
                         if (isset($_GET['orden']) && $_GET['orden'] == 'tipo' && $tipoActual != $habitacion['nombre']) {
                             $tipoActual = $habitacion['nombre'];
                             echo '<div class="w-100 mt-4 mb-2"><h4 class="text-primary border-bottom pb-2 fw-bold"><i class="fas fa-tag"></i> ' . mb_strtoupper($tipoActual) . '</h4></div>';
                         }
-                    ?>
+                        ?>
                         <?php
                         // LÓGICA SMART BIDIRECCIONAL: Sincronización Real de Ocupación
                 
@@ -119,26 +119,26 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                             $habitacion['estado'] = 'DEUDA';
                             // Sincronización Real con la Base de Datos
                             $db->ejecutar("UPDATE habitaciones SET estado = 'DEUDA' WHERE habitacionID = ?", [$habitacion['habitacionID']]);
-                            
+
                             // Regla de Hotelería: cobrar 1 día por pasarse de la hora.
                             // Cobrar días adicionales al sobrepasar la barrera de las 13:00 los días siguientes.
                             $checkout_obj = new DateTime($habitacion['checkout_activo']);
                             $ahora_obj = new DateTime();
-                            
+
                             $dias_cobro = 1;
 
                             $iter_date_limite = clone $checkout_obj;
                             $iter_date_limite->modify('+1 day');
                             $iter_date_limite->setTime(13, 0, 0); // Vencimiento del primer día de castigo
-
+                
                             while ($iter_date_limite <= $ahora_obj) {
                                 $dias_cobro++;
                                 $iter_date_limite->modify('+1 day');
                             }
-                            
+
                             // Si no hay precio pactado (raro), usamos el precio base
                             $precio_diario = !empty($habitacion['precio_pactado']) ? $habitacion['precio_pactado'] : $habitacion['precio'];
-                            $deuda_final = $dias_cobro * $precio_diario; 
+                            $deuda_final = $dias_cobro * $precio_diario;
                             $habitacion['precio_pactado'] = $deuda_final; // Sobrescribimos visualmente para el botón
                         }
 
@@ -167,11 +167,10 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                                 $btnClass .= ' btn btn-dark';
                         }
                         ?>
-                        <button id="habitacion-<?php echo $habitacion['habitacionID']; ?>" 
+                        <button id="habitacion-<?php echo $habitacion['habitacionID']; ?>"
                             class="<?php echo $btnClass; ?> habitacion-card"
                             data-tipo-id="<?php echo $habitacion['tipohabitacionID']; ?>"
-                            data-tipo-nombre="<?php echo $habitacion['nombre']; ?>"
-                            <?php echo $boton_estado; ?>
+                            data-tipo-nombre="<?php echo $habitacion['nombre']; ?>" <?php echo $boton_estado; ?>
                             onclick="handleHabitacionClick('<?php echo $habitacion['estado']; ?>', '<?php echo $habitacion['numero']; ?>', '<?php echo $habitacion['nombre']; ?>', '<?php echo ($habitacion['estado'] === 'DEUDA' ? $habitacion['precio_pactado'] : (!empty($habitacion['precio_pactado']) ? $habitacion['precio_pactado'] : $habitacion['precio'])); ?>', '<?php echo $habitacion['habitacionID']; ?>')">
 
                             <?php if ($habitacion['estado'] === 'DEUDA'): ?>
@@ -188,14 +187,16 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                             <?php if (($habitacion['estado'] === 'OCUPADA' || $habitacion['estado'] === 'DEUDA') && !empty($habitacion['cliente_activo'])): ?>
                                 <!-- Ficha Flotante (Tooltip) para OCUPADAS y DEUDAS -->
                                 <?php if ($habitacion['estado'] === 'DEUDA'): ?>
-                                    <span class="badge-precio" style="background:#dc3545; color:#fff; border-color:#dc3545;">DEUDA Bs. <?php echo number_format($habitacion['precio_pactado'], 0); ?></span>
+                                    <span class="badge-precio" style="background:#dc3545; color:#fff; border-color:#dc3545;">DEUDA Bs.
+                                        <?php echo number_format($habitacion['precio_pactado'], 0); ?></span>
                                 <?php else: ?>
                                     <span class="badge-precio">Bs. <?php echo number_format($habitacion['precio_pactado'], 0); ?></span>
                                 <?php endif; ?>
-                                
+
                                 <div class="habitacion-info-tooltip">
                                     <div class="tooltip-header" <?php echo ($habitacion['estado'] === 'DEUDA') ? 'style="background-color: #dc3545;"' : ''; ?>>
-                                        <i class="fas <?php echo ($habitacion['estado'] === 'DEUDA') ? 'fa-exclamation-triangle' : 'fa-user-circle'; ?>"></i> 
+                                        <i
+                                            class="fas <?php echo ($habitacion['estado'] === 'DEUDA') ? 'fa-exclamation-triangle' : 'fa-user-circle'; ?>"></i>
                                         <?php echo ($habitacion['estado'] === 'DEUDA') ? 'DEUDA VENCIDA' : 'DETALLE OCUPACIÓN'; ?>
                                     </div>
                                     <div class="tooltip-body">
@@ -209,25 +210,31 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                             <?php elseif ($habitacion['estado'] === 'DISPONIBLE'): ?>
                                 <!-- Precio visible directamente solo en DISPONIBLES -->
                                 <span class="badge-precio">Bs. <?php echo number_format($habitacion['precio'], 0); ?></span>
-                                
-                                <div style="position: absolute; top: 4px; left: 4px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;">
+
+                                <div
+                                    style="position: absolute; top: 4px; left: 4px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;">
                                     <?php if ($habitacion['tv'] == 1): ?>
-                                        <span style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">TV</span>
+                                        <span
+                                            style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">TV</span>
                                     <?php endif; ?>
                                     <?php if ($habitacion['bano'] == 1): ?>
-                                        <span style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">BAÑO</span>
+                                        <span
+                                            style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">BAÑO</span>
                                     <?php endif; ?>
                                     <?php if ($habitacion['ventilador'] == 1): ?>
-                                        <span style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">VENT</span>
+                                        <span
+                                            style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">VENT</span>
                                     <?php endif; ?>
                                 </div>
                             <?php else: ?>
                                 <!-- Otros estados: Texto simple -->
-                                <span class="estado-label"><?php echo ($habitacion['estado'] === 'MANTENIMIENTO') ? 'MANT.' : $habitacion['estado']; ?></span>
-                                
-                                <?php if ($habitacion['estado'] === 'MANTENIMIENTO' && trim((string)$habitacion['descripcion']) !== ''): ?>
+                                <span
+                                    class="estado-label"><?php echo ($habitacion['estado'] === 'MANTENIMIENTO') ? 'MANT.' : $habitacion['estado']; ?></span>
+
+                                <?php if ($habitacion['estado'] === 'MANTENIMIENTO' && trim((string) $habitacion['descripcion']) !== ''): ?>
                                     <div class="habitacion-info-tooltip">
-                                        <div class="tooltip-header" style="background-color: #343a40; color: white; border-color: #555;">
+                                        <div class="tooltip-header"
+                                            style="background-color: #343a40; color: white; border-color: #555;">
                                             <i class="fas fa-tools"></i> MANTENIMIENTO
                                         </div>
                                         <div class="tooltip-body">
@@ -254,7 +261,7 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
             const habitaciones = document.querySelectorAll('.habitacion-card');
             habitaciones.forEach(hab => {
                 if (tipoID === 'TODOS' || hab.getAttribute('data-tipo-id') === tipoID) {
-                    hab.style.display = ''; 
+                    hab.style.display = '';
                     hab.classList.remove('d-none');
                 } else {
                     hab.style.display = 'none';
@@ -263,49 +270,7 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
             });
         }
     </script>
-    <!-- PANEL DE DEPURACIÓN FORENSE -->
-    <div class="container-fluid mt-5 mb-5" style="border-top: 3px solid #333; padding-top: 20px;">
-        <div class="card border-dark shadow">
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">DEPURADOR: ESTADO REAL EN DB</h4>
-                <button class="btn btn-sm btn-outline-light" onclick="location.reload()">REFRESCAR</button>
-            </div>
-            <div class="card-body bg-light">
-                <div class="row">
-                    <div class="col-md-7">
-                        <table class="table table-bordered table-sm bg-white">
-                            <thead><tr><th>Hab</th><th>Estado DB</th><th>Clase</th></tr></thead>
-                            <tbody>
-                                <?php foreach ($rs as $h): 
-                                    $c = 'btn-dark';
-                                    if($h['estado'] == 'DISPONIBLE') $c = 'btn-success';
-                                    if($h['estado'] == 'OCUPADA') $c = 'btn-primary';
-                                    if($h['estado'] == 'DEUDA') $c = 'btn-danger';
-                                    if($h['estado'] == 'LIMPIEZA') $c = 'btn-secondary';
-                                    if($h['estado'] == 'MOMENTANEO') $c = 'btn-warning';
-                                ?>
-                                <tr>
-                                    <td><?= $h['numero'] ?></td>
-                                    <td><span class="badge <?= str_replace('btn-','bg-',$c) ?>"><?= $h['estado'] ?></span></td>
-                                    <td><code><?= $c ?></code></td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="col-md-5 border-start">
-                        <h5>Última Operación:</h5>
-                        <?php if (isset($_SESSION['debug_last_op'])): ?>
-                            <pre class="bg-white p-2 border"><?= print_r($_SESSION['debug_last_op'], true) ?></pre>
-                            <?php unset($_SESSION['debug_last_op']); ?>
-                        <?php else: ?>
-                            <p class="text-muted">Sin operaciones recientes.</p>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+
 </body>
 
 </html>

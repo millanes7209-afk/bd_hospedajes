@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once("../../conexion.php");
 
 // Forzar respuesta JSON limpia siempre
@@ -6,20 +7,21 @@ header('Content-Type: application/json');
 
 try {
     $habitacionID = $_GET['habitacionID'] ?? 0;
+    $empresaID    = $_SESSION['empresaID'] ?? 0;
 
     if (!$habitacionID) {
         echo json_encode(['error' => 'Falta habitacionID']);
         exit;
     }
 
-    // 1. Obtener datos básicos del hospedaje
+    // 1. Obtener datos básicos del hospedaje filtrando por empresa
     $sql = "SELECT h.hospedajeID, hab.numero, hab.habitacionID, h.monto as monto_total
             FROM hospedajes h
             JOIN habitaciones hab ON h.habitacionID = hab.habitacionID
-            WHERE h.habitacionID = ? AND h._estado <> 'X' AND h.estado = 'ACTIVO'
+            WHERE h.habitacionID = ? AND h.empresaID = ? AND h._estado <> 'X' AND h.estado IN ('ACTIVO', 'DEUDA')
             ORDER BY h.hospedajeID DESC LIMIT 1";
 
-    $row = $db->obtenerFila($sql, [$habitacionID]);
+    $row = $db->obtenerFila($sql, [$habitacionID, $empresaID]);
 
     if ($row) {
         $hospedajeID = $row['hospedajeID'];

@@ -24,10 +24,10 @@ try {
         throw new Exception("Datos incompletos para procesar el pago.");
     }
 
-    // 2. Obtener datos actuales del hospedaje
-    $sql_h = "SELECT monto, checkout FROM hospedajes WHERE hospedajeID = ?";
-    $h_actual = $db->obtenerFila($sql_h, [$hospedajeID]);
-    if (!$h_actual) throw new Exception("No se encontró el hospedaje.");
+    // 2. Obtener datos actuales del hospedaje filtrando por empresa
+    $sql_h = "SELECT monto, checkout FROM hospedajes WHERE hospedajeID = ? AND empresaID = ?";
+    $h_actual = $db->obtenerFila($sql_h, [$hospedajeID, $empresaID]);
+    if (!$h_actual) throw new Exception("No se encontró el hospedaje o no pertenece a esta empresa.");
 
     $nuevo_monto_total = $h_actual['monto'] + $monto_adicional;
 
@@ -78,7 +78,7 @@ try {
     }
 
     // 9. Actualizar la Habitación
-    $estado_hab = ($tipo_accion === 'SALIR') ? 'LIMPIEZA' : 'OCUPADA'; // Cambiado de MOMENTANEO a OCUPADA para consistencia
+    $estado_hab = ($tipo_accion === 'SALIR') ? 'LIMPIEZA' : 'MOMENTANEO'; 
     $sql_upd_hab = "UPDATE habitaciones SET estado = ? WHERE habitacionID = ?";
     $res_upd_hab = $db->ejecutar($sql_upd_hab, [$estado_hab, $habitacionID]);
     if (!$res_upd_hab) throw new Exception("Error al actualizar el estado de la habitación.");

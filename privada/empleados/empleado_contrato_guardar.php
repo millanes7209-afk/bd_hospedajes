@@ -27,27 +27,14 @@ if (!$rs_rol) {
     exit("ERROR: El rolID=$rolID no existe en la tabla roles");
 }
 
-// 2. VALIDACIÓN: ¿Ya tiene un contrato ACTIVO con este mismo CARGO en esta empresa?
-$sql_dup = "SELECT 1 FROM empleado_empresas 
-            WHERE empleadoID = ? AND empresaID = ? AND rolID = ? AND estado_laboral = 'ACTIVO' AND _estado <> 'X'";
-$rs_dup = $db->obtenerFila($sql_dup, [$empleadoID, $empresaID, $rolID]);
-
-if ($rs_dup) {
-    exit("ERROR: El empleado ya tiene un contrato ACTIVO como '" . $rs_rol['rol'] . "' en esta empresa. Debe finalizar el anterior antes de crear uno nuevo igual.");
-}
+// 2. VALIDACIÓN: (Opcional) Podrías querer avisar si ya tiene el mismo cargo, pero permitiremos múltiples.
+// Se elimina el bloqueo forzoso para permitir flexibilidad total.
 
 try {
     $db->beginTransaction();
 
-    // 1. Si es TITULAR, desactivar contratos previos de este empleado en esta empresa
-    if ($es_titular === 1) {
-        $db->ejecutar(
-            "UPDATE empleado_empresas 
-             SET estado_laboral = 'INACTIVO', _fec_modificacion = NOW()
-             WHERE empleadoID = ? AND empresaID = ? AND estado_laboral = 'ACTIVO' AND _estado <> 'X'",
-            [$empleadoID, $empresaID]
-        );
-    }
+    // 1. Lógica de Titularidad: (Opcional) Podrías marcar otros como no titulares, 
+    // pero permitiremos que coexistan múltiples contratos activos sin apagar los anteriores.
 
     // 2. INSERT contrato en empleado_empresas
     $sql = "INSERT INTO empleado_empresas 

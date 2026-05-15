@@ -98,6 +98,18 @@ if (isset($_SESSION["sesion_id_rol"])) {
     }
 
     $rs = $db->obtenerTodo($sql, $params);
+
+    // --- NUEVO: DETECCIÓN DE MÓDULOS ACTIVOS PARA LA EMPRESA ---
+    $modulos_activos = [];
+    if (!$is_global) {
+        $sql_mods = "SELECT funcionalidadID FROM empresa_funcionalidades WHERE empresaID = ? AND estado = 'ACTIVO' AND _estado <> 'X'";
+        $rs_mods = $db->obtenerTodo($sql_mods, [$empresaID]);
+        $modulos_activos = array_column($rs_mods, 'funcionalidadID');
+    }
+    // Flag para el módulo de baños premium (MÓDULO INDEPENDIENTE ID 4)
+    $tieneModuloBanos = in_array(4, $modulos_activos);
+    // -----------------------------------------------------------
+
     $nick = $_SESSION["sesion_usuario"];
     $dir_php = $_SERVER["PHP_SELF"];
     $cuerp = strpos($dir_php, "listado_tablas.php");
@@ -456,9 +468,14 @@ if (isset($_SESSION["sesion_id_rol"])) {
                             <i class="fas fa-arrow-left"></i> VOLVER A EMPRESAS
                         </a>
                     </li>
-                    <li class='nav-item'>
-                        <a class='nav-link' href='<?= ($cuerp == false ? "../../validar.php" : "validar.php") ?>'>
-                            <i class="fas fa-sign-out-alt"></i> CERRAR SESIÓN
+                    <li class="nav-item">
+                        <a href="../../selector_rol.php?manual=1" class="nav-link">
+                            <i class="fas fa-user-tag me-2"></i> Cambiar Rol
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../../validar.php">
+                            <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
                         </a>
                     </li>
                 </ul>
@@ -490,12 +507,16 @@ if (isset($_SESSION["sesion_id_rol"])) {
                         <div class="leyenda-item"><span class="leyenda-dot dot-deuda"></span> DEUDA</div>
                         <div class="leyenda-item"><span class="leyenda-dot dot-limpieza"></span> LIMPIEZA</div>
                         <div class="leyenda-item"><span class="leyenda-dot dot-mantenimiento"></span> MANTENIMIENTO</div>
-                        
-                        <!-- BOTONES DE BAÑOS MOVIDOS AQUÍ -->
+
+                        <!-- BOTONES DE BAÑOS MOVIDOS AQUÍ (Solo si tiene módulo Premium ID 6) -->
+                        <?php if ($tieneModuloBanos): ?>
                         <div class="d-flex gap-1 ms-3 border-start ps-3">
-                            <button type="button" class="btn btn-xs btn-primary py-0 px-2 fw-bold" onclick="mostrarModalBano('INGRESO')" style="font-size: 10px; height: 20px;">+ BAÑO</button>
-                            <button type="button" class="btn btn-xs btn-danger py-0 px-2 fw-bold" onclick="mostrarModalBano('EGRESO')" style="font-size: 10px; height: 20px;">- BAÑO</button>
+                            <button type="button" class="btn btn-xs btn-primary py-0 px-2 fw-bold"
+                                onclick="mostrarModalBano('INGRESO')" style="font-size: 10px; height: 20px;">+ BAÑO</button>
+                            <button type="button" class="btn btn-xs btn-danger py-0 px-2 fw-bold"
+                                onclick="mostrarModalBano('EGRESO')" style="font-size: 10px; height: 20px;">- BAÑO</button>
                         </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Botón de Agrupación y Novedades -->
@@ -520,8 +541,10 @@ if (isset($_SESSION["sesion_id_rol"])) {
 
                     <!-- Botones de Acción -->
                     <div class="header-actions d-flex align-items-center">
-                            <button type="button" class="btn-header-acc btn-header-ingreso" onclick="mostrarModalIngreso()" title="Ingreso que no es hospedaje" <?= $boton_header_estado ?>>Otros Ingresos</button>
-                            <button type="button" class="btn-header-acc btn-header-egreso" onclick="mostrarModalEgreso()" title="Gasto de caja" <?= $boton_header_estado ?>>Registrar Egreso</button>
+                        <button type="button" class="btn-header-acc btn-header-ingreso" onclick="mostrarModalIngreso()"
+                            title="Ingreso que no es hospedaje" <?= $boton_header_estado ?>>Otros Ingresos</button>
+                        <button type="button" class="btn-header-acc btn-header-egreso" onclick="mostrarModalEgreso()"
+                            title="Gasto de caja" <?= $boton_header_estado ?>>Registrar Egreso</button>
                     </div>
                 <?php endif; ?>
 

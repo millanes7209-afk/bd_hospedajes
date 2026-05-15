@@ -6,8 +6,8 @@ if ((isset($_POST["accion"])) and ($_POST["accion"] == "Ingresar")) {
     $nick = $_POST["nick"];
     $password = $_POST["password"];
 
-    // 1. Buscamos la clave en la tabla 'usuarios' (antes era password, ahora es clave)
-    $sql1 = "SELECT clave FROM usuarios WHERE usuario = ? AND _estado <> 'X'";
+    // 1. Buscamos la clave y el ID en la tabla 'usuarios'
+    $sql1 = "SELECT usuarioID, clave FROM usuarios WHERE usuario = ? AND _estado <> 'X'";
     $rs1 = $db->obtenerTodo($sql1, array($nick));
 
     if ($rs1) {
@@ -47,25 +47,22 @@ if ((isset($_POST["accion"])) and ($_POST["accion"] == "Ingresar")) {
                              AND r._estado <> 'X'";
         $rs = $db->obtenerTodo($sql, array($nick));
 
-        if ($rs) {
-            // Guardamos datos comunes
-            $_SESSION["sesion_id_usuario"] = $rs[0]["usuarioID"];
-            $_SESSION["sesion_usuario"] = $rs[0]["usuario"];
+        if ($rs2) {
+            // Guardamos datos básicos del usuario y empleado
+            $_SESSION["sesion_id_usuario"] = $rs1[0]["usuarioID"] ?? 0;
+            $_SESSION["sesion_usuario"] = $nick;
             $_SESSION["sesion_nom_completo"] = $nom_completo;
-            $_SESSION["sesion_id_empleado"] = $rs[0]["empleadoID"];
-            
-            // Guardamos la lista de todos los roles disponibles
-            $_SESSION["sesion_roles_disponibles"] = $rs;
+            $_SESSION["sesion_id_empleado"] = $rs2[0]["empleadoID"];
 
-            if (count($rs) > 1) {
-                // Múltiples roles: Al selector
-                header("Location: selector_rol.php");
-            } else {
-                // Un solo rol: Seteamos y entramos
-                $_SESSION["sesion_id_rol"] = $rs[0]["rolID"];
-                $_SESSION["sesion_rol"] = $rs[0]["rol"];
-                header("Location: selector_empresa.php");
-            }
+            // Verificamos si es administrador global para el selector de empresas
+            $sql_admin = "SELECT 1 FROM usuarios_roles ur 
+                         INNER JOIN roles r ON ur.rolID = r.rolID 
+                         WHERE ur.usuarioID = ? AND r.rol = 'ADMINISTRADOR' AND ur._estado <> 'X'";
+            $res_admin = $db->obtenerFila($sql_admin, [$_SESSION["sesion_id_usuario"]]);
+            $_SESSION["sesion_es_admin"] = $res_admin ? true : false;
+            
+            // Vamos directo al selector de empresas
+            header("Location: selector_empresa.php");
             exit();
         }
     } else {

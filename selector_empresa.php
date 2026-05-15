@@ -32,11 +32,11 @@ $color_secundario = '#ffffff';
 
 try {
     // 3. CONSULTA DE EMPRESAS
-    // Opción C: El ADMINISTRADOR ve todas las empresas sin necesitar contrato laboral.
-    // Para el resto de roles, se valida normalmente con empleado_empresas.
-    $rol_sesion = strtoupper($_SESSION['sesion_rol'] ?? '');
+    // El ADMINISTRADOR global ve todas las empresas.
+    // El resto solo ve donde tiene contrato.
+    $esAdminGlobal = $_SESSION['sesion_es_admin'] ?? false;
 
-    if ($rol_sesion === 'ADMINISTRADOR') {
+    if ($esAdminGlobal) {
         // ADMINISTRADOR: acceso directo a todas las empresas activas
         $sql = "SELECT DISTINCT emp.empresaID, emp.nombre, emp.color_primario, emp.color_secundario, emp.logo_agencia
                 FROM empresa emp
@@ -99,7 +99,7 @@ try {
                             <p class='text-muted mb-0'><i class='fas fa-user-tag me-2'></i><?php echo htmlspecialchars($_SESSION['sesion_rol'] ?? 'Sin Rol'); ?></p>
                         </div>
                         <div class='d-flex gap-2'>
-                            <?php if (strtoupper($_SESSION['sesion_rol'] ?? '') === 'ADMINISTRADOR'): ?>
+                            <?php if ($_SESSION['sesion_es_admin'] ?? false): ?>
                                 <a href='privada/sistema/index.php' class='btn btn-dark btn-sm'>
                                     <i class='fas fa-cog me-2'></i>Panel Maestro
                                 </a>
