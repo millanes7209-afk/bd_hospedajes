@@ -1,12 +1,6 @@
 <?php
 session_start();
 require_once("../../conexion.php");
-
-/**
- * MOTOR DE PROCESAMIENTO DE PERMANENCIA (EXTENSIÓN DE ESTADÍA)
- * Finaliza estancia previa (ACTIVO o DEUDA) y genera una nueva.
- */
-
 $hospedajeID_anterior = $_POST['hospedajeID_anterior'];
 $habitacionID = $_POST['habitacionID'];
 $checkout = $_POST['checkout'];
@@ -43,8 +37,8 @@ try {
 
     $db->beginTransaction();
 
-    // 2. FINALIZAR HOSPEDAJE ANTERIOR
-    $sqlOld = "UPDATE hospedajes SET estado = 'FINALIZADO', observaciones = CONCAT(observaciones, ' | EXTENDIDO POR PERMANENCIA') 
+    // 2. INACTIVAR HOSPEDAJE ANTERIOR
+    $sqlOld = "UPDATE hospedajes SET estado = 'INACTIVO', observaciones = CONCAT(observaciones, ' | EXTENDIDO POR PERMANENCIA') 
                WHERE hospedajeID = ? AND empresaID = ?";
     $db->ejecutar($sqlOld, [$hospedajeID_anterior, $empresaID]);
 
@@ -55,7 +49,7 @@ try {
                         JOIN cuentas c ON i.cuentaID = c.cuentaID
                         WHERE h.hospedajeID = ? AND h.empresaID = ?";
     $tipoAnterior = $db->obtenerFila($sqlTipoAnterior, [$hospedajeID_anterior, $empresaID]);
-    
+
     if (!$tipoAnterior) {
         $cuenta = $db->obtenerFila("SELECT cuentaID FROM cuentas WHERE codigo = '401' AND empresaID = ?", [$empresaID]);
         $cuentaID = $cuenta['cuentaID'];
@@ -86,8 +80,19 @@ try {
                                      _fec_insercion, _fec_modificacion, _estado, _usuario) 
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $paramsNew = [
-        $empresaID, $habitacionID, $cajaID, $ingresoID, $ahora, $checkout, $monto_total, 
-        'ACTIVO', $descripcion, $ahora, $ahora, 'A', $usuarioID
+        $empresaID,
+        $habitacionID,
+        $cajaID,
+        $ingresoID,
+        $ahora,
+        $checkout,
+        $monto_total,
+        'ACTIVO',
+        $descripcion,
+        $ahora,
+        $ahora,
+        'A',
+        $usuarioID
     ];
     $db->ejecutar($sqlNew, $paramsNew);
     $nuevoHospedajeID = $db->ultimoInsertId();
@@ -102,7 +107,7 @@ try {
 
     // 5. ACTUALIZAR ESTADO DE HABITACIÓN (Cambio de "Esencia")
     // Forzamos a OCUPADA (eliminando el estado DEUDA si existía)
-    $db->ejecutar("UPDATE habitaciones SET estado = 'OCUPADA' WHERE habitacionID = ?", [$habitacionID]);
+    $db->ejecutar("UPDATE habitaciones SET estado = 'OCUPADA' WHERE habitacionID = ? AND empresaID = ?", [$habitacionID, $empresaID]);
 
     $db->commit();
     $_SESSION['mensaje'] = "Permanencia registrada. Habitación $habitacion_numero ahora está OCUPADA.";
@@ -120,7 +125,8 @@ try {
     header("Location: ../habitacioness/habitaciones.php");
 
 } catch (Exception $e) {
-    if ($db->inTransaction()) $db->rollBack();
+    if ($db->inTransaction())
+        $db->rollBack();
     die("Error crítico: " . $e->getMessage());
 }
 ?>

@@ -100,7 +100,7 @@ try {
 
     // 6. ACTUALIZAR CONTABILIDAD (ingresos e ingreso_pagos)
     // Sincronizar monto total del ingreso
-    $db->ejecutar("UPDATE ingresos SET monto_total = ?, _fec_modificacion = ? WHERE ingresoID = ?", [$monto_nuevo, $ahora, $ingresoID]);
+    $db->ejecutar("UPDATE ingresos SET monto_total = ?, _fec_modificacion = ? WHERE ingresoID = ? AND empresaID = ?", [$monto_nuevo, $ahora, $ingresoID, $empresaID]);
 
     foreach ($pagos_form as $pago) {
         $ipID = $pago['movimientoID'] ?? null; // Reutilizamos el nombre del campo del POST (que ahora contendrá el ingresopagoID)

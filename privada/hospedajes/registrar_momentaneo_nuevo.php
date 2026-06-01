@@ -28,6 +28,16 @@ if (!$habitacionID || empty($pagos) || !$cajaID) {
 try {
     $db->beginTransaction();
 
+    // VERIFICACIÓN ANTI-DUPLICADO: Rechazar si ya hay un hospedaje ACTIVO para esta habitación
+    $hospedajeExistente = $db->obtenerFila(
+        "SELECT hospedajeID FROM hospedajes 
+         WHERE habitacionID = ? AND empresaID = ? AND estado = 'ACTIVO' AND _estado <> 'X'",
+        [$habitacionID, $empresaID]
+    );
+    if ($hospedajeExistente) {
+        throw new Exception("Esta habitación ya tiene un hospedaje activo (ID: {$hospedajeExistente['hospedajeID']}). No se puede registrar un duplicado.");
+    }
+
     // 1. Insertar Hospedaje (Estado MOMENTANEO)
     $sqlH = "INSERT INTO hospedajes (empresaID, habitacionID, cajaID, checkin, checkout, monto, estado, observaciones, 
                                    _fec_insercion, _fec_modificacion, _estado, _usuario) 

@@ -21,15 +21,15 @@ if (isset($_GET['habitacionID'])) {
         $hospedaje = $db->obtenerFila($sql, [$habitacionID, $empresaID]);
 
         if ($hospedaje) {
-            $db->ejecutar("UPDATE hospedajes SET estado = 'FINALIZADO', _fec_modificacion = NOW(), _usuario = ? 
-                          WHERE hospedajeID = ?", [$usuarioID, $hospedaje['hospedajeID']]);
+            $db->ejecutar("UPDATE hospedajes SET estado = 'INACTIVO', _fec_modificacion = NOW(), _usuario = ? 
+                          WHERE hospedajeID = ? AND empresaID = ?", [$usuarioID, $hospedaje['hospedajeID'], $empresaID]);
 
-            $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ?", [$habitacionID]);
+            $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ? AND empresaID = ?", [$habitacionID, $empresaID]);
             $_SESSION['mensaje'] = "Habitación liberada (LIMPIEZA).";
             $_SESSION['mensaje_tipo'] = "success";
         } else {
             // Si estaba reservada y no hay hospedaje, solo limpiar habitación
-            $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ?", [$habitacionID]);
+            $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ? AND empresaID = ?", [$habitacionID, $empresaID]);
             $_SESSION['mensaje'] = "Habitación puesta en LIMPIEZA.";
             $_SESSION['mensaje_tipo'] = "info";
         }

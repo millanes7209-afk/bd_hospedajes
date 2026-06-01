@@ -15,12 +15,13 @@ if (!$hospedajeID) {
 }
 
 // 1. Obtener datos del hospedaje y habitación
+$empresaID = $_SESSION['empresaID'];
 $sql = "SELECT h.*, hab.numero, thab.nombre as tipo_nombre
         FROM hospedajes h
         JOIN habitaciones hab ON h.habitacionID = hab.habitacionID
         JOIN tipo_habitaciones thab ON hab.tipohabitacionID = thab.tipohabitacionID
-        WHERE h.hospedajeID = ? AND h._estado <> 'X'";
-$hospedaje = $db->obtenerFila($sql, [$hospedajeID]);
+        WHERE h.hospedajeID = ? AND h.empresaID = ? AND h._estado <> 'X'";
+$hospedaje = $db->obtenerFila($sql, [$hospedajeID, $empresaID]);
 
 if (!$hospedaje) {
     echo "<div class='alert alert-danger'>Error: Hospedaje no encontrado en el sistema.</div>";
@@ -30,8 +31,8 @@ if (!$hospedaje) {
 // 2. Obtener clientes que ya están en la habitación
 $sqlC = "SELECT c.* FROM hospedajes_clientes hc
          JOIN clientes c ON hc.clienteID = c.clienteID
-         WHERE hc.hospedajeID = ? AND hc._estado <> 'X'";
-$clientes_actuales = $db->obtenerTodo($sqlC, [$hospedajeID]);
+         WHERE hc.hospedajeID = ? AND hc.empresaID = ? AND hc._estado <> 'X'";
+$clientes_actuales = $db->obtenerTodo($sqlC, [$hospedajeID, $empresaID]);
 ?>
 
 <!DOCTYPE html>

@@ -45,6 +45,16 @@ try {
         throw new Exception("No se pudo iniciar la transacción en la base de datos.");
     }
 
+    // VERIFICACIÓN ANTI-DUPLICADO: Si ya hay un hospedaje ACTIVO para esta habitación, rechazamos
+    $hospedajeExistente = $db->obtenerFila(
+        "SELECT hospedajeID FROM hospedajes 
+         WHERE habitacionID = ? AND empresaID = ? AND estado = 'ACTIVO' AND _estado <> 'X'",
+        [$habitacionID, $empresaID]
+    );
+    if ($hospedajeExistente) {
+        throw new Exception("Esta habitación ya tiene un hospedaje activo registrado (ID: {$hospedajeExistente['hospedajeID']}). No se puede registrar un segundo hospedaje.");
+    }
+
     // 4. DETERMINAR LA CUENTA CONTABLE
     $codigo_cuenta = ($tipo_estadia == 'MOMENTANEO') ? '402' : '401';
     $cuenta = $db->obtenerFila("SELECT cuentaID FROM cuentas WHERE codigo = ? AND empresaID = ?", [$codigo_cuenta, $empresaID]);
@@ -119,8 +129,8 @@ try {
 
     // 7. ACTUALIZAR ESTADO DE LA HABITACIÓN
     // DESPUÉS (diagnóstico)
-    $sqlHab = "UPDATE habitaciones SET estado = 'OCUPADA' WHERE habitacionID = ?";
-    $stmtHab = $db->ejecutar($sqlHab, [$habitacionID]);
+    $sqlHab = "UPDATE habitaciones SET estado = 'OCUPADA' WHERE habitacionID = ? AND empresaID = ?";
+    $stmtHab = $db->ejecutar($sqlHab, [$habitacionID, $empresaID]);
     $filasAfectadas = $stmtHab->rowCount();
     if ($filasAfectadas === 0) {
         throw new Exception("UPDATE afectó 0 filas. HabitacionID recibido: $habitacionID");

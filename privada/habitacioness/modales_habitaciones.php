@@ -349,7 +349,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCELAR</button>
-          <button type="submit" class="btn btn-primary fw-bold">REGISTRAR PAGO Y DESOCUPAR</button>
+          <button type="submit" class="btn btn-primary fw-bold">PAGAR Y DESOCUPAR</button>
         </div>
       </div>
     </form>
@@ -370,10 +370,8 @@
             <label class="form-label fw-bold">Monto (Bs.):</label>
             <input type="number" class="form-control form-control-lg text-center fw-bold" name="monto" value="1" step="0.5" required>
           </div>
-          <div class="mb-3">
-            <label class="form-label fw-bold">Descripción:</label>
-            <input type="text" class="form-control" name="descripcion" placeholder="Opcional" oninput="this.value = this.value.toUpperCase()">
-          </div>
+          <!-- Descripción oculta forzada -->
+          <input type="hidden" name="descripcion" value="SERVICIO DE BAÑOS">
           <input type="hidden" name="tipo" id="bano-tipo-input">
         </div>
         <div class="modal-footer">

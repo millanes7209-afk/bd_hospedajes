@@ -58,8 +58,8 @@ try {
     }
 
     // 3. Anular contablemente el INGRESO maestro
-    $sqlAnularI = "UPDATE ingresos SET _estado = 'X', _fec_modificacion = ? WHERE ingresoID = ?";
-    if ($db->ejecutar($sqlAnularI, [$ahora, $ingresoID]) === false) {
+    $sqlAnularI = "UPDATE ingresos SET _estado = 'X', _fec_modificacion = ? WHERE ingresoID = ? AND empresaID = ?";
+    if ($db->ejecutar($sqlAnularI, [$ahora, $ingresoID, $empresaID]) === false) {
         throw new Exception("Error al anular el ingreso financiero relacionado.");
     }
 
@@ -70,8 +70,8 @@ try {
     }
 
     // 5. Pasar habitación a estado LIMPIEZA
-    $sqlHab = "UPDATE habitaciones SET estado = 'LIMPIEZA', _fec_modificacion = ? WHERE habitacionID = ?";
-    if ($db->ejecutar($sqlHab, [$ahora, $habitacionID]) === false) {
+    $sqlHab = "UPDATE habitaciones SET estado = 'LIMPIEZA', _fec_modificacion = ? WHERE habitacionID = ? AND empresaID = ?";
+    if ($db->ejecutar($sqlHab, [$ahora, $habitacionID, $empresaID]) === false) {
         throw new Exception("Error al actualizar estado de la habitación.");
     }
 

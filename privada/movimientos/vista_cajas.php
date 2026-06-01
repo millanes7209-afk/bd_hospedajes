@@ -400,7 +400,7 @@ foreach ($fechas_rango as $fecha) {
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold">AUDITORÍA DE MOVIMIENTOS DEL TURNO</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="background:none; border:none; font-size:1.5rem;">&times;</button>
                 </div>
                 <div class="modal-body" id="modalDetalleContenido">
                     <div class="text-center py-5">
@@ -423,7 +423,7 @@ foreach ($fechas_rango as $fecha) {
             <div class="modal-content shadow-sm">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold text-dark">CONFIRMAR RECAUDACIÓN</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="background:none; border:none; font-size:1.5rem;">&times;</button>
                 </div>
                 <div class="modal-body py-3">
                     <div class="card border-0 bg-light mb-0">
@@ -448,7 +448,7 @@ foreach ($fechas_rango as $fecha) {
             <div class="modal-content border-0 shadow-lg">
                 <div id="modalMensajeHeader" class="modal-header">
                     <h5 class="modal-title fw-bold" id="modalMensajeTitulo"></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="background:none; border:none; font-size:1.5rem;">&times;</button>
                 </div>
                 <div class="modal-body text-center py-4">
                     <div id="modalMensajeIcono" class="mb-3" style="font-size: 3.5rem;"></div>

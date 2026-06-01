@@ -52,6 +52,15 @@ class MiConexion extends PDO {
     }
 
     private function debugError($metodo, $mensaje, $sql = "") {
+        if ($this->esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'error' => "ERROR EN $metodo: $mensaje",
+                'sql' => $sql
+            ]);
+            exit;
+        }
         echo "<div style='background:#fdd; color:#900; padding:12px; border:2px solid #a00; margin:10px; font-family:sans-serif;'>";
         echo "<b>ERROR EN $metodo:</b> $mensaje<br>";
         if (!empty($sql)) echo "<b>SQL:</b> <code style='background:#eee; padding:2px;'>" . htmlspecialchars($sql) . "</code>";
@@ -59,7 +68,22 @@ class MiConexion extends PDO {
     }
 
     private function mostrarErrorCritico($mensaje) {
+        if ($this->esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'error' => "ERROR DE CONEXIÓN: $mensaje"
+            ]);
+            exit;
+        }
         die("<div style='background:#fee; color:#a00; padding:15px; border:2px solid #a00;'><b>ERROR DE CONEXIÓN:</b> $mensaje</div>");
+    }
+
+    private function esAjax() {
+        return (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') || 
+               (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) ||
+               (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) ||
+               (headers_sent() === false && in_array('Content-Type: application/json', headers_list()));
     }
 }
 

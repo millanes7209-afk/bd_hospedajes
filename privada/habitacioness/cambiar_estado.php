@@ -7,16 +7,20 @@ if (isset($_GET['habitacionID']) && isset($_GET['nuevoEstado'])) {
     $habitacionID = $_GET['habitacionID'];
     $nuevoEstado = $_GET['nuevoEstado'];
 
+    $empresaID = $_SESSION['empresaID'];
+    
     // Consulta SQL simple - solo cambiar estado
     if ($nuevoEstado === 'LIMPIEZA') {
-        $sql = "UPDATE habitaciones SET estado = ?, descripcion = '' WHERE habitacionID = ?";
+        $sql = "UPDATE habitaciones SET estado = ?, descripcion = '' WHERE habitacionID = ? AND empresaID = ?";
+        $params = array($nuevoEstado, $habitacionID, $empresaID);
     } else {
-        $sql = "UPDATE habitaciones SET estado = ? WHERE habitacionID = ?";
+        $sql = "UPDATE habitaciones SET estado = ? WHERE habitacionID = ? AND empresaID = ?";
+        $params = array($nuevoEstado, $habitacionID, $empresaID);
     }
     
     // Ejecutar la consulta - USAR MÉTODO CORRECTO DE LA CLASE MiConexion
     try {
-        $result = $db->ejecutar($sql, array($nuevoEstado, $habitacionID));
+        $result = $db->ejecutar($sql, $params);
         
         if ($result) {
             $_SESSION['message'] = 'Estado actualizado a ' . $nuevoEstado; // Mensaje de éxito

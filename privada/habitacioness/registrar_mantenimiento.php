@@ -6,13 +6,14 @@ require_once("../../conexion.php");
 // Obtener los datos del formulario
 $descripcion = $_POST['descripcion'];
 $habitacionID = $_POST['habitacionID'];
+$empresaID = $_SESSION['empresaID'];
 
 // Consulta SQL para actualizar estado y descripción
-$sql = "UPDATE habitaciones SET estado = ?, descripcion = ? WHERE habitacionID = ?";
+$sql = "UPDATE habitaciones SET estado = ?, descripcion = ? WHERE habitacionID = ? AND empresaID = ?";
 
 // Ejecutar la consulta - USAR MÉTODO CORRECTO DE LA CLASE MiConexion
 try {
-    $result = $db->ejecutar($sql, array('MANTENIMIENTO', $descripcion, $habitacionID));
+    $result = $db->ejecutar($sql, array('MANTENIMIENTO', $descripcion, $habitacionID, $empresaID));
     
     if ($result) {
         $_SESSION['message'] = 'Mantenimiento registrado correctamente';

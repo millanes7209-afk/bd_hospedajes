@@ -2,6 +2,8 @@
 session_start();
 require_once '../../conexion.php';
 
+header('Content-Type: application/json');
+
 // Recibir el dato JSON con el notificacionID
 $data = json_decode(file_get_contents("php://input"), true);
 $notificacionID = $data['notificacionID'] ?? null;
@@ -22,4 +24,3 @@ if ($db->ejecutar($query, [$fecha_programada, $notificacionID])) {
 } else {
     echo json_encode(['success' => false, 'message' => 'No se pudo posponer la notificación']);
 }
-?>

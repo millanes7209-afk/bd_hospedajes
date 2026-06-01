@@ -375,6 +375,23 @@ if (isset($_SESSION["sesion_id_rol"])) {
                 });
             }
 
+            // --- ANTI DOBLE ENVÍO GLOBAL: Deshabilita el botón submit al primer clic ---
+            document.addEventListener('submit', function (e) {
+                const form = e.target;
+                const submitBtn = form.querySelector('[type="submit"]');
+                if (submitBtn && !submitBtn.disabled) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.6';
+                    submitBtn.style.cursor = 'not-allowed';
+                    // Reactivar después de 8 segundos por si el servidor tarda o falla
+                    setTimeout(function () {
+                        submitBtn.disabled = false;
+                        submitBtn.style.opacity = '';
+                        submitBtn.style.cursor = '';
+                    }, 8000);
+                }
+            }, true);
+
             // --- CERRAR MENÚ AL SELECCIONAR OPCIÓN/PESTAÑA ---
             document.addEventListener('click', function (e) {
                 const target = e.target.closest('.nav-link, .nav-tab-item');
@@ -546,23 +563,24 @@ if (isset($_SESSION["sesion_id_rol"])) {
                         <button type="button" class="btn-header-acc btn-header-egreso" onclick="mostrarModalEgreso()"
                             title="Gasto de caja" <?= $boton_header_estado ?>>Registrar Egreso</button>
                     </div>
-                <?php endif; ?>
 
-                <?php if ($_SESSION["sesion_rol"] == 'RECEPCIONISTA' || $_SESSION["sesion_rol"] == 'ADMINISTRADOR'): ?>
-                    <?php if ($caja_abierta): ?>
-                        <button type='button' class='btn btn-danger' data-toggle='modal' data-target='#modalCerrarCaja'
-                            style='margin-right: 15px;'>
-                            <i class='fas fa-lock'></i> Cerrar Caja
-                        </button>
-                    <?php else: ?>
-                        <form action='<?php echo ($cuerp == 'false') ? 'procesar_caja.php' : '../../procesar_caja.php'; ?>'
-                            method='post' style='margin-right: 15px;'>
-                            <input type='hidden' name='accion' value='abrir'>
-                            <button type='submit' class='btn btn-success'>
-                                <i class='fas fa-lock-open'></i> Abrir Caja
+                    <?php if ($_SESSION["sesion_rol"] == 'RECEPCIONISTA' || $_SESSION["sesion_rol"] == 'ADMINISTRADOR'): ?>
+                        <?php if ($caja_abierta): ?>
+                            <button type='button' class='btn btn-danger' data-toggle='modal' data-target='#modalCerrarCaja'
+                                style='margin-right: 15px;'>
+                                <i class='fas fa-lock'></i> Cerrar Caja
                             </button>
-                        </form>
+                        <?php else: ?>
+                            <form action='<?php echo ($cuerp == 'false') ? 'procesar_caja.php' : '../../procesar_caja.php'; ?>'
+                                method='post' style='margin-right: 15px;'>
+                                <input type='hidden' name='accion' value='abrir'>
+                                <button type='submit' class='btn btn-success'>
+                                    <i class='fas fa-lock-open'></i> Abrir Caja
+                                </button>
+                            </form>
+                        <?php endif; ?>
                     <?php endif; ?>
+
                 <?php endif; ?>
                 <div id='saldo-acumulado' class='saldo-info' style='font-size: 18px;'>
                     <?php foreach ($saldos_forma_pago as $formaPagoTipo => $saldo): ?>
@@ -741,7 +759,7 @@ if (isset($_SESSION["sesion_id_rol"])) {
     $total_general_json = json_encode(0);
     $fecha_apertura_json = json_encode("");
 
-    if (isset($caja_abierta) && $caja_abierta && ($_SESSION["sesion_rol"] == 'RECEPCIONISTA' || $_SESSION["sesion_rol"] == 'ADMINISTRADOR')) {
+    if (isset($caja_abierta) && $caja_abierta && ($_SESSION["sesion_rol"] == 'RECEPCIONISTA' || $_SESSION["sesion_rol"] == 'ADMINISTRADOR') && strpos($_SERVER['PHP_SELF'], 'habitaciones.php') !== false) {
         $saldos_modal = array_filter($saldos_forma_pago, function ($saldo) {
             return $saldo > 0;
         });

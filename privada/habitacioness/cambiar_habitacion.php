@@ -16,27 +16,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $db->beginTransaction();
 
             // 1. Verificar si la nueva habitación sigue disponible (lock de lectura)
-            $sqlDisp = "SELECT estado FROM habitaciones WHERE habitacionID = ?";
-            $habNueva = $db->obtenerFila($sqlDisp, [$nueva_habitacionID]);
+            $sqlDisp = "SELECT estado FROM habitaciones WHERE habitacionID = ? AND empresaID = ?";
+            $habNueva = $db->obtenerFila($sqlDisp, [$nueva_habitacionID, $empresaID]);
 
             if ($habNueva && $habNueva['estado'] === 'DISPONIBLE') {
                 
                 // 2. Mover el hospedaje a la nueva habitación
                 $db->ejecutar(
-                    "UPDATE hospedajes SET habitacionID = ? WHERE hospedajeID = ? AND estado = 'ACTIVO'",
-                    [$nueva_habitacionID, $hospedajeID]
+                    "UPDATE hospedajes SET habitacionID = ? WHERE hospedajeID = ? AND empresaID = ? AND estado = 'ACTIVO'",
+                    [$nueva_habitacionID, $hospedajeID, $empresaID]
                 );
 
                 // 3. Habitación antigua → LIMPIEZA
                 $db->ejecutar(
-                    "UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ?",
-                    [$habitacionID_actual]
+                    "UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ? AND empresaID = ?",
+                    [$habitacionID_actual, $empresaID]
                 );
 
                 // 4. Habitación nueva → OCUPADA
                 $db->ejecutar(
-                    "UPDATE habitaciones SET estado = 'OCUPADA' WHERE habitacionID = ?",
-                    [$nueva_habitacionID]
+                    "UPDATE habitaciones SET estado = 'OCUPADA' WHERE habitacionID = ? AND empresaID = ?",
+                    [$nueva_habitacionID, $empresaID]
                 );
 
                 $db->commit();

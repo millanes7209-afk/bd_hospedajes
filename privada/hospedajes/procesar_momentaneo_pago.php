@@ -38,7 +38,7 @@ try {
 
     // Determinar concepto y estado según la acción
     $concepto = ($tipo_accion === 'SALIR') ? "COBRO EXTRA SALIDA MOMENTÁNEO" : "EXTENSIÓN MOMENTÁNEO (+1 Hora)";
-    $estado_h = ($tipo_accion === 'SALIR') ? 'FINALIZADO' : 'ACTIVO';
+    $estado_h = ($tipo_accion === 'SALIR') ? 'INACTIVO' : 'ACTIVO';
     $ahora = date("Y-m-d H:i:s");
 
     // 5. INSERTAR EN LA SUPER-TABLA INGRESOS
@@ -76,6 +76,14 @@ try {
     if ($db->ejecutar($sqlNewH, $paramsNewH) === false) {
         throw new Exception("Error al registrar el nuevo registro de hospedaje vinculado al pago.");
     }
+    $nuevoHospedajeID = $db->lastInsertId();
+
+    // 8.1. Vincular los mismos clientes al nuevo registro
+    $db->ejecutar("INSERT INTO hospedajes_clientes (empresaID, hospedajeID, clienteID, _usuario, _estado)
+                  SELECT empresaID, ?, clienteID, ?, 'A' 
+                  FROM hospedajes_clientes 
+                  WHERE hospedajeID = ? AND empresaID = ? AND _estado <> 'X'",
+                  [$nuevoHospedajeID, $usuarioID, $hospedajeID, $empresaID]);
 
     // 9. Actualizar la Habitación
     $estado_hab = ($tipo_accion === 'SALIR') ? 'LIMPIEZA' : 'MOMENTANEO'; 

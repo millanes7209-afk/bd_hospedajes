@@ -28,8 +28,8 @@ if (isset($_GET['habitacionID'])) {
 
         // Poner la habitación en LIMPIEZA
         $db->ejecutar(
-            "UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ?",
-            [$habitacionID]
+            "UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ? AND empresaID = ?",
+            [$habitacionID, $empresaID]
         );
 
         $db->commit();

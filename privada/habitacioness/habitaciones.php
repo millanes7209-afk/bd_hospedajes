@@ -18,19 +18,26 @@ $sql = "SELECT  thab.tipohabitacionID, hab.habitacionID, hab.bano, hab.tv, hab.v
                  JOIN clientes c ON hc.clienteID = c.clienteID 
                  WHERE h.habitacionID = hab.habitacionID 
                  AND h.empresaID = ?
-                 AND h.estado IN ('ACTIVO', 'DEUDA') AND h._estado <> 'X' AND hc._estado <> 'X' AND c._estado <> 'X') AS cliente_activo,
+                 AND h.estado = 'ACTIVO' AND h._estado <> 'X' AND hc._estado <> 'X' AND c._estado <> 'X') AS cliente_activo,
                 (SELECT h.checkout 
                  FROM hospedajes h 
                  WHERE h.habitacionID = hab.habitacionID 
                  AND h.empresaID = ?
-                 AND h.estado IN ('ACTIVO', 'DEUDA') AND h._estado <> 'X'
+                 AND h.estado = 'ACTIVO' AND h._estado <> 'X'
                  ORDER BY h.hospedajeID DESC LIMIT 1) AS checkout_activo,
                 (SELECT h.monto 
                  FROM hospedajes h 
                  WHERE h.habitacionID = hab.habitacionID 
                  AND h.empresaID = ?
-                 AND h.estado IN ('ACTIVO', 'DEUDA') AND h._estado <> 'X'
-                 ORDER BY h.hospedajeID DESC LIMIT 1) AS precio_pactado
+                 AND h.estado = 'ACTIVO' AND h._estado <> 'X'
+                 ORDER BY h.hospedajeID DESC LIMIT 1) AS precio_pactado,
+                (SELECT h.hospedajeID
+                 FROM hospedajes h
+                 WHERE h.habitacionID = hab.habitacionID
+                 AND h.empresaID = ?
+                 AND h.estado = 'ACTIVO'
+                 AND h._estado <> 'X'
+                 LIMIT 1) AS hospedaje_activo_id
         FROM    habitaciones hab
         JOIN    tipo_habitaciones thab ON hab.tipohabitacionID = thab.tipohabitacionID
         WHERE   thab._estado <> 'X'
@@ -38,7 +45,7 @@ $sql = "SELECT  thab.tipohabitacionID, hab.habitacionID, hab.bano, hab.tv, hab.v
         AND     hab.empresaID = ?
         ORDER BY $orderBy";
 
-$rs = $db->obtenerTodo($sql, array($empresaID, $empresaID, $empresaID, $empresaID));
+$rs = $db->obtenerTodo($sql, array($empresaID, $empresaID, $empresaID, $empresaID, $empresaID));
 
 
 // Guardar en sesión para ver después de redirección
@@ -88,58 +95,41 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                         ?>
                         <?php
                         // LÓGICA SMART BIDIRECCIONAL: Sincronización Real de Ocupación
-                
-                        // CASO A: Si hay un cliente activo pero la habitación NO está marcada como OCUPADA (ej: está en LIMPIEZA)
-                        if (!empty($habitacion['cliente_activo']) && $habitacion['estado'] !== 'OCUPADA') {
+                              // CASO A: Si hay un hospedaje ACTIVO en BD pero la habitación NO está marcada como OCUPADA (ej: está en LIMPIEZA)
+                        if (!empty($habitacion['hospedaje_activo_id']) && $habitacion['estado'] !== 'OCUPADA') {
                             $habitacion['estado'] = 'OCUPADA';
                             // Sincronización silenciosa opcional (opcional para no saturar BD, pero asegura coherencia)
                             $db->ejecutar("UPDATE habitaciones SET estado = 'OCUPADA' WHERE habitacionID = ?", [$habitacion['habitacionID']]);
                         }
-                        // CASO B: Si la habitación dice OCUPADA pero en realidad NO hay nadie registrado
-                        else if ($habitacion['estado'] === 'OCUPADA' && empty($habitacion['cliente_activo'])) {
+                        
+                        // CASO B: Si la habitación dice estar ocupada o en deuda, pero NO hay ningún hospedaje ACTIVO en BD
+                        else if (in_array($habitacion['estado'], ['OCUPADA', 'DEUDA']) && empty($habitacion['hospedaje_activo_id'])) {
                             $habitacion['estado'] = 'LIMPIEZA';
-                            $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ?", [$habitacion['habitacionID']]);
+                            $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ? AND empresaID = ?", [$habitacion['habitacionID'], $empresaID]);
                         }
 
-                        // CASO C: SINCRONIZACIÓN DE DEUDA (Si el checkout ya pasó)
+                        // CASO C: SINCRONIZACIÓN DE DEUDA (Si la habitación está OCUPADA y el checkout ya pasó)
                         if ($habitacion['estado'] === 'OCUPADA' && !empty($habitacion['checkout_activo'])) {
                             $now_stamp = time();
                             if (strtotime($habitacion['checkout_activo']) < $now_stamp) {
                                 $habitacion['estado'] = 'DEUDA';
-                                // Persistencia real en la base de datos
-                                $db->ejecutar("UPDATE habitaciones SET estado = 'DEUDA' WHERE habitacionID = ?", [$habitacion['habitacionID']]);
-                                // También actualizamos el hospedaje para que sea coherente
-                                $db->ejecutar("UPDATE hospedajes SET estado = 'DEUDA' WHERE habitacionID = ? AND estado = 'ACTIVO' AND empresaID = ?", [$habitacion['habitacionID'], $empresaID]);
-                            }
-                        }
+                                // Persistencia real en la base de datos (SOLO HABITACIÓN)
+                                $db->ejecutar("UPDATE habitaciones SET estado = 'DEUDA' WHERE habitacionID = ? AND empresaID = ?", [$habitacion['habitacionID'], $empresaID]);
 
-                        // CASO C: DEUDA (Tiempo vencido) - La deuda final se calcula cruzando las 13:00
-                        $now_stamp = time();
-                        if ($habitacion['estado'] === 'OCUPADA' && !empty($habitacion['checkout_activo']) && strtotime($habitacion['checkout_activo']) < $now_stamp) {
-                            $habitacion['estado'] = 'DEUDA';
-                            // Sincronización Real con la Base de Datos
-                            $db->ejecutar("UPDATE habitaciones SET estado = 'DEUDA' WHERE habitacionID = ?", [$habitacion['habitacionID']]);
-
-                            // Regla de Hotelería: cobrar 1 día por pasarse de la hora.
-                            // Cobrar días adicionales al sobrepasar la barrera de las 13:00 los días siguientes.
-                            $checkout_obj = new DateTime($habitacion['checkout_activo']);
-                            $ahora_obj = new DateTime();
-
-                            $dias_cobro = 1;
-
-                            $iter_date_limite = clone $checkout_obj;
-                            $iter_date_limite->modify('+1 day');
-                            $iter_date_limite->setTime(13, 0, 0); // Vencimiento del primer día de castigo
-                
-                            while ($iter_date_limite <= $ahora_obj) {
-                                $dias_cobro++;
+                                // Regla de Hotelería: calcular deuda (cruzar las 13:00)
+                                $checkout_obj = new DateTime($habitacion['checkout_activo']);
+                                $ahora_obj = new DateTime();
+                                $dias_cobro = 1;
+                                $iter_date_limite = clone $checkout_obj;
                                 $iter_date_limite->modify('+1 day');
+                                $iter_date_limite->setTime(13, 0, 0);
+                                while ($iter_date_limite <= $ahora_obj) {
+                                    $dias_cobro++;
+                                    $iter_date_limite->modify('+1 day');
+                                }
+                                $precio_diario = !empty($habitacion['precio_pactado']) ? $habitacion['precio_pactado'] : $habitacion['precio'];
+                                $habitacion['precio_pactado'] = $dias_cobro * $precio_diario;
                             }
-
-                            // Si no hay precio pactado (raro), usamos el precio base
-                            $precio_diario = !empty($habitacion['precio_pactado']) ? $habitacion['precio_pactado'] : $habitacion['precio'];
-                            $deuda_final = $dias_cobro * $precio_diario;
-                            $habitacion['precio_pactado'] = $deuda_final; // Sobrescribimos visualmente para el botón
                         }
 
                         // Asignar la clase de Bootstrap según el estado
@@ -176,9 +166,6 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                             <?php if ($habitacion['estado'] === 'DEUDA'): ?>
                                 <span>DEUDA</span>
                                 <strong><?php echo $habitacion['numero']; ?></strong>
-                                <div style="font-size: 0.75em; font-weight: bold; margin-top: 2px; opacity: 0.9;">
-                                    Bs. <?php echo $habitacion['precio_pactado']; ?>
-                                </div>
                             <?php else: ?>
                                 <span><?php echo $habitacion['estado']; ?></span>
                                 <strong><?php echo $habitacion['numero']; ?></strong>

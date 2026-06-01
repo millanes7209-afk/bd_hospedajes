@@ -28,13 +28,20 @@ if (!$cajaInfo) {
 }
 
 // 2. Obtener Movimientos desde la vista unificada
-$sqlMovs = "SELECT 
-                movimientoID, tipo, concepto, monto, fecha as _fec_insercion,
-                forma_pago
-            FROM v_movimientos_caja
-            WHERE cajaID = ? AND empresaID = ?
-            ORDER BY movimientoID ASC";
-$movimientos = $db->obtenerTodo($sqlMovs, [$cajaID, $empresaID]);
+$sqlMovs = "
+    SELECT movimientoID, tipo, concepto, monto, fecha as _fec_insercion, forma_pago
+    FROM v_movimientos_caja
+    WHERE cajaID = ? AND empresaID = ?
+    
+    UNION ALL
+    
+    SELECT 0 as movimientoID, tipo, descripcion as concepto, monto, fecha as _fec_insercion, 'EFECTIVO' as forma_pago
+    FROM banos
+    WHERE cajaID = ? AND empresaID = ?
+    
+    ORDER BY _fec_insercion ASC
+";
+$movimientos = $db->obtenerTodo($sqlMovs, [$cajaID, $empresaID, $cajaID, $empresaID]);
 
 // 3. Renderizar Vista (HTML)
 $totalIngresos = 0;
@@ -53,7 +60,7 @@ $totalEgresos = 0;
             </div>
             <div class="col-md-6 text-md-end">
                 <p class="mb-1 text-dark"><strong>Cierre:</strong> <?= $cajaInfo['fecha_cierre'] ? date('d/m/Y H:i', strtotime($cajaInfo['fecha_cierre'])) : '<span class="text-danger fw-bold">TURNO ABIERTO</span>' ?></p>
-                <p class="mb-0 text-dark"><strong>Empresa ID:</strong> <?= $empresaID ?></p>
+
             </div>
         </div>
     </div>

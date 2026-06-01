@@ -22,18 +22,18 @@ if (isset($_GET['habitacionID'])) {
         $hospedaje = $db->obtenerFila($sql, [$habitacionID, $empresaID]);
 
         if ($hospedaje) {
-            // 2. Finalizar el hospedaje (Estado unificado: FINALIZADO)
-            $db->ejecutar("UPDATE hospedajes SET estado = 'FINALIZADO', checkout = NOW(), _fec_modificacion = NOW(), _usuario = ? 
-                          WHERE hospedajeID = ?", [$usuarioID, $hospedaje['hospedajeID']]);
+            // 2. Finalizar el hospedaje (Estado unificado: INACTIVO)
+            $db->ejecutar("UPDATE hospedajes SET estado = 'INACTIVO', checkout = NOW(), _fec_modificacion = NOW(), _usuario = ? 
+                          WHERE hospedajeID = ? AND empresaID = ?", [$usuarioID, $hospedaje['hospedajeID'], $empresaID]);
 
             // 3. Cambiar habitación a LIMPIEZA (Base de datos real)
-            $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ?", [$habitacionID]);
+            $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ? AND empresaID = ?", [$habitacionID, $empresaID]);
 
             $_SESSION['mensaje'] = "Habitación desocupada con éxito. Estado: LIMPIEZA.";
             $_SESSION['mensaje_tipo'] = "success";
         } else {
             // Limpieza de seguridad por si la habitación quedó trabada visualmente
-            $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ?", [$habitacionID]);
+            $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ? AND empresaID = ?", [$habitacionID, $empresaID]);
             $_SESSION['mensaje'] = "La habitación fue reseteada a LIMPIEZA.";
             $_SESSION['mensaje_tipo'] = "warning";
         }

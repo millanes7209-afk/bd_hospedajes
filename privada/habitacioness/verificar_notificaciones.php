@@ -2,6 +2,8 @@
 session_start();
 require_once("../../conexion.php");
 
+header('Content-Type: application/json');
+
 // Obtener la fecha y hora actual
 $fecha_actual = date("Y-m-d H:i:s");
 
@@ -15,4 +17,3 @@ if ($rs) {
 } else {
     echo json_encode(array()); // No hay notificaciones pendientes
 }
-?>

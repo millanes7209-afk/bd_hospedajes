@@ -332,36 +332,86 @@ function actualizarEstadoHabitaciones() {
                     case 'MOMENTANEO': btnClass += ' btn btn-warning'; break;
                     default: btnClass += ' btn btn-dark';
                 }
+                // FILTRADO POR EMPRESA: El PHP 'obtener_estados_habitaciones.php' ya filtra estrictamente por la sesión del usuario.
+                
+                // LÓGICA DE "MANTENER" EN VEZ DE "RECREAR":
+                // Comprobamos si los datos clave han cambiado antes de tocar el DOM
+                const estadoPrevio = btnHabitacion.getAttribute('data-estado-actual');
+                const clientePrevio = btnHabitacion.getAttribute('data-cliente-actual');
+                const montoPrevio = btnHabitacion.getAttribute('data-monto-actual');
+                
+                // Si nada ha cambiado, saltamos la actualización de este botón para no romper el hover/tooltip actual
+                if (estadoPrevio === habitacion.estado && 
+                    clientePrevio === (habitacion.cliente_activo || '') && 
+                    montoPrevio === String(habitacion.precio_inteligente)) {
+                    return; 
+                }
+
+                // Si llegamos aquí es porque algo cambió, procedemos a actualizar
                 btnHabitacion.className = btnClass;
+                btnHabitacion.setAttribute('data-estado-actual', habitacion.estado);
+                btnHabitacion.setAttribute('data-cliente-actual', habitacion.cliente_activo || '');
+                btnHabitacion.setAttribute('data-monto-actual', habitacion.precio_inteligente);
+                
                 // Actualizar el atributo onclick con el precio inteligente
                 btnHabitacion.setAttribute('onclick', `handleHabitacionClick('${habitacion.estado}', '${habitacion.numero}', '${habitacion.tipo}', '${habitacion.precio_inteligente}', '${habitacion.habitacionID}')`);
 
-                if (habitacion.estado === 'OCUPADA' && habitacion.cliente_activo) {
-                    // Renderizado Smart (Ocupada)
+                // RECONSTRUCCIÓN DEL CONTENIDO (Solo ocurre si hay cambios reales)
+                let innerHTML = '';
+                
+                // 1. Cuerpo del botón
+                if (habitacion.estado === 'DEUDA') {
+                    innerHTML += `<span>DEUDA</span><strong>${habitacion.numero}</strong>`;
+                } else {
+                    innerHTML += `<span>${habitacion.estado}</span><strong>${habitacion.numero}</strong>`;
+                }
+
+                // 2. Tooltips y Badges (Fichas Flotantes)
+                if ((habitacion.estado === 'OCUPADA' || habitacion.estado === 'DEUDA') && habitacion.cliente_activo) {
                     let d = new Date(habitacion.checkout_activo);
                     let formattedDate = ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
                     
-                    btnHabitacion.innerHTML = `
-                        <div style="font-size: 11px; font-weight: bold; line-height: 1.1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 100%; margin-bottom: 2px;" title="${habitacion.cliente_activo}">
-                            <i class="fas fa-user mr-1"></i> ${habitacion.cliente_activo.toUpperCase()}
-                        </div>
-                        <strong>${habitacion.numero}</strong>
-                        <div style="font-size: 10px; margin-top: 2px; opacity: 0.9;">
-                            <i class="fas fa-sign-out-alt mr-1"></i> ${formattedDate}
+                    let badgeColor = (habitacion.estado === 'DEUDA') ? 'background:#dc3545; color:#fff; border-color:#dc3545;' : '';
+                    let badgeLabel = (habitacion.estado === 'DEUDA') ? 'DEUDA Bs.' : 'Bs.';
+                    
+                    innerHTML += `
+                        <span class="badge-precio" style="${badgeColor}">${badgeLabel} ${parseInt(habitacion.precio_inteligente)}</span>
+                        <div class="habitacion-info-tooltip">
+                            <div class="tooltip-header" ${habitacion.estado === 'DEUDA' ? 'style="background-color: #dc3545;"' : ''}>
+                                <i class="fas ${habitacion.estado === 'DEUDA' ? 'fa-exclamation-triangle' : 'fa-user-circle'}"></i>
+                                ${habitacion.estado === 'DEUDA' ? 'DEUDA VENCIDA' : 'DETALLE OCUPACIÓN'}
+                            </div>
+                            <div class="tooltip-body">
+                                <p><strong>CLIENTE:</strong><br>${habitacion.cliente_activo.toUpperCase()}</p>
+                                <p><strong>SALIDA:</strong> ${formattedDate}</p>
+                                <p><strong>TIPO:</strong> ${habitacion.tipo}</p>
+                            </div>
                         </div>
                     `;
+                } else if (habitacion.estado === 'DISPONIBLE') {
+                    innerHTML += `<span class="badge-precio">Bs. ${parseInt(habitacion.precio_base)}</span>
+                        <div style="position: absolute; top: 4px; left: 4px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;">
+                            ${habitacion.tv == 1 ? '<span style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">TV</span>' : ''}
+                            ${habitacion.bano == 1 ? '<span style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">BAÑO</span>' : ''}
+                            ${habitacion.ventilador == 1 ? '<span style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">VENT</span>' : ''}
+                        </div>`;
                 } else {
-                    // Renderizado Estándar
-                    let contenido = `<span>${habitacion.estado}</span>`;
-                    
-                    // LÓGICA SMART: Si hay deuda, mostrar el monto real del hospedaje
-                    if (habitacion.estado === 'DEUDA') {
-                        contenido = `<span>DEUDA</span><strong>${habitacion.numero}</strong><div style="font-size: 0.75em; font-weight: bold; margin-top: 2px; opacity: 0.9;">Bs. ${habitacion.precio_inteligente}</div>`;
-                        btnHabitacion.innerHTML = contenido;
-                    } else {
-                        btnHabitacion.innerHTML = `<span>${habitacion.estado}</span><strong>${habitacion.numero}</strong>`;
+                    innerHTML += `<span class="estado-label">${habitacion.estado === 'MANTENIMIENTO' ? 'MANT.' : habitacion.estado}</span>`;
+                    if (habitacion.estado === 'MANTENIMIENTO' && habitacion.habitacion_descripcion) {
+                        innerHTML += `
+                            <div class="habitacion-info-tooltip">
+                                <div class="tooltip-header" style="background-color: #343a40; color: white; border-color: #555;">
+                                    <i class="fas fa-tools"></i> MANTENIMIENTO
+                                </div>
+                                <div class="tooltip-body">
+                                    <p><strong>DESCRIPCIÓN:</strong><br>${habitacion.habitacion_descripcion}</p>
+                                </div>
+                            </div>
+                        `;
                     }
                 }
+
+                btnHabitacion.innerHTML = innerHTML;
             }
         });
     })

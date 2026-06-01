@@ -2,6 +2,8 @@
 session_start();
 require_once '../../conexion.php';
 
+header('Content-Type: application/json');
+
 // Recibir el dato JSON con el notificacionID
 $data = json_decode(file_get_contents("php://input"), true);
 if (json_last_error() !== JSON_ERROR_NONE) {
@@ -24,4 +26,3 @@ if ($db->ejecutar($query, [$notificacionID])) {
 } else {
     echo json_encode(['success' => false, 'message' => 'No se pudo marcar la notificación']);
 }
-?>

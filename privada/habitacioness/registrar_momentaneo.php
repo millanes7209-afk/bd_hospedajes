@@ -58,8 +58,8 @@ try {
 
     // 4. Cambiar estado habitación a MOMENTANEO
     $db->ejecutar(
-        "UPDATE habitaciones SET estado = 'MOMENTANEO' WHERE habitacionID = ?",
-        [$habitacionID]
+        "UPDATE habitaciones SET estado = 'MOMENTANEO' WHERE habitacionID = ? AND empresaID = ?",
+        [$habitacionID, $empresaID]
     );
 
     $db->commit();
