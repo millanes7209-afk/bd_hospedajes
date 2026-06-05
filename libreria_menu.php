@@ -38,7 +38,7 @@ if (isset($_SESSION["sesion_id_rol"])) {
                             SUM(CASE WHEN tipo = 'INGRESO' THEN monto ELSE 0 END) AS total_ingresos,
                             SUM(CASE WHEN tipo = 'EGRESO' THEN monto ELSE 0 END) AS total_egresos
                            FROM v_movimientos_caja
-                           WHERE cajaID = ? AND empresaID = ?
+                           WHERE cajaID = ? AND empresaID = ? AND _estado <> 'X'
                            GROUP BY forma_pago";
             $rs_saldo_acumulado = $db->obtenerTodo($sql_saldos, [$caja_abierta_id, $empresaID]);
 
@@ -527,12 +527,12 @@ if (isset($_SESSION["sesion_id_rol"])) {
 
                         <!-- BOTONES DE BAÑOS MOVIDOS AQUÍ (Solo si tiene módulo Premium ID 6) -->
                         <?php if ($tieneModuloBanos): ?>
-                        <div class="d-flex gap-1 ms-3 border-start ps-3">
-                            <button type="button" class="btn btn-xs btn-primary py-0 px-2 fw-bold"
-                                onclick="mostrarModalBano('INGRESO')" style="font-size: 10px; height: 20px;">+ BAÑO</button>
-                            <button type="button" class="btn btn-xs btn-danger py-0 px-2 fw-bold"
-                                onclick="mostrarModalBano('EGRESO')" style="font-size: 10px; height: 20px;">- BAÑO</button>
-                        </div>
+                            <div class="d-flex gap-1 ms-3 border-start ps-3">
+                                <button type="button" class="btn btn-xs btn-primary py-0 px-2 fw-bold"
+                                    onclick="mostrarModalBano('INGRESO')" style="font-size: 10px; height: 20px;">+ BAÑO</button>
+                                <button type="button" class="btn btn-xs btn-danger py-0 px-2 fw-bold"
+                                    onclick="mostrarModalBano('EGRESO')" style="font-size: 10px; height: 20px;">- BAÑO</button>
+                            </div>
                         <?php endif; ?>
                     </div>
 

@@ -58,21 +58,12 @@ document.addEventListener("DOMContentLoaded", function () {
         })
             .then((response) => response.json())
             .then((data) => {
-                const isSeparated = nombre || apellido;
+                const isSeparated = nombre || apellido || ci;
 
                 updateTableHeader(isSeparated);
 
-                const resultadosFiltrados = data.filter((fila) => {
-                    const nombreCoincide = nombre
-                        ? fila.nombres.toLowerCase().includes(nombre)
-                        : true;
-                    const apellidoCoincide = apellido
-                        ? fila.apellidos.toLowerCase().includes(apellido)
-                        : true;
-                    const ciCoincide = ci ? fila.ci.includes(ci) : true;
-
-                    return nombreCoincide && apellidoCoincide && ciCoincide;
-                });
+                // El filtrado ya viene hecho desde el servidor (SQL) para mayor rendimiento
+                const resultadosFiltrados = data;
 
                 tbody.innerHTML = "";
 

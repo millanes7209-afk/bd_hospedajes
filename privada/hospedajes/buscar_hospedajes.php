@@ -3,10 +3,29 @@ require_once("../seguridad/seguridad_ajax.php");
 header('Content-Type: application/json; charset=utf-8');
 
 $empresaID = $_SESSION['empresaID'];
+$nombre = isset($_POST['nombre']) ? trim($_POST['nombre']) : '';
+$apellido = isset($_POST['apellido']) ? trim($_POST['apellido']) : '';
+$ci = isset($_POST['ci']) ? trim($_POST['ci']) : '';
 
 try {
-    // Consulta para obtener el listado base para el buscador
-    // Necesitamos traer los datos de los clientes por separado para que el JS pueda filtrar por Nombre/Apellido/CI
+    $params = [$empresaID];
+    $where = "WHERE h._estado <> 'X' AND hc._estado <> 'X' AND h.empresaID = ?";
+
+    if (!empty($nombre)) {
+        $where .= " AND c.nombres LIKE ?";
+        $params[] = "%$nombre%";
+    }
+    if (!empty($apellido)) {
+        $where .= " AND (c.apellido1 LIKE ? OR c.apellido2 LIKE ?)";
+        $params[] = "%$apellido%";
+        $params[] = "%$apellido%";
+    }
+    if (!empty($ci)) {
+        $where .= " AND c.ci LIKE ?";
+        $params[] = "%$ci%";
+    }
+
+    // Limitamos a 100 resultados para no colapsar el navegador si la búsqueda es muy genérica
     $sql = "SELECT 
                 u.usuario, 
                 h.hospedajeID, 
@@ -27,14 +46,12 @@ try {
             INNER JOIN clientes c ON hc.clienteID = c.clienteID
             INNER JOIN usuarios u ON h._usuario = u.usuarioID
             INNER JOIN habitaciones hab ON h.habitacionID = hab.habitacionID
-            WHERE h._estado <> 'X' 
-            AND hc._estado <> 'X'
-            AND h.empresaID = ?
-            ORDER BY h.hospedajeID DESC";
+            $where
+            ORDER BY h.hospedajeID DESC
+            LIMIT 100";
 
-    $rs = $db->obtenerTodo($sql, [$empresaID]);
+    $rs = $db->obtenerTodo($sql, $params);
 
-    // Formatear fechas para que el JS las muestre bien
     foreach ($rs as &$fila) {
         $fila['checkin'] = date('d/m/Y H:i', strtotime($fila['checkin']));
         $fila['checkout'] = date('d/m/Y H:i', strtotime($fila['checkout']));

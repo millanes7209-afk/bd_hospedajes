@@ -1,0 +1,48 @@
+=== INICIO DE MIGRACIÓN: 2026-06-02 18:06:29 ===
+[AVISO] - CajaID=73 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=99 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=233 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=237 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=269 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=335 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=356 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=359 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=418 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=444 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=596 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=602 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=620 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=627 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=635 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=676 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=703 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=762 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=799 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=816 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=824 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=856 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=882 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1005 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1028 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1035 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1063 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1064 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1099 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1123 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1124 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1129 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1140 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1150 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1192 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1244 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1265 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1274 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1295 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1307 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1328 está CERRADA pero no tiene movimientos registrados.
+[AVISO] - CajaID=1369 está CERRADA pero no tiene movimientos registrados.
+
+=== MIGRACIÓN FINALIZADA: 2026-06-02 18:06:33 ===
+Cajas procesadas  : 1510
+Registros creados : 2153
+Fallidos          : 0

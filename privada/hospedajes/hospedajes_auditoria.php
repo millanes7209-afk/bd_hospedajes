@@ -9,7 +9,8 @@ require_once("../../libreria_menu.php");
  */
 
 $empresaID = $_SESSION["empresaID"] ?? null;
-if (!$empresaID) die("Error de acceso.");
+if (!$empresaID)
+    die("Error de acceso.");
 
 $verHistorial = isset($_GET['historial']) && $_GET['historial'] == '1';
 $estadoBusqueda = $verHistorial ? 1 : 0;
@@ -24,11 +25,14 @@ $sql = "SELECT a.*, u.usuario, h.hospedajeID
 $auditorias = $db->obtenerTodo($sql, [$empresaID, $estadoBusqueda]);
 
 // Función auxiliar para mostrar el detalle de pagos de forma legible
-function formatearDetalle($json) {
-    if (!$json || $json == 'CANCELADO') return "<span class='text-muted'>$json</span>";
+function formatearDetalle($json)
+{
+    if (!$json || $json == 'CANCELADO')
+        return "<span class='text-muted'>$json</span>";
     $datos = json_decode($json, true);
-    if (!$datos) return $json;
-    
+    if (!$datos)
+        return $json;
+
     $html = "<ul class='list-unstyled mb-0 small'>";
     foreach ($datos as $item) {
         $html .= "<li><strong>{$item['tipo']}:</strong> Bs. {$item['monto']}</li>";
@@ -40,20 +44,52 @@ function formatearDetalle($json) {
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Panel de Auditoría Financiera</title>
     <style>
-        .badge-modificacion { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
-        .badge-eliminacion { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .table-hover tbody tr:hover { background-color: rgba(0,0,0,.03); }
-        .card-header-flex { display: flex; justify-content: space-between; align-items: center; }
-        .diff-container { font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; }
-        .diff-old { background-color: #ffdce0; }
-        .diff-new { background-color: #cdffd8; }
-        body { color: #000 !important; }
+        .badge-modificacion {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .badge-eliminacion {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, .03);
+        }
+
+        .card-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .diff-container {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+        }
+
+        .diff-old {
+            background-color: #ffdce0;
+        }
+
+        .diff-new {
+            background-color: #cdffd8;
+        }
+
+        body {
+            color: #000 !important;
+        }
     </style>
 </head>
+
 <body>
     <div class="container mt-3 mb-5">
         <div class="card shadow-sm">
@@ -73,7 +109,9 @@ function formatearDetalle($json) {
             </div>
             <div class="card-body">
                 <?php if (isset($_SESSION['mensaje'])): ?>
-                    <div class="alert alert-success py-2"><?php echo $_SESSION['mensaje']; unset($_SESSION['mensaje']); ?></div>
+                    <div class="alert alert-success py-2"><?php echo $_SESSION['mensaje'];
+                    unset($_SESSION['mensaje']); ?>
+                    </div>
                 <?php endif; ?>
 
                 <div class="table-responsive">
@@ -90,38 +128,47 @@ function formatearDetalle($json) {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (!$auditorias) : ?>
+                            <?php if (!$auditorias): ?>
                                 <tr>
-                                    <td colspan="7" class="text-center py-4 text-muted">No se encontraron registros de auditoría.</td>
+                                    <td colspan="7" class="text-center py-4 text-muted">No se encontraron registros de
+                                        auditoría.</td>
                                 </tr>
                             <?php endif; ?>
 
-                            <?php foreach ($auditorias as $a) : ?>
+                            <?php foreach ($auditorias as $a): ?>
                                 <tr>
                                     <td>
                                         <div class="fw-bold"><?php echo date('d/m/Y', strtotime($a['fecha'])); ?></div>
-                                        <div class="small text-muted"><?php echo date('H:i', strtotime($a['fecha'])); ?> hrs.</div>
+                                        <div class="small text-muted"><?php echo date('H:i', strtotime($a['fecha'])); ?>
+                                            hrs.</div>
                                     </td>
                                     <td>
-                                        <div class="fw-bold fs-6"><i class="fas fa-user-circle me-1 text-primary"></i><?php echo $a['usuario']; ?></div>
+                                        <div class="fw-bold fs-6"><i
+                                                class="fas fa-user-circle me-1 text-primary"></i><?php echo $a['usuario']; ?>
+                                        </div>
                                     </td>
                                     <td>
-                                        <span class="badge <?php echo ($a['tipo_auditoria'] == 'ELIMINACION' ? 'badge-eliminacion' : 'badge-modificacion'); ?> px-2 py-1 small">
+                                        <span
+                                            class="badge <?php echo ($a['tipo_auditoria'] == 'ELIMINACION' ? 'badge-eliminacion' : 'badge-modificacion'); ?> px-2 py-1 small">
                                             <?php echo $a['tipo_auditoria']; ?>
                                         </span>
                                         <div class="small fw-bold mt-1">Hospedaje #<?php echo $a['hospedajeID']; ?></div>
                                     </td>
                                     <td>
-                                        <div class="small">Original: <strong><?php echo $a['monto_anterior']; ?></strong></div>
-                                        <div class="small">Nuevo: <strong class="text-primary"><?php echo $a['monto_nuevo']; ?></strong></div>
+                                        <div class="small">Original: <strong><?php echo $a['monto_anterior']; ?></strong>
+                                        </div>
+                                        <div class="small">Nuevo: <strong
+                                                class="text-primary"><?php echo $a['monto_nuevo']; ?></strong></div>
                                     </td>
                                     <td class="diff-container">
                                         <div class="p-1 mb-1 diff-old border rounded">
-                                            <div class="fw-bold x-small text-uppercase" style="font-size: 0.65rem;">Anterior:</div>
+                                            <div class="fw-bold x-small text-uppercase" style="font-size: 0.65rem;">
+                                                Anterior:</div>
                                             <?php echo formatearDetalle($a['detalle_original']); ?>
                                         </div>
                                         <div class="p-1 diff-new border rounded text-dark">
-                                            <div class="fw-bold x-small text-uppercase" style="font-size: 0.65rem;">Nuevo:</div>
+                                            <div class="fw-bold x-small text-uppercase" style="font-size: 0.65rem;">Nuevo:
+                                            </div>
                                             <?php echo formatearDetalle($a['detalle_nuevo']); ?>
                                         </div>
                                     </td>
@@ -132,8 +179,10 @@ function formatearDetalle($json) {
                                     </td>
                                     <td class="text-center">
                                         <?php if ($a['estado_revision'] == 0): ?>
-                                            <form action="procesar_auditoria.php" method="post" onsubmit="return confirm('¿Marcar este registro como revisado?')">
-                                                <input type="hidden" name="id" value="<?php echo $a['id']; ?>">
+                                            <form action="procesar_auditoria.php" method="post"
+                                                onsubmit="return confirm('¿Marcar este registro como revisado?')">
+                                                <input type="hidden" name="auditoriaID"
+                                                    value="<?php echo $a['auditoriaID']; ?>">
                                                 <button type="submit" class="btn btn-sm btn-success">
                                                     <i class="fas fa-check"></i> Revisado
                                                 </button>
@@ -151,4 +200,5 @@ function formatearDetalle($json) {
         </div>
     </div>
 </body>
+
 </html>

@@ -4,7 +4,7 @@ require_once("../../conexion.php");
 require_once("../../libreria_menu.php");
 require_once("utils/hospedajes_utilidades.php");
 
-// Consulta para obtener los datos de los hospedajes
+// Consulta para obtener los datos de los hospedajes de los últimos 2 días
 $sql = "SELECT usu.usuario,h.hospedajeID,h.estado as estado,
         GROUP_CONCAT(DISTINCT CONCAT_WS(' ', c.apellido1, apellido2, c.nombres) SEPARATOR ', ') as clientes,
         h.checkin,h.checkout,r.numero AS habitacion_numero, h.monto, h.cajaID,
@@ -21,6 +21,7 @@ $sql = "SELECT usu.usuario,h.hospedajeID,h.estado as estado,
         AND c._estado <> 'X'
         AND usu._estado<> 'x'
         AND h.empresaID = ?
+        AND h.checkin >= DATE_SUB(NOW(), INTERVAL 3 DAY)
         GROUP BY h.hospedajeID
         ORDER BY h.hospedajeID DESC";
 
@@ -95,16 +96,20 @@ $rs = $db->obtenerTodo($sql, [$_SESSION['empresaID']]);
                                     <td class="text-center"><?= htmlspecialchars($fila['estado']) ?></td>
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-4">
-                                            <form name="formModif<?= $fila['hospedajeID'] ?>" method="post" action="hospedaje_modificar.php" style="display:inline;">
+                                            <form name="formModif<?= $fila['hospedajeID'] ?>" method="post"
+                                                action="hospedaje_modificar.php" style="display:inline;">
                                                 <input type="hidden" name="hospedajeID" value="<?= $fila['hospedajeID'] ?>">
                                                 <input type="hidden" name="auth" value="hospedajes.php">
-                                                <button type="submit" style="background:none; border:none; color:#0d6efd; padding:0; cursor:pointer;" title="Modificar">
+                                                <button type="submit"
+                                                    style="background:none; border:none; color:#0d6efd; padding:0; cursor:pointer;"
+                                                    title="Modificar">
                                                     <i class="fas fa-pencil-alt fa-lg"></i>
                                                 </button>
                                             </form>
                                             <button type="button"
                                                 style="background:none; border:none; color:#dc3545; padding:0; cursor:pointer;"
-                                                onclick="eliminarHospedaje(<?= $fila['hospedajeID'] ?>, '<?= $fila['habitacion_numero'] ?>', <?= $fila['cajaID'] ?>)" title="Eliminar">
+                                                onclick="eliminarHospedaje(<?= $fila['hospedajeID'] ?>, '<?= $fila['habitacion_numero'] ?>', <?= $fila['cajaID'] ?>)"
+                                                title="Eliminar">
                                                 <i class="fas fa-trash-alt fa-lg"></i>
                                             </button>
                                         </div>
@@ -133,7 +138,8 @@ $rs = $db->obtenerTodo($sql, [$_SESSION['empresaID']]);
                 </div>
                 <div class="modal-body">
                     <p class="text-black lead text-center">¿Está seguro de que desea eliminar el hospedaje de la <br>
-                        <strong class="text-danger">Habitación <span id="numHabEliminar"></span></strong>?</p>
+                        <strong class="text-danger">Habitación <span id="numHabEliminar"></span></strong>?
+                    </p>
                     <p class="text-muted small text-center">Esta acción enviará la habitación a <b>LIMPIEZA</b>.</p>
                     <label class="form-label fw-bold small text-black">Motivo de la eliminación (Obligatorio):</label>
                     <textarea class="form-control" id="txtMotivoEliminar" rows="3"
@@ -169,7 +175,8 @@ $rs = $db->obtenerTodo($sql, [$_SESSION['empresaID']]);
                     <p class="text-muted">No puede eliminar registros que no pertenecen a su turno actual.</p>
                 </div>
                 <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-danger" data-dismiss="modal" data-bs-dismiss="modal">Entendido</button>
+                    <button type="button" class="btn btn-danger" data-dismiss="modal"
+                        data-bs-dismiss="modal">Entendido</button>
                 </div>
             </div>
         </div>

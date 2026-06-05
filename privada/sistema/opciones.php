@@ -30,6 +30,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             // Insertar
             $sql = "INSERT INTO opciones (grupoID, funcionalidadID, opcion, contenido, orden, _fec_insercion, _usuario, _estado) VALUES (?, ?, ?, ?, ?, NOW(), ?, 'A')";
             $db->ejecutar($sql, [$grupoID, $funcionalidadID, $opcion, $contenido, $orden, $usuarioID]);
+
+            // --- RECUPERACIÓN DE LÓGICA DE TRIGGER ELIMINADO ---
+            $nuevaOpcionID = $db->ultimoInsertId();
+            if ($nuevaOpcionID) {
+                // Verificar si ya existe el acceso para el Administrador (Rol 1)
+                $existe = $db->obtenerFila("SELECT 1 FROM accesos WHERE rolID = 1 AND opcionID = ?", [$nuevaOpcionID]);
+                if (!$existe) {
+                    $sqlAcceso = "INSERT INTO accesos (rolID, opcionID, _fec_insercion, _usuario, _estado) VALUES (1, ?, NOW(), ?, 'A')";
+                    $db->ejecutar($sqlAcceso, [$nuevaOpcionID, $usuarioID]);
+                }
+            }
         }
     } elseif ($accion === 'eliminar') {
         $opcionID = $_POST['opcionID'];
@@ -108,11 +119,13 @@ $opciones = $db->obtenerTodo($sql);
                                         <td><span class=""><?= htmlspecialchars($o['grupo']) ?></span></td>
                                         <td class="fw-bold"><?= htmlspecialchars($o['opcion']) ?></td>
                                         <td><code><?= htmlspecialchars($o['contenido']) ?></code></td>
-                                        <td><span class="badge bg-light text-dark border"><?= $o['funcionalidad'] ? htmlspecialchars($o['funcionalidad']) : 'BÁSICO' ?></span></td>
+                                        <td><span
+                                                class="badge bg-light text-dark border"><?= $o['funcionalidad'] ? htmlspecialchars($o['funcionalidad']) : 'BÁSICO' ?></span>
+                                        </td>
                                         <td class="text-center"><?= $o['orden'] ?></td>
                                         <td class="text-center">
                                             <button class="btn btn-info btn-sm text-white"
-                                                onclick="editarOpcion(<?= $o['opcionID'] ?>, <?= $o['grupoID'] ?>, '<?= addslashes($o['opcion']) ?>', '<?= addslashes($o['contenido']) ?>', <?= $o['orden'] ?>, <?= (int)$o['funcionalidadID'] ?>)">
+                                                onclick="editarOpcion(<?= $o['opcionID'] ?>, <?= $o['grupoID'] ?>, '<?= addslashes($o['opcion']) ?>', '<?= addslashes($o['contenido']) ?>', <?= $o['orden'] ?>, <?= (int) $o['funcionalidadID'] ?>)">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button class="btn btn-danger btn-sm"
@@ -155,7 +168,8 @@ $opciones = $db->obtenerTodo($sql);
                             <label class="form-label fw-bold">Módulo / Funcionalidad:</label>
                             <select name="funcionalidadID" id="selFuncionalidad" class="form-control" required>
                                 <?php foreach ($funcionalidades_select as $fs): ?>
-                                    <option value="<?= $fs['funcionalidadID'] ?>"><?= htmlspecialchars($fs['nombre']) ?></option>
+                                    <option value="<?= $fs['funcionalidadID'] ?>"><?= htmlspecialchars($fs['nombre']) ?>
+                                    </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -189,10 +203,12 @@ $opciones = $db->obtenerTodo($sql);
             <div class="modal-content border-danger">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>CONFIRMAR ELIMINACIÓN</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center py-4">
-                    <p class="mb-0">¿Realmente desea eliminar la opción: <br><b id="delOpcionNombre" class="text-danger fs-5"></b>?</p>
+                    <p class="mb-0">¿Realmente desea eliminar la opción: <br><b id="delOpcionNombre"
+                            class="text-danger fs-5"></b>?</p>
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">CANCELAR</button>
@@ -239,7 +255,7 @@ $opciones = $db->obtenerTodo($sql);
             modalEliminar.show();
         }
 
-        document.getElementById('btnConfirmarBorrado').addEventListener('click', function() {
+        document.getElementById('btnConfirmarBorrado').addEventListener('click', function () {
             document.getElementById('formEliminar').submit();
         });
     </script>

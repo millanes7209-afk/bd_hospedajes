@@ -95,16 +95,16 @@ $rs = $db->obtenerTodo($sql, [$fecha_inicio, $fecha_fin, $_SESSION['empresaID']]
                             <?php foreach ($rs as $fila) : ?>
                                 <tr>
                                     <td><?= date('d/m/Y', strtotime($fila['checkin'])) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['paternos'])) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['maternos'])) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['nombres_ind'])) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['cis'])) ?></td>
+                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['paternos'] ?? '')) ?></td>
+                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['maternos'] ?? '')) ?></td>
+                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['nombres_ind'] ?? '')) ?></td>
+                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['cis'] ?? '')) ?></td>
                                     <td style="text-align: center;"><?= $fila['habitacion_numero'] ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['nacionalidades'])) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['fechas_nac'])) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['estados_civiles'])) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['profesiones'])) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['procedencias'])) ?></td>
+                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['nacionalidades'] ?? '')) ?></td>
+                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['fechas_nac'] ?? '')) ?></td>
+                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['estados_civiles'] ?? '')) ?></td>
+                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['profesiones'] ?? '')) ?></td>
+                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['procedencias'] ?? '')) ?></td>
                                     <td><?= $fila['checkout'] ? date('d/m/Y', strtotime($fila['checkout'])) : '-' ?></td>
                                 </tr>
                             <?php endforeach; ?>
