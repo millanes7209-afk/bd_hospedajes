@@ -17,23 +17,24 @@ try {
     // Obtener información de la caja incluyendo fecha de apertura
     $sql_caja = "SELECT cajaID, fecha_apertura FROM cajas WHERE cajaID = ? AND empresaID = ?";
     $info_caja = $db->obtenerFila($sql_caja, array($caja_id, $empresaID));
-    
-    // Consulta SQL para obtener saldos netos desde la vista unificada
-    $sql = "SELECT formapagoID, forma_pago as tipo, 
+
+    // Consulta SQL para obtener saldos netos desde la vista unificada (ahora en PHP)
+    $vista = $db->getVistaMovimientos();
+    $sql = "SELECT forma_pago as tipo, 
                    SUM(CASE WHEN tipo = 'INGRESO' THEN monto ELSE -monto END) as total_monto
-            FROM v_movimientos_caja
+            FROM $vista as t
             WHERE cajaID = ?
-            GROUP BY formapagoID, forma_pago
+            GROUP BY forma_pago
             ORDER BY forma_pago";
-    
+
     $saldos = $db->obtenerTodo($sql, array($caja_id));
-    
+
     // Calcular total general
     $total_general = 0;
     foreach ($saldos as $saldo) {
         $total_general += $saldo['total_monto'];
     }
-    
+
     // Respuesta JSON
     echo json_encode([
         'success' => true,
@@ -49,7 +50,7 @@ try {
             'sql_debug' => $sql
         ]
     ]);
-    
+
 } catch (Exception $e) {
     echo json_encode(['error' => 'Error al consultar saldos: ' . $e->getMessage()]);
 }

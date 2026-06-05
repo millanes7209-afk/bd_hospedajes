@@ -30,7 +30,7 @@ if (!$cajaInfo) {
 // 2. Obtener Movimientos desde la vista unificada
 $sqlMovs = "
     SELECT movimientoID, tipo, concepto, monto, fecha as _fec_insercion, forma_pago
-    FROM v_movimientos_caja
+    FROM " . $db->getVistaMovimientos() . " as t
     WHERE cajaID = ? AND empresaID = ?
     
     UNION ALL
@@ -55,11 +55,15 @@ $totalEgresos = 0;
     <div class="card-body py-2">
         <div class="row">
             <div class="col-md-6">
-                <p class="mb-1 text-dark"><strong>Recepcionista:</strong> <?= htmlspecialchars($cajaInfo['recepcionista']) ?></p>
-                <p class="mb-0 text-dark"><strong>Apertura:</strong> <?= date('d/m/Y H:i', strtotime($cajaInfo['fecha_apertura'])) ?></p>
+                <p class="mb-1 text-dark"><strong>Recepcionista:</strong>
+                    <?= htmlspecialchars($cajaInfo['recepcionista']) ?></p>
+                <p class="mb-0 text-dark"><strong>Apertura:</strong>
+                    <?= date('d/m/Y H:i', strtotime($cajaInfo['fecha_apertura'])) ?></p>
             </div>
             <div class="col-md-6 text-md-end">
-                <p class="mb-1 text-dark"><strong>Cierre:</strong> <?= $cajaInfo['fecha_cierre'] ? date('d/m/Y H:i', strtotime($cajaInfo['fecha_cierre'])) : '<span class="text-danger fw-bold">TURNO ABIERTO</span>' ?></p>
+                <p class="mb-1 text-dark"><strong>Cierre:</strong>
+                    <?= $cajaInfo['fecha_cierre'] ? date('d/m/Y H:i', strtotime($cajaInfo['fecha_cierre'])) : '<span class="text-danger fw-bold">TURNO ABIERTO</span>' ?>
+                </p>
 
             </div>
         </div>
@@ -80,30 +84,34 @@ $totalEgresos = 0;
         </thead>
         <tbody>
             <?php if (empty($movimientos)): ?>
-                <tr><td colspan="5" class="text-center py-4 text-muted">No hay movimientos registrados.</td></tr>
-            <?php else: ?>
-                <?php foreach ($movimientos as $mov): 
-                    if ($mov['tipo'] === 'INGRESO') $totalIngresos += $mov['monto'];
-                    if ($mov['tipo'] === 'EGRESO') $totalEgresos += $mov['monto'];
-                ?>
                 <tr>
-                    <td class="text-muted"><?= date('H:i', strtotime($mov['_fec_insercion'])) ?></td>
-                    <td>
-                        <small class="fw-bold <?= $mov['tipo'] === 'INGRESO' ? 'text-success' : 'text-danger' ?>">
-                            <?= $mov['tipo'] ?>
-                        </small>
-                    </td>
-                    <td>
-                        <span class="text-dark"><strong><?= htmlspecialchars($mov['concepto']) ?></strong></span>
-                        <?php if(!empty($mov['detalle'])): ?>
-                            <br><small class="text-muted"><?= htmlspecialchars($mov['detalle']) ?></small>
-                        <?php endif; ?>
-                    </td>
-                    <td class="text-center text-dark"><?= htmlspecialchars($mov['forma_pago']) ?></td>
-                    <td class="text-end fw-bold text-dark">
-                        <?= number_format($mov['monto'], 2) ?>
-                    </td>
+                    <td colspan="5" class="text-center py-4 text-muted">No hay movimientos registrados.</td>
                 </tr>
+            <?php else: ?>
+                <?php foreach ($movimientos as $mov):
+                    if ($mov['tipo'] === 'INGRESO')
+                        $totalIngresos += $mov['monto'];
+                    if ($mov['tipo'] === 'EGRESO')
+                        $totalEgresos += $mov['monto'];
+                    ?>
+                    <tr>
+                        <td class="text-muted"><?= date('H:i', strtotime($mov['_fec_insercion'])) ?></td>
+                        <td>
+                            <small class="fw-bold <?= $mov['tipo'] === 'INGRESO' ? 'text-success' : 'text-danger' ?>">
+                                <?= $mov['tipo'] ?>
+                            </small>
+                        </td>
+                        <td>
+                            <span class="text-dark"><strong><?= htmlspecialchars($mov['concepto']) ?></strong></span>
+                            <?php if (!empty($mov['detalle'])): ?>
+                                <br><small class="text-muted"><?= htmlspecialchars($mov['detalle']) ?></small>
+                            <?php endif; ?>
+                        </td>
+                        <td class="text-center text-dark"><?= htmlspecialchars($mov['forma_pago']) ?></td>
+                        <td class="text-end fw-bold text-dark">
+                            <?= number_format($mov['monto'], 2) ?>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
         </tbody>
@@ -125,7 +133,8 @@ $totalEgresos = 0;
                 </div>
                 <div class="d-flex justify-content-between border-top pt-2">
                     <span class="h5 mb-0 text-dark fw-bold">SALDO LÍQUIDO:</span>
-                    <span class="h5 mb-0 text-dark fw-bold">Bs. <?= number_format($totalIngresos - $totalEgresos, 2) ?></span>
+                    <span class="h5 mb-0 text-dark fw-bold">Bs.
+                        <?= number_format($totalIngresos - $totalEgresos, 2) ?></span>
                 </div>
             </div>
         </div>

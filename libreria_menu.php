@@ -33,11 +33,12 @@ if (isset($_SESSION["sesion_id_rol"])) {
             foreach ($rs_formas_pago as $forma_pago)
                 $saldos_forma_pago[$forma_pago['tipo']] = 0.00;
 
-            // Obtener sumatoria real de movimientos desde la vista unificada
+            // Obtener sumatoria real de movimientos desde la vista unificada (ahora en PHP)
+            $vista = $db->getVistaMovimientos();
             $sql_saldos = "SELECT forma_pago AS forma_pago_tipo,
                             SUM(CASE WHEN tipo = 'INGRESO' THEN monto ELSE 0 END) AS total_ingresos,
                             SUM(CASE WHEN tipo = 'EGRESO' THEN monto ELSE 0 END) AS total_egresos
-                           FROM v_movimientos_caja
+                           FROM $vista as t
                            WHERE cajaID = ? AND empresaID = ? AND _estado <> 'X'
                            GROUP BY forma_pago";
             $rs_saldo_acumulado = $db->obtenerTodo($sql_saldos, [$caja_abierta_id, $empresaID]);
@@ -114,10 +115,16 @@ if (isset($_SESSION["sesion_id_rol"])) {
     $dir_php = $_SERVER["PHP_SELF"];
     $cuerp = strpos($dir_php, "listado_tablas.php");
 
-    // Ruta de imagen
-    $img_path1 = '../img/' . $logo_agencia;
-    $img_path2 = '../../../img/' . $logo_agencia;
-    $img_path = file_exists($img_path1) ? $img_path1 : $img_path2;
+    // Ruta de imagen (Detección de profundidad de carpetas)
+    $img_path_root = 'img/' . $logo_agencia;
+    $img_path_p1 = '../img/' . $logo_agencia;
+    $img_path_p2 = '../../img/' . $logo_agencia;
+    $img_path_p3 = '../../../img/' . $logo_agencia;
+
+    if (file_exists($img_path_root)) $img_path = $img_path_root;
+    elseif (file_exists($img_path_p1)) $img_path = $img_path_p1;
+    elseif (file_exists($img_path_p2)) $img_path = $img_path_p2;
+    else $img_path = $img_path_p3;
 
 } else {
     $rs = "";

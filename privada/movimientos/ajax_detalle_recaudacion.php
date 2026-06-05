@@ -32,7 +32,7 @@ if (!$recInfo) {
 $sqlMovs = "SELECT 
                 movimientoID, tipo, concepto, monto, fecha as _fec_insercion,
                 forma_pago, cajaID
-            FROM v_movimientos_caja
+            FROM " . $db->getVistaMovimientos() . " as t
             WHERE recaudacionID = ? AND empresaID = ?
             ORDER BY movimientoID ASC";
 $movimientos = $db->obtenerTodo($sqlMovs, [$recaudacionID, $empresaID]);
