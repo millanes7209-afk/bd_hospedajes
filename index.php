@@ -1,25 +1,27 @@
-<?php 
-session_start(); 
+<?php
+session_start();
 require_once("conexion.php");
 
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Sistema Web Dulces Sueños</title>
   <link rel="stylesheet" href="css/login.css"> <!-- Aquí enlazamos el archivo CSS -->
   <!-- Enlace a Bootstrap CSS -->
-  
+
   <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  
+
 </head>
+
 <body>
 
   <div class="login-container">
     <!-- Avatar que cambia dinámicamente -->
-    <img id="user-avatar" class="avatar" src="../img/imagen_login.jpeg" alt="Avatar Usuario">
+    <img id="user-avatar" class="avatar" src="img/imagen_login.jpeg" alt="Avatar Usuario">
 
     <div class="banner">INGRESAR</div>
 
@@ -37,27 +39,30 @@ require_once("conexion.php");
         <h2>Usuario:</h2>
         <div class="input-container">
           <span class="input-icon">
-            <img src="../img/usuario.png" alt="Icono Usuario" class="icon">
+            <img src="img/usuario.png" alt="Icono Usuario" class="icon">
           </span>
-          <input type="text" name="nick" id="usuario" class="limpiar" placeholder="Usuario" oninput="mostrarAvatar()" required>
+          <input type="text" name="nick" id="usuario" class="limpiar" placeholder="Usuario" oninput="mostrarAvatar()"
+            required>
         </div>
       </div>
       <div class="form-group">
         <h2>Clave:</h2>
         <div class="input-container">
           <span class="input-icon">
-            <img src="../img/candado.jpg" alt="Icono Contraseña" class="icon">
+            <img src="img/candado.jpg" alt="Icono Contraseña" class="icon">
           </span>
-          <input type="password" name="password" id="password" placeholder="Contraseña" required oninput="ocultarAvatar()">
-          <span class="toggle-password" onclick="togglePassword()">👁️</span> <!-- Ojo para mostrar/ocultar contraseña -->
+          <input type="password" name="password" id="password" placeholder="Contraseña" required
+            oninput="ocultarAvatar()">
+          <span class="toggle-password" onclick="togglePassword()">👁️</span>
+          <!-- Ojo para mostrar/ocultar contraseña -->
         </div>
       </div>
       <button type="submit" name="accion" value="Ingresar" id="btn1">INGRESAR</button>
     </form>
 
     <a href="../Index.html">
-      <button class="boton-atras">ATRÁS</button> 
-    </a> 
+      <button class="boton-atras">ATRÁS</button>
+    </a>
   </div>
 
   <!-- Enlace al archivo JavaScript externo -->
@@ -66,4 +71,5 @@ require_once("conexion.php");
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 </body>
+
 </html>

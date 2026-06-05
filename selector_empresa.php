@@ -1,6 +1,6 @@
 <?php
 session_start();
- // --- NUEVA LÓGICA DE LIMPIEZA ---
+// --- NUEVA LÓGICA DE LIMPIEZA ---
 // Al regresar al selector, eliminamos los rastros de la empresa anterior
 if (isset($_SESSION['empresaID'])) {
     unset($_SESSION['empresaID']);
@@ -67,6 +67,7 @@ try {
 ?>
 <!DOCTYPE html>
 <html lang='es'>
+
 <head>
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
@@ -74,15 +75,70 @@ try {
     <link href='bootstrap/css/bootstrap.min.css' rel='stylesheet'>
     <link href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css' rel='stylesheet'>
     <style>
-        body { background-color: #f8f9fa; min-height: 100vh; }
-        .header-section { background-color: <?php echo $color_primario; ?>; color: <?php echo $color_secundario; ?>; padding: 2rem 0; margin-bottom: 2rem; }
-        .user-card { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .empresa-table { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
-        .empresa-table .table thead th { background-color: <?php echo $color_primario; ?>; color: <?php echo $color_secundario; ?>; padding: 1rem; border: none; }
-        .btn-select { background-color: <?php echo $color_primario; ?>; color: <?php echo $color_secundario; ?>; border: none; padding: 8px 20px; font-weight: 600; border-radius: 5px; }
-        .no-empresas { background: white; border-radius: 10px; padding: 3rem; text-align: center; }
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        .header-section {
+            background-color:
+                <?php echo $color_primario; ?>
+            ;
+            color:
+                <?php echo $color_secundario; ?>
+            ;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .user-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .empresa-table {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .empresa-table .table thead th {
+            background-color:
+                <?php echo $color_primario; ?>
+            ;
+            color:
+                <?php echo $color_secundario; ?>
+            ;
+            padding: 1rem;
+            border: none;
+        }
+
+        .btn-select {
+            background-color:
+                <?php echo $color_primario; ?>
+            ;
+            color:
+                <?php echo $color_secundario; ?>
+            ;
+            border: none;
+            padding: 8px 20px;
+            font-weight: 600;
+            border-radius: 5px;
+        }
+
+        .no-empresas {
+            background: white;
+            border-radius: 10px;
+            padding: 3rem;
+            text-align: center;
+        }
     </style>
 </head>
+
 <body>
     <div class='container'>
         <div class='header-section text-center'>
@@ -95,8 +151,11 @@ try {
                 <div class='user-card'>
                     <div class='d-flex align-items-center justify-content-between'>
                         <div>
-                            <h4 class='mb-1'><?php echo htmlspecialchars($_SESSION['sesion_nom_completo'] ?? 'Usuario'); ?></h4>
-                            <p class='text-muted mb-0'><i class='fas fa-user-tag me-2'></i><?php echo htmlspecialchars($_SESSION['sesion_rol'] ?? 'Sin Rol'); ?></p>
+                            <h4 class='mb-1'>
+                                <?php echo htmlspecialchars($_SESSION['sesion_nom_completo'] ?? 'Usuario'); ?></h4>
+                            <p class='text-muted mb-0'><i
+                                    class='fas fa-user-tag me-2'></i><?php echo htmlspecialchars($_SESSION['sesion_rol'] ?? 'Sin Rol'); ?>
+                            </p>
                         </div>
                         <div class='d-flex gap-2'>
                             <?php if ($_SESSION['sesion_es_admin'] ?? false): ?>
@@ -130,16 +189,20 @@ try {
                                     <tr>
                                         <td>
                                             <div class='d-flex align-items-center gap-3'>
-                                                <?php 
+                                                <?php
                                                 $logo = $empresa['logo_agencia'];
                                                 $src = "";
-                                                if ($logo && file_exists("uploads/imagen/$logo")) $src = "uploads/imagen/$logo";
-                                                elseif ($logo && file_exists("../img/$logo")) $src = "../img/$logo";
+                                                if ($logo && file_exists("uploads/imagen/$logo"))
+                                                    $src = "uploads/imagen/$logo";
+                                                elseif ($logo && file_exists("img/$logo"))
+                                                    $src = "img/$logo";
 
                                                 if ($src): ?>
-                                                    <img src='<?php echo $src; ?>' style='width: 45px; height: 45px; object-fit: cover; border-radius: 8px;'>
+                                                    <img src='<?php echo $src; ?>'
+                                                        style='width: 45px; height: 45px; object-fit: cover; border-radius: 8px;'>
                                                 <?php else: ?>
-                                                    <div style='background:<?php echo $empresa['color_primario']; ?>; color:<?php echo $empresa['color_secundario']; ?>; width:45px; height:45px; border-radius:8px; display:flex; align-items:center; justify-content:center;'>
+                                                    <div
+                                                        style='background:<?php echo $empresa['color_primario']; ?>; color:<?php echo $empresa['color_secundario']; ?>; width:45px; height:45px; border-radius:8px; display:flex; align-items:center; justify-content:center;'>
                                                         <i class='fas fa-store'></i>
                                                     </div>
                                                 <?php endif; ?>
@@ -148,7 +211,8 @@ try {
                                         </td>
                                         <td class="text-end">
                                             <form method='post' action='validar1.php' class='mb-0'>
-                                                <input type='hidden' name='empresaID' value='<?php echo $empresa['empresaID']; ?>'>
+                                                <input type='hidden' name='empresaID'
+                                                    value='<?php echo $empresa['empresaID']; ?>'>
                                                 <button type='submit' class='btn btn-select'>Ingresar</button>
                                             </form>
                                         </td>
@@ -168,4 +232,5 @@ try {
         </div>
     </div>
 </body>
+
 </html>

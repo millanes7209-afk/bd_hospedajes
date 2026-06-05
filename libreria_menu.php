@@ -115,16 +115,21 @@ if (isset($_SESSION["sesion_id_rol"])) {
     $dir_php = $_SERVER["PHP_SELF"];
     $cuerp = strpos($dir_php, "listado_tablas.php");
 
-    // Ruta de imagen (Detección de profundidad de carpetas)
-    $img_path_root = 'img/' . $logo_agencia;
-    $img_path_p1 = '../img/' . $logo_agencia;
-    $img_path_p2 = '../../img/' . $logo_agencia;
-    $img_path_p3 = '../../../img/' . $logo_agencia;
+    // Ruta de imagen (Detección de profundidad de carpetas interna al proyecto)
+    // Buscamos cuántos niveles subir hasta encontrar la carpeta img/ propia del proyecto
+    $img_path = "";
+    $prefijo = "";
+    for ($i = 0; $i < 5; $i++) {
+        if (file_exists($prefijo . 'img/' . $logo_agencia)) {
+            $img_path = $prefijo . 'img/' . $logo_agencia;
+            break;
+        }
+        $prefijo .= "../";
+    }
 
-    if (file_exists($img_path_root)) $img_path = $img_path_root;
-    elseif (file_exists($img_path_p1)) $img_path = $img_path_p1;
-    elseif (file_exists($img_path_p2)) $img_path = $img_path_p2;
-    else $img_path = $img_path_p3;
+    // Si no se encuentra, usar default
+    if (empty($img_path))
+        $img_path = $prefijo . "img/default.png";
 
 } else {
     $rs = "";
@@ -409,7 +414,7 @@ if (isset($_SESSION["sesion_id_rol"])) {
                     }
                 }
             });
-        });
+    });
     </script>
 
     <!-- TEMATIZACIÓN DINÁMICA POR EMPRESA -->
@@ -758,7 +763,7 @@ if (isset($_SESSION["sesion_id_rol"])) {
                         }
                     });
             });
-        }
+    }
     </script>
 
     <?php

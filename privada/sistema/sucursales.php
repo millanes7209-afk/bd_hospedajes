@@ -3,7 +3,7 @@ require_once("libreria_sistema.php");
 
 // Procesar actualización de módulos
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['accion'] === 'guardar_modulos') {
-    $empresaID = (int)$_POST['empresaID'];
+    $empresaID = (int) $_POST['empresaID'];
     $modulos = $_POST['modulos'] ?? []; // IDs de funcionalidades seleccionadas
 
     // 1. Desactivar todos para esta empresa
@@ -11,9 +11,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
 
     // 2. Activar o Insertar los seleccionados
     foreach ($modulos as $fID) {
-        $fID = (int)$fID;
+        $fID = (int) $fID;
         $existe = $db->obtenerFila("SELECT empresafuncionID FROM empresa_funcionalidades WHERE empresaID = ? AND funcionalidadID = ?", [$empresaID, $fID]);
-        
+
         if ($existe) {
             $db->ejecutar("UPDATE empresa_funcionalidades SET estado = 'ACTIVO', _fec_modificacion = NOW(), _usuario = ? WHERE empresafuncionID = ?", [$_SESSION['sesion_id_usuario'], $existe['empresafuncionID']]);
         } else {
@@ -40,14 +40,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
     $logo_path = null;
     if (isset($_FILES['logo_agencia']) && $_FILES['logo_agencia']['error'] === UPLOAD_ERR_OK) {
         $ext = pathinfo($_FILES['logo_agencia']['name'], PATHINFO_EXTENSION);
-        $nombre_logo = "logo_" . time() . "_" . rand(100,999) . "." . $ext;
-        $ruta_destino = "../../../img/" . $nombre_logo;
-        
+        $nombre_logo = "logo_" . time() . "_" . rand(100, 999) . "." . $ext;
+        $ruta_destino = "../../img/" . $nombre_logo;
+
         // Crear carpeta si no existe (por si acaso)
-        if (!is_dir("../../../img/")) {
-            mkdir("../../../img/", 0777, true);
+        if (!is_dir("../../img/")) {
+            mkdir("../../img/", 0777, true);
         }
-        
+
         if (move_uploaded_file($_FILES['logo_agencia']['tmp_name'], $ruta_destino)) {
             $logo_path = $nombre_logo; // Solo guardamos el nombre del archivo
         }
@@ -133,30 +133,34 @@ foreach ($res as $r) {
                                 <?php echo $e['telefono']; ?>
                             </td>
                             <td>
-                                <?php 
+                                <?php
                                 $activos = $modulos_activos[$e['empresaID']] ?? [];
                                 if (empty($activos)) {
                                     echo '<span class="badge bg-secondary">Sin módulos</span>';
                                 } else {
                                     foreach ($funcionalidades as $f) {
                                         if (in_array($f['funcionalidadID'], $activos)) {
-                                            echo '<span class="badge bg-primary me-1" title="'.$f['descripcion'].'">'.$f['nombre'].'</span>';
+                                            echo '<span class="badge bg-primary me-1" title="' . $f['descripcion'] . '">' . $f['nombre'] . '</span>';
                                         }
                                     }
                                 }
                                 ?>
                             </td>
                             <td class="text-end">
-                                <a href="../../validar1.php?id=<?php echo $e['empresaID']; ?>" class="btn btn-sm btn-success me-1" title="Entrar a esta sucursal">
+                                <a href="../../validar1.php?id=<?php echo $e['empresaID']; ?>"
+                                    class="btn btn-sm btn-success me-1" title="Entrar a esta sucursal">
                                     <i class="fas fa-door-open"></i>
                                 </a>
-                                <button class="btn btn-sm btn-outline-primary" onclick='abrirModulos(<?php echo $e['empresaID']; ?>, "<?php echo $e['nombre']; ?>", <?php echo json_encode($activos); ?>)'>
+                                <button class="btn btn-sm btn-outline-primary"
+                                    onclick='abrirModulos(<?php echo $e['empresaID']; ?>, "<?php echo $e['nombre']; ?>", <?php echo json_encode($activos); ?>)'>
                                     <i class="fas fa-boxes"></i>
                                 </button>
-                                <button class="btn btn-sm btn-info text-white" onclick='editarSucursal(<?= json_encode($e) ?>)'>
+                                <button class="btn btn-sm btn-info text-white"
+                                    onclick='editarSucursal(<?= json_encode($e) ?>)'>
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger" onclick='eliminarSucursal(<?= $e['empresaID'] ?>, "<?= htmlspecialchars($e['nombre']) ?>")'>
+                                <button class="btn btn-sm btn-danger"
+                                    onclick='eliminarSucursal(<?= $e['empresaID'] ?>, "<?= htmlspecialchars($e['nombre']) ?>")'>
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -180,10 +184,12 @@ foreach ($res as $r) {
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-4">Selecciona los módulos que esta empresa tiene autorizados según su plan de pago.</p>
+                    <p class="text-muted small mb-4">Selecciona los módulos que esta empresa tiene autorizados según su
+                        plan de pago.</p>
                     <?php foreach ($funcionalidades as $f): ?>
                         <div class="form-check mb-3 p-2 border rounded hover-bg-light">
-                            <input class="form-check-input ms-0 me-2" type="checkbox" name="modulos[]" value="<?php echo $f['funcionalidadID']; ?>" id="f_<?php echo $f['funcionalidadID']; ?>">
+                            <input class="form-check-input ms-0 me-2" type="checkbox" name="modulos[]"
+                                value="<?php echo $f['funcionalidadID']; ?>" id="f_<?php echo $f['funcionalidadID']; ?>">
                             <label class="form-check-label d-block" for="f_<?php echo $f['funcionalidadID']; ?>">
                                 <div class="fw-bold"><?php echo $f['nombre']; ?></div>
                                 <div class="small text-muted"><?php echo $f['descripcion']; ?></div>
@@ -202,56 +208,56 @@ foreach ($res as $r) {
 
 
 <script>
-function abrirModulos(id, nombre, activos) {
-    document.getElementById('m_empresaID').value = id;
-    document.getElementById('m_nombre').innerText = nombre;
-    
-    // Resetear checks
-    document.querySelectorAll('input[name="modulos[]"]').forEach(cb => {
-        cb.checked = activos.includes(parseInt(cb.value));
-    });
-    
-    let modal = new bootstrap.Modal(document.getElementById('modalModulos'));
-    modal.show();
-}
+    function abrirModulos(id, nombre, activos) {
+        document.getElementById('m_empresaID').value = id;
+        document.getElementById('m_nombre').innerText = nombre;
 
-function abrirModalSucursal() {
-    document.getElementById('sucModalTitle').innerText = 'Nueva Sucursal';
-    document.getElementById('suc_empresaID').value = '';
-    document.getElementById('suc_nombre').value = '';
-    document.getElementById('suc_direccion').value = '';
-    document.getElementById('suc_telefono').value = '';
-    document.getElementById('suc_ruc').value = '';
-    document.getElementById('suc_representante').value = '';
-    document.getElementById('suc_color1').value = '#1a1a1a';
-    document.getElementById('suc_color2').value = '#00f2fe';
-    let modal = new bootstrap.Modal(document.getElementById('modalSucursal'));
-    modal.show();
-}
+        // Resetear checks
+        document.querySelectorAll('input[name="modulos[]"]').forEach(cb => {
+            cb.checked = activos.includes(parseInt(cb.value));
+        });
 
-function editarSucursal(data) {
-    document.getElementById('sucModalTitle').innerText = 'Editar Sucursal';
-    document.getElementById('suc_empresaID').value = data.empresaID;
-    document.getElementById('suc_nombre').value = data.nombre;
-    document.getElementById('suc_direccion').value = data.direccion;
-    document.getElementById('suc_telefono').value = data.telefono;
-    document.getElementById('suc_ruc').value = data.ruc || '';
-    document.getElementById('suc_representante').value = data.representante_legal || '';
-    document.getElementById('suc_color1').value = data.color_primario || '#1a1a1a';
-    document.getElementById('suc_color2').value = data.color_secundario || '#00f2fe';
-    let modal = new bootstrap.Modal(document.getElementById('modalSucursal'));
-    modal.show();
-}
-
-function eliminarSucursal(id, nombre) {
-    if (confirm("¿Realmente desea eliminar la sucursal: " + nombre + "?")) {
-        const f = document.createElement('form');
-        f.method = 'POST';
-        f.innerHTML = '<input type="hidden" name="accion" value="eliminar_sucursal"><input type="hidden" name="empresaID" value="'+id+'">';
-        document.body.appendChild(f);
-        f.submit();
+        let modal = new bootstrap.Modal(document.getElementById('modalModulos'));
+        modal.show();
     }
-}
+
+    function abrirModalSucursal() {
+        document.getElementById('sucModalTitle').innerText = 'Nueva Sucursal';
+        document.getElementById('suc_empresaID').value = '';
+        document.getElementById('suc_nombre').value = '';
+        document.getElementById('suc_direccion').value = '';
+        document.getElementById('suc_telefono').value = '';
+        document.getElementById('suc_ruc').value = '';
+        document.getElementById('suc_representante').value = '';
+        document.getElementById('suc_color1').value = '#1a1a1a';
+        document.getElementById('suc_color2').value = '#00f2fe';
+        let modal = new bootstrap.Modal(document.getElementById('modalSucursal'));
+        modal.show();
+    }
+
+    function editarSucursal(data) {
+        document.getElementById('sucModalTitle').innerText = 'Editar Sucursal';
+        document.getElementById('suc_empresaID').value = data.empresaID;
+        document.getElementById('suc_nombre').value = data.nombre;
+        document.getElementById('suc_direccion').value = data.direccion;
+        document.getElementById('suc_telefono').value = data.telefono;
+        document.getElementById('suc_ruc').value = data.ruc || '';
+        document.getElementById('suc_representante').value = data.representante_legal || '';
+        document.getElementById('suc_color1').value = data.color_primario || '#1a1a1a';
+        document.getElementById('suc_color2').value = data.color_secundario || '#00f2fe';
+        let modal = new bootstrap.Modal(document.getElementById('modalSucursal'));
+        modal.show();
+    }
+
+    function eliminarSucursal(id, nombre) {
+        if (confirm("¿Realmente desea eliminar la sucursal: " + nombre + "?")) {
+            const f = document.createElement('form');
+            f.method = 'POST';
+            f.innerHTML = '<input type="hidden" name="accion" value="eliminar_sucursal"><input type="hidden" name="empresaID" value="' + id + '">';
+            document.body.appendChild(f);
+            f.submit();
+        }
+    }
 </script>
 
 <!-- Modal Nueva/Editar Sucursal -->
@@ -269,7 +275,8 @@ function eliminarSucursal(id, nombre) {
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Nombre Comercial:</label>
-                            <input type="text" name="nombre" id="suc_nombre" class="form-control" required onkeyup="this.value=this.value.toUpperCase()">
+                            <input type="text" name="nombre" id="suc_nombre" class="form-control" required
+                                onkeyup="this.value=this.value.toUpperCase()">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">NIT / RUC:</label>
@@ -279,7 +286,8 @@ function eliminarSucursal(id, nombre) {
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Representante Legal:</label>
-                            <input type="text" name="representante_legal" id="suc_representante" class="form-control" onkeyup="this.value=this.value.toUpperCase()">
+                            <input type="text" name="representante_legal" id="suc_representante" class="form-control"
+                                onkeyup="this.value=this.value.toUpperCase()">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Teléfono/WhatsApp:</label>
@@ -290,15 +298,17 @@ function eliminarSucursal(id, nombre) {
                         <label class="form-label fw-bold">Dirección Completa:</label>
                         <input type="text" name="direccion" id="suc_direccion" class="form-control" required>
                     </div>
-                    
+
                     <div class="row bg-light p-2 rounded mb-3">
                         <div class="col-md-6 mb-3 mb-md-0">
                             <label class="form-label fw-bold text-muted small">Color Primario:</label>
-                            <input type="color" name="color_primario" id="suc_color1" class="form-control form-control-color w-100" title="Elegir color primario">
+                            <input type="color" name="color_primario" id="suc_color1"
+                                class="form-control form-control-color w-100" title="Elegir color primario">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold text-muted small">Color Secundario:</label>
-                            <input type="color" name="color_secundario" id="suc_color2" class="form-control form-control-color w-100" title="Elegir color secundario">
+                            <input type="color" name="color_secundario" id="suc_color2"
+                                class="form-control form-control-color w-100" title="Elegir color secundario">
                         </div>
                     </div>
 
@@ -318,9 +328,16 @@ function eliminarSucursal(id, nombre) {
 </div>
 
 <style>
-    .hover-bg-light:hover { background-color: #f8f9fa; }
-    .badge { font-weight: 500; font-size: 0.75rem; }
+    .hover-bg-light:hover {
+        background-color: #f8f9fa;
+    }
+
+    .badge {
+        font-weight: 500;
+        font-size: 0.75rem;
+    }
 </style>
 
 </body>
+
 </html>
