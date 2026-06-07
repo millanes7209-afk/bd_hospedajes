@@ -6,8 +6,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $empresaID = $_SESSION['empresaID'];
     $usuarioID = $_SESSION['sesion_id_usuario'];
     $cajaID = $_SESSION['caja_abierta_id'];
-    
-    $monto = (float)$_POST['monto'];
+
+    $monto = (float) $_POST['monto'];
     $tipo = $_POST['tipo']; // INGRESO o EGRESO
     $descripcion = strtoupper(trim($_POST['descripcion'] ?? ''));
 
@@ -19,9 +19,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        $sql = "INSERT INTO banos (empresaID, cajaID, usuarioID, monto, tipo, descripcion, fecha) 
-                VALUES (?, ?, ?, ?, ?, ?, NOW())";
-        $db->ejecutar($sql, [$empresaID, $cajaID, $usuarioID, $monto, $tipo, $descripcion]);
+        $fecha_actual = date('Y-m-d H:i:s');
+        $sql = "INSERT INTO banos (empresaID, cajaID, usuarioID, monto, tipo, descripcion, fecha, _fec_insercion, _usuario, _estado) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'A')";
+        $db->ejecutar($sql, [$empresaID, $cajaID, $usuarioID, $monto, $tipo, $descripcion, $fecha_actual, $fecha_actual, $usuarioID]);
 
         $_SESSION['mensaje'] = "Registro de Baño ($tipo) guardado correctamente.";
         $_SESSION['mensaje_tipo'] = "success";

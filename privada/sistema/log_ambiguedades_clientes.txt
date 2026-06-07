@@ -1,0 +1,477 @@
+=== INICIO DE MIGRACIÓN: 2026-06-06 19:43:12 ===
+[LIMPIEZA] Tabla clientes vaciada antes de migrar.
+[ID Antiguo: 84] [JOSE  BLANCO CANO] - CI anómalo ('497709'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 104] [ARIEL ARTURO  AQUINO MAMANI] - CI anómalo ('850539'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 108] [BERNARDO ORTIZ] - CI anómalo ('10715112-1C'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 146] [LUIS SEGOVIA] - CI anómalo ('53277684'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 167] [JUAN ARGOTE] - CI anómalo ('6614749-8'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 168] [PEDRO CASTILLO] - CI anómalo ('46163976'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 193] [NORBERTO RAMOS FLORES] - CI anómalo ('47724849'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 309] [ADEMAR VELASQUEZ] - CI anómalo ('37721592'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 348] [NILDA MAMANI] - CI anómalo ('32562748'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 383] [VALENTIN LAIME PUENTE] - CI anómalo ('619006-1j'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 434] [RENE TOLA ORDOÑEZ] - CI anómalo ('672760'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 455] [SILVIA BEATRIZ IBARRA] - CI anómalo ('25526419'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 518] [DIEGO CACERES SANCHEZ] - CI anómalo ('72561813'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 547] [RODRIGO UMANTE] - CI anómalo ('722564'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 560] [LUISA CABEZAS] - CI anómalo ('3495371-1O'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 562] [ROLANDO VILTE VIDAURRE] - CI anómalo ('7235278-1H'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 564] [JULIO  PINTO PACO] - CI anómalo ('457552'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 619] [FELICIANO CRUZ CALLA] - CI anómalo ('1297313-1s'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 694] [LUIS  VARGAS CATARI] - CI anómalo ('596164'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 743] [DOMINGA COPA] - CI anómalo ('47813557'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 753] [PABLO CISNEROS] - CI anómalo ('89822434'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 766] [DEYSI  CASIMIRO] - CI anómalo ('58077749'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 773] [ROSA ARMELLA] - CI anómalo ('1834226-G1'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 820] [OSCAR WILLY  INCISO PALOMO] - CI anómalo ('E-17795102'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 828] [JUAN  BATALLANOS TEJERINA] - CI anómalo ('1793092-1M'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 879] [OSCAR PERALES] - CI anómalo ('38824785'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 888] [LUIS MIGUEL  GUERRERO APARICIO] - CI anómalo ('72254345'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 907] [FREDDY GERMAN ALANOCA  FLORES] - CI anómalo ('4365225-1B'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 968] [QUEVIN VILLALOBOS] - CI anómalo ('60106345'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 990] [ROXANA VALDIVIEZO] - CI anómalo ('41042403'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1019] [GEORGES  GONZALES] - CI anómalo ('1193226324'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1020] [ALEXANDRA  ZAPATA] - CI anómalo ('1035429891'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1038] [DANY  ALIPIO AGUIRRE] - CI anómalo ('80236421-6'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 1041] [HECTOR JARAMILLO] - CI anómalo ('27875324'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1070] [FRANCISCO APAZA] - CI anómalo ('E-11650470'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 1102] [MARCELA  DEL VALLE] - CI anómalo ('34074093'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1142] [NAIM ALAVILA CLEMENTE] - CI anómalo ('59759686'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1143] [CLAUDIA CLEMENTE] - CI anómalo ('44879996'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1155] [SANDRA MIRANDA] - CI anómalo ('28598555-2'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 1169] [MARIO CANO RODRIGUEZ] - CI anómalo ('5100693-1L'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 1175] [EDELMIRO PELOC] - CI anómalo ('26025552'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1188] [WILLIAMS  VIZCARRA MARTINEZ] - CI anómalo ('46390502'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1212] [GUILLERMO NARANJO] - CI anómalo ('E-17743520'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 1229] [JOSE SILVA MALCOTTI] - CI anómalo ('27477345'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1235] [WILMA  VALDIVIEZO] - CI anómalo ('40935371'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1285] [PABLO  CIARES] - CI anómalo ('26793979'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1330] [VALENTINA MAMANI SANTOS] - CI anómalo ('1278067-1R'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 1343] [JULIA CRUZ ARROYO] - CI anómalo ('52343635'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1352] [RICARDO BARSA] - CI anómalo ('703142'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1353] [BENJAMIN CHABARRIA] - CI anómalo ('74000785'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1376] [SERGIO  GREGORIO] - CI anómalo ('346367433463674'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1377] [SOFIA GREGORIO] - CI anómalo ('50387369'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1378] [HECTOR MAMANI] - CI anómalo ('41903366'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1379] [ROSARIO PORTAL] - CI anómalo ('44124847'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1381] [FRANZ  ACARAPI] - CI anómalo ('128000228'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1399] [RONAL RODRIGUEZ TOLAY] - CI anómalo ('7235280-1P'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 1437] [MANUELA NOEMI SOTO] - CI anómalo ('28698034'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1438] [VIVIAN AZUCENA OROSCO] - CI anómalo ('45112691'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1439] [ALEJANDRA CRISTINA SOTO] - CI anómalo ('25532581'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1440] [MARIA ISABEL SOTO] - CI anómalo ('29612934'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1449] [WILSON SOLIZ] - CI anómalo ('47607826'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1465] [NORA MENDOZA] - CI anómalo ('1824556-1B'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 1470] [AIDE OVANDO] - CI anómalo ('34426636'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1508] [ROSARIO  CONDORI] - CI anómalo ('43219058'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1530] [ISMAEL SOLARES CONDORI] - CI anómalo ('121707'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1565] [ROSALINO ALARCON] - CI anómalo ('25516368'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1588] [GABRIELA  RIOS] - CI anómalo ('28310726'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1636] [ELIZABETH AYELEN] - CI anómalo ('34120917'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1648] [CARLOS  COLQUE] - CI anómalo ('32308427'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1671] [EMANUEL RUIZ] - CI anómalo ('42303275'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1672] [CECILIO GARCIA] - CI anómalo ('33593571'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1673] [SANTIAGO VEGA] - CI anómalo ('33470586'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1698] [ANGEL DEL TORO SANDOVAL] - CI anómalo ('1065564729'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1712] [BRENDA ESTRADA] - CI anómalo ('45342245'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1741] [VICTOR CARI] - CI anómalo ('26125140'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1785] [CLAUDIO SUXO] - CI anómalo ('24399210'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1799] [JUANITA LIDIA HUMACATA VILCA] - CI anómalo ('106755702'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1826] [FABIAN BARRIENTOS ALTAMIRANO] - CI anómalo ('1841993-1G'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 1837] [KEVIN VILLANO HANCCO] - CI anómalo ('60837042-6'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 1838] [FREDY VILLANO QUISPE] - CI anómalo ('45357906-4'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 1845] [BRISA JAEL] - CI anómalo ('48405047'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1855] [ANGEL VEIZAGA] - CI anómalo ('974393'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1886] [ALEXIA  MANCILLA CHOSCO] - CI anómalo ('53711646'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1892] [CAROLINA  RIOS] - CI anómalo ('279722863'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1893] [CARLOS EDUARDO PEREYRA] - CI anómalo ('26215308'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1894] [EDUARDO GABRIEL  PEREYRA] - CI anómalo ('49195178'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1895] [NOELIA SOLEDAD PEREYRA] - CI anómalo ('44501082'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1896] [AXEL GASTON JUAREZ] - CI anómalo ('42303096'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1897] [AXEL NICOLAS JUAREZ PEREYRA] - CI anómalo ('59483163'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1899] [ROSMERY HUMACATA] - CI anómalo ('5010064-1k'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 1913] [MARCEL DAVID SINGH] - CI anómalo ('29784644'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1951] [GUSTABO BATALLANOS MERCADO] - CI anómalo ('49412064'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1954] [LUIS CHOQUEHUANCA] - CI anómalo ('414028'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1962] [FLORENCIA HERRERA] - CI anómalo ('46401747'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1978] [MARIA AQUINO] - CI anómalo ('37645132'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1979] [MAXIMILIANO  VILTE] - CI anómalo ('36486350'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1980] [JOAQUIN VILTE] - CI anómalo ('50947867'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1981] [ROMINA AQUINO] - CI anómalo ('39198680'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 1993] [EDGAR CONDORI] - CI anómalo ('3979124-1Q'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 1997] [MIGUEL YUFRA] - CI anómalo ('28938464'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2001] [LIZ GARECA] - CI anómalo ('E-11652185'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2018] [CLAUDIA RAMOS] - CI anómalo ('32215731'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2027] [DANIELA  CHOQUE RUEDA] - CI anómalo ('72454661'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2035] [LUIS  ESQUIVEL BERNA] - CI anómalo ('120200194'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2067] [DIEGO  CARDENAS] - CI anómalo ('34227422'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2068] [JUAN  ARGOTE] - CI anómalo ('34191279'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2085] [WEIMAR  MAIGUA] - CI anómalo ('72388733'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2108] [ROSALES MONTERO TORO] - CI anómalo ('5524466-1Q'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2111] [MARTINA LOPEZ] - CI anómalo ('23.039.861'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2112] [PATRICIO LAZARO CHAILE] - CI anómalo ('26.923.492'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2117] [MARIA SONIA CARDOZO] - CI anómalo ('27.954.439'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2118] [DANIEL RODRIGO GUTIERREZ] - CI anómalo ('30.804.806'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2122] [BLADIMIR  RODRIGUEZ] - CI anómalo ('542050'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2124] [JUAN FRANCO] - CI anómalo ('F587103-B'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2138] [MARILIN  CRUZ] - CI anómalo ('135331588'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2150] [TERESA SUBIA] - CI anómalo ('74435026'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2184] [DIEGO ALEJANDRO NIEVA JACQUET] - CI anómalo ('37636441'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2188] [RODRIC THIAGO VELASQUEZ MAMANI] - CI anómalo ('59454914'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2200] [JUAN CARLOS UDAETA OJALVO] - CI anómalo ('827261'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2209] [YASMANI  ALARCON] - CI anómalo ('313929'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2215] [DANIEL RIOS] - CI anómalo ('46034887'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2233] [PEDRO ROBLES ORTIZ] - CI anómalo ('57830310'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2253] [MIGUEL CARDOZO] - CI anómalo ('23647245'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2267] [AMANDA PEREZ] - CI anómalo ('41408471'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2290] [MODESTO CACERES] - CI anómalo ('20702855'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2304] [FELIX SANGUINO ZENTENO] - CI anómalo ('FELIX SANGUINO'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2334] [JOSE CALDERON] - CI anómalo ('72507874'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2398] [JOAQUIN MIRANDA] - CI anómalo ('40595276'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2401] [VICTOR TICONA] - CI anómalo ('444097'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2403] [LIVIA KALISAYA] - CI anómalo ('35309977'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2423] [JOSE  RODRIGUEZ ALARCON] - CI anómalo ('1791987-1T'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2440] [ARACELI DE LOS ANGELES ANDRADE] - CI anómalo ('43762062'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2497] [LIZETH ROMERO FERNANDEZ] - CI anómalo ('100620831'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2509] [ROXANA CONDORI] - CI anómalo ('43312325'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2541] [ALBERTINA  TACURI QUISPE] - CI anómalo ('645769'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2551] [LAUTARO GALLARDO] - CI anómalo ('58712624'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2552] [NADIA VILLCA GALLARDO] - CI anómalo ('57548447'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2639] [GUSTAVO ADOLFO  QUINTERO REYES] - CI anómalo ('1006181245'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2640] [RODRIGUEZ SILVA  NESTOR DAVID] - CI anómalo ('1096248965'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2641] [NICOLLE DAYANA  GARZON CEBALLOS] - CI anómalo ('1.113.978.574'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2642] [JULIO CESAR  ZAPATA BOLAÑOS] - CI anómalo ('1.115.085.243'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2664] [NESTOR FABIAN FERREIRA] - CI anómalo ('33648342'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2676] [RODOLFO GARCIA] - CI anómalo ('1242739-1Q'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2778] [ABAD GUARACHI] - CI anómalo ('746947'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2799] [DALMA ESCALANTE] - CI anómalo ('720565'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2822] [NORA LEAÑEZ] - CI anómalo ('26285266'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2847] [IVIDIO SALVATIERRA ORTEGA] - CI anómalo ('1623372-21'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2859] [MARIA ANTEZANA BALDIVIEZO] - CI anómalo ('|10707128'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2870] [FRANK ANTONY TICONA FERNANDEZ] - CI anómalo ('12365661-1M'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2911] [JOSE CAYO] - CI anómalo ('72443813'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 2965] [HERMES ARAGON MONTES] - CI anómalo ('E-17675007'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 2979] [DANIELA FANNY GONZALES] - CI anómalo ('35262061'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3002] [PEDRO PADILLA BELLIDO] - CI anómalo ('1074867-1Q'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 3005] [JAVIER RAMIRO MARTINEZ] - CI anómalo ('32930662'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3037] [ELIAS NICANOR GIMENEZ FLORES] - CI anómalo ('39039161'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3059] [MARIO EDDY CANIZARES FLORES] - CI anómalo ('1895230-1N'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 3078] [FRANCO TAPIA] - CI anómalo ('44697115'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3083] [JACK CASTELLON] - CI anómalo ('9647072-1C'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 3099] [MOISES CONDORI] - CI anómalo ('10654055-1C'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 3118] [FRANCO LOPEZ] - CI anómalo ('35822229'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3125] [DAVID JOSUE BORJA] - CI anómalo ('43939037'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3126] [DANIEL ANTONIO BORJA] - CI anómalo ('45761092'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3127] [JULIAN CORI] - CI anómalo ('426689'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3154] [ENZO SANTI] - CI anómalo ('39202132'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3156] [CELINA RIVERA] - CI anómalo ('7235627-1N'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 3201] [MARIA CRUZ] - CI anómalo ('37418400'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3265] [TEOFILO VILLA LOPEZ] - CI anómalo ('717168'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3315] [FABIO  TEJERINA] - CI anómalo ('35781320'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3375] [JHISEL CHOQUE] - CI anómalo ('59411368'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3398] [JUAN FLORES] - CI anómalo ('24724725'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3419] [LUIS ZEBALLOS] - CI anómalo ('79237924'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3423] [EUSEBIO MAMANI QUISPE] - CI anómalo ('441987'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3427] [IRENIO YANQUE] - CI anómalo ('22712561'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3442] [LUIS PALACIOS CONDORI] - CI anómalo ('49049803'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3471] [NELSON GUERRERO] - CI anómalo ('37372018'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3478] [DANIELA MARTINEZ] - CI anómalo ('40820526'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3480] [AURORA MARTINEZ] - CI anómalo ('31839037'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3526] [EDWIN  ROJAS PARRA] - CI anómalo ('804044'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3529] [ALEJANDRO  CALIZAYA] - CI anómalo ('6664082-1l'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 3544] [RAFAEL  PEREZ PANTALEON] - CI anómalo ('27034549'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3549] [LUIS GABRIEL ICHAZO ROMERO] - CI anómalo ('74853358'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3569] [DERLY  TAQUICHIRI] - CI anómalo ('44010724'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3575] [NICANOR VALERIO CHAUQUE] - CI anómalo ('29815781'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3581] [FLORENTINO MOLLO AGUILAR] - CI anómalo ('3671016-27'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 3613] [MARCELINA MAMANI VEGA] - CI anómalo ('41056856'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3619] [SERGIO SUBELZA CABANA] - CI anómalo ('36682311'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3628] [PEDRO CRUZ] - CI anómalo ('33867713'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3642] [ELBER CASTILLO] - CI anómalo ('37645533'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3685] [PASCUAL TEJERINA MENDOZA] - CI anómalo ('5674961-1s'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 3722] [JULIO BULEGIO] - CI anómalo ('25783632'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3733] [NOELIA ELIZABETH TEJERINA] - CI anómalo ('37.721.994'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 3735] [LUCIA DEL VALLE RIOS] - CI anómalo ('45056098'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3736] [GABRIELA MARILYN RIOS NIEVES] - CI anómalo ('33042286'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3738] [SOL IARA AYELEN CAVALIERI CARRIZO] - CI anómalo ('45178716'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3739] [ELVIO EXEQUIEL MICHEL] - CI anómalo ('38739736'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3741] [BORIS CHINURI BARRIOS] - CI anómalo ('50038'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3760] [WILLIAMS MARTINEZ] - CI anómalo ('46390502-4'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 3791] [JOSE ALEAJNDRO BRAVO ALVARADO] - CI anómalo ('35661066'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3812] [LETICIA MÉRIDA] - CI anómalo ('52280843'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3813] [DYLAN VEGA] - CI anómalo ('56232307'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3814] [MIGUEL  VEGA] - CI anómalo ('28495592'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3815] [CLAUDIA LIMA] - CI anómalo ('27324949'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3848] [JOSE LUIS  MARTINEZ] - CI anómalo ('39930051'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3866] [LUCY FLOR CHOQUE PACCI] - CI anómalo ('54328760'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3871] [JULIA JIMENEZ] - CI anómalo ('2643461-1M'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 3921] [ARNALDO ANDRE ESPINDOLA] - CI anómalo ('42019025'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3926] [INES ESPERANZA TORREZ] - CI anómalo ('33886674'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 3951] [JHONNY RODRIGUEZ TORREZ] - CI anómalo ('8086666-1t'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4018] [POLICARPIO TARIFA] - CI anómalo ('124410898'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4044] [JUAN COLQUE] - CI anómalo ('45092540'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4049] [JUANA MAMANI] - CI anómalo ('1249202-1N'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4051] [ROBERTO TOLABA] - CI anómalo ('714972'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4070] [CECILIO POMA CHOQUE] - CI anómalo ('689488'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4076] [ASCENCIO DELGADO MAMANI] - CI anómalo ('1312915-1E'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4155] [LUIS GARCIA] - CI anómalo ('43853950'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4185] [EDISON AGUILAR] - CI anómalo ('47655887'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4198] [JUAN CRUZ] - CI anómalo ('954986391'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4215] [ADHEMAR MAMANI] - CI anómalo ('498348'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4221] [CINTIA ERIKA PELOC] - CI anómalo ('42583145'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4228] [BENEDICTO  APAZA] - CI anómalo ('27254197'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4229] [JOSE APAZA] - CI anómalo ('30623653'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4238] [HUGO CIRILO  HUALLPA CAZON] - CI anómalo ('579107'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4254] [CLAUDIA YENI RIOS NIEVES] - CI anómalo ('40658426'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4255] [MAIRA JIMENA CORONEL] - CI anómalo ('37531919'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4256] [ENRIQUE SEGUNDO PAICO RAMOS] - CI anómalo ('E-0035511'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4260] [JORGE ALAN  TAPIA] - CI anómalo ('44522519'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4262] [SUSANA VERONICA TAPIA] - CI anómalo ('38670184'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4358] [TOMAS  GONZALES] - CI anómalo ('40659948'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4363] [GABRIELA CAZON] - CI anómalo ('27874526'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4415] [DENNIS STORM] - CI anómalo ('E-17923258'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4420] [MARIA ARMELLA ORTEGA] - CI anómalo ('5047167-1D'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4439] [NORMA INES CHOROLQUE] - CI anómalo ('22020015'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4461] [RONAL BADIVIEZO] - CI anómalo ('7235183-1C'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4493] [ALEJANDRO ORLANDO RUEDA LARA] - CI anómalo ('7235391-1O'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4499] [ROMULO FLORES CALDERON] - CI anómalo ('10647349-1p'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4505] [JULIAN LIMA ESPINOZA] - CI anómalo ('948942041'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4506] [RUBEN RAMOS SANCHEZ] - CI anómalo ('50559652'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4521] [PATRICIA CALA] - CI anómalo ('24556392'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4538] [SIXTO LLANOS] - CI anómalo ('4158533-1H'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4601] [AMANDA LAMAS] - CI anómalo ('24523141'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4606] [EOR FERNANDEZ] - CI anómalo ('5038000853'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4633] [RENE MOLINA] - CI anómalo ('5048480-1B'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4639] [LELIS CAMILO CARI GIRON] - CI anómalo ('1396339-1F'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4654] [BLADIMIR QUISPE] - CI anómalo ('7235860-1k'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4678] [AYELEN CELESTE CORONEL CARDENAS] - CI anómalo ('47080436'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4710] [ROXANA PELOC] - CI anómalo ('46790508'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4849] [NANCY RIOS] - CI anómalo ('39004905'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4850] [ROSENDO INCA] - CI anómalo ('45029854'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 4869] [MARTHA  FLORESTARIFA] - CI anómalo ('95.585.135'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4874] [BARTOLOME MEDINACELI] - CI anómalo ('1330986-1U'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4892] [JUAN DANIEL CUEVAS ZENTENO] - CI anómalo ('7235042-1I'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4895] [BERNARDO WIDMAR QUIROGA] - CI anómalo ('12.984.383'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4970] [MARIANA LIS VERA] - CI anómalo ('45.560.527'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 4971] [MICOL GEORGINA CORIA] - CI anómalo ('44.230.191'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5005] [MARIO VERA OCAMPO] - CI anómalo ('94.724.580'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5034] [MARISOL FATIMA OCHOA ARGOTA] - CI anómalo ('96.455.957'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5037] [LUIS  CAZON TEJERINA] - CI anómalo ('103933449'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5049] [AGAPITO AGUILAR CASTELLON] - CI anómalo ('7236740-1r'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5051] [CANDELARIA SALINAS] - CI anómalo ('48017096'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5052] [CRISTIAN  CORDOBA] - CI anómalo ('45467922'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5053] [LAUTARO DIAS] - CI anómalo ('44515749'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5066] [RUTH BIANCA ROSSO] - CI anómalo ('E-17898295'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5107] [ELEUTERIO ANGELO QUISPE] - CI anómalo ('3800295-1I'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5114] [EMMANUEL DARUICH] - CI anómalo ('38.006.542'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5138] [ELIZABETH NOELIA BENENCIA] - CI anómalo ('34.972.605'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5139] [VERONICA JUDITH ROCHA] - CI anómalo ('31.920.307'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5141] [JOSE TOLABA ALTAMIRANO] - CI anómalo ('7235309-1c'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5158] [MIRTHA HOOPER VASQUEZ] - CI anómalo ('975057'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5209] [MANUEL MARQUEZ] - CI anómalo ('34.488.078'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5210] [JOSE LUIS AGUIRRE VEDIA] - CI anómalo ('10667192-1H'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5216] [LUCIO LOPEZ] - CI anómalo ('653204'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5224] [SERGIO CAZON VASQUEZ] - CI anómalo ('94.870.911'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5231] [CARLOS ONTIVEROS] - CI anómalo ('40355290'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5277] [MAXIMO ELADIO BATALLANOS MERCADO] - CI anómalo ('94.902.453'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5289] [DEMETRIO VENTURA] - CI anómalo ('1256110-1J'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5292] [JACSON VIDES] - CI anómalo ('7235274-1M'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5301] [MARCELINA OCAMPO MONDAQUE] - CI anómalo ('94.553.367'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5371] [YANINA IBAÑEZ] - CI anómalo ('45576286'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5379] [LUCIO ALVAREZ] - CI anómalo ('18.793.893'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5381] [SANTOS AGAPITO SEGOVIA SUBIA] - CI anómalo ('94.796.926'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5403] [FILEMON MAMANI CAMACHO] - CI anómalo ('93.100.633'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5457] [ARIEL  JARA] - CI anómalo ('130707406'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5501] [HERNAN AVILA] - CI anómalo ('40.326.912'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5507] [WILMAN CANDIDO VELASCO] - CI anómalo ('41401485'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5516] [ROBERTO ULLOA] - CI anómalo ('23318178'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5528] [ROBERTO JORGE ULLOA ROSA] - CI anómalo ('23.318.178'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5564] [FACUNDO  AVILES] - CI anómalo ('94.120.304'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5565] [OLGA CAZON AVILES] - CI anómalo ('94.300.662'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5567] [NOELIA LIS BERNAL PAREDES] - CI anómalo ('7236987-1C'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5593] [SERGIO LENIZ] - CI anómalo ('38214620'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5617] [JONATHAN HOYOS SALAZAR] - CI anómalo ('Y6038717N'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5638] [JHON BELTRAN CHABARRIA URZAGASTE] - CI anómalo ('7235321-1B'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5639] [CARLOS ORTIZ VALENCIA] - CI anómalo ('40710084'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5676] [GABY QUIÑONES TANCARA] - CI anómalo ('100945290'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5679] [SERGIO MARCELO SUBEKZA CABANA] - CI anómalo ('36.682.311'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5705] [CLAUDIA PETRONA CLEMENTE] - CI anómalo ('44.879.996'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5706] [JOEL ALAVILA CAYO] - CI anómalo ('96.068.428'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5707] [NAIM JOEL ALAVILA CLEMENTE] - CI anómalo ('59.759.686'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5710] [FRANCISCA RUIZ VEGA] - CI anómalo ('7236499-1U'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5736] [FLORA LIMACHI] - CI anómalo ('1110622-1k'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5739] [JAVIER RICARDO PUCA] - CI anómalo ('29897987'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5778] [RUBEN HURTADO IPORRE] - CI anómalo ('720230'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5805] [FELIPE CESAR SUBELZA] - CI anómalo ('20352160'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5815] [YENINA SOLEDAD MEDINA] - CI anómalo ('40147330'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5820] [FLOREANO FERNANDEZ] - CI anómalo ('Q44843078'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5830] [MARIANY  ARAMAYO ALTAMIRANO] - CI anómalo ('95.636.105'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5831] [MARIANELA NICOLE MARTINEZ ARAMAYO] - CI anómalo ('51.353.002'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5842] [JOEL CONDORI QUISPE] - CI anómalo ('v'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5848] [LEODAN DOMINGO RAMOS ZENTENO] - CI anómalo ('96.416.140'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5877] [DINO ORLANDO CADENA MENDIETA] - CI anómalo ('31.093.729'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5882] [JOSE LUIS MARTINEZ] - CI anómalo ('39.930.051'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5939] [SEGUNDINA  FLORES] - CI anómalo ('4114804-1V'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5958] [HERNAN CRISTOBAL VEGA] - CI anómalo ('32082645'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5959] [ORLANDO ARCANGEL VEGA] - CI anómalo ('30606993'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 5966] [SANTOS HIPOLITO RODRIGUEZ CLEMENTE] - CI anómalo ('94.685.313'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5988] [LUIS  FARFAN] - CI anómalo ('39.784.385'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5990] [WILBERT  MARTINEZ CABRITA] - CI anómalo ('7235834-1O'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5991] [CARMEN SANDOVAL HEREDIA] - CI anómalo ('7235950-1N'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 5992] [NOELIA VANESA MEDINA] - CI anómalo ('35896824'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6001] [LETICIA ESTHER FLORES PALOMINO] - CI anómalo ('94.519.032'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6004] [LICET DELICIA RIVERA PORTAL] - CI anómalo ('96.427.371'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6019] [RENE MARIANO SARDINA] - CI anómalo ('36993622'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6048] [LUCIO OCHOA TRUJILLO] - CI anómalo ('7220192-1v'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6078] [MILTON  ENCINAS] - CI anómalo ('113387370'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6107] [WEIMAR  CARRANZA GONZALES] - CI anómalo ('1630983-1K'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6114] [MARIA CRUZ CHOQUE] - CI anómalo ('46788360'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6119] [FRANCO SERRANO] - CI anómalo ('42815380'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6150] [LUCIO GUTIERREZ GALLARDO] - CI anómalo ('5048493-1k'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6197] [DARWIN JOSE HERNANDEZ SAEZ] - CI anómalo ('16.865.104'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6203] [MARIA MAGDALENA MENDOZA INCA] - CI anómalo ('95.834.020'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6219] [FRANCO EZEQUIEL SERRANO] - CI anómalo ('42.815.380'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6249] [EMMANUEL ESTEBAN FERNANDEZ] - CI anómalo ('37.592.317'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6250] [OLGA NINA CHOQUE] - CI anómalo ('94.324.859'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6251] [JONATHAN MATIAS SANTOS] - CI anómalo ('44.247.576'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6252] [AYELEN MARISOL MANCILLA YURQUINA] - CI anómalo ('45.256.756'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6255] [LUIS SEGOVIA VALENTINO] - CI anómalo ('53.277.684'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6256] [LIDIA MERCADO LOPEZ] - CI anómalo ('94.755.818'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6290] [SANTIAGO VEGA] - CI anómalo ('33.470.586'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6339] [CARINA  MARTINEZ] - CI anómalo ('39675898'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6354] [FLORA TIRADO PORTUGUEZ] - CI anómalo ('5051393-1H'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6360] [SAMUEL CORAITE RUIZ] - CI anómalo ('94.246.425'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6361] [PACIFICO MIGUEL CARDOZO] - CI anómalo ('23.647.245'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6364] [FLORIZA HUANCA CUSIHUALLPA] - CI anómalo ('E-17909943'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6373] [ORLANDO MAMANI CRUZ] - CI anómalo ('146516661'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6377] [RAFAEL  PEREZ] - CI anómalo ('27.034.549'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6426] [JOSE ANTONIO GONZALES] - CI anómalo ('12.007.045'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6438] [NANCY FRANCO RUIZ] - CI anómalo ('95.068.772'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6439] [ANGEL THIAGO HERRERA FRANCO] - CI anómalo ('56.386.577'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6440] [VICTOR HUGO HERRERA SILES] - CI anómalo ('95.079.505'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6450] [SANTOS ALEJANDRO LAMAS] - CI anómalo ('40326042'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6451] [ELVA ROXANA PELOC] - CI anómalo ('42753176'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6457] [TARIFA VALDEZ CESAR EZEQUIEL] - CI anómalo ('32877050'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6461] [VANIA VARGAS TERCEROS] - CI anómalo ('24997334'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6462] [DANIA LIZET  ORELLANA TERCEROS] - CI anómalo ('41789839'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6465] [MARCIAL ANGEL PRIETO] - CI anómalo ('18.504.096'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6468] [MARIO JOSE  PLAZA] - CI anómalo ('16.884.628'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6469] [MARIO JOSE PLAZA] - CI anómalo ('33.983.428'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6470] [GABRIEL CRISTIAN RAMON FLORES] - CI anómalo ('32.857.703'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6471] [CINTIA ROCIO PLAZA] - CI anómalo ('36.791.613'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6511] [CRISTINA MEJIRA COSSIO] - CI anómalo ('986452'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6514] [LAUREANO TEJERINA] - CI anómalo ('23899057'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6522] [AEXANDER CHURQUINA VEGA] - CI anómalo ('7207687-1C'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6532] [BEATRIZ  YUCRA DIAZ] - CI anómalo ('127384764'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6548] [MAXIMO MOSCOSO BENITES] - CI anómalo ('1799107-1Q'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6575] [EUFRONIO  CANO ORELLANA] - CI anómalo ('590272'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6608] [JORGE LUIS ALBERTO] - CI anómalo ('34636911'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6612] [LEONARDA  RAMIREZ] - CI anómalo ('71835192'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6622] [ELIAN PERALTA] - CI anómalo ('46168534'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6639] [KEVIN ROMERO] - CI anómalo ('44913376'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6640] [JESUS SUBELZA] - CI anómalo ('26025613'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6641] [ESTER FARFAN] - CI anómalo ('29296291'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6642] [JUNIOR ROMERO] - CI anómalo ('52182978'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6643] [WILSON ROMERO] - CI anómalo ('49894615'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6653] [ROSA GARECA] - CI anómalo ('38236434'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6661] [DERWUAS GONZALES SANCHEZ] - CI anómalo ('27319433'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6683] [CRISPIN QUISPE RAMIREZ] - CI anómalo ('103661003'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6685] [MARIA ALEJANDRA ARMELLA] - CI anómalo ('40726983'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6731] [JUAN MANUEL ZALAZAR] - CI anómalo ('26714007'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6736] [ADIEL SULKA MAMANI] - CI anómalo ('37343623'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6737] [AGUSTINA SULKA CHURA] - CI anómalo ('55564835'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6763] [ABELARDO RODRIGUEZ TELLO] - CI anómalo ('E-17641249'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6768] [LELIA ARANCIBIA] - CI anómalo ('29482965'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6785] [ZOE BENITES FERNANDEZ] - CI anómalo ('58928841'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6786] [MIGUEL BENITES FERNANDEZ] - CI anómalo ('54279298'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6796] [LUIS CHAVARRIA MAMANI] - CI anómalo ('96.352.521'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6799] [CHAVARRIA MAMANI] - CI anómalo ('luis'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6810] [SANTOS CALIXTO TOCONAS] - CI anómalo ('25147227'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6813] [JUAN PIZARRO GARISTO] - CI anómalo ('999241'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6852] [LUIS MARTINEZ] - CI anómalo ('107073852'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6920] [SOFIA VACA] - CI anómalo ('F5735409'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6921] [MIGUEL RIOS GUITIAN] - CI anómalo ('78264097'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6942] [WILLY DONNY MARTINEZ] - CI anómalo ('93.994.950'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6943] [GONZALO MAMANI ALEJO] - CI anómalo ('95.244.044'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6958] [JOSE MANUEL  FLORES] - CI anómalo ('18.825.230'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6966] [SANTIAGO GARNICA] - CI anómalo ('39976100'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 6968] [HUMBERTO CALDERON CHINURI] - CI anómalo ('96.141.872'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6973] [CARMEN ESTEBAN OVIEDO] - CI anómalo ('12.739.780'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6976] [WALTER ELIAS ORTEGA] - CI anómalo ('33.350.938'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6985] [RENE GALEAN RUEDA] - CI anómalo ('4128430-1Q'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6992] [VICTOR HUGO CONDORI VARGAS] - CI anómalo ('94.415.011'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6993] [ANGELICA VARGAS TRUJILLO] - CI anómalo ('95.718.615'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 6994] [JUAN SILVESTRE GUTIERREZ] - CI anómalo ('95.061.011'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7016] [SILVIA CHOQUE] - CI anómalo ('23759991'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7048] [SANTIAGO GARNICA] - CI anómalo ('38976100'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7050] [RAFAEL ALBERTO ABREGU] - CI anómalo ('E-11496862'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7054] [GERONIMO TACURI CORREA] - CI anómalo ('5118963-1U'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7055] [JOSE HERRERA DURAN] - CI anómalo ('64339100'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7074] [RILLDA CANO CORREA] - CI anómalo ('5045039-1F'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7081] [TRIFON SARDINA SUBIA] - CI anómalo ('94.148.379'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7090] [NICOLE ROMANo] - CI anómalo ('70105086'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7119] [ANA RENGIFO MARTINEZ] - CI anómalo ('10641015-1N'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7172] [PRESENTACION CHOQUE FLORES] - CI anómalo ('96.389.556'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7173] [DELICIA ALEJANDRO LLANOS] - CI anómalo ('96.478.008'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7188] [MARY LUZ FERNANDEZ] - CI anómalo ('72943143'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7192] [MARCO RAMIREZ MENDEZ] - CI anómalo ('103577680'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7206] [RODRIGO RAMOS RIOS] - CI anómalo ('7236795-1U'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7226] [BORIS CHINURI BARRIOS] - CI anómalo ('5003829-1F'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7253] [GERMAN SANCHEZ CALONGE] - CI anómalo ('E-10135728'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7270] [NICOLE VILLADA] - CI anómalo ('42551729'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7281] [LUIS AGUILAR CONDORI] - CI anómalo ('E-0047066'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7288] [VICTOR ACOSTA ARROYO] - CI anómalo ('34617860'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7298] [JULIAN OROSCO ORTEGA] - CI anómalo ('1850176-1G'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7299] [SONIA  CRUZ] - CI anómalo ('72943142'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7308] [AMALIA MARISOL LAZARO] - CI anómalo ('39.784.374'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7309] [WILSON EFRAIN FLORES] - CI anómalo ('44.271.335'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7327] [ESTEBAN HUARANCA LOPEZ] - CI anómalo ('3972526-1p'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7364] [TIMOTEA VIRGINIA SANCHEZ] - CI anómalo ('38.654.251'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7365] [FABIOLA GLADYS ACHO] - CI anómalo ('33.603.965'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7366] [CARMEN ROSA AUCAPIÑA] - CI anómalo ('31.223.103'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7373] [MABEL  BENITEZ] - CI anómalo ('37.305.003'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7418] [FLOREANO GOYA FERNANDEZ] - CI anómalo ('44843078'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7444] [ANA FLORES ACUÑA] - CI anómalo ('1871569-1C'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7469] [MARFA  ALTAMIRANO FARFAN] - CI anómalo ('94.899.109'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7480] [MARCELO SALINAS] - CI anómalo ('22.340.676'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7507] [ROBERTO TEJERINA TARIFA] - CI anómalo ('94.024.223'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7516] [CLAUDIA TEJERINA] - CI anómalo ('21.176.612'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7517] [ROMAN TEJERINA] - CI anómalo ('M8.201.259'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7527] [MARIO MAYTA JURADO] - CI anómalo ('65678749'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7534] [NORMA GALLARDO] - CI anómalo ('95.351.557'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7535] [NADIA LUJAN VILLCA GALLARDO] - CI anómalo ('57.548.447'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7582] [JESUS AIZA VERA] - CI anómalo ('95.629.004'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7604] [MARIO VENTURA MAMANI] - CI anómalo ('93.980.649'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7615] [FERNANDO LIMAY] - CI anómalo ('24.483.499'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7653] [HECTOR SAUL HUMACATA] - CI anómalo ('39198702'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7677] [IVER  ORTEGA GUERRERO] - CI anómalo ('7235058-1l'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7689] [ARMANDO ALEMAN] - CI anómalo ('67376839'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7707] [MARIA ANGELA CASTRO] - CI anómalo ('16.866.858'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7708] [VICTORIA ESPINOZA] - CI anómalo ('18.310.605'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7710] [LINDER GONSALO RAMIREZ MORENO] - CI anómalo ('72298009'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7713] [DIONISIA LOURDES MARTINEZ] - CI anómalo ('34121695'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7761] [KARINA FERNANDA RODRIGUEZ] - CI anómalo ('39895208'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7789] [ISMAEL GOMEZ GUTIERREZ] - CI anómalo ('4013404-1F'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7796] [LUCRECIA CARRIZO SANTOS] - CI anómalo ('94.884.647'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7797] [KARINA ANDREA NAVARRO] - CI anómalo ('23.937.057'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7805] [CARLOS GUZMAN ARGOTE] - CI anómalo ('767764'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7807] [EDWIN ELISEO MELEAN ANACHURI] - CI anómalo ('7236436-1J'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7821] [JOSE LUIS ORTEGA AYARDE] - CI anómalo ('96.072.488'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7823] [ALBERTO  CAUCOTA ALARCON] - CI anómalo ('94.697.916'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7827] [RICHARD GOMEZ ARACA] - CI anómalo ('66786529'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7830] [EMILIANA BENITEZ PORTAL] - CI anómalo ('95.263.163'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7831] [SILIDONIA BENITEZ PORTAL] - CI anómalo ('94.083.997'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7840] [MARTIN  ARROYO AGUIRRE] - CI anómalo ('94.561.695'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7849] [ARIEL ARNALDO ESÍNOZA ORTEGA] - CI anómalo ('41.369.519'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7916] [RODOLGO CAYAS GOMEZ] - CI anómalo ('e-11604530'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7924] [SIXTO QUISPE TEJERINA] - CI anómalo ('1242308-1Q'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7927] [BERNARDO MARTINEZ CANO] - CI anómalo ('95.853.552'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7933] [FAVIO CORTEZ CHAVARRIA] - CI anómalo ('94.920.701'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7939] [JHENIIFER DONAIRE CRUZ] - CI anómalo ('7235773-1Q'): vacío o contiene letras. Se asignó Bolivia por defecto.
+[ID Antiguo: 7950] [GUILLERMO LAZARO] - CI anómalo ('44913770'): no cumple reglas de Bolivia ni Argentina. Se asignó Bolivia por defecto.
+[ID Antiguo: 7972] [YANETH ANCASI AGUILAR] - CI anómalo ('8505248-1K'): vacío o contiene letras. Se asignó Bolivia por defecto.
+
+=== MIGRACIÓN FINALIZADA: 2026-06-06 19:43:27 ===
+Total procesados : 7977
+Exitosos         : 7977
+Fallidos         : 0

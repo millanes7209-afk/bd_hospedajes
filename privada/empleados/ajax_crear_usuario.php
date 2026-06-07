@@ -4,8 +4,8 @@ header('Content-Type: application/json; charset=utf-8');
 require_once("../../conexion.php");
 
 $empleadoID = $_POST['empleadoID'] ?? '';
-$usuario    = trim($_POST['usuario'] ?? '');
-$clave      = $_POST['clave'] ?? '';
+$usuario = trim($_POST['usuario'] ?? '');
+$clave = $_POST['clave'] ?? '';
 
 // Validación básica
 if (empty($empleadoID) || empty($usuario) || empty($clave)) {
@@ -14,7 +14,7 @@ if (empty($empleadoID) || empty($usuario) || empty($clave)) {
 }
 
 $usuarioLogueado = $_SESSION['sesion_id_usuario'];
-$empresaID       = $_SESSION['empresaID'];
+$empresaID = $_SESSION['empresaID'];
 
 try {
     // Verificar que el nombre de usuario no exista
@@ -55,34 +55,37 @@ try {
     // Hashear la clave
     $hash = password_hash($clave, PASSWORD_DEFAULT);
 
+    $ahora = date('Y-m-d H:i:s');
+
     // ── Iniciar transacción ──
     $db->beginTransaction();
 
     // INSERT en usuarios
     $db->ejecutar(
         "INSERT INTO usuarios (empleadoID, usuario, clave, _fec_insercion, _estado, _usuario)
-         VALUES (?, ?, ?, NOW(), 'A', ?)",
-        [$empleadoID, $usuario, $hash, $usuarioLogueado]
+         VALUES (?, ?, ?, ?, 'A', ?)",
+        [$empleadoID, $usuario, $hash, $ahora, $usuarioLogueado]
     );
     $nuevoUsuarioID = $db->lastInsertId();
 
     // INSERT en usuarios_roles (aquí se cierra el círculo)
     $db->ejecutar(
         "INSERT INTO usuarios_roles (usuarioID, rolID, _fec_insercion, _estado, _usuario)
-         VALUES (?, ?, NOW(), 'A', ?)",
-        [$nuevoUsuarioID, $rolID, $usuarioLogueado]
+         VALUES (?, ?, ?, 'A', ?)",
+        [$nuevoUsuarioID, $rolID, $ahora, $usuarioLogueado]
     );
 
     $db->commit();
 
     echo json_encode([
-        'status'    => 'SUCCESS',
+        'status' => 'SUCCESS',
         'usuarioID' => $nuevoUsuarioID,
-        'rolID'     => $rolID
+        'rolID' => $rolID
     ]);
 
 } catch (Exception $e) {
-    if ($db->inTransaction()) $db->rollBack();
+    if ($db->inTransaction())
+        $db->rollBack();
     echo json_encode(['status' => 'ERROR', 'message' => $e->getMessage()]);
 }
 ?>

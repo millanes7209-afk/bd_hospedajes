@@ -12,8 +12,8 @@ require_once '../../conexion.php';
 // ─────────────────────────────────────────────
 // CONFIGURACIÓN INICIAL
 // ─────────────────────────────────────────────
-$fecha_limite  = '2026-05-30 23:59:59';
-$log_file      = __DIR__ . '/log_errores_clientes_incidentes.txt';
+
+$log_file = __DIR__ . '/log_errores_clientes_incidentes.txt';
 $hay_anomalias = false;
 
 // Conexión a la base de datos antigua
@@ -22,7 +22,8 @@ $db_antigua = new MiConexion("127.0.0.1", "bd_dulces", "root", "");
 // ─────────────────────────────────────────────
 // FUNCIÓN: Registrar en el log
 // ─────────────────────────────────────────────
-function registrarLog(string $archivo, string $motivo, bool &$hay_anomalias): void {
+function registrarLog(string $archivo, string $motivo, bool &$hay_anomalias): void
+{
     if (!$hay_anomalias) {
         file_put_contents($archivo, "=== INICIO DE MIGRACIÓN UNIFICADA: " . date('Y-m-d H:i:s') . " ===\n");
         $hay_anomalias = true;
@@ -36,35 +37,30 @@ function registrarLog(string $archivo, string $motivo, bool &$hay_anomalias): vo
 // ====================================================================
 echo "\n=== FASE 1: INICIANDO MIGRACIÓN DE RELACIONES HOSPEDAJES <-> CLIENTES ===\n\n";
 
-$sql_select_hc = "SELECT * FROM hospedajes_clientes WHERE _fec_insercion <= :fecha_limite";
-$stmt_hc = $db_antigua->ejecutar($sql_select_hc, [':fecha_limite' => $fecha_limite]);
+$sql_select_hc = "SELECT * FROM hospedajes_clientes";
+$stmt_hc = $db_antigua->ejecutar($sql_select_hc, []);
 
-$sql_insert_hc = "
-    INSERT INTO hospedajes_clientes (
-        hospedajeID, clienteID, empresaID,
-        _fec_insercion, _fec_modificacion, _usuario, _estado
-    ) VALUES (
-        :hospedajeID, :clienteID, :empresaID,
-        :_fec_insercion, :_fec_modificacion, :_usuario, :_estado
-    )
-";
+$sql_insert_hc = "INSERT INTO hospedajes_clientes (hospedajeID, clienteID, empresaID, _fec_insercion, _fec_modificacion, _usuario, _estado) 
+                  VALUES (:hospedajeID, :clienteID, :empresaID, :_fec_insercion, :_fec_modificacion, :_usuario, :_estado)";
 
-$total_hc = 0; $ok_hc = 0; $fail_hc = 0;
+$total_hc = 0;
+$ok_hc = 0;
+$fail_hc = 0;
 
 while ($row = $stmt_hc->fetch(PDO::FETCH_ASSOC)) {
     $total_hc++;
-    $hID = (int)$row['hospedajeID'];
-    $cID = (int)$row['clienteID'];
+    $hID = (int) $row['hospedajeID'];
+    $cID = (int) $row['clienteID'];
 
     try {
         $db->ejecutar($sql_insert_hc, [
-            ':hospedajeID'       => $hID,
-            ':clienteID'         => $cID,
-            ':empresaID'         => 1, // Forzado a Empresa 1
-            ':_fec_insercion'    => $row['_fec_insercion'],
+            ':hospedajeID' => $hID,
+            ':clienteID' => $cID,
+            ':empresaID' => 1, // Forzado a Empresa 1
+            ':_fec_insercion' => $row['_fec_insercion'],
             ':_fec_modificacion' => $row['_fec_modificacion'],
-            ':_usuario'          => $row['_usuario'],
-            ':_estado'           => $row['_estado']
+            ':_usuario' => $row['_usuario'],
+            ':_estado' => $row['_estado']
         ]);
         $ok_hc++;
         echo "  [OK HC] Hospedaje ID {$hID} <-> Cliente ID {$cID}\n";
@@ -79,8 +75,8 @@ while ($row = $stmt_hc->fetch(PDO::FETCH_ASSOC)) {
 // ====================================================================
 echo "\n=== FASE 2: INICIANDO MIGRACIÓN DE INCIDENTES HISTÓRICOS ===\n\n";
 
-$sql_select_inc = "SELECT * FROM incidentes WHERE _fec_insercion <= :fecha_limite";
-$stmt_inc = $db_antigua->ejecutar($sql_select_inc, [':fecha_limite' => $fecha_limite]);
+$sql_select_inc = "SELECT * FROM incidentes";
+$stmt_inc = $db_antigua->ejecutar($sql_select_inc);
 
 $sql_insert_inc = "
     INSERT INTO incidentes (
@@ -94,30 +90,32 @@ $sql_insert_inc = "
     )
 ";
 
-$total_inc = 0; $ok_inc = 0; $fail_inc = 0;
+$total_inc = 0;
+$ok_inc = 0;
+$fail_inc = 0;
 
 while ($row = $stmt_inc->fetch(PDO::FETCH_ASSOC)) {
     $total_inc++;
-    $incID = (int)$row['incidenteID'];
-    
+    $incID = (int) $row['incidenteID'];
+
     // Normalizar la fecha del incidente a formato Y-m-d (DATE)
     $fecha_formateada = date('Y-m-d', strtotime($row['fecha']));
 
     try {
         $db->ejecutar($sql_insert_inc, [
-            ':incidenteID'       => $incID,
-            ':clienteID'         => $row['clienteID'],
-            ':empresaID'         => 1, // Forzado a Empresa 1
-            ':descripcion'       => trim($row['descripcion']),
-            ':fecha'             => $fecha_formateada,
-            ':estado'            => 'PENDIENTE', // Valor inicial por defecto en nueva estructura
-            ':usuarioID'         => $row['_usuario'], // Asignamos el usuario auditor que registró originalmente
-            ':fecha_atencion'    => null,
-            ':solucion'          => null,
-            ':_fec_insercion'    => $row['_fec_insercion'],
+            ':incidenteID' => $incID,
+            ':clienteID' => $row['clienteID'],
+            ':empresaID' => 1, // Forzado a Empresa 1
+            ':descripcion' => trim($row['descripcion']),
+            ':fecha' => $fecha_formateada,
+            ':estado' => 'PENDIENTE', // Valor inicial por defecto en nueva estructura
+            ':usuarioID' => $row['_usuario'], // Asignamos el usuario auditor que registró originalmente
+            ':fecha_atencion' => null,
+            ':solucion' => null,
+            ':_fec_insercion' => $row['_fec_insercion'],
             ':_fec_modificacion' => $row['_fec_modificacion'],
-            ':_usuario'          => $row['_usuario'],
-            ':_estado'           => $row['_estado']
+            ':_usuario' => $row['_usuario'],
+            ':_estado' => $row['_estado']
         ]);
         $ok_inc++;
         echo "  [OK INC] Incidente ID {$incID} registrado para Cliente ID {$row['clienteID']}\n";

@@ -12,8 +12,7 @@ require_once '../../conexion.php';
 // ─────────────────────────────────────────────
 // CONFIGURACIÓN INICIAL
 // ─────────────────────────────────────────────
-$fecha_limite = '2026-05-30 23:59:59';
-$log_file     = __DIR__ . '/log_ambiguedades_cajas.txt';
+$log_file = __DIR__ . '/log_ambiguedades_cajas.txt';
 $hay_anomalias = false;
 
 // Conexión a la base de datos antigua
@@ -22,7 +21,8 @@ $db_antigua = new MiConexion("127.0.0.1", "bd_dulces", "root", "");
 // ─────────────────────────────────────────────
 // FUNCIÓN: Registrar en el log (solo si hay anomalía)
 // ─────────────────────────────────────────────
-function registrarLog(string $archivo, int $id, string $motivo, bool &$hay_anomalias): void {
+function registrarLog(string $archivo, int $id, string $motivo, bool &$hay_anomalias): void
+{
     if (!$hay_anomalias) {
         file_put_contents($archivo, "=== INICIO DE MIGRACIÓN: " . date('Y-m-d H:i:s') . " ===\n");
         $hay_anomalias = true;
@@ -35,7 +35,8 @@ function registrarLog(string $archivo, int $id, string $motivo, bool &$hay_anoma
 // ─────────────────────────────────────────────
 // FUNCIÓN: Validar fecha_apertura
 // ─────────────────────────────────────────────
-function validarFechaApertura(?string $fecha, int $id, string $log_file, bool &$hay_anomalias): string {
+function validarFechaApertura(?string $fecha, int $id, string $log_file, bool &$hay_anomalias): string
+{
     if (empty($fecha) || $fecha === '0000-00-00 00:00:00' || is_null($fecha)) {
         $ahora = date('Y-m-d H:i:s');
         registrarLog($log_file, $id, "fecha_apertura inválida ('{$fecha}'). Se asignó la fecha actual '{$ahora}'.", $hay_anomalias);
@@ -47,7 +48,8 @@ function validarFechaApertura(?string $fecha, int $id, string $log_file, bool &$
 // ─────────────────────────────────────────────
 // FUNCIÓN: Validar fecha_cierre
 // ─────────────────────────────────────────────
-function validarFechaCierre(?string $fecha): ?string {
+function validarFechaCierre(?string $fecha): ?string
+{
     if (empty($fecha) || $fecha === '0000-00-00 00:00:00' || is_null($fecha)) {
         return null;
     }
@@ -56,9 +58,8 @@ function validarFechaCierre(?string $fecha): ?string {
 
 // ─────────────────────────────────────────────
 // EXTRACCIÓN desde bd_dulces
-// ─────────────────────────────────────────────
-$sql_select = "SELECT * FROM cajas WHERE _fec_insercion <= :fecha_limite";
-$stmt = $db_antigua->ejecutar($sql_select, [':fecha_limite' => $fecha_limite]);
+$sql_select = "SELECT * FROM cajas";
+$stmt = $db_antigua->ejecutar($sql_select);
 
 // ─────────────────────────────────────────────
 // SQL de inserción en bd_hospedajes
@@ -76,7 +77,7 @@ $sql_insert = "
 // ─────────────────────────────────────────────
 // PROCESO FILA POR FILA
 // ─────────────────────────────────────────────
-$total    = 0;
+$total = 0;
 $exitosos = 0;
 $fallidos = 0;
 
@@ -95,20 +96,20 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 
         // fechas
         $fecha_apertura = validarFechaApertura($row['fecha_apertura'] ?? null, $id, $log_file, $hay_anomalias);
-        $fecha_cierre   = validarFechaCierre($row['fecha_cierre'] ?? null);
+        $fecha_cierre = validarFechaCierre($row['fecha_cierre'] ?? null);
 
         $db->ejecutar($sql_insert, [
-            ':cajaID'            => $id,
-            ':_fec_insercion'    => $row['_fec_insercion'],
+            ':cajaID' => $id,
+            ':_fec_insercion' => $row['_fec_insercion'],
             ':_fec_modificacion' => $row['_fec_modificacion'],
-            ':_usuario'          => $row['_usuario'],
-            ':_estado'           => $estado_reg,
-            ':empresaID'         => 1,
-            ':usuarioID'         => $row['_usuario'],
-            ':estado'            => $estado,
-            ':fecha_apertura'    => $fecha_apertura,
-            ':fecha_cierre'      => $fecha_cierre,
-            ':observaciones'     => null,
+            ':_usuario' => $row['_usuario'],
+            ':_estado' => $estado_reg,
+            ':empresaID' => 1,
+            ':usuarioID' => $row['_usuario'],
+            ':estado' => $estado,
+            ':fecha_apertura' => $fecha_apertura,
+            ':fecha_cierre' => $fecha_cierre,
+            ':observaciones' => null,
         ]);
 
         $exitosos++;
@@ -124,9 +125,9 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 // RESUMEN FINAL
 // ─────────────────────────────────────────────
 $resumen = "\n=== MIGRACIÓN FINALIZADA: " . date('Y-m-d H:i:s') . " ===\n"
-         . "Total procesados : {$total}\n"
-         . "Exitosos         : {$exitosos}\n"
-         . "Fallidos         : {$fallidos}\n";
+    . "Total procesados : {$total}\n"
+    . "Exitosos         : {$exitosos}\n"
+    . "Fallidos         : {$fallidos}\n";
 
 echo $resumen;
 

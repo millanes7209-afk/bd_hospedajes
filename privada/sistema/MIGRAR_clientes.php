@@ -12,11 +12,10 @@ require_once '../../conexion.php';
 // ─────────────────────────────────────────────
 // CONFIGURACIÓN INICIAL
 // ─────────────────────────────────────────────
-$id_argentina     = 9;
-$id_bolivia       = 23;
+$id_argentina = 9;
+$id_bolivia = 23;
 $usuario_migrador = 1;
-$fecha_limite     = '2026-05-30 23:59:59';
-$log_file         = __DIR__ . '/log_ambiguedades_clientes.txt';
+$log_file = __DIR__ . '/log_ambiguedades_clientes.txt';
 
 // Limpiar log anterior
 file_put_contents($log_file, "=== INICIO DE MIGRACIÓN: " . date('Y-m-d H:i:s') . " ===\n");
@@ -27,7 +26,8 @@ $db_antigua = new MiConexion("127.0.0.1", "bd_dulces", "root", "");
 // ─────────────────────────────────────────────
 // FUNCIÓN: Registrar en el log
 // ─────────────────────────────────────────────
-function registrarLog(string $archivo, int $id, string $nombre_completo, string $motivo): void {
+function registrarLog(string $archivo, int $id, string $nombre_completo, string $motivo): void
+{
     $linea = "[ID Antiguo: {$id}] [{$nombre_completo}] - {$motivo}\n";
     file_put_contents($archivo, $linea, FILE_APPEND);
     echo "  [LOG] {$linea}";
@@ -36,7 +36,8 @@ function registrarLog(string $archivo, int $id, string $nombre_completo, string 
 // ─────────────────────────────────────────────
 // FUNCIÓN: Detectar paisID según CI
 // ─────────────────────────────────────────────
-function detectarPaisID(string $ci, int $id_bolivia, int $id_argentina, int $id_cliente, string $nombre, string $log_file): int {
+function detectarPaisID(string $ci, int $id_bolivia, int $id_argentina, int $id_cliente, string $nombre, string $log_file): int
+{
     $ci = trim($ci);
 
     // CI vacío o con letras
@@ -65,7 +66,8 @@ function detectarPaisID(string $ci, int $id_bolivia, int $id_argentina, int $id_
 // ─────────────────────────────────────────────
 // FUNCIÓN: Validar fecha de nacimiento
 // ─────────────────────────────────────────────
-function validarFecha(?string $fecha, int $id_cliente, string $nombre_completo, string $log_file): string {
+function validarFecha(?string $fecha, int $id_cliente, string $nombre_completo, string $log_file): string
+{
     if (empty($fecha) || $fecha === '0000-00-00' || is_null($fecha)) {
         registrarLog($log_file, $id_cliente, $nombre_completo, "Fecha de nacimiento inválida ('{$fecha}'). Se asignó '1900-01-01' por defecto.");
         return '1900-01-01';
@@ -92,9 +94,8 @@ try {
 
 // ─────────────────────────────────────────────
 // PASO 2: EXTRACCIÓN desde bd_dulces
-// ─────────────────────────────────────────────
-$sql_select = "SELECT * FROM clientes WHERE _fec_insercion <= :fecha_limite";
-$stmt = $db_antigua->ejecutar($sql_select, [':fecha_limite' => $fecha_limite]);
+$sql_select = "SELECT * FROM clientes";
+$stmt = $db_antigua->ejecutar($sql_select);
 
 // ─────────────────────────────────────────────
 // PASO 3: SQL de inserción en bd_hospedajes
@@ -114,13 +115,13 @@ $sql_insert = "
 // ─────────────────────────────────────────────
 // PASO 4: PROCESO FILA POR FILA
 // ─────────────────────────────────────────────
-$total    = 0;
+$total = 0;
 $exitosos = 0;
 $fallidos = 0;
 
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     $total++;
-    $id              = (int) $row['clienteID'];
+    $id = (int) $row['clienteID'];
     $nombre_completo = trim($row['nombres'] . ' ' . $row['apellidos']);
 
     try {
@@ -129,9 +130,9 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 
         // Separar apellidos por el primer espacio
         $apellidos_raw = trim($row['apellidos']);
-        $partes        = explode(' ', $apellidos_raw, 2);
-        $apellido1     = $partes[0] ?? null;
-        $apellido2     = isset($partes[1]) && $partes[1] !== '' ? $partes[1] : null;
+        $partes = explode(' ', $apellidos_raw, 2);
+        $apellido1 = $partes[0] ?? null;
+        $apellido2 = isset($partes[1]) && $partes[1] !== '' ? $partes[1] : null;
 
         // Fecha de nacimiento
         $fecha_nacimiento = validarFecha($row['fecha_nacimiento'] ?? null, $id, $nombre_completo, $log_file);
@@ -141,19 +142,19 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 
         // Insertar en bd_hospedajes
         $db->ejecutar($sql_insert, [
-            ':clienteID'         => $id,
-            ':paisID'            => $paisID,
-            ':ci'                => $ci,
-            ':nombres'           => $row['nombres'],
-            ':apellido1'         => $apellido1,
-            ':apellido2'         => $apellido2,
-            ':fecha_nacimiento'  => $fecha_nacimiento,
-            ':lugar_nacimiento'  => trim($row['lugar_nacimiento']),
-            ':estado_civil'      => trim($row['est_civil']),
-            ':profesion'         => trim($row['profesion']),
-            ':_estado'           => 'A',
-            ':_usuario'          => $usuario_migrador,
-            ':_fec_insercion'    => $row['_fec_insercion'],
+            ':clienteID' => $id,
+            ':paisID' => $paisID,
+            ':ci' => $ci,
+            ':nombres' => $row['nombres'],
+            ':apellido1' => $apellido1,
+            ':apellido2' => $apellido2,
+            ':fecha_nacimiento' => $fecha_nacimiento,
+            ':lugar_nacimiento' => trim($row['lugar_nacimiento']),
+            ':estado_civil' => trim($row['est_civil']),
+            ':profesion' => trim($row['profesion']),
+            ':_estado' => 'A',
+            ':_usuario' => $usuario_migrador,
+            ':_fec_insercion' => $row['_fec_insercion'],
             ':_fec_modificacion' => $row['_fec_modificacion'],
         ]);
 
@@ -170,9 +171,9 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 // RESUMEN FINAL
 // ─────────────────────────────────────────────
 $resumen = "\n=== MIGRACIÓN FINALIZADA: " . date('Y-m-d H:i:s') . " ===\n"
-         . "Total procesados : {$total}\n"
-         . "Exitosos         : {$exitosos}\n"
-         . "Fallidos         : {$fallidos}\n";
+    . "Total procesados : {$total}\n"
+    . "Exitosos         : {$exitosos}\n"
+    . "Fallidos         : {$fallidos}\n";
 
 echo $resumen;
 file_put_contents($log_file, $resumen, FILE_APPEND);

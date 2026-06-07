@@ -12,6 +12,7 @@ if (isset($_GET['habitacionID'])) {
     $empresaID = $_SESSION["empresaID"];
 
     try {
+        $ahora = date('Y-m-d H:i:s');
         $db->beginTransaction();
 
         // Buscar hospedaje/reserva vinculado
@@ -21,8 +22,8 @@ if (isset($_GET['habitacionID'])) {
         $hospedaje = $db->obtenerFila($sql, [$habitacionID, $empresaID]);
 
         if ($hospedaje) {
-            $db->ejecutar("UPDATE hospedajes SET estado = 'INACTIVO', _fec_modificacion = NOW(), _usuario = ? 
-                          WHERE hospedajeID = ? AND empresaID = ?", [$usuarioID, $hospedaje['hospedajeID'], $empresaID]);
+            $db->ejecutar("UPDATE hospedajes SET estado = 'INACTIVO', _fec_modificacion = ?, _usuario = ? 
+                          WHERE hospedajeID = ? AND empresaID = ?", [$ahora, $usuarioID, $hospedaje['hospedajeID'], $empresaID]);
 
             $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ? AND empresaID = ?", [$habitacionID, $empresaID]);
             $_SESSION['mensaje'] = "Habitación liberada (LIMPIEZA).";
@@ -36,7 +37,8 @@ if (isset($_GET['habitacionID'])) {
 
         $db->commit();
     } catch (Exception $e) {
-        if ($db->inTransaction()) $db->rollBack();
+        if ($db->inTransaction())
+            $db->rollBack();
         $_SESSION['mensaje'] = "Error: " . $e->getMessage();
         $_SESSION['mensaje_tipo'] = "danger";
     }

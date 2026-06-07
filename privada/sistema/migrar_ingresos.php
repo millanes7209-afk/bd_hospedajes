@@ -20,10 +20,10 @@ require_once '../../conexion.php';
 // ─────────────────────────────────────────────
 // CONFIGURACIÓN INICIAL
 // ─────────────────────────────────────────────
-$fecha_limite   = '2026-05-30 23:59:59';
+$fecha_limite = '2040-01-01 23:59:59'; // Sin restricción real
 $cuenta_default = 1; // Por defecto: Ingreso Hospedaje
-$log_file       = __DIR__ . '/log_ambiguedades_ingresos.txt';
-$hay_anomalias  = false;
+$log_file = __DIR__ . '/log_ambiguedades_ingresos.txt';
+$hay_anomalias = false;
 
 // Conexión a la base de datos antigua
 $db_antigua = new MiConexion("127.0.0.1", "bd_dulces", "root", "");
@@ -32,19 +32,20 @@ $db_antigua = new MiConexion("127.0.0.1", "bd_dulces", "root", "");
 // CATÁLOGO DE FILTRADO PARA INGRESOS (EMPRESA 1)
 // ─────────────────────────────────────────────
 $catalogo = [
-    2  => ['momentaneo', 'momentáneo'],
-    3  => ['visita'],
-    4  => ['baño', 'bano'],
-    5  => ['ducha'],
-    6  => ['recarga'],
+    2 => ['momentaneo', 'momentáneo'],
+    3 => ['visita'],
+    4 => ['baño', 'bano'],
+    5 => ['ducha'],
+    6 => ['recarga'],
     23 => ['alquiler', 'local'],
-    1  => ['hospedaje', 'ingreso'] // Cuenta base por si dice algo genérico
+    1 => ['hospedaje', 'ingreso'] // Cuenta base por si dice algo genérico
 ];
 
 // ─────────────────────────────────────────────
 // FUNCIÓN: Registrar en el log
 // ─────────────────────────────────────────────
-function registrarLog(string $archivo, int $id, string $motivo, bool &$hay_anomalias): void {
+function registrarLog(string $archivo, int $id, string $motivo, bool &$hay_anomalias): void
+{
     if (!$hay_anomalias) {
         file_put_contents($archivo, "=== INICIO DE MIGRACIÓN INGRESOS: " . date('Y-m-d H:i:s') . " ===\n");
         $hay_anomalias = true;
@@ -57,9 +58,10 @@ function registrarLog(string $archivo, int $id, string $motivo, bool &$hay_anoma
 // ─────────────────────────────────────────────
 // FUNCIÓN: Detectar cuentaID según tipo o descripción
 // ─────────────────────────────────────────────
-function detectarCuentaID(string $tipo, string $descripcion, array $catalogo, int $cuenta_default): int {
+function detectarCuentaID(string $tipo, string $descripcion, array $catalogo, int $cuenta_default): int
+{
     $texto_analisis = strtolower($tipo . ' ' . $descripcion);
-    
+
     foreach ($catalogo as $cuentaID => $palabras) {
         foreach ($palabras as $palabra) {
             if (stripos($texto_analisis, $palabra) !== false) {
@@ -73,8 +75,8 @@ function detectarCuentaID(string $tipo, string $descripcion, array $catalogo, in
 // ─────────────────────────────────────────────
 // EXTRACCIÓN desde bd_dulces
 // ─────────────────────────────────────────────
-$sql_select = "SELECT * FROM ingresos WHERE _fec_insercion <= :fecha_limite";
-$stmt = $db_antigua->ejecutar($sql_select, [':fecha_limite' => $fecha_limite]);
+$sql_select = "SELECT * FROM ingresos";
+$stmt = $db_antigua->ejecutar($sql_select);
 
 // SQL Nueva Cabecera `ingresos` (Nota: Ya no incluye hospedajeID)
 $sql_ingreso = "
@@ -98,7 +100,7 @@ $sql_ingreso_pago = "
     )
 ";
 
-$total    = 0;
+$total = 0;
 $exitosos = 0;
 $fallidos = 0;
 
@@ -114,28 +116,28 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 
         // ── INSERCIÓN 1: Cabecera ingresos ──
         $db->ejecutar($sql_ingreso, [
-            ':ingresoID'         => $id,
-            ':empresaID'         => 1,
-            ':cajaID'            => $row['cajaID'],
-            ':cuentaID'          => $cuentaID,
-            ':usuarioID'         => $row['_usuario'], 
-            ':monto_total'       => $row['monto'],
-            ':concepto'          => trim($row['descripcion'] !== '' ? $row['descripcion'] : 'Ingreso por ' . $row['tipo']),
-            ':entregado'         => 0,
-            ':fecha_entrega'     => null,
-            ':recaudacionID'     => null,
-            ':fecha'             => $row['fecha_pago'],
-            ':_fec_insercion'    => $row['_fec_insercion'],
+            ':ingresoID' => $id,
+            ':empresaID' => 1,
+            ':cajaID' => $row['cajaID'],
+            ':cuentaID' => $cuentaID,
+            ':usuarioID' => $row['_usuario'],
+            ':monto_total' => $row['monto'],
+            ':concepto' => trim($row['descripcion'] !== '' ? $row['descripcion'] : 'Ingreso por ' . $row['tipo']),
+            ':entregado' => 0,
+            ':fecha_entrega' => null,
+            ':recaudacionID' => null,
+            ':fecha' => $row['fecha_pago'],
+            ':_fec_insercion' => $row['_fec_insercion'],
             ':_fec_modificacion' => $row['_fec_modificacion'],
-            ':_usuario'          => $row['_usuario'],
-            ':_estado'           => $row['_estado']
+            ':_usuario' => $row['_usuario'],
+            ':_estado' => $row['_estado']
         ]);
 
         // ── INSERCIÓN 2: Detalle ingreso_pagos ──
         $db->ejecutar($sql_ingreso_pago, [
-            ':ingresoID'   => $id,
+            ':ingresoID' => $id,
             ':formapagoID' => $row['formaPagoID'],
-            ':monto'       => $row['monto']
+            ':monto' => $row['monto']
         ]);
 
         $exitosos++;

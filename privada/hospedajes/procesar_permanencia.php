@@ -60,18 +60,18 @@ try {
     }
 
     // Insertar Ingreso Maestro
-    $sqlI = "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    $sqlI = "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario, _fec_insercion) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $concepto_i = "EXTENSIÓN $tipo_label HAB. $habitacion_numero" . ($descripcion ? " - $descripcion" : "");
-    $db->ejecutar($sqlI, [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto_total, $concepto_i, $ahora, $usuarioID]);
+    $db->ejecutar($sqlI, [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto_total, $concepto_i, $ahora, $usuarioID, $ahora]);
     $ingresoID = $db->ultimoInsertId();
 
     // Detalle de Pagos
     foreach ($pagos as $pago) {
         $monto_pago = floatval(str_replace(',', '.', $pago['monto']));
         if ($monto_pago > 0) {
-            $sqlIP = "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto) VALUES (?, ?, ?)";
-            $db->ejecutar($sqlIP, [$ingresoID, $pago['formaPagoID'], $monto_pago]);
+            $sqlIP = "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto, _fec_insercion) VALUES (?, ?, ?, ?)";
+            $db->ejecutar($sqlIP, [$ingresoID, $pago['formaPagoID'], $monto_pago, $ahora]);
         }
     }
 

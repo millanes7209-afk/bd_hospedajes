@@ -14,13 +14,14 @@ require_once '../../conexion.php';
 // CONFIGURACIÓN INICIAL
 // ─────────────────────────────────────────────
 $usuario_migrador = 1;
-$log_file         = __DIR__ . '/log_ambiguedades_cierre_cajas.txt';
-$hay_anomalias    = false;
+$log_file = __DIR__ . '/log_ambiguedades_cierre_cajas.txt';
+$hay_anomalias = false;
 
 // ─────────────────────────────────────────────
 // FUNCIÓN: Registrar en el log
 // ─────────────────────────────────────────────
-function registrarLog(string $archivo, string $motivo, bool &$hay_anomalias): void {
+function registrarLog(string $archivo, string $motivo, bool &$hay_anomalias): void
+{
     if (!$hay_anomalias) {
         file_put_contents($archivo, "=== INICIO DE MIGRACIÓN: " . date('Y-m-d H:i:s') . " ===\n");
         $hay_anomalias = true;
@@ -33,9 +34,8 @@ function registrarLog(string $archivo, string $motivo, bool &$hay_anomalias): vo
 // ─────────────────────────────────────────────
 // PASO 1: Obtener solo cajas CERRADAS
 // ─────────────────────────────────────────────
-$sql_cajas = "SELECT cajaID, _usuario, _fec_insercion, _fec_modificacion, _estado 
-              FROM cajas 
-              WHERE estado = 'CERRADA'";
+$sql_cajas = "SELECT cajaID, _usuario, _fec_insercion, _fec_modificacion, _estado, estado 
+              FROM cajas";
 $stmt_cajas = $db->ejecutar($sql_cajas, []);
 
 // ─────────────────────────────────────────────
@@ -81,9 +81,9 @@ $sql_insert = "
 // ─────────────────────────────────────────────
 // PROCESO POR CADA CAJA CERRADA
 // ─────────────────────────────────────────────
-$total_cajas     = 0;
+$total_cajas = 0;
 $total_registros = 0;
-$fallidos        = 0;
+$fallidos = 0;
 
 echo "\n=== INICIANDO GENERACIÓN DE CIERRE_CAJAS ===\n\n";
 
@@ -95,7 +95,7 @@ while ($caja = $stmt_cajas->fetch(PDO::FETCH_ASSOC)) {
 
     // Calcular montos por forma de pago para esta caja
     $stmt_mov = $db->ejecutar($sql_movimientos, [
-        ':cajaID'  => $cajaID,
+        ':cajaID' => $cajaID,
         ':cajaID2' => $cajaID,
     ]);
 
@@ -104,13 +104,13 @@ while ($caja = $stmt_cajas->fetch(PDO::FETCH_ASSOC)) {
     while ($mov = $stmt_mov->fetch(PDO::FETCH_ASSOC)) {
         try {
             $db->ejecutar($sql_insert, [
-                ':cajaID'            => $cajaID,
-                ':formapagoID'       => $mov['formapagoID'],
-                ':monto'             => $mov['monto_total'],
-                ':_fec_insercion'    => $caja['_fec_insercion'],
+                ':cajaID' => $cajaID,
+                ':formapagoID' => $mov['formapagoID'],
+                ':monto' => $mov['monto_total'],
+                ':_fec_insercion' => $caja['_fec_insercion'],
                 ':_fec_modificacion' => $caja['_fec_modificacion'],
-                ':_usuario'          => $caja['_usuario'],
-                ':_estado'           => $caja['_estado'],
+                ':_usuario' => $caja['_usuario'],
+                ':_estado' => $caja['_estado'],
             ]);
 
             $total_registros++;
@@ -132,9 +132,9 @@ while ($caja = $stmt_cajas->fetch(PDO::FETCH_ASSOC)) {
 // RESUMEN FINAL
 // ─────────────────────────────────────────────
 $resumen = "\n=== MIGRACIÓN FINALIZADA: " . date('Y-m-d H:i:s') . " ===\n"
-         . "Cajas procesadas  : {$total_cajas}\n"
-         . "Registros creados : {$total_registros}\n"
-         . "Fallidos          : {$fallidos}\n";
+    . "Cajas procesadas  : {$total_cajas}\n"
+    . "Registros creados : {$total_registros}\n"
+    . "Fallidos          : {$fallidos}\n";
 
 echo $resumen;
 

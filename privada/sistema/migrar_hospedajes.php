@@ -12,9 +12,9 @@ require_once '../../conexion.php';
 // ─────────────────────────────────────────────
 // CONFIGURACIÓN INICIAL
 // ─────────────────────────────────────────────
-$fecha_limite   = '2026-05-30 23:59:59';
-$log_file       = __DIR__ . '/log_errores_hospedajes.txt';
-$hay_anomalias  = false;
+$fecha_limite = '2040-01-01 23:59:59'; // Sin restricción real
+$log_file = __DIR__ . '/log_errores_hospedajes.txt';
+$hay_anomalias = false;
 
 // Conexión a la base de datos antigua
 $db_antigua = new MiConexion("127.0.0.1", "bd_dulces", "root", "");
@@ -22,7 +22,8 @@ $db_antigua = new MiConexion("127.0.0.1", "bd_dulces", "root", "");
 // ─────────────────────────────────────────────
 // FUNCIÓN: Registrar en el log
 // ─────────────────────────────────────────────
-function registrarLog(string $archivo, int $id, string $motivo, bool &$hay_anomalias): void {
+function registrarLog(string $archivo, int $id, string $motivo, bool &$hay_anomalias): void
+{
     if (!$hay_anomalias) {
         file_put_contents($archivo, "=== INICIO DE MIGRACIÓN HOSPEDAJES: " . date('Y-m-d H:i:s') . " ===\n");
         $hay_anomalias = true;
@@ -39,9 +40,8 @@ $sql_select = "
     SELECT h.*, i.ingresoID 
     FROM hospedajes h
     INNER JOIN ingresos i ON i.hospedajeID = h.hospedajeID
-    WHERE h._fec_insercion <= :fecha_limite
 ";
-$stmt = $db_antigua->ejecutar($sql_select, [':fecha_limite' => $fecha_limite]);
+$stmt = $db_antigua->ejecutar($sql_select);
 
 // ─────────────────────────────────────────────
 // SQL INSERCIÓN DESTINO
@@ -58,7 +58,7 @@ $sql_insert = "
     )
 ";
 
-$total    = 0;
+$total = 0;
 $exitosos = 0;
 $fallidos = 0;
 
@@ -71,20 +71,20 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     try {
         // Mapeo y normalización de campos hacia la nueva estructura
         $db->ejecutar($sql_insert, [
-            ':hospedajeID'       => $id,
-            ':empresaID'         => 1, // Forzado a Empresa 1 por defecto
-            ':checkin'           => $row['checkin'],
-            ':checkout'          => $row['checkout'],
-            ':monto'             => $row['monto_total'], // Cambio de nombre de columna: monto_total -> monto
-            ':estado'            => $row['estado'] === 'ACTIVO' ? 'ACTIVO' : 'INACTIVO',
-            ':habitacionID'      => $row['habitacionID'],
-            ':observaciones'     => trim($row['descripcion'] ?? ''), // Mapeo de descripcion -> observaciones
-            ':cajaID'            => $row['cajaID'] ?? null,
-            ':ingresoID'         => $row['ingresoID'], // ¡Aquí se consolida el cruce mágico!
-            ':_fec_insercion'    => $row['_fec_insercion'],
+            ':hospedajeID' => $id,
+            ':empresaID' => 1, // Forzado a Empresa 1 por defecto
+            ':checkin' => $row['checkin'],
+            ':checkout' => $row['checkout'],
+            ':monto' => $row['monto_total'], // Cambio de nombre de columna: monto_total -> monto
+            ':estado' => $row['estado'] === 'ACTIVO' ? 'ACTIVO' : 'INACTIVO',
+            ':habitacionID' => $row['habitacionID'],
+            ':observaciones' => trim($row['descripcion'] ?? ''), // Mapeo de descripcion -> observaciones
+            ':cajaID' => $row['cajaID'] ?? null,
+            ':ingresoID' => $row['ingresoID'], // ¡Aquí se consolida el cruce mágico!
+            ':_fec_insercion' => $row['_fec_insercion'],
             ':_fec_modificacion' => $row['_fec_modificacion'],
-            ':_usuario'          => $row['_usuario'],
-            ':_estado'           => $row['_estado']
+            ':_usuario' => $row['_usuario'],
+            ':_estado' => $row['_estado']
         ]);
 
         $exitosos++;

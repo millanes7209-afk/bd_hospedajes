@@ -1,4 +1,4 @@
-=== INICIO DE MIGRACIÓN: 2026-06-02 18:06:29 ===
+=== INICIO DE MIGRACIÓN: 2026-06-06 19:50:13 ===
 [AVISO] - CajaID=73 está CERRADA pero no tiene movimientos registrados.
 [AVISO] - CajaID=99 está CERRADA pero no tiene movimientos registrados.
 [AVISO] - CajaID=233 está CERRADA pero no tiene movimientos registrados.
@@ -42,7 +42,7 @@
 [AVISO] - CajaID=1328 está CERRADA pero no tiene movimientos registrados.
 [AVISO] - CajaID=1369 está CERRADA pero no tiene movimientos registrados.
 
-=== MIGRACIÓN FINALIZADA: 2026-06-02 18:06:33 ===
-Cajas procesadas  : 1510
-Registros creados : 2153
+=== MIGRACIÓN FINALIZADA: 2026-06-06 19:50:21 ===
+Cajas procesadas  : 1529
+Registros creados : 2182
 Fallidos          : 0

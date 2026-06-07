@@ -13,6 +13,7 @@ if (isset($_GET['habitacionID'])) {
     $empresaID = $_SESSION["empresaID"];
 
     try {
+        $ahora = date('Y-m-d H:i:s');
         $db->beginTransaction();
 
         // 1. Buscar el hospedaje activo o en deuda EN ESTA EMPRESA
@@ -23,8 +24,8 @@ if (isset($_GET['habitacionID'])) {
 
         if ($hospedaje) {
             // 2. Finalizar el hospedaje (Estado unificado: INACTIVO)
-            $db->ejecutar("UPDATE hospedajes SET estado = 'INACTIVO', checkout = NOW(), _fec_modificacion = NOW(), _usuario = ? 
-                          WHERE hospedajeID = ? AND empresaID = ?", [$usuarioID, $hospedaje['hospedajeID'], $empresaID]);
+            $db->ejecutar("UPDATE hospedajes SET estado = 'INACTIVO', checkout = ?, _fec_modificacion = ?, _usuario = ? 
+                          WHERE hospedajeID = ? AND empresaID = ?", [$ahora, $ahora, $usuarioID, $hospedaje['hospedajeID'], $empresaID]);
 
             // 3. Cambiar habitación a LIMPIEZA (Base de datos real)
             $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ? AND empresaID = ?", [$habitacionID, $empresaID]);
@@ -40,7 +41,8 @@ if (isset($_GET['habitacionID'])) {
 
         $db->commit();
     } catch (Exception $e) {
-        if ($db->inTransaction()) $db->rollBack();
+        if ($db->inTransaction())
+            $db->rollBack();
         $_SESSION['mensaje'] = "Error al desocupar: " . $e->getMessage();
         $_SESSION['mensaje_tipo'] = "danger";
     }
