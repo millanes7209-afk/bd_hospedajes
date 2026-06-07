@@ -103,7 +103,7 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
             }
         });
 
-        // VALIDACIÓN MANDATARIA DE SALDO AL ENVIAR
+        // VALIDACIÓN MANDATARIA AL ENVIAR
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('formHospedaje');
             if (form) {
@@ -113,23 +113,56 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
                     const alertaSaldo = document.getElementById('alertaSaldo');
 
                     // Resetear la alerta en cada intento
-                    if (alertaSaldo) alertaSaldo.style.display = 'none';
+                    if (alertaSaldo) {
+                        alertaSaldo.style.display = 'none';
+                        alertaSaldo.className = "alert alert-danger py-1 px-2 small mb-0 text-center fw-bold";
+                    }
 
-                    if (Math.abs(saldo) > 0.01) {
+                    // 1. Validar que se haya seleccionado al menos un cliente
+                    const clientes = document.querySelectorAll('#listaClientesSeleccionados input[name="clientesSeleccionados[]"]');
+                    if (clientes.length === 0) {
                         event.preventDefault();
                         if (alertaSaldo) {
-                            alertaSaldo.innerHTML = "<i class='fas fa-exclamation-triangle'></i> El saldo debe ser exactamente 0.00";
+                            alertaSaldo.innerHTML = "<i class='fas fa-user-times'></i> DEBE SELECCIONAR AL MENOS UN CLIENTE.";
                             alertaSaldo.style.display = 'block';
                         }
                         return false;
                     }
 
-                    // Asegurarnos de que haya al menos un cliente
-                    const clientes = document.querySelectorAll('#listaClientesSeleccionados input[name="clientesSeleccionados[]"]');
-                    if (clientes.length === 0) {
+                    // 2. Validar que existan filas de pago y que tengan forma de pago seleccionada
+                    const filasPago = document.querySelectorAll('.fila-pago');
+                    if (filasPago.length === 0) {
                         event.preventDefault();
                         if (alertaSaldo) {
-                            alertaSaldo.innerHTML = "<i class='fas fa-exclamation-triangle'></i> Debe seleccionar al menos un cliente.";
+                            alertaSaldo.innerHTML = "<i class='fas fa-money-bill-wave'></i> DEBE AÑADIR AL MENOS UNA FORMA DE PAGO.";
+                            alertaSaldo.style.display = 'block';
+                        }
+                        return false;
+                    }
+
+                    let pagosIncompletos = false;
+                    filasPago.forEach(fila => {
+                        const fp = fila.querySelector('select').value;
+                        const mm = fila.querySelector('input').value;
+                        if (!fp || !mm || parseFloat(mm) <= 0) {
+                            pagosIncompletos = true;
+                        }
+                    });
+
+                    if (pagosIncompletos) {
+                        event.preventDefault();
+                        if (alertaSaldo) {
+                            alertaSaldo.innerHTML = "<i class='fas fa-exclamation-circle'></i> POR FAVOR, COMPLETE LOS DATOS DE PAGO (FORMA Y MONTO).";
+                            alertaSaldo.style.display = 'block';
+                        }
+                        return false;
+                    }
+
+                    // 3. Validar que el saldo sea 0
+                    if (Math.abs(saldo) > 0.01) {
+                        event.preventDefault();
+                        if (alertaSaldo) {
+                            alertaSaldo.innerHTML = "<i class='fas fa-balance-scale-right'></i> EL SALDO DEBE SER CERO. PAGUE EL MONTO TOTAL.";
                             alertaSaldo.style.display = 'block';
                         }
                         return false;
@@ -239,9 +272,9 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
                                     <div class="row mb-3">
                                         <div class="col-md-6">
                                             <label for="monto_total" class="form-label"><b>(*) Precio (Bs)</b></label>
-                                            <input type="number" class="form-control" name="monto_total" id="monto_total"
-                                                value="<?php echo $precio_habitacion; ?>" min="1" step="0.5"
-                                                oninput="actualizarResumenPagos()"
+                                            <input type="number" class="form-control" name="monto_total"
+                                                id="monto_total" value="<?php echo $precio_habitacion; ?>" min="1"
+                                                step="0.5" oninput="actualizarResumenPagos()"
                                                 data-original="<?php echo $precio_habitacion; ?>">
                                         </div>
                                         <div class="col-md-6">
@@ -275,12 +308,15 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
                                                             <span class="fw-bold small">Bs <span
                                                                     id="displayTotalPagado">0.00</span></span>
                                                         </div>
-                                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <div
+                                                            class="d-flex justify-content-between align-items-center mb-1">
                                                             <span class="fw-bold small">SALDO:</span>
                                                             <span class="fw-bold small text-danger">Bs <span
                                                                     id="displaySaldoPendiente">0.00</span></span>
                                                         </div>
-                                                        <div id="alertaSaldo" class="alert alert-danger py-1 px-2 small mb-0 text-center fw-bold" style="display: none;"></div>
+                                                        <div id="alertaSaldo"
+                                                            class="alert alert-danger py-1 px-2 small mb-0 text-center fw-bold"
+                                                            style="display: none;"></div>
                                                     </div>
                                                 </div>
                                             </div>

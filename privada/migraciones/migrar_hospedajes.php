@@ -34,14 +34,34 @@ function registrarLog(string $archivo, int $id, string $motivo, bool &$hay_anoma
 }
 
 // ─────────────────────────────────────────────
-// EXTRACCIÓN CON INNER JOIN (Para obtener el ingresoID)
+// DETECTAR PUNTO DE INICIO (INCREMENTAL)
+// ─────────────────────────────────────────────
+echo "Analizando base de datos de destino...\n";
+$res_max = $db->obtenerFila("SELECT MAX(hospedajeID) as max_id FROM hospedajes");
+$ultimo_id_destino = (int) ($res_max['max_id'] ?? 0);
+echo "Último ID en destino: {$ultimo_id_destino}\n";
+
+// ─────────────────────────────────────────────
+// FASE 1: REPARAR CAJA_ID EN REGISTROS EXISTENTES
+// ─────────────────────────────────────────────
+echo "Fase 1: Reparando cajaID en registros existentes en el host...\n";
+$sql_repair = "UPDATE hospedajes h
+               JOIN ingresos i ON h.ingresoID = i.ingresoID
+               SET h.cajaID = i.cajaID
+               WHERE h.cajaID IS NULL";
+$filas_reparadas = $db->ejecutar($sql_repair);
+echo "Registros reparados en el host.\n";
+
+// ─────────────────────────────────────────────
+// FASE 2: EXTRACCIÓN INCREMENTAL (Solo lo nuevo)
 // ─────────────────────────────────────────────
 $sql_select = "
     SELECT h.*, i.ingresoID, i.cajaID 
     FROM hospedajes h
     INNER JOIN ingresos i ON i.hospedajeID = h.hospedajeID
+    WHERE h.hospedajeID > ?
 ";
-$stmt = $db_antigua->ejecutar($sql_select);
+$stmt = $db_antigua->ejecutar($sql_select, [$ultimo_id_destino]);
 
 // ─────────────────────────────────────────────
 // SQL INSERCIÓN DESTINO

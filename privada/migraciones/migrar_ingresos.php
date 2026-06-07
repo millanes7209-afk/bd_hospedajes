@@ -73,10 +73,18 @@ function detectarCuentaID(string $tipo, string $descripcion, array $catalogo, in
 }
 
 // ─────────────────────────────────────────────
-// EXTRACCIÓN desde bd_dulces
+// DETECTAR PUNTO DE INICIO (INCREMENTAL)
 // ─────────────────────────────────────────────
-$sql_select = "SELECT * FROM ingresos";
-$stmt = $db_antigua->ejecutar($sql_select);
+echo "Analizando base de datos de destino (Ingresos)...\n";
+$res_max = $db->obtenerFila("SELECT MAX(ingresoID) as max_id FROM ingresos");
+$ultimo_id_destino = (int) ($res_max['max_id'] ?? 0);
+echo "Último ID de ingreso en destino: {$ultimo_id_destino}\n";
+
+// ─────────────────────────────────────────────
+// EXTRACCIÓN desde bd_dulces (Solo lo nuevo)
+// ─────────────────────────────────────────────
+$sql_select = "SELECT * FROM ingresos WHERE ingresoID > ?";
+$stmt = $db_antigua->ejecutar($sql_select, [$ultimo_id_destino]);
 
 // SQL Nueva Cabecera `ingresos` (Nota: Ya no incluye hospedajeID)
 $sql_ingreso = "

@@ -164,23 +164,14 @@ try {
         $db->rollBack();
     }
 
-    // ==========================================
-    // DEPURADOR EN PANTALLA (DETIENE LA REDIRECCIÓN)
-    // ==========================================
-    echo "<div style='background-color:#fee; padding:25px; border:3px solid #c00; font-family:sans-serif; margin:20px; border-radius:8px;'>";
-    echo "<h2 style='color:#c00; margin-top:0;'>¡ERROR CRÍTICO DURANTE EL REGISTRO!</h2>";
-    echo "<p><b>La transacción de base de datos ha sido cancelada (Rollback). Ningún dato se ha guardado para evitar inconsistencias.</b></p>";
-    echo "<hr>";
-    echo "<h4 style='color:#333;'>Información del Depurador:</h4>";
-    echo "<ul style='color:#555;'>";
-    echo "<li><b>Mensaje de Error:</b> " . $e->getMessage() . "</li>";
-    echo "<li><b>Archivo:</b> " . basename($e->getFile()) . "</li>";
-    echo "<li><b>Línea que falló:</b> " . $e->getLine() . "</li>";
-    echo "</ul>";
-    echo "<hr>";
-    echo "<p><small>Por favor verifica que la estructura de tus tablas (especialmente 'movimientos') coincida exactamente con los datos que se están enviando.</small></p>";
-    echo "<a href='window.history.back()' onclick='window.history.back(); return false;' style='display:inline-block; margin-top:15px; padding:10px 20px; background:#0056b3; color:white; text-decoration:none; border-radius:5px;'>Volver al Formulario</a>";
-    echo "</div>";
+    // REGISTRAMOS EL ERROR TÉCNICO EN EL LOG DEL SERVIDOR PERO AL USUARIO LE DAMOS ALGO CLARO
+    error_log("FALLO EN REGISTRO DE HOSPEDAJE: " . $e->getMessage());
+
+    $_SESSION['mensaje'] = "No se pudo registrar el hospedaje: " . $e->getMessage();
+    $_SESSION['mensaje_tipo'] = "danger";
+
+    // Redirigimos atrás para que el usuario no pierda lo que escribió y vea el error
+    echo "<script>window.history.back();</script>";
     exit();
 }
 ?>
