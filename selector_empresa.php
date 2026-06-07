@@ -152,7 +152,8 @@ try {
                     <div class='d-flex align-items-center justify-content-between'>
                         <div>
                             <h4 class='mb-1'>
-                                <?php echo htmlspecialchars($_SESSION['sesion_nom_completo'] ?? 'Usuario'); ?></h4>
+                                <?php echo htmlspecialchars($_SESSION['sesion_nom_completo'] ?? 'Usuario'); ?>
+                            </h4>
                             <p class='text-muted mb-0'><i
                                     class='fas fa-user-tag me-2'></i><?php echo htmlspecialchars($_SESSION['sesion_rol'] ?? 'Sin Rol'); ?>
                             </p>
@@ -192,10 +193,14 @@ try {
                                                 <?php
                                                 $logo = $empresa['logo_agencia'];
                                                 $src = "";
-                                                if ($logo && file_exists("uploads/imagen/$logo"))
-                                                    $src = "uploads/imagen/$logo";
-                                                elseif ($logo && file_exists("img/$logo"))
-                                                    $src = "img/$logo";
+                                                // Única fuente: carpeta img
+                                                $candidatos = [$logo, 'logo.png', 'default.png'];
+                                                foreach ($candidatos as $c) {
+                                                    if (!empty($c) && file_exists("img/$c")) {
+                                                        $src = "img/$c";
+                                                        break;
+                                                    }
+                                                }
 
                                                 if ($src): ?>
                                                     <img src='<?php echo $src; ?>'

@@ -115,21 +115,26 @@ if (isset($_SESSION["sesion_id_rol"])) {
     $dir_php = $_SERVER["PHP_SELF"];
     $cuerp = strpos($dir_php, "listado_tablas.php");
 
-    // Ruta de imagen (Detección de profundidad de carpetas interna al proyecto)
-    // Buscamos cuántos niveles subir hasta encontrar la carpeta img/ propia del proyecto
+    // --- LÓGICA DE LOGO SIMPLIFICADA (SOLO CARPETA img/) ---
+    $root_path = __DIR__; // Carpeta raíz donde está libreria_menu.php
     $img_path = "";
-    $prefijo = "";
-    for ($i = 0; $i < 5; $i++) {
-        if (file_exists($prefijo . 'img/' . $logo_agencia)) {
-            $img_path = $prefijo . 'img/' . $logo_agencia;
+
+    // Calculamos el prefijo ../ según la profundidad del archivo que nos llama
+    $script_path = str_replace('\\', '/', $_SERVER['SCRIPT_FILENAME']);
+    $base_path = str_replace('\\', '/', $root_path);
+    $diff = str_replace($base_path, '', $script_path);
+    $niveles = substr_count(trim($diff, '/'), '/');
+    $prefijo = str_repeat("../", $niveles);
+
+    // Intentamos 1. Logo de empresa, 2. logo.png, 3. default.png
+    $candidatos = [$logo_agencia, 'logo.png', 'default.png', 'usuario.png'];
+    foreach ($candidatos as $nombre_img) {
+        if (!empty($nombre_img) && file_exists($root_path . "/img/" . $nombre_img)) {
+            $img_path = $prefijo . "img/" . $nombre_img;
             break;
         }
-        $prefijo .= "../";
     }
-
-    // Si no se encuentra, usar default
-    if (empty($img_path))
-        $img_path = $prefijo . "img/default.png";
+    // ------------------------------------------------------
 
 } else {
     $rs = "";
@@ -414,7 +419,7 @@ if (isset($_SESSION["sesion_id_rol"])) {
                     }
                 }
             });
-    });
+        });
     </script>
 
     <!-- TEMATIZACIÓN DINÁMICA POR EMPRESA -->
@@ -763,7 +768,7 @@ if (isset($_SESSION["sesion_id_rol"])) {
                         }
                     });
             });
-    }
+        }
     </script>
 
     <?php
