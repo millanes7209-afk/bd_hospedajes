@@ -3,7 +3,7 @@ require_once("../seguridad/seguridad_ajax.php");
 header('Content-Type: application/json; charset=utf-8');
 
 $empleadoID = $_POST['empleadoID'] ?? '';
-$empresaID  = $_SESSION['empresaID'] ?? null;
+$empresaID = $_SESSION['empresaID'] ?? null;
 $usuarioSesion = $_SESSION['sesion_id_usuario'] ?? null;
 
 if (empty($empleadoID) || empty($empresaID)) {
@@ -14,17 +14,20 @@ if (empty($empleadoID) || empty($empresaID)) {
 try {
     $db->beginTransaction();
 
+    $ahora = date('Y-m-d H:i:s');
+
     // 1. Marcar el contrato como INACTIVO y registrar FECHA_FIN
     $sql_ee = "UPDATE empleado_empresas 
-               SET estado_laboral = 'INACTIVO', fecha_fin = NOW(), _fec_modificacion = NOW(), _usuario = ?
+               SET estado_laboral = 'INACTIVO', fecha_fin = ?, _fec_modificacion = ?, _usuario = ?
                WHERE empleadoID = ? AND empresaID = ? AND _estado <> 'X'";
-    $db->ejecutar($sql_ee, [$usuarioSesion, $empleadoID, $empresaID]);
+    $db->ejecutar($sql_ee, [$ahora, $ahora, $usuarioSesion, $empleadoID, $empresaID]);
 
     $db->commit();
     echo json_encode(['status' => 'SUCCESS', 'message' => 'Baja laboral procesada correctamente.']);
 
 } catch (Exception $e) {
-    if ($db->inTransaction()) $db->rollBack();
+    if ($db->inTransaction())
+        $db->rollBack();
     echo json_encode(['status' => 'ERROR', 'message' => $e->getMessage()]);
 }
 ?>

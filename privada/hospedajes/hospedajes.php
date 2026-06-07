@@ -21,7 +21,7 @@ $sql = "SELECT usu.usuario,h.hospedajeID,h.estado as estado,
         AND c._estado <> 'X'
         AND usu._estado<> 'x'
         AND h.empresaID = ?
-        AND h.checkin >= DATE_SUB(NOW(), INTERVAL 3 DAY)
+        AND h.checkin >= DATE_SUB('" . date('Y-m-d H:i:s') . "', INTERVAL 3 DAY)
         GROUP BY h.hospedajeID
         ORDER BY h.hospedajeID DESC";
 

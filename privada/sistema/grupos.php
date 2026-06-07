@@ -17,20 +17,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     if ($accion === 'guardar') {
         $grupo = strtoupper(trim($_POST['grupo']));
         $grupoID = $_POST['grupoID'] ?? null;
+        $ahora = date('Y-m-d H:i:s');
 
         if ($grupoID) {
             // Actualizar
-            $sql = "UPDATE grupos SET grupo = ?, _fec_modificacion = NOW(), _usuario = ? WHERE grupoID = ?";
-            $db->ejecutar($sql, [$grupo, $usuarioID, $grupoID]);
+            $sql = "UPDATE grupos SET grupo = ?, _fec_modificacion = ?, _usuario = ? WHERE grupoID = ?";
+            $db->ejecutar($sql, [$grupo, $ahora, $usuarioID, $grupoID]);
         } else {
             // Insertar
-            $sql = "INSERT INTO grupos (grupo, _fec_insercion, _usuario, _estado) VALUES (?, NOW(), ?, 'A')";
-            $db->ejecutar($sql, [$grupo, $usuarioID]);
+            $sql = "INSERT INTO grupos (grupo, _fec_insercion, _usuario, _estado) VALUES (?, ?, ?, 'A')";
+            $db->ejecutar($sql, [$grupo, $ahora, $usuarioID]);
         }
     } elseif ($accion === 'eliminar') {
         $grupoID = $_POST['grupoID'];
-        $sql = "UPDATE grupos SET _estado = 'X', _fec_modificacion = NOW(), _usuario = ? WHERE grupoID = ?";
-        $db->ejecutar($sql, [$usuarioID, $grupoID]);
+        $ahora = date('Y-m-d H:i:s');
+        $sql = "UPDATE grupos SET _estado = 'X', _fec_modificacion = ?, _usuario = ? WHERE grupoID = ?";
+        $db->ejecutar($sql, [$ahora, $usuarioID, $grupoID]);
     }
     header("Location: grupos.php");
     exit();
@@ -120,7 +122,8 @@ $grupos = $db->obtenerTodo($sql);
                 <form method="post">
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalTitle">Nuevo Grupo</h5>
-                        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="border:none; background:none; font-size:1.5rem;">&times;</button>
+                        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"
+                            style="border:none; background:none; font-size:1.5rem;">&times;</button>
                     </div>
                     <div class="modal-body">
                         <input type="hidden" name="accion" value="guardar">
@@ -146,10 +149,12 @@ $grupos = $db->obtenerTodo($sql);
             <div class="modal-content border-danger">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>CONFIRMAR ELIMINACIÓN</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center py-4">
-                    <p class="mb-0">¿Realmente desea eliminar el grupo: <br><b id="delGrupoNombre" class="text-danger fs-5"></b>?</p>
+                    <p class="mb-0">¿Realmente desea eliminar el grupo: <br><b id="delGrupoNombre"
+                            class="text-danger fs-5"></b>?</p>
                     <small class="text-muted mt-2 d-block">Nota: Esto ocultará todas sus opciones vinculadas.</small>
                 </div>
                 <div class="modal-footer bg-light">
@@ -190,7 +195,7 @@ $grupos = $db->obtenerTodo($sql);
             modalEliminar.show();
         }
 
-        document.getElementById('btnConfirmarBorrado').addEventListener('click', function() {
+        document.getElementById('btnConfirmarBorrado').addEventListener('click', function () {
             document.getElementById('formEliminar').submit();
         });
     </script>

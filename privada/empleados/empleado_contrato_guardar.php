@@ -4,17 +4,17 @@ require_once("../../conexion.php");
 
 header('Content-Type: text/plain; charset=utf-8');
 
-$empresaID  = $_SESSION['empresaID']          ?? null;
-$usuarioID  = $_SESSION['sesion_id_usuario']  ?? null;
+$empresaID = $_SESSION['empresaID'] ?? null;
+$usuarioID = $_SESSION['sesion_id_usuario'] ?? null;
 
 // Recibir datos
-$empleadoID   = $_POST['empleadoID']    ?? '';
-$rolID        = $_POST['rolID']         ?? '';      // FK numérica
-$sueldo       = $_POST['sueldo']        ?? '';
-$fecha_inicio = $_POST['fecha_inicio']  ?? '';
-$fecha_fin    = !empty($_POST['fecha_fin']) ? $_POST['fecha_fin'] : null;
-$descripcion  = $_POST['descripcion']   ?? '';
-$es_titular   = (isset($_POST['es_titular']) && $_POST['es_titular'] == '1') ? 1 : 0;
+$empleadoID = $_POST['empleadoID'] ?? '';
+$rolID = $_POST['rolID'] ?? '';      // FK numérica
+$sueldo = $_POST['sueldo'] ?? '';
+$fecha_inicio = $_POST['fecha_inicio'] ?? '';
+$fecha_fin = !empty($_POST['fecha_fin']) ? $_POST['fecha_fin'] : null;
+$descripcion = $_POST['descripcion'] ?? '';
+$es_titular = (isset($_POST['es_titular']) && $_POST['es_titular'] == '1') ? 1 : 0;
 
 // Validar datos mínimos
 if (empty($empleadoID) || empty($rolID) || empty($sueldo) || empty($fecha_inicio)) {
@@ -36,13 +36,15 @@ try {
     // 1. Lógica de Titularidad: (Opcional) Podrías marcar otros como no titulares, 
     // pero permitiremos que coexistan múltiples contratos activos sin apagar los anteriores.
 
+    $ahora = date('Y-m-d H:i:s');
+
     // 2. INSERT contrato en empleado_empresas
     $sql = "INSERT INTO empleado_empresas 
                 (empleadoID, rolID, empresaID, sueldo, fecha_inicio, fecha_fin,
                  estado_laboral, es_titular, _fec_insercion, _usuario, _estado)
             VALUES 
                 (?, ?, ?, ?, ?, ?,
-                 'ACTIVO', ?, NOW(), ?, 'A')";
+                 'ACTIVO', ?, ?, ?, 'A')";
 
     $db->ejecutar($sql, [
         $empleadoID,
@@ -52,6 +54,7 @@ try {
         $fecha_inicio,
         $fecha_fin,
         $es_titular,
+        $ahora,
         $usuarioID
     ]);
 
@@ -75,8 +78,8 @@ try {
             // No tiene este rol → insertarlo
             $db->ejecutar(
                 "INSERT INTO usuarios_roles (usuarioID, rolID, _fec_insercion, _estado, _usuario)
-                 VALUES (?, ?, NOW(), 'A', ?)",
-                [$nuevoUsuarioID, $rolID, $usuarioID]
+                 VALUES (?, ?, ?, 'A', ?)",
+                [$nuevoUsuarioID, $rolID, $ahora, $usuarioID]
             );
         }
         // Si ya tenía el rol, no hacer nada (evitar duplicados)
@@ -87,7 +90,8 @@ try {
     echo "SUCCESS";
 
 } catch (Exception $e) {
-    if ($db->inTransaction()) $db->rollBack();
+    if ($db->inTransaction())
+        $db->rollBack();
     echo "ERROR: " . $e->getMessage();
 }
 ?>

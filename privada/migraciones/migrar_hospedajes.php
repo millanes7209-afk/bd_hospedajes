@@ -37,7 +37,7 @@ function registrarLog(string $archivo, int $id, string $motivo, bool &$hay_anoma
 // EXTRACCIÓN CON INNER JOIN (Para obtener el ingresoID)
 // ─────────────────────────────────────────────
 $sql_select = "
-    SELECT h.*, i.ingresoID 
+    SELECT h.*, i.ingresoID, i.cajaID 
     FROM hospedajes h
     INNER JOIN ingresos i ON i.hospedajeID = h.hospedajeID
 ";
@@ -88,7 +88,7 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         ]);
 
         $exitosos++;
-        echo "  [OK] Hospedaje ID {$id} amarrado a Ingreso ID {$row['ingresoID']}\n";
+        echo "  [OK] Hospedaje ID {$id} -> Ingreso ID {$row['ingresoID']} | Caja ID {$row['cajaID']}\n";
 
     } catch (Exception $e) {
         $fallidos++;

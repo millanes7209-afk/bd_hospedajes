@@ -14,6 +14,7 @@ if (count($rs_caja_abierta) > 0) {
     $empresaID = $_SESSION['empresaID'];
 
     $db->beginTransaction();
+    $ahora = date('Y-m-d H:i:s');
     try {
         // 1. Consolidar montos por forma de pago (Neto = Ingresos - Egresos)
         $sql_resumen = "SELECT formapagoID, SUM(monto_neto) as total 
@@ -30,19 +31,19 @@ if (count($rs_caja_abierta) > 0) {
                             WHERE e.cajaID = ? AND e._estado <> 'X' 
                             GROUP BY ep.formapagoID
                         ) as t GROUP BY formapagoID";
-        
+
         $resumen = $db->obtenerTodo($sql_resumen, [$caja_id, $caja_id]);
 
         // 2. Insertar en cierre_cajas para el reporte administrativo
         foreach ($resumen as $row) {
-            $sql_ins = "INSERT INTO cierre_cajas (cajaID, formapagoID, monto, _usuario, _estado) 
-                        VALUES (?, ?, ?, ?, 'A')";
-            $db->ejecutar($sql_ins, [$caja_id, $row['formapagoID'], $row['total'], $id_usuario]);
+            $sql_ins = "INSERT INTO cierre_cajas (cajaID, formapagoID, monto, _fec_insercion, _usuario, _estado) 
+                        VALUES (?, ?, ?, ?, ?, 'A')";
+            $db->ejecutar($sql_ins, [$caja_id, $row['formapagoID'], $row['total'], $ahora, $id_usuario]);
         }
 
         // 3. Actualizar la caja para cerrarla
-        $sql_cerrar_caja = "UPDATE cajas SET estado = 'CERRADA', fecha_cierre = NOW(), _usuario = ? WHERE cajaID = ?";
-        $db->ejecutar($sql_cerrar_caja, array($id_usuario, $caja_id));
+        $sql_cerrar_caja = "UPDATE cajas SET estado = 'CERRADA', fecha_cierre = ?, _fec_modificacion = ?, _usuario = ? WHERE cajaID = ?";
+        $db->ejecutar($sql_cerrar_caja, [$ahora, $ahora, $id_usuario, $caja_id]);
 
         $db->commit();
         $_SESSION['mensaje'] = 'Caja cerrada y consolidada exitosamente.';

@@ -39,8 +39,8 @@ try {
     $nuevaClave = "123456";
     $hashClave = password_hash($nuevaClave, PASSWORD_DEFAULT);
 
-    $sql_upd = "UPDATE usuarios SET clave = ?, _fec_modificacion = NOW(), _usuario = ? WHERE usuarioID = ?";
-    $db->ejecutar($sql_upd, [$hashClave, $adminID, $target['usuarioID']]);
+    $sql_upd = "UPDATE usuarios SET clave = ?, _fec_modificacion = ?, _usuario = ? WHERE usuarioID = ?";
+    $db->ejecutar($sql_upd, [$hashClave, date('Y-m-d H:i:s'), $adminID, $target['usuarioID']]);
 
     echo json_encode(['status' => 'SUCCESS', 'message' => 'Contraseña reseteada correctamente a 123456.']);
 

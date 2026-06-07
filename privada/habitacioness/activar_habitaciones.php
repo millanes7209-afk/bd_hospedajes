@@ -14,22 +14,23 @@ try {
 
     foreach ($opciones as $op) {
         $path = "../privada/" . $op['contenido'];
-        
+
         // Verificar si ya existe para no duplicar
         $check = $db->obtenerFila("SELECT opcionID FROM opciones WHERE contenido = ?", [$path]);
-        
+
         if (!$check) {
+            $ahora = date('Y-m-d H:i:s');
             $sql_op = "INSERT INTO opciones (grupoID, opcion, contenido, orden, _fec_insercion, _usuario, _estado) 
-                       VALUES (?, ?, ?, ?, NOW(), 1, 'A')";
-            $db->ejecutar($sql_op, [$grupoID, $op['opcion'], $path, $op['orden']]);
+                       VALUES (?, ?, ?, ?, ?, 1, 'A')";
+            $db->ejecutar($sql_op, [$grupoID, $op['opcion'], $path, $op['orden'], $ahora]);
             $opcionID = $db->lastInsertId();
             echo "Opción '{$op['opcion']}' creada (ID: $opcionID).\n";
-            
+
             // DAR ACCESO AL PROPIETARIO (Rol 3) mentalmente solicitado por el usuario
             // El Admin ya tiene acceso por el TRIGGER.
             $sql_acc = "INSERT INTO accesos (rolID, opcionID, _fec_insercion, _usuario, _estado) 
-                        VALUES (3, ?, NOW(), 1, 'A')";
-            $db->ejecutar($sql_acc, [$opcionID]);
+                        VALUES (3, ?, ?, 1, 'A')";
+            $db->ejecutar($sql_acc, [$opcionID, $ahora]);
             echo "Acceso concedido al PROPIETARIO para '{$op['opcion']}'.\n";
         } else {
             echo "La opción '{$op['opcion']}' ya existe.\n";

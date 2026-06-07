@@ -16,21 +16,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         $bano = isset($_POST['bano']) ? 1 : 0;
         $ventilador = isset($_POST['ventilador']) ? 1 : 0;
         $habitacionID = $_POST['habitacionID'] ?? null;
+        $ahora = date('Y-m-d H:i:s');
 
         if ($habitacionID) {
-            $sql = "UPDATE habitaciones SET tipohabitacionID = ?, numero = ?, descripcion = ?, tv = ?, bano = ?, ventilador = ?, _fec_modificacion = NOW(), _usuario = ? 
+            $sql = "UPDATE habitaciones SET tipohabitacionID = ?, numero = ?, descripcion = ?, tv = ?, bano = ?, ventilador = ?, _fec_modificacion = ?, _usuario = ? 
                     WHERE habitacionID = ? AND empresaID = ?";
-            $db->ejecutar($sql, [$tipohabitacionID, $numero, $descripcion, $tv, $bano, $ventilador, $usuarioID, $habitacionID, $empresaID]);
+            $db->ejecutar($sql, [$tipohabitacionID, $numero, $descripcion, $tv, $bano, $ventilador, $ahora, $usuarioID, $habitacionID, $empresaID]);
         } else {
             $sql = "INSERT INTO habitaciones (tipohabitacionID, empresaID, numero, estado, descripcion, tv, bano, ventilador, _fec_insercion, _usuario, _estado) 
-                    VALUES (?, ?, ?, 'DISPONIBLE', ?, ?, ?, ?, NOW(), ?, 'A')";
-            $db->ejecutar($sql, [$tipohabitacionID, $empresaID, $numero, $descripcion, $tv, $bano, $ventilador, $usuarioID]);
+                    VALUES (?, ?, ?, 'DISPONIBLE', ?, ?, ?, ?, ?, ?, 'A')";
+            $db->ejecutar($sql, [$tipohabitacionID, $empresaID, $numero, $descripcion, $tv, $bano, $ventilador, $ahora, $usuarioID]);
         }
     } elseif ($accion === 'eliminar') {
         $habitacionID = $_POST['habitacionID'];
-        $sql = "UPDATE habitaciones SET _estado = 'X', _fec_modificacion = NOW(), _usuario = ? 
+        $sql = "UPDATE habitaciones SET _estado = 'X', _fec_modificacion = ?, _usuario = ? 
                 WHERE habitacionID = ? AND empresaID = ?";
-        $db->ejecutar($sql, [$usuarioID, $habitacionID, $empresaID]);
+        $db->ejecutar($sql, [$ahora, $usuarioID, $habitacionID, $empresaID]);
     }
     header("Location: habit_lista.php");
     exit();

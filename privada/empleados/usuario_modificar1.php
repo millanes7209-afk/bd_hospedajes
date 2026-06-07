@@ -11,15 +11,17 @@ $usuarioLogueado = $_SESSION['sesion_id_usuario'];
 try {
     $db->beginTransaction();
 
+    $ahora = date('Y-m-d H:i:s');
+
     if (!empty($clave)) {
         // Actualizar con nueva clave
         $hash = password_hash($clave, PASSWORD_DEFAULT);
-        $sql = "UPDATE usuarios SET empleadoID = ?, usuario = ?, clave = ?, _fec_modificacion = NOW(), _usuario = ? WHERE usuarioID = ?";
-        $db->ejecutar($sql, [$empleadoID, $usuario, $hash, $usuarioLogueado, $usuarioID]);
+        $sql = "UPDATE usuarios SET empleadoID = ?, usuario = ?, clave = ?, _fec_modificacion = ?, _usuario = ? WHERE usuarioID = ?";
+        $db->ejecutar($sql, [$empleadoID, $usuario, $hash, $ahora, $usuarioLogueado, $usuarioID]);
     } else {
         // Actualizar sin tocar la clave
-        $sql = "UPDATE usuarios SET empleadoID = ?, usuario = ?, _fec_modificacion = NOW(), _usuario = ? WHERE usuarioID = ?";
-        $db->ejecutar($sql, [$empleadoID, $usuario, $usuarioLogueado, $usuarioID]);
+        $sql = "UPDATE usuarios SET empleadoID = ?, usuario = ?, _fec_modificacion = ?, _usuario = ? WHERE usuarioID = ?";
+        $db->ejecutar($sql, [$empleadoID, $usuario, $ahora, $usuarioLogueado, $usuarioID]);
     }
 
     $db->commit();
@@ -27,7 +29,8 @@ try {
     $_SESSION['mensaje_tipo'] = "success";
 
 } catch (Exception $e) {
-    if ($db->inTransaction()) $db->rollBack();
+    if ($db->inTransaction())
+        $db->rollBack();
     $_SESSION['mensaje'] = "Error: " . $e->getMessage();
     $_SESSION['mensaje_tipo'] = "danger";
 }

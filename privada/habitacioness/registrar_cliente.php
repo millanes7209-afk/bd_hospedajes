@@ -22,16 +22,25 @@ try {
         echo "error_ci_duplicado";
     } else {
         // 2. Insertar nuevo cliente
+        $ahora = date('Y-m-d H:i:s');
         $sql_insert = "INSERT INTO clientes (empresaID, ci, nombres, apellidos, fecha_nacimiento, lugar_nacimiento, est_civil, profesion, _fec_insercion, _usuario, _estado) 
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, 'A')";
-        
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'A')";
+
         $params = [
-            $empresaID, $ci, $nombres, $apellidos, $fecha_nacimiento, 
-            $lugar_nacimiento, $est_civil, $profesion, $usuarioID
+            $empresaID,
+            $ci,
+            $nombres,
+            $apellidos,
+            $fecha_nacimiento,
+            $lugar_nacimiento,
+            $est_civil,
+            $profesion,
+            $ahora,
+            $usuarioID
         ];
 
         if ($db->ejecutar($sql_insert, $params)) {
-            $clienteID = $db->ultimoID();
+            $clienteID = $db->lastInsertId();
             echo "success:$clienteID";
         } else {
             echo "error: No se pudo registrar el cliente. Inténtelo de nuevo.";

@@ -20,11 +20,12 @@ if (empty($cajaIDs)) {
 
 try {
     $procesados = 0;
+    $ahora = date('Y-m-d H:i:s');
     foreach ($cajaIDs as $cajaID) {
         // 1. Calcular el neto pendiente (Ingresos - Egresos) de esta caja
         $resI = $db->obtenerFila("SELECT SUM(monto_total) as total FROM ingresos WHERE cajaID = ? AND entregado = 0 AND _estado <> 'X'", [$cajaID]);
         $resE = $db->obtenerFila("SELECT SUM(monto_total) as total FROM egresos  WHERE cajaID = ? AND entregado = 0 AND _estado <> 'X'", [$cajaID]);
-        
+
         // 1b. Calcular el neto de BAÑOS
         $resB = $db->obtenerFila("SELECT SUM(CASE WHEN tipo = 'INGRESO' THEN monto ELSE 0 END) - 
                                          SUM(CASE WHEN tipo = 'EGRESO' THEN monto ELSE 0 END) as total 
@@ -33,7 +34,7 @@ try {
         $total_i = floatval($resI['total'] ?? 0);
         $total_e = floatval($resE['total'] ?? 0);
         $total_b = floatval($resB['total'] ?? 0);
-        
+
         $monto_neto = $total_i - $total_e + $total_b;
 
         if ($monto_neto != 0 || $total_i > 0 || $total_e > 0 || $total_b > 0) {
@@ -44,20 +45,20 @@ try {
 
             // 2. Crear registro en recaudaciones
             $sql_rec = "INSERT INTO recaudaciones (empresaID, usuariorecepcionistaID, usuariopropietarioID, monto, comprobante_nro, fecha, _usuario, _estado) 
-                        VALUES (?, ?, ?, ?, ?, NOW(), ?, 'A')";
-            $db->ejecutar($sql_rec, [$empresaID, $recepcionistaID, $usuarioPropietarioID, $monto_neto, $comprobante, $usuarioPropietarioID]);
-            
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 'A')";
+            $db->ejecutar($sql_rec, [$empresaID, $recepcionistaID, $usuarioPropietarioID, $monto_neto, $comprobante, $ahora, $usuarioPropietarioID]);
+
             $recaudacionID = $db->ultimoInsertId();
 
             // 3. Marcar INGRESOS como entregados
-            $db->ejecutar("UPDATE ingresos SET entregado = 1, fecha_entrega = NOW(), recaudacionID = ?, _fec_modificacion = NOW(), _usuario = ? WHERE cajaID = ? AND entregado = 0", [$recaudacionID, $usuarioPropietarioID, $cajaID]);
+            $db->ejecutar("UPDATE ingresos SET entregado = 1, fecha_entrega = ?, recaudacionID = ?, _fec_modificacion = ?, _usuario = ? WHERE cajaID = ? AND entregado = 0", [$ahora, $recaudacionID, $ahora, $usuarioPropietarioID, $cajaID]);
 
             // 4. Marcar EGRESOS como entregados
-            $db->ejecutar("UPDATE egresos SET entregado = 1, fecha_entrega = NOW(), recaudacionID = ?, _fec_modificacion = NOW(), _usuario = ? WHERE cajaID = ? AND entregado = 0", [$recaudacionID, $usuarioPropietarioID, $cajaID]);
+            $db->ejecutar("UPDATE egresos SET entregado = 1, fecha_entrega = ?, recaudacionID = ?, _fec_modificacion = ?, _usuario = ? WHERE cajaID = ? AND entregado = 0", [$ahora, $recaudacionID, $ahora, $usuarioPropietarioID, $cajaID]);
 
             // 5. Marcar BAÑOS como entregados
             $db->ejecutar("UPDATE banos SET entregado = 1, recaudacionID = ? WHERE cajaID = ? AND entregado = 0", [$recaudacionID, $cajaID]);
-            
+
             $procesados++;
         }
     }

@@ -11,6 +11,7 @@ if (!isset($_SESSION['sesion_id_usuario']) || !isset($_SESSION['empresaID'])) {
 $accion = $_POST['accion'] ?? $_GET['accion'] ?? '';
 $empresaID = $_SESSION['empresaID'];
 $usuarioID = $_SESSION['sesion_id_usuario'];
+$ahora = date('Y-m-d H:i:s');
 
 header('Content-Type: application/json');
 
@@ -23,23 +24,21 @@ if ($accion === 'listar') {
             ORDER BY n._fec_insercion ASC";
     $notas = $db->obtenerTodo($sql, [$empresaID]);
     echo json_encode(["status" => "ok", "data" => $notas]);
-} 
-elseif ($accion === 'guardar') {
+} elseif ($accion === 'guardar') {
     $mensaje = trim($_POST['mensaje'] ?? '');
     if (!empty($mensaje)) {
         $sql = "INSERT INTO notificaciones (empresaID, usuarioID, mensaje, completado, usuario_completado, _fec_insercion, _usuario, _estado) 
-                VALUES (?, ?, ?, 0, 0, NOW(), ?, 'A')";
-        $db->ejecutar($sql, [$empresaID, $usuarioID, $mensaje, $usuarioID]);
+                VALUES (?, ?, ?, 0, 0, ?, ?, 'A')";
+        $db->ejecutar($sql, [$empresaID, $usuarioID, $mensaje, $ahora, $usuarioID]);
         echo json_encode(["status" => "ok", "message" => "Nota guardada"]);
     } else {
         echo json_encode(["status" => "error", "message" => "Mensaje vacío"]);
     }
-} 
-elseif ($accion === 'completar') {
-    $notificacionID = (int)($_POST['notificacionID'] ?? 0);
+} elseif ($accion === 'completar') {
+    $notificacionID = (int) ($_POST['notificacionID'] ?? 0);
     if ($notificacionID > 0) {
-        $sql = "UPDATE notificaciones SET completado = 1, usuario_completado = ?, _fec_modificacion = NOW(), _usuario = ? WHERE notificacionID = ? AND empresaID = ?";
-        $db->ejecutar($sql, [$usuarioID, $usuarioID, $notificacionID, $empresaID]);
+        $sql = "UPDATE notificaciones SET completado = 1, usuario_completado = ?, _fec_modificacion = ?, _usuario = ? WHERE notificacionID = ? AND empresaID = ?";
+        $db->ejecutar($sql, [$usuarioID, $ahora, $usuarioID, $notificacionID, $empresaID]);
         echo json_encode(["status" => "ok", "message" => "Tarea completada"]);
     } else {
         echo json_encode(["status" => "error", "message" => "ID inválido"]);

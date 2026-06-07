@@ -24,23 +24,25 @@ try {
     $rolID = $contrato['rolID'];
 
     // 2. Insertar el usuario
+    $ahora = date('Y-m-d H:i:s');
     $hash = password_hash($clave, PASSWORD_DEFAULT);
     $sql_user = "INSERT INTO usuarios (empleadoID, usuario, clave, _fec_insercion, _usuario, _estado) 
-                 VALUES (?, ?, ?, NOW(), ?, 'A')";
-    $db->ejecutar($sql_user, [$empleadoID, $usuario, $hash, $usuarioLogueado]);
+                 VALUES (?, ?, ?, ?, ?, 'A')";
+    $db->ejecutar($sql_user, [$empleadoID, $usuario, $hash, $ahora, $usuarioLogueado]);
     $nuevoUsuarioID = $db->ultimoInsertId();
 
     // 3. Vincular con el Rol
     $sql_rol_vinc = "INSERT INTO usuarios_roles (usuarioID, rolID, _fec_insercion, _usuario, _estado) 
-                     VALUES (?, ?, NOW(), ?, 'A')";
-    $db->ejecutar($sql_rol_vinc, [$nuevoUsuarioID, $rolID, $usuarioLogueado]);
+                     VALUES (?, ?, ?, ?, 'A')";
+    $db->ejecutar($sql_rol_vinc, [$nuevoUsuarioID, $rolID, $ahora, $usuarioLogueado]);
 
     $db->commit();
     $_SESSION['mensaje'] = "Usuario creado correctamente.";
     $_SESSION['mensaje_tipo'] = "success";
 
 } catch (Exception $e) {
-    if ($db->inTransaction()) $db->rollBack();
+    if ($db->inTransaction())
+        $db->rollBack();
     $_SESSION['mensaje'] = "Error: " . $e->getMessage();
     $_SESSION['mensaje_tipo'] = "danger";
 }

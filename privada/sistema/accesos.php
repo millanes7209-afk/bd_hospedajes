@@ -13,17 +13,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
         $check = $db->obtenerFila("SELECT accesoID FROM accesos WHERE rolID = ? AND opcionID = ?", [$rolID, $opcionID]);
 
+        $ahora = date('Y-m-d H:i:s');
         if ($check) {
-            $sql = "UPDATE accesos SET _estado = 'A', _fec_modificacion = NOW(), _usuario = ? WHERE accesoID = ?";
-            $db->ejecutar($sql, [$usuarioID, $check['accesoID']]);
+            $sql = "UPDATE accesos SET _estado = 'A', _fec_modificacion = ?, _usuario = ? WHERE accesoID = ?";
+            $db->ejecutar($sql, [$ahora, $usuarioID, $check['accesoID']]);
         } else {
-            $sql = "INSERT INTO accesos (rolID, opcionID, _fec_insercion, _usuario, _estado) VALUES (?, ?, NOW(), ?, 'A')";
-            $db->ejecutar($sql, [$rolID, $opcionID, $usuarioID]);
+            $sql = "INSERT INTO accesos (rolID, opcionID, _fec_insercion, _usuario, _estado) VALUES (?, ?, ?, ?, 'A')";
+            $db->ejecutar($sql, [$rolID, $opcionID, $ahora, $usuarioID]);
         }
     } elseif ($accion === 'revocar') {
         $accesoID = $_POST['accesoID'];
-        $sql = "UPDATE accesos SET _estado = 'X', _fec_modificacion = NOW(), _usuario = ? WHERE accesoID = ?";
-        $db->ejecutar($sql, [$usuarioID, $accesoID]);
+        $ahora = date('Y-m-d H:i:s');
+        $sql = "UPDATE accesos SET _estado = 'X', _fec_modificacion = ?, _usuario = ? WHERE accesoID = ?";
+        $db->ejecutar($sql, [$ahora, $usuarioID, $accesoID]);
     }
     header("Location: accesos.php");
     exit();
@@ -135,7 +137,8 @@ $accesos = $db->obtenerTodo($sql);
                 <form method="post">
                     <div class="modal-header" style="border-bottom: none;">
                         <h5 class="modal-title">Conceder Permiso de Visualización</h5>
-                        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="border:none; background:none; font-size:1.5rem;">&times;</button>
+                        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"
+                            style="border:none; background:none; font-size:1.5rem;">&times;</button>
                     </div>
                     <div class="modal-body">
                         <input type="hidden" name="accion" value="conceder">
@@ -175,10 +178,12 @@ $accesos = $db->obtenerTodo($sql);
             <div class="modal-content border-danger">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title"><i class="fas fa-user-shield me-2"></i>CONFIRMAR REVOCACIÓN</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center py-4">
-                    <p class="mb-0">¿Realmente desea revocar el acceso del Rol:<br><b id="revRolNombre" class="text-danger fs-5"></b></p>
+                    <p class="mb-0">¿Realmente desea revocar el acceso del Rol:<br><b id="revRolNombre"
+                            class="text-danger fs-5"></b></p>
                     <p class="mt-2">Para la pestaña: <b id="revOpcionNombre" class="text-primary"></b>?</p>
                 </div>
                 <div class="modal-footer bg-light">
@@ -207,7 +212,7 @@ $accesos = $db->obtenerTodo($sql);
         }
 
         // Lógica de filtrado dinámico
-        document.getElementById('selectRol').addEventListener('change', function() {
+        document.getElementById('selectRol').addEventListener('change', function () {
             const rolID = this.value;
             const selectOpcion = document.getElementById('selectOpcion');
             selectOpcion.innerHTML = ''; // Limpiar
@@ -247,7 +252,7 @@ $accesos = $db->obtenerTodo($sql);
             modalRevocar.show();
         }
 
-        document.getElementById('btnConfirmarRevocar').addEventListener('click', function() {
+        document.getElementById('btnConfirmarRevocar').addEventListener('click', function () {
             document.getElementById('formRevocar').submit();
         });
     </script>

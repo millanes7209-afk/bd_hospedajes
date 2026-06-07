@@ -3,8 +3,9 @@ require_once('conexion.php');
 
 try {
     // 1. Crear el grupo SISTEMA
-    $sql_grupo = "INSERT INTO grupos (grupo, _fec_insercion, _usuario, _estado) VALUES ('SISTEMA', NOW(), 1, 'A')";
-    $db->ejecutar($sql_grupo);
+    $ahora = date('Y-m-d H:i:s');
+    $sql_grupo = "INSERT INTO grupos (grupo, _fec_insercion, _usuario, _estado) VALUES ('SISTEMA', ?, 1, 'A')";
+    $db->ejecutar($sql_grupo, [$ahora]);
     $grupoID = $db->lastInsertId();
     echo "Grupo SISTEMA creado (ID: $grupoID)\n";
 
@@ -17,8 +18,8 @@ try {
 
     foreach ($opciones as $op) {
         $sql_op = "INSERT INTO opciones (grupoID, opcion, contenido, orden, _fec_insercion, _usuario, _estado) 
-                   VALUES (?, ?, ?, ?, NOW(), 1, 'A')";
-        $db->ejecutar($sql_op, [$grupoID, $op['opcion'], $op['contenido'], $op['orden']]);
+                   VALUES (?, ?, ?, ?, ?, 1, 'A')";
+        $db->ejecutar($sql_op, [$grupoID, $op['opcion'], $op['contenido'], $op['orden'], $ahora]);
         echo "Opción '{$op['opcion']}' creada.\n";
     }
 

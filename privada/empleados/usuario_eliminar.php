@@ -16,13 +16,15 @@ try {
     $user = $db->obtenerFila($sql_u, [$usuarioID]);
     $nombre = $user ? $user['usuario'] : "Desconocido";
 
+    $ahora = date('Y-m-d H:i:s');
+
     // 2. Borrado Lógico del Usuario
-    $sql_del_u = "UPDATE usuarios SET _estado = 'X', _fec_modificacion = NOW(), _usuario = ? WHERE usuarioID = ?";
-    $db->ejecutar($sql_del_u, [$usuarioLogueado, $usuarioID]);
+    $sql_del_u = "UPDATE usuarios SET _estado = 'X', _fec_modificacion = ?, _usuario = ? WHERE usuarioID = ?";
+    $db->ejecutar($sql_del_u, [$ahora, $usuarioLogueado, $usuarioID]);
 
     // 3. Borrado Lógico de sus Roles (Cascada lógica)
-    $sql_del_r = "UPDATE usuarios_roles SET _estado = 'X', _fec_modificacion = NOW(), _usuario = ? WHERE usuarioID = ?";
-    $db->ejecutar($sql_del_r, [$usuarioLogueado, $usuarioID]);
+    $sql_del_r = "UPDATE usuarios_roles SET _estado = 'X', _fec_modificacion = ?, _usuario = ? WHERE usuarioID = ?";
+    $db->ejecutar($sql_del_r, [$ahora, $usuarioLogueado, $usuarioID]);
 
     echo json_encode([
         'tipo' => 'success',

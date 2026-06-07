@@ -8,13 +8,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
     $descripcion = trim($_POST['descripcion']);
     $usuarioID = $_SESSION['sesion_id_usuario'];
 
+    $ahora = date('Y-m-d H:i:s');
     if ($funcionalidadID) {
-        $sql = "UPDATE funcionalidades SET nombre = ?, descripcion = ?, _fec_modificacion = NOW(), _usuario = ? WHERE funcionalidadID = ?";
-        $db->ejecutar($sql, [$nombre, $descripcion, $usuarioID, $funcionalidadID]);
+        $sql = "UPDATE funcionalidades SET nombre = ?, descripcion = ?, _fec_modificacion = ?, _usuario = ? WHERE funcionalidadID = ?";
+        $db->ejecutar($sql, [$nombre, $descripcion, $ahora, $usuarioID, $funcionalidadID]);
         $mensaje = ["tipo" => "info", "texto" => "Nivel de funcionalidad actualizado."];
     } else {
-        $sql = "INSERT INTO funcionalidades (nombre, descripcion, _fec_insercion, _usuario, _estado) VALUES (?, ?, NOW(), ?, 'A')";
-        $db->ejecutar($sql, [$nombre, $descripcion, $usuarioID]);
+        $sql = "INSERT INTO funcionalidades (nombre, descripcion, _fec_insercion, _usuario, _estado) VALUES (?, ?, ?, ?, 'A')";
+        $db->ejecutar($sql, [$nombre, $descripcion, $ahora, $usuarioID]);
         $mensaje = ["tipo" => "success", "texto" => "Nuevo nivel de funcionalidad creado."];
     }
 }
@@ -55,7 +56,8 @@ $funcionalidades = $db->obtenerTodo("SELECT * FROM funcionalidades WHERE _estado
                             <td class="fw-bold text-primary"><?php echo $f['nombre']; ?></td>
                             <td><?php echo $f['descripcion'] ?? 'Sin descripción'; ?></td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-info text-white" onclick='editarFuncionalidad(<?= json_encode($f) ?>)'>
+                                <button class="btn btn-sm btn-info text-white"
+                                    onclick='editarFuncionalidad(<?= json_encode($f) ?>)'>
                                     <i class="fas fa-edit"></i> Editar
                                 </button>
                             </td>
@@ -81,7 +83,8 @@ $funcionalidades = $db->obtenerTodo("SELECT * FROM funcionalidades WHERE _estado
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nombre del Nivel:</label>
-                        <input type="text" name="nombre" id="f_nombre" class="form-control" required onkeyup="this.value=this.value.toUpperCase()">
+                        <input type="text" name="nombre" id="f_nombre" class="form-control" required
+                            onkeyup="this.value=this.value.toUpperCase()">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Descripción / ¿Qué incluye?:</label>
@@ -98,24 +101,25 @@ $funcionalidades = $db->obtenerTodo("SELECT * FROM funcionalidades WHERE _estado
 </div>
 
 <script>
-function abrirModalFuncionalidad() {
-    document.getElementById('fModalTitle').innerText = 'Nuevo Nivel de Funcionalidad';
-    document.getElementById('f_funcionalidadID').value = '';
-    document.getElementById('f_nombre').value = '';
-    document.getElementById('f_descripcion').value = '';
-    let modal = new bootstrap.Modal(document.getElementById('modalFuncionalidad'));
-    modal.show();
-}
+    function abrirModalFuncionalidad() {
+        document.getElementById('fModalTitle').innerText = 'Nuevo Nivel de Funcionalidad';
+        document.getElementById('f_funcionalidadID').value = '';
+        document.getElementById('f_nombre').value = '';
+        document.getElementById('f_descripcion').value = '';
+        let modal = new bootstrap.Modal(document.getElementById('modalFuncionalidad'));
+        modal.show();
+    }
 
-function editarFuncionalidad(data) {
-    document.getElementById('fModalTitle').innerText = 'Editar Nivel';
-    document.getElementById('f_funcionalidadID').value = data.funcionalidadID;
-    document.getElementById('f_nombre').value = data.nombre;
-    document.getElementById('f_descripcion').value = data.descripcion || '';
-    let modal = new bootstrap.Modal(document.getElementById('modalFuncionalidad'));
-    modal.show();
-}
+    function editarFuncionalidad(data) {
+        document.getElementById('fModalTitle').innerText = 'Editar Nivel';
+        document.getElementById('f_funcionalidadID').value = data.funcionalidadID;
+        document.getElementById('f_nombre').value = data.nombre;
+        document.getElementById('f_descripcion').value = data.descripcion || '';
+        let modal = new bootstrap.Modal(document.getElementById('modalFuncionalidad'));
+        modal.show();
+    }
 </script>
 
 </body>
+
 </html>

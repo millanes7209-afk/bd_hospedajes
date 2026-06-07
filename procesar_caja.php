@@ -80,8 +80,8 @@ if (isset($_POST['accion'])) {
             // Crear snapshots en cierre_cajas con auditoría completa
             foreach ($saldos as $saldo) {
                 $sql_snapshot = "INSERT INTO cierre_cajas (cajaID, formapagoID, monto, _fec_insercion, _fec_modificacion, _usuario, _estado) 
-                                 VALUES (?, ?, ?, NOW(), NOW(), ?, 'A')";
-                $db->ejecutar($sql_snapshot, array($caja_abierta_id, $saldo['formapagoID'], $saldo['total_monto'], $usuarioID));
+                                 VALUES (?, ?, ?, ?, ?, ?, 'A')";
+                $db->ejecutar($sql_snapshot, array($caja_abierta_id, $saldo['formapagoID'], $saldo['total_monto'], $fecha_cierre, $fecha_cierre, $usuarioID));
             }
 
             // Limpiar la caja abierta en la sesión

@@ -6,8 +6,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
     $empresaID = (int) $_POST['empresaID'];
     $modulos = $_POST['modulos'] ?? []; // IDs de funcionalidades seleccionadas
 
+    $ahora = date('Y-m-d H:i:s');
     // 1. Desactivar todos para esta empresa
-    $db->ejecutar("UPDATE empresa_funcionalidades SET estado = 'INACTIVO', _fec_modificacion = NOW(), _usuario = ? WHERE empresaID = ?", [$_SESSION['sesion_id_usuario'], $empresaID]);
+    $db->ejecutar("UPDATE empresa_funcionalidades SET estado = 'INACTIVO', _fec_modificacion = ?, _usuario = ? WHERE empresaID = ?", [$ahora, $_SESSION['sesion_id_usuario'], $empresaID]);
 
     // 2. Activar o Insertar los seleccionados
     foreach ($modulos as $fID) {
@@ -15,10 +16,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
         $existe = $db->obtenerFila("SELECT empresafuncionID FROM empresa_funcionalidades WHERE empresaID = ? AND funcionalidadID = ?", [$empresaID, $fID]);
 
         if ($existe) {
-            $db->ejecutar("UPDATE empresa_funcionalidades SET estado = 'ACTIVO', _fec_modificacion = NOW(), _usuario = ? WHERE empresafuncionID = ?", [$_SESSION['sesion_id_usuario'], $existe['empresafuncionID']]);
+            $db->ejecutar("UPDATE empresa_funcionalidades SET estado = 'ACTIVO', _fec_modificacion = ?, _usuario = ? WHERE empresafuncionID = ?", [$ahora, $_SESSION['sesion_id_usuario'], $existe['empresafuncionID']]);
         } else {
             $db->ejecutar("INSERT INTO empresa_funcionalidades (empresaID, funcionalidadID, fecha_activacion, estado, _fec_insercion, _usuario, _estado) 
-                           VALUES (?, ?, NOW(), 'ACTIVO', NOW(), ?, 'A')", [$empresaID, $fID, $_SESSION['sesion_id_usuario']]);
+                           VALUES (?, ?, ?, 'ACTIVO', ?, ?, 'A')", [$empresaID, $fID, $ahora, $ahora, $_SESSION['sesion_id_usuario']]);
         }
     }
     $mensaje = ["tipo" => "success", "texto" => "Módulos actualizados correctamente para la sucursal."];
@@ -53,20 +54,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
         }
     }
 
+    $ahora = date('Y-m-d H:i:s');
     if ($empresaID) {
         // Editar
         if ($logo_path) {
-            $sql = "UPDATE empresa SET nombre = ?, direccion = ?, telefono = ?, ruc = ?, representante_legal = ?, color_primario = ?, color_secundario = ?, logo_agencia = ?, _fec_modificacion = NOW(), _usuario = ? WHERE empresaID = ?";
-            $db->ejecutar($sql, [$nombre, $direccion, $telefono, $ruc, $representante_legal, $color_primario, $color_secundario, $logo_path, $usuarioID, $empresaID]);
+            $sql = "UPDATE empresa SET nombre = ?, direccion = ?, telefono = ?, ruc = ?, representante_legal = ?, color_primario = ?, color_secundario = ?, logo_agencia = ?, _fec_modificacion = ?, _usuario = ? WHERE empresaID = ?";
+            $db->ejecutar($sql, [$nombre, $direccion, $telefono, $ruc, $representante_legal, $color_primario, $color_secundario, $logo_path, $ahora, $usuarioID, $empresaID]);
         } else {
-            $sql = "UPDATE empresa SET nombre = ?, direccion = ?, telefono = ?, ruc = ?, representante_legal = ?, color_primario = ?, color_secundario = ?, _fec_modificacion = NOW(), _usuario = ? WHERE empresaID = ?";
-            $db->ejecutar($sql, [$nombre, $direccion, $telefono, $ruc, $representante_legal, $color_primario, $color_secundario, $usuarioID, $empresaID]);
+            $sql = "UPDATE empresa SET nombre = ?, direccion = ?, telefono = ?, ruc = ?, representante_legal = ?, color_primario = ?, color_secundario = ?, _fec_modificacion = ?, _usuario = ? WHERE empresaID = ?";
+            $db->ejecutar($sql, [$nombre, $direccion, $telefono, $ruc, $representante_legal, $color_primario, $color_secundario, $ahora, $usuarioID, $empresaID]);
         }
         $mensaje = ["tipo" => "info", "texto" => "Datos de la empresa actualizados."];
     } else {
         // Nuevo
-        $sql = "INSERT INTO empresa (nombre, direccion, telefono, ruc, representante_legal, color_primario, color_secundario, logo_agencia, _fec_insercion, _usuario, _estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, 'A')";
-        $db->ejecutar($sql, [$nombre, $direccion, $telefono, $ruc, $representante_legal, $color_primario, $color_secundario, $logo_path, $usuarioID]);
+        $sql = "INSERT INTO empresa (nombre, direccion, telefono, ruc, representante_legal, color_primario, color_secundario, logo_agencia, _fec_insercion, _usuario, _estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'A')";
+        $db->ejecutar($sql, [$nombre, $direccion, $telefono, $ruc, $representante_legal, $color_primario, $color_secundario, $logo_path, $ahora, $usuarioID]);
         $mensaje = ["tipo" => "success", "texto" => "Nueva empresa registrada con éxito."];
     }
 }
@@ -75,8 +77,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['accion'] === 'eliminar_sucursal') {
     $empresaID = $_POST['empresaID'];
     $usuarioID = $_SESSION['sesion_id_usuario'];
-    $sql = "UPDATE empresa SET _estado = 'X', _fec_modificacion = NOW(), _usuario = ? WHERE empresaID = ?";
-    $db->ejecutar($sql, [$usuarioID, $empresaID]);
+    $ahora = date('Y-m-d H:i:s');
+    $sql = "UPDATE empresa SET _estado = 'X', _fec_modificacion = ?, _usuario = ? WHERE empresaID = ?";
+    $db->ejecutar($sql, [$ahora, $usuarioID, $empresaID]);
     $mensaje = ["tipo" => "danger", "texto" => "Sucursal eliminada del sistema."];
 }
 

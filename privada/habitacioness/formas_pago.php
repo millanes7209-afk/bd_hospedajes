@@ -12,23 +12,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         $tipo = strtoupper(trim($_POST['tipo']));
         $descripcion = trim($_POST['descripcion']);
         $formapagoID = $_POST['formapagoID'] ?? null;
+        $ahora = date('Y-m-d H:i:s');
 
         if ($formapagoID) {
             // Actualizar
-            $sql = "UPDATE formas_pago SET tipo = ?, descripcion = ?, _fec_modificacion = NOW(), _usuario = ? 
+            $sql = "UPDATE formas_pago SET tipo = ?, descripcion = ?, _fec_modificacion = ?, _usuario = ? 
                     WHERE formapagoID = ? AND empresaID = ?";
-            $db->ejecutar($sql, [$tipo, $descripcion, $usuarioID, $formapagoID, $empresaID]);
+            $db->ejecutar($sql, [$tipo, $descripcion, $ahora, $usuarioID, $formapagoID, $empresaID]);
         } else {
             // Insertar
             $sql = "INSERT INTO formas_pago (empresaID, tipo, descripcion, _fec_insercion, _usuario, _estado) 
-                    VALUES (?, ?, ?, NOW(), ?, 'A')";
-            $db->ejecutar($sql, [$empresaID, $tipo, $descripcion, $usuarioID]);
+                    VALUES (?, ?, ?, ?, ?, 'A')";
+            $db->ejecutar($sql, [$empresaID, $tipo, $descripcion, $ahora, $usuarioID]);
         }
     } elseif ($accion === 'eliminar') {
         $formapagoID = $_POST['formapagoID'];
-        $sql = "UPDATE formas_pago SET _estado = 'X', _fec_modificacion = NOW(), _usuario = ? 
+        $sql = "UPDATE formas_pago SET _estado = 'X', _fec_modificacion = ?, _usuario = ? 
                 WHERE formapagoID = ? AND empresaID = ?";
-        $db->ejecutar($sql, [$usuarioID, $formapagoID, $empresaID]);
+        $db->ejecutar($sql, [$ahora, $usuarioID, $formapagoID, $empresaID]);
     }
     header("Location: formas_pago.php");
     exit();

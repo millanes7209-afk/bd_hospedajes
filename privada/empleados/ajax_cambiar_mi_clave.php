@@ -20,10 +20,10 @@ try {
     $hashClave = password_hash($nuevaClave, PASSWORD_DEFAULT);
 
     $sql = "UPDATE usuarios 
-            SET clave = ?, _fec_modificacion = NOW(), _usuario = ?
+            SET clave = ?, _fec_modificacion = ?, _usuario = ?
             WHERE usuarioID = ? AND _estado <> 'X'";
-    
-    $db->ejecutar($sql, [$hashClave, $usuarioID, $usuarioID]);
+
+    $db->ejecutar($sql, [$hashClave, date('Y-m-d H:i:s'), $usuarioID, $usuarioID]);
 
     echo json_encode(['status' => 'SUCCESS', 'message' => 'Contraseña actualizada.']);
 

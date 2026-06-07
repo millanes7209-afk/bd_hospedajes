@@ -21,15 +21,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         $funcionalidadID = (int) $_POST['funcionalidadID'];
         $orden = (int) $_POST['orden'];
         $opcionID = $_POST['opcionID'] ?? null;
+        $ahora = date('Y-m-d H:i:s');
 
         if ($opcionID) {
             // Actualizar
-            $sql = "UPDATE opciones SET grupoID = ?, funcionalidadID = ?, opcion = ?, contenido = ?, orden = ?, _fec_modificacion = NOW(), _usuario = ? WHERE opcionID = ?";
-            $db->ejecutar($sql, [$grupoID, $funcionalidadID, $opcion, $contenido, $orden, $usuarioID, $opcionID]);
+            $sql = "UPDATE opciones SET grupoID = ?, funcionalidadID = ?, opcion = ?, contenido = ?, orden = ?, _fec_modificacion = ?, _usuario = ? WHERE opcionID = ?";
+            $db->ejecutar($sql, [$grupoID, $funcionalidadID, $opcion, $contenido, $orden, $ahora, $usuarioID, $opcionID]);
         } else {
             // Insertar
-            $sql = "INSERT INTO opciones (grupoID, funcionalidadID, opcion, contenido, orden, _fec_insercion, _usuario, _estado) VALUES (?, ?, ?, ?, ?, NOW(), ?, 'A')";
-            $db->ejecutar($sql, [$grupoID, $funcionalidadID, $opcion, $contenido, $orden, $usuarioID]);
+            $sql = "INSERT INTO opciones (grupoID, funcionalidadID, opcion, contenido, orden, _fec_insercion, _usuario, _estado) VALUES (?, ?, ?, ?, ?, ?, ?, 'A')";
+            $db->ejecutar($sql, [$grupoID, $funcionalidadID, $opcion, $contenido, $orden, $ahora, $usuarioID]);
 
             // --- RECUPERACIÓN DE LÓGICA DE TRIGGER ELIMINADO ---
             $nuevaOpcionID = $db->ultimoInsertId();
@@ -37,15 +38,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 // Verificar si ya existe el acceso para el Administrador (Rol 1)
                 $existe = $db->obtenerFila("SELECT 1 FROM accesos WHERE rolID = 1 AND opcionID = ?", [$nuevaOpcionID]);
                 if (!$existe) {
-                    $sqlAcceso = "INSERT INTO accesos (rolID, opcionID, _fec_insercion, _usuario, _estado) VALUES (1, ?, NOW(), ?, 'A')";
-                    $db->ejecutar($sqlAcceso, [$nuevaOpcionID, $usuarioID]);
+                    $sqlAcceso = "INSERT INTO accesos (rolID, opcionID, _fec_insercion, _usuario, _estado) VALUES (1, ?, ?, ?, 'A')";
+                    $db->ejecutar($sqlAcceso, [$nuevaOpcionID, $ahora, $usuarioID]);
                 }
             }
         }
     } elseif ($accion === 'eliminar') {
         $opcionID = $_POST['opcionID'];
-        $sql = "UPDATE opciones SET _estado = 'X', _fec_modificacion = NOW(), _usuario = ? WHERE opcionID = ?";
-        $db->ejecutar($sql, [$usuarioID, $opcionID]);
+        $ahora = date('Y-m-d H:i:s');
+        $sql = "UPDATE opciones SET _estado = 'X', _fec_modificacion = ?, _usuario = ? WHERE opcionID = ?";
+        $db->ejecutar($sql, [$ahora, $usuarioID, $opcionID]);
     }
     header("Location: opciones.php");
     exit();

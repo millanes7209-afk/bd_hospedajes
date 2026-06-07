@@ -20,7 +20,7 @@ try {
     // 1. Verificar duplicidad de CI en OTROS registros
     $sql_check = "SELECT empleadoID FROM empleados WHERE ci = ? AND empleadoID <> ? AND _estado <> 'X'";
     $check = $db->obtenerFila($sql_check, [$ci, $empleadoID]);
-    
+
     if ($check) {
         throw new Exception("El C.I. ingresado ya pertenece a otro empleado registrado.");
     }
@@ -28,11 +28,18 @@ try {
     // 2. Ejecutar actualización
     $sql_upd = "UPDATE empleados 
                 SET nombres = ?, apellidos = ?, ci = ?, telefono = ?, genero = ?, 
-                    _fec_modificacion = NOW(), _usuario = ?
+                    _fec_modificacion = ?, _usuario = ?
                 WHERE empleadoID = ? AND _estado <> 'X'";
-    
+
     $db->ejecutar($sql_upd, [
-        $nombres, $apellidos, $ci, $telefono, $genero, $usuarioID, $empleadoID
+        $nombres,
+        $apellidos,
+        $ci,
+        $telefono,
+        $genero,
+        date('Y-m-d H:i:s'),
+        $usuarioID,
+        $empleadoID
     ]);
 
     echo json_encode(['status' => 'SUCCESS', 'message' => 'Empleado actualizado correctamente.']);
