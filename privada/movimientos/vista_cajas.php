@@ -22,13 +22,13 @@ $usuarioID_actual = $_SESSION['sesion_id_usuario'] ?? $_SESSION['usuarioID'] ?? 
 
 // Obtener usuarios para filtro si tiene privilegios
 $usuarios_mov = [];
-    // Obtener usuarios solo de la empresa actual
-    $sql_usuarios = "SELECT DISTINCT u.usuarioID, u.usuario 
+// Obtener usuarios solo de la empresa actual
+$sql_usuarios = "SELECT DISTINCT u.usuarioID, u.usuario 
                      FROM usuarios u
                      INNER JOIN empleado_empresas ee ON u.empleadoID = ee.empleadoID
                      WHERE u._estado <> 'X' AND ee.empresaID = ? AND ee._estado <> 'X'
                      ORDER BY u.usuario";
-    $usuarios_mov = $db->obtenerTodo($sql_usuarios, [$empresaID_filtro]);
+$usuarios_mov = $db->obtenerTodo($sql_usuarios, [$empresaID_filtro]);
 
 // Obtener formas de pago disponibles
 $sql_formas_pago = "SELECT fp.formapagoID, fp.tipo 
@@ -144,7 +144,7 @@ foreach ($fechas_rango as $fecha) {
                          SUM(CASE WHEN tipo = 'EGRESO' THEN monto ELSE 0 END) as saldo
                   FROM banos WHERE cajaID = ? AND entregado = 0";
         $rb = $db->obtenerFila($sql_b, [$cid]);
-        $caja_data['saldo_bano'] = (float)($rb['saldo'] ?? 0);
+        $caja_data['saldo_bano'] = (float) ($rb['saldo'] ?? 0);
     }
 
     $vista_semanal[$fecha]['movimientos'] = $agrupados_final;
@@ -166,11 +166,14 @@ foreach ($fechas_rango as $fecha) {
 
     .card {
         margin: 20px;
-        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+        box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075) !important;
         border: 0 !important;
     }
 
-    .tabla-turno th, .tabla-turno td { vertical-align: middle !important; }
+    .tabla-turno th,
+    .tabla-turno td {
+        vertical-align: middle !important;
+    }
 
 
 
@@ -188,12 +191,18 @@ foreach ($fechas_rango as $fecha) {
     }
 
     @media print {
+
         /* Ocultar TODO por defecto */
-        body * { visibility: hidden; }
-        
+        body * {
+            visibility: hidden;
+        }
+
         /* Mostrar solo el contenedor del reporte y sus hijos */
-        #area-impresion, #area-impresion * { visibility: visible; }
-        
+        #area-impresion,
+        #area-impresion * {
+            visibility: visible;
+        }
+
         /* Posicionar el área de impresión al inicio de la página */
         #area-impresion {
             position: absolute;
@@ -203,16 +212,32 @@ foreach ($fechas_rango as $fecha) {
         }
 
         /* Ajustes de estilo para la tabla */
-        .table { font-size: 11px; width: 100% !important; border-collapse: collapse !important; }
-        .table th, .table td { border: 1px solid #ddd !important; padding: 4px !important; }
-        
+        .table {
+            font-size: 11px;
+            width: 100% !important;
+            border-collapse: collapse !important;
+        }
+
+        .table th,
+        .table td {
+            border: 1px solid #ddd !important;
+            padding: 4px !important;
+        }
+
         /* Ocultar elementos específicos dentro del área de impresión que no queremos */
-        .no-print, .btn, .card-header, .row.mb-4, .col-recaudar, .check-recaudar {
+        .no-print,
+        .btn,
+        .card-header,
+        .row.mb-4,
+        .col-recaudar,
+        .check-recaudar {
             display: none !important;
             visibility: hidden !important;
         }
 
-        body { background: white !important; }
+        body {
+            background: white !important;
+        }
     }
 </style>
 
@@ -220,7 +245,7 @@ foreach ($fechas_rango as $fecha) {
     <div class="container-fluid mt-4 mb-5" id="area-impresion">
         <!-- Encabezado de Impresión -->
         <?= generarEncabezadoImpresion('REPORTE DE CAJAS (DINERO PENDIENTE)', $fecha_inicio, $fecha_fin) ?>
-        
+
         <div class="row justify-content-center">
             <div class="col-lg-11">
                 <div class="card shadow-sm border-0">
@@ -283,14 +308,7 @@ foreach ($fechas_rango as $fecha) {
                                     <?php
                                     $hayRegistros = false;
                                     foreach ($vista_semanal as $fecha => $datos): ?>
-                                        <?php if (empty($datos['movimientos'])): ?>
-                                            <tr>
-                                                <td colspan="<?= ($rol_usuario !== 'RECEPCIONISTA' ? 3 : 2) + count($formas_pago) + 1 ?>"
-                                                    class="text-center text-muted fst-italic">
-                                                    <?= date('d/m/Y', strtotime($fecha)) ?> - Sin pendientes
-                                                </td>
-                                            </tr>
-                                        <?php else:
+                                        <?php if (!empty($datos['movimientos'])):
                                             $hayRegistros = true;
                                             foreach ($datos['movimientos'] as $movimiento): ?>
                                                 <tr>
@@ -315,24 +333,27 @@ foreach ($fechas_rango as $fecha) {
                                                         Bs. <?= number_format($movimiento['saldo_bano'], 2) ?>
                                                     </td>
 
-                                                    <?php 
+                                                    <?php
                                                     $total_fila += $movimiento['saldo_bano'];
-                                                    $suma_footer_total_general += $total_fila; 
+                                                    $suma_footer_total_general += $total_fila;
                                                     ?>
                                                     <td class="text-end align-middle fw-bold">Bs.
                                                         <?= number_format($total_fila, 2) ?>
                                                     </td>
 
                                                     <?php if ($rol_usuario !== 'RECEPCIONISTA'): ?>
-                                                        <td class="text-center align-middle" style="width: 40px; border-left: 1px solid #dee2e6;">
+                                                        <td class="text-center align-middle"
+                                                            style="width: 40px; border-left: 1px solid #dee2e6;">
                                                             <button class="btn btn-sm btn-outline-secondary border-0"
                                                                 onclick="verDetalleCaja(<?= $movimiento['cajaID'] ?>)"
                                                                 title="Auditar Movimientos">
                                                                 <i class="fas fa-eye"></i>
                                                             </button>
                                                         </td>
-                                                        <td class="text-center align-middle col-recaudar" style="width: 40px; border-left: 1px solid #dee2e6;">
-                                                                <input type="checkbox" class="check-recaudar form-check-input m-0 d-block mx-auto"
+                                                        <td class="text-center align-middle col-recaudar"
+                                                            style="width: 40px; border-left: 1px solid #dee2e6;">
+                                                            <input type="checkbox"
+                                                                class="check-recaudar form-check-input m-0 d-block mx-auto"
                                                                 style="width: 18px; height: 18px; cursor: pointer; border: 1px solid #adb5bd;"
                                                                 data-cajaid="<?= $movimiento['cajaID'] ?>"
                                                                 data-monto="<?= array_sum($movimiento['saldos']) + $movimiento['saldo_bano'] ?>"
@@ -343,21 +364,33 @@ foreach ($fechas_rango as $fecha) {
                                             <?php endforeach; ?>
                                         <?php endif; ?>
                                     <?php endforeach; ?>
+                                <?php if (!$hayRegistros): ?>
+                                            <tr>
+                                                <td colspan="<?= ($rol_usuario !== 'RECEPCIONISTA' ? 4 : 3) + count($formas_pago) + 1 ?>"
+                                                    class="text-center py-5 text-muted">
+                                                    <i class="fas fa-check-circle fa-2x mb-2"></i><br>
+                                                    No se encontró dinero pendiente de entrega en el rango seleccionado.
+                                                </td>
+                                            </tr>
+                                    <?php endif; ?>
                                 </tbody>
 
                                 <?php if ($hayRegistros): ?>
                                     <tfoot class="bg-light border-top">
                                         <tr>
-                                            <th colspan="2" class="text-right align-middle text-muted" style="text-align: right;">TOTAL GENERAL:</th>
+                                            <th colspan="2" class="text-right align-middle text-muted"
+                                                style="text-align: right;">TOTAL GENERAL:</th>
                                             <?php foreach ($formas_pago as $forma_pago): ?>
                                                 <th class="text-center">
                                                     <?= number_format($suma_footer_formas[$forma_pago['tipo']], 2) ?> Bs.
                                                 </th>
                                             <?php endforeach; ?>
                                             <th class="text-center text-info">
-                                                <?php 
+                                                <?php
                                                 $total_banos_footer = 0;
-                                                foreach($vista_semanal as $d) foreach($d['movimientos'] as $m) $total_banos_footer += $m['saldo_bano'];
+                                                foreach ($vista_semanal as $d)
+                                                    foreach ($d['movimientos'] as $m)
+                                                        $total_banos_footer += $m['saldo_bano'];
                                                 echo number_format($total_banos_footer, 2);
                                                 ?> Bs.
                                             </th>
@@ -400,7 +433,8 @@ foreach ($fechas_rango as $fecha) {
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold">AUDITORÍA DE MOVIMIENTOS DEL TURNO</h5>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="background:none; border:none; font-size:1.5rem;">&times;</button>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"
+                        style="background:none; border:none; font-size:1.5rem;">&times;</button>
                 </div>
                 <div class="modal-body" id="modalDetalleContenido">
                     <div class="text-center py-5">
@@ -423,7 +457,8 @@ foreach ($fechas_rango as $fecha) {
             <div class="modal-content shadow-sm">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold text-dark">CONFIRMAR RECAUDACIÓN</h5>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="background:none; border:none; font-size:1.5rem;">&times;</button>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"
+                        style="background:none; border:none; font-size:1.5rem;">&times;</button>
                 </div>
                 <div class="modal-body py-3">
                     <div class="card border-0 bg-light mb-0">
@@ -436,7 +471,8 @@ foreach ($fechas_rango as $fecha) {
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">CANCELAR</button>
-                    <button type="button" class="btn btn-primary px-4 fw-bold" id="btnAceptarRecaudacion">CONFIRMAR ENTREGA</button>
+                    <button type="button" class="btn btn-primary px-4 fw-bold" id="btnAceptarRecaudacion">CONFIRMAR
+                        ENTREGA</button>
                 </div>
             </div>
         </div>
@@ -448,14 +484,16 @@ foreach ($fechas_rango as $fecha) {
             <div class="modal-content border-0 shadow-lg">
                 <div id="modalMensajeHeader" class="modal-header">
                     <h5 class="modal-title fw-bold" id="modalMensajeTitulo"></h5>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="background:none; border:none; font-size:1.5rem;">&times;</button>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"
+                        style="background:none; border:none; font-size:1.5rem;">&times;</button>
                 </div>
                 <div class="modal-body text-center py-4">
                     <div id="modalMensajeIcono" class="mb-3" style="font-size: 3.5rem;"></div>
                     <p id="modalMensajeTexto" class="fs-5 mb-0 px-3"></p>
                 </div>
                 <div class="modal-footer border-0 justify-content-center pb-4">
-                    <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">ACEPTAR</button>
+                    <button type="button" class="btn btn-secondary px-4 fw-bold"
+                        data-bs-dismiss="modal">ACEPTAR</button>
                 </div>
             </div>
         </div>
@@ -526,7 +564,7 @@ foreach ($fechas_rango as $fecha) {
         function procesarRecaudacion() {
             const seleccionados = Array.from(document.querySelectorAll('.check-recaudar:checked'));
             const ids = seleccionados.map(chk => chk.dataset.cajaid);
-            
+
             // Extraer fechas únicas
             const fechasUnicas = [...new Set(seleccionados.map(chk => {
                 const fila = chk.closest('tr');
@@ -548,9 +586,9 @@ foreach ($fechas_rango as $fecha) {
                     ${listaFechas}
                 </div>
             `;
-            
+
             // Asignar el evento al botón de aceptar del modal
-            document.getElementById('btnAceptarRecaudacion').onclick = function() {
+            document.getElementById('btnAceptarRecaudacion').onclick = function () {
                 modalConfirmar.hide();
                 ejecutarRecaudacion(ids);
             };
