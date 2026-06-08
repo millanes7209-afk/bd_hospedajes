@@ -103,7 +103,7 @@ class MiConexion extends PDO
     {
         return "(
             SELECT 
-                'INGRESO' AS tipo, i.ingresoID AS movimientoID, i.cajaID, i.empresaID, i._usuario AS usuarioID, 
+                'INGRESO' AS tipo, i.ingresoID AS movimientoID, i.cajaID, i.empresaID, i.usuarioID, 
                 i.cuentaID, c.codigo AS cuenta_codigo, c.nombre AS cuenta_nombre, 
                 COALESCE(ip.monto, i.monto_total) AS monto, i.concepto, i.fecha, i._estado, 
                 i.recaudacionID, fp.tipo AS forma_pago, i._fec_insercion
@@ -115,7 +115,7 @@ class MiConexion extends PDO
             UNION ALL
             
             SELECT 
-                'EGRESO' AS tipo, e.egresoID AS movimientoID, e.cajaID, e.empresaID, e._usuario AS usuarioID, 
+                'EGRESO' AS tipo, e.egresoID AS movimientoID, e.cajaID, e.empresaID, e.usuarioID, 
                 e.cuentaID, c.codigo AS cuenta_codigo, c.nombre AS cuenta_nombre, 
                 COALESCE(ep.monto, e.monto_total) AS monto, e.concepto, e.fecha, e._estado, 
                 NULL AS recaudacionID, fp.tipo AS forma_pago, e._fec_insercion
@@ -129,7 +129,7 @@ class MiConexion extends PDO
 
 // --- Instancia de la conexión ---
 // LOCAL
-//$db = new MiConexion("127.0.0.1", "bd_hospedajes", "root", "");
+$db = new MiConexion("127.0.0.1", "bd_hospedajes", "root", "");
 
 // PRODUCCIÓN (HOST)
-$db = new MiConexion("sdb-52.hosting.stackcp.net", "bdhospedajes-35303034893b", "bdhospedajes-35303034893b", "SCARYmovie1.");
+//$db = new MiConexion("sdb-52.hosting.stackcp.net", "bdhospedajes-35303034893b", "bdhospedajes-35303034893b", "SCARYmovie1.");
