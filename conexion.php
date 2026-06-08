@@ -132,4 +132,4 @@ class MiConexion extends PDO
 //$db = new MiConexion("127.0.0.1", "bd_hospedajes", "root", "");
 
 // PRODUCCIÓN (HOST)
-$db = new MiConexion("sdb-52.hosting.stackcp.net", "bdhospedajes-35303034893b", "bdhospedajes-35303034893b", "SCARYmovie1.");
+$db = new MiConexion("sdb-88.hosting.stackcp.net", "hospedajes-35313135e22c", "hospedajes-35313135e22c", "SCARYmovie1.");
