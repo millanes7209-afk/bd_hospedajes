@@ -20,6 +20,12 @@ $usuarioID_filtro = $_GET['usuarioID'] ?? '';
 // Obtener usuarioID actual
 $usuarioID_actual = $_SESSION['sesion_id_usuario'] ?? $_SESSION['usuarioID'] ?? 0;
 
+// Verificar si la empresa tiene el módulo de baños activo (funcionalidadID = 4)
+$tiene_banos = (bool) $db->obtenerFila(
+    "SELECT 1 FROM empresa_funcionalidades WHERE empresaID = ? AND funcionalidadID = 4 AND estado = 'ACTIVO' AND _estado <> 'X'",
+    [$empresaID_filtro]
+);
+
 // Obtener usuarios para filtro si tiene privilegios
 $usuarios_mov = [];
 // Obtener usuarios solo de la empresa actual
@@ -296,7 +302,9 @@ foreach ($fechas_rango as $fecha) {
                                         <?php foreach ($formas_pago as $forma_pago): ?>
                                             <th class="text-center"><?= $forma_pago['tipo'] ?></th>
                                         <?php endforeach; ?>
-                                        <th class="text-center text-info">BAÑOS</th>
+                                        <?php if ($tiene_banos): ?>
+                                            <th class="text-center text-info">BAÑOS</th>
+                                        <?php endif; ?>
                                         <th class="text-end">Total</th>
                                         <?php if ($rol_usuario !== 'RECEPCIONISTA'): ?>
                                             <th width="4%"></th>
@@ -329,12 +337,15 @@ foreach ($fechas_rango as $fecha) {
                                                         <td class="text-center align-middle">Bs. <?= number_format($monto, 2) ?></td>
                                                     <?php endforeach; ?>
 
-                                                    <td class="text-center align-middle text-info fw-bold">
-                                                        Bs. <?= number_format($movimiento['saldo_bano'], 2) ?>
-                                                    </td>
+                                                    <?php if ($tiene_banos): ?>
+                                                        <td class="text-center align-middle text-info fw-bold">
+                                                            Bs. <?= number_format($movimiento['saldo_bano'], 2) ?>
+                                                        </td>
+                                                    <?php endif; ?>
 
                                                     <?php
-                                                    $total_fila += $movimiento['saldo_bano'];
+                                                    if ($tiene_banos)
+                                                        $total_fila += $movimiento['saldo_bano'];
                                                     $suma_footer_total_general += $total_fila;
                                                     ?>
                                                     <td class="text-end align-middle fw-bold">Bs.
@@ -364,14 +375,14 @@ foreach ($fechas_rango as $fecha) {
                                             <?php endforeach; ?>
                                         <?php endif; ?>
                                     <?php endforeach; ?>
-                                <?php if (!$hayRegistros): ?>
-                                            <tr>
-                                                <td colspan="<?= ($rol_usuario !== 'RECEPCIONISTA' ? 4 : 3) + count($formas_pago) + 1 ?>"
-                                                    class="text-center py-5 text-muted">
-                                                    <i class="fas fa-check-circle fa-2x mb-2"></i><br>
-                                                    No se encontró dinero pendiente de entrega en el rango seleccionado.
-                                                </td>
-                                            </tr>
+                                    <?php if (!$hayRegistros): ?>
+                                        <tr>
+                                            <td colspan="<?= ($rol_usuario !== 'RECEPCIONISTA' ? 4 : 3) + count($formas_pago) + 1 ?>"
+                                                class="text-center py-5 text-muted">
+                                                <i class="fas fa-check-circle fa-2x mb-2"></i><br>
+                                                No se encontró dinero pendiente de entrega en el rango seleccionado.
+                                            </td>
+                                        </tr>
                                     <?php endif; ?>
                                 </tbody>
 
@@ -385,15 +396,17 @@ foreach ($fechas_rango as $fecha) {
                                                     <?= number_format($suma_footer_formas[$forma_pago['tipo']], 2) ?> Bs.
                                                 </th>
                                             <?php endforeach; ?>
-                                            <th class="text-center text-info">
-                                                <?php
-                                                $total_banos_footer = 0;
-                                                foreach ($vista_semanal as $d)
-                                                    foreach ($d['movimientos'] as $m)
-                                                        $total_banos_footer += $m['saldo_bano'];
-                                                echo number_format($total_banos_footer, 2);
-                                                ?> Bs.
-                                            </th>
+                                            <?php if ($tiene_banos): ?>
+                                                <th class="text-center text-info">
+                                                    <?php
+                                                    $total_banos_footer = 0;
+                                                    foreach ($vista_semanal as $d)
+                                                        foreach ($d['movimientos'] as $m)
+                                                            $total_banos_footer += $m['saldo_bano'];
+                                                    echo number_format($total_banos_footer, 2);
+                                                    ?> Bs.
+                                                </th>
+                                            <?php endif; ?>
                                             <th class="text-end" style="font-size: 1.1rem; border-left: 1px solid #dee2e6;">
                                                 <?= number_format($suma_footer_total_general, 2) ?> Bs.
                                             </th>
