@@ -169,6 +169,11 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
                     }
                 });
             }
+
+            // Mostrar 1 fila de pago automáticamente al cargar
+            if (typeof agregarFilaPago === 'function') {
+                agregarFilaPago();
+            }
         });
     </script>
 </head>
