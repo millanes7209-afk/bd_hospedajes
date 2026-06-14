@@ -15,7 +15,7 @@ function mostrarModalIngreso() {
 function mostrarModalBano(tipo) {
     document.getElementById('bano-tipo-titulo').innerText = (tipo === 'INGRESO') ? 'INGRESO BAÑO' : 'EGRESO BAÑO';
     document.getElementById('bano-tipo-input').value = tipo;
-    
+
     // Cambiar color del botón según el tipo
     const btn = document.getElementById('btn-guardar-bano');
     if (tipo === 'INGRESO') {
@@ -35,7 +35,7 @@ function handleHabitacionClick(estado, numero, tipo, precio, habitacionID) {
     var modal = new bootstrap.Modal(document.getElementById('menu-opciones'));
     const modalFooter = document.getElementById('modal-footer');
     modalFooter.innerHTML = ''; // Limpiar botones existentes
-    
+
     // Asignar el número de habitación al badge cabecera
     const spanBadge = document.getElementById('modal-habitacion-badge');
     if (spanBadge) spanBadge.innerText = numero;
@@ -81,9 +81,9 @@ function handleHabitacionClick(estado, numero, tipo, precio, habitacionID) {
         modalFooter.innerHTML = `
             <button type="button" class="btn btn-secondary" onclick="cambiarEstado('${habitacionID}', 'LIMPIEZA')">LIMPIEZA</button>
         `;
-        modal.show(); 
+        modal.show();
     }
-}   
+}
 
 /**
  * REDIRECCIÓN AL NUEVO MÓDULO DE HOSPEDAJE (Usa POST para limpiar la URL)
@@ -148,7 +148,24 @@ function agregar_huesped(action, numero, tipo, habitacionID) {
 }
 
 function cambiarEstado(habitacionID, nuevoEstado) {
-    window.location.href = 'cambiar_estado.php?habitacionID=' + habitacionID + '&nuevoEstado=' + nuevoEstado + '&auth=habitaciones.php';
+    // Cerramos el modal de opciones si está abierto
+    const modalOpciones = bootstrap.Modal.getInstance(document.getElementById('menu-opciones'));
+    if (modalOpciones) modalOpciones.hide();
+
+    fetch('ajax_cambiar_estado.php?habitacionID=' + habitacionID + '&nuevoEstado=' + nuevoEstado)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Si el cambio fue exitoso en BD, actualizamos el mapa inmediatamente
+                actualizarEstadoHabitaciones();
+            } else {
+                alert('Error al cambiar el estado: ' + (data.error || 'Desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error AJAX:', error);
+            alert('Fallo de conexión al cambiar el estado.');
+        });
 }
 
 function desocupar(habitacionID) {
@@ -178,7 +195,7 @@ function mostrarModalPermanencia(habitacionID, monto_deuda = 0) {
     var input = document.createElement('input');
     input.type = 'hidden';
     input.name = 'hospedajeID';
-    
+
     // Obtener el hospedajeID actual vía API antes de saltar
     fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&auth=habitaciones.php')
         .then(response => response.json())
@@ -222,7 +239,7 @@ function mostrarModalCambioHabitacion(habitacionID) {
         .then(text => {
             try {
                 return JSON.parse(text);
-            } catch(e) {
+            } catch (e) {
                 alert("Fallo crítico en obtener_datos_hospedaje.php:\n\n" + text.substring(0, 300));
                 throw new Error("Bad JSON Hospedaje");
             }
@@ -241,7 +258,7 @@ function mostrarModalCambioHabitacion(habitacionID) {
                     .then(text2 => {
                         try {
                             return JSON.parse(text2);
-                        } catch(e) {
+                        } catch (e) {
                             alert("Fallo crítico en get_habitaciones_disponibles.php:\n\n" + text2.substring(0, 300));
                             throw new Error("Bad JSON Disponibles");
                         }
@@ -269,7 +286,7 @@ function mostrarModalCambioHabitacion(habitacionID) {
                                 btn.style.cssText = 'min-width:70px; font-size:1.1em; font-weight:bold; padding: 10px 14px;';
                                 btn.innerText = hab.numero;
                                 btn.title = hab.nombre + ' - Bs. ' + hab.precio;
-                                btn.onclick = function() {
+                                btn.onclick = function () {
                                     // Deseleccionar anterior
                                     grid.querySelectorAll('.btn').forEach(b => {
                                         b.classList.remove('btn-dark');
@@ -317,64 +334,64 @@ function ocuparDesdeReserva(habitacionID) {
  */
 function actualizarEstadoHabitaciones() {
     fetch('obtener_estados_habitaciones.php?auth=habitaciones.php')
-    .then(response => response.json())
-    .then(data => {
-        data.forEach(function(habitacion) {
-            const btnHabitacion = document.getElementById('habitacion-' + habitacion.habitacionID);
-            if (btnHabitacion) {
-                let btnClass = 'btn-habitacion';
-                switch (habitacion.estado) {
-                    case 'DISPONIBLE': btnClass += ' btn btn-success'; break;
-                    case 'OCUPADA': btnClass += ' btn btn-primary'; break;
-                    case 'DEUDA': btnClass += ' btn btn-danger'; break;
-                    case 'LIMPIEZA': btnClass += ' btn btn-secondary'; break;
-                    case 'RESERVADA': btnClass += ' btn btn-info'; break;
-                    case 'MOMENTANEO': btnClass += ' btn btn-warning'; break;
-                    default: btnClass += ' btn btn-dark';
-                }
-                // FILTRADO POR EMPRESA: El PHP 'obtener_estados_habitaciones.php' ya filtra estrictamente por la sesión del usuario.
-                
-                // LÓGICA DE "MANTENER" EN VEZ DE "RECREAR":
-                // Comprobamos si los datos clave han cambiado antes de tocar el DOM
-                const estadoPrevio = btnHabitacion.getAttribute('data-estado-actual');
-                const clientePrevio = btnHabitacion.getAttribute('data-cliente-actual');
-                const montoPrevio = btnHabitacion.getAttribute('data-monto-actual');
-                
-                // Si nada ha cambiado, saltamos la actualización de este botón para no romper el hover/tooltip actual
-                if (estadoPrevio === habitacion.estado && 
-                    clientePrevio === (habitacion.cliente_activo || '') && 
-                    montoPrevio === String(habitacion.precio_inteligente)) {
-                    return; 
-                }
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(function (habitacion) {
+                const btnHabitacion = document.getElementById('habitacion-' + habitacion.habitacionID);
+                if (btnHabitacion) {
+                    let btnClass = 'btn-habitacion';
+                    switch (habitacion.estado) {
+                        case 'DISPONIBLE': btnClass += ' btn btn-success'; break;
+                        case 'OCUPADA': btnClass += ' btn btn-primary'; break;
+                        case 'DEUDA': btnClass += ' btn btn-danger'; break;
+                        case 'LIMPIEZA': btnClass += ' btn btn-secondary'; break;
+                        case 'RESERVADA': btnClass += ' btn btn-info'; break;
+                        case 'MOMENTANEO': btnClass += ' btn btn-warning'; break;
+                        default: btnClass += ' btn btn-dark';
+                    }
+                    // FILTRADO POR EMPRESA: El PHP 'obtener_estados_habitaciones.php' ya filtra estrictamente por la sesión del usuario.
 
-                // Si llegamos aquí es porque algo cambió, procedemos a actualizar
-                btnHabitacion.className = btnClass;
-                btnHabitacion.setAttribute('data-estado-actual', habitacion.estado);
-                btnHabitacion.setAttribute('data-cliente-actual', habitacion.cliente_activo || '');
-                btnHabitacion.setAttribute('data-monto-actual', habitacion.precio_inteligente);
-                
-                // Actualizar el atributo onclick con el precio inteligente
-                btnHabitacion.setAttribute('onclick', `handleHabitacionClick('${habitacion.estado}', '${habitacion.numero}', '${habitacion.tipo}', '${habitacion.precio_inteligente}', '${habitacion.habitacionID}')`);
+                    // LÓGICA DE "MANTENER" EN VEZ DE "RECREAR":
+                    // Comprobamos si los datos clave han cambiado antes de tocar el DOM
+                    const estadoPrevio = btnHabitacion.getAttribute('data-estado-actual');
+                    const clientePrevio = btnHabitacion.getAttribute('data-cliente-actual');
+                    const montoPrevio = btnHabitacion.getAttribute('data-monto-actual');
 
-                // RECONSTRUCCIÓN DEL CONTENIDO (Solo ocurre si hay cambios reales)
-                let innerHTML = '';
-                
-                // 1. Cuerpo del botón
-                if (habitacion.estado === 'DEUDA') {
-                    innerHTML += `<span>DEUDA</span><strong>${habitacion.numero}</strong>`;
-                } else {
-                    innerHTML += `<span>${habitacion.estado}</span><strong>${habitacion.numero}</strong>`;
-                }
+                    // Si nada ha cambiado, saltamos la actualización de este botón para no romper el hover/tooltip actual
+                    if (estadoPrevio === habitacion.estado &&
+                        clientePrevio === (habitacion.cliente_activo || '') &&
+                        montoPrevio === String(habitacion.precio_inteligente)) {
+                        return;
+                    }
 
-                // 2. Tooltips y Badges (Fichas Flotantes)
-                if ((habitacion.estado === 'OCUPADA' || habitacion.estado === 'DEUDA') && habitacion.cliente_activo) {
-                    let d = new Date(habitacion.checkout_activo);
-                    let formattedDate = ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
-                    
-                    let badgeColor = (habitacion.estado === 'DEUDA') ? 'background:#dc3545; color:#fff; border-color:#dc3545;' : '';
-                    let badgeLabel = (habitacion.estado === 'DEUDA') ? 'DEUDA Bs.' : 'Bs.';
-                    
-                    innerHTML += `
+                    // Si llegamos aquí es porque algo cambió, procedemos a actualizar
+                    btnHabitacion.className = btnClass;
+                    btnHabitacion.setAttribute('data-estado-actual', habitacion.estado);
+                    btnHabitacion.setAttribute('data-cliente-actual', habitacion.cliente_activo || '');
+                    btnHabitacion.setAttribute('data-monto-actual', habitacion.precio_inteligente);
+
+                    // Actualizar el atributo onclick con el precio inteligente
+                    btnHabitacion.setAttribute('onclick', `handleHabitacionClick('${habitacion.estado}', '${habitacion.numero}', '${habitacion.tipo}', '${habitacion.precio_inteligente}', '${habitacion.habitacionID}')`);
+
+                    // RECONSTRUCCIÓN DEL CONTENIDO (Solo ocurre si hay cambios reales)
+                    let innerHTML = '';
+
+                    // 1. Cuerpo del botón
+                    if (habitacion.estado === 'DEUDA') {
+                        innerHTML += `<span>DEUDA</span><strong>${habitacion.numero}</strong>`;
+                    } else {
+                        innerHTML += `<span>${habitacion.estado}</span><strong>${habitacion.numero}</strong>`;
+                    }
+
+                    // 2. Tooltips y Badges (Fichas Flotantes)
+                    if ((habitacion.estado === 'OCUPADA' || habitacion.estado === 'DEUDA') && habitacion.cliente_activo) {
+                        let d = new Date(habitacion.checkout_activo);
+                        let formattedDate = ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+
+                        let badgeColor = (habitacion.estado === 'DEUDA') ? 'background:#dc3545; color:#fff; border-color:#dc3545;' : '';
+                        let badgeLabel = (habitacion.estado === 'DEUDA') ? 'DEUDA Bs.' : 'Bs.';
+
+                        innerHTML += `
                         <span class="badge-precio" style="${badgeColor}">${badgeLabel} ${parseInt(habitacion.precio_inteligente)}</span>
                         <div class="habitacion-info-tooltip">
                             <div class="tooltip-header" ${habitacion.estado === 'DEUDA' ? 'style="background-color: #dc3545;"' : ''}>
@@ -388,17 +405,17 @@ function actualizarEstadoHabitaciones() {
                             </div>
                         </div>
                     `;
-                } else if (habitacion.estado === 'DISPONIBLE') {
-                    innerHTML += `<span class="badge-precio">Bs. ${parseInt(habitacion.precio_base)}</span>
+                    } else if (habitacion.estado === 'DISPONIBLE') {
+                        innerHTML += `<span class="badge-precio">Bs. ${parseInt(habitacion.precio_base)}</span>
                         <div style="position: absolute; top: 4px; left: 4px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;">
                             ${habitacion.tv == 1 ? '<span style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">TV</span>' : ''}
                             ${habitacion.bano == 1 ? '<span style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">BAÑO</span>' : ''}
                             ${habitacion.ventilador == 1 ? '<span style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">VENT</span>' : ''}
                         </div>`;
-                } else {
-                    innerHTML += `<span class="estado-label">${habitacion.estado === 'MANTENIMIENTO' ? 'MANT.' : habitacion.estado}</span>`;
-                    if (habitacion.estado === 'MANTENIMIENTO' && habitacion.habitacion_descripcion) {
-                        innerHTML += `
+                    } else {
+                        innerHTML += `<span class="estado-label">${habitacion.estado === 'MANTENIMIENTO' ? 'MANT.' : habitacion.estado}</span>`;
+                        if (habitacion.estado === 'MANTENIMIENTO' && habitacion.habitacion_descripcion) {
+                            innerHTML += `
                             <div class="habitacion-info-tooltip">
                                 <div class="tooltip-header" style="background-color: #343a40; color: white; border-color: #555;">
                                     <i class="fas fa-tools"></i> MANTENIMIENTO
@@ -408,14 +425,14 @@ function actualizarEstadoHabitaciones() {
                                 </div>
                             </div>
                         `;
+                        }
                     }
-                }
 
-                btnHabitacion.innerHTML = innerHTML;
-            }
-        });
-    })
-    .catch(error => console.error('Error al actualizar:', error));
+                    btnHabitacion.innerHTML = innerHTML;
+                }
+            });
+        })
+        .catch(error => console.error('Error al actualizar:', error));
 }
 
 setInterval(actualizarEstadoHabitaciones, 60000);
@@ -433,15 +450,15 @@ function mostrarModalPagoDeuda(habitacionID, monto) {
 
     // Buscar el hospedajeID y número de la habitación desde los datos ya cargados
     fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&auth=habitaciones.php')
-    .then(response => response.json())
-    .then(data => {
-        if (!data.error) {
-            document.getElementById('pago-deuda-habitacion').innerText = data.numero;
-            document.getElementById('pago-deuda-habitacion-numero').value = data.numero;
-            document.getElementById('pago-deuda-hospedajeID').value = data.hospedajeID;
-        }
-    })
-    .catch(error => console.error('Error:', error));
+        .then(response => response.json())
+        .then(data => {
+            if (!data.error) {
+                document.getElementById('pago-deuda-habitacion').innerText = data.numero;
+                document.getElementById('pago-deuda-habitacion-numero').value = data.numero;
+                document.getElementById('pago-deuda-hospedajeID').value = data.hospedajeID;
+            }
+        })
+        .catch(error => console.error('Error:', error));
 
     var modalPagoDeuda = new bootstrap.Modal(document.getElementById('modal-pago-deuda'));
     modalPagoDeuda.show();
@@ -517,7 +534,7 @@ function actualizarResumenMom() {
     const saldo = total - pagado;
 
     const elPagado = document.getElementById('momDisplayPagado');
-    const elSaldo  = document.getElementById('momDisplaySaldo');
+    const elSaldo = document.getElementById('momDisplaySaldo');
     if (elPagado) elPagado.innerText = pagado.toFixed(2);
     if (elSaldo) {
         elSaldo.innerText = saldo.toFixed(2);
@@ -531,7 +548,7 @@ function mantenimiento(numero, habitacionID) {
 
     document.getElementById('mantenimiento-habitacion').value = numero;
     document.getElementById('mantenimiento-habitacionID').value = habitacionID;
-    
+
     const modalmantenimiento = new bootstrap.Modal(document.getElementById('modal-mantenimiento'));
     modalmantenimiento.show();
 }
@@ -539,11 +556,11 @@ function mantenimiento(numero, habitacionID) {
 /**
  * EVENT LISTENERS AL CARGAR
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Guardar Momentaneo
     const btnGuardarMom = document.getElementById("guardar-momentaneo");
     if (btnGuardarMom) {
-        btnGuardarMom.addEventListener("click", function() {
+        btnGuardarMom.addEventListener("click", function () {
             document.getElementById("form-momentaneo").submit();
         });
     }
@@ -551,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Guardar Mantenimiento
     const btnGuardarMant = document.getElementById('guardar-mantenimiento');
     if (btnGuardarMant) {
-        btnGuardarMant.addEventListener('click', function() {
+        btnGuardarMant.addEventListener('click', function () {
             document.getElementById('form-mantenimiento').submit();
         });
     }
@@ -559,15 +576,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Modal Notificación Custom (miModal)
     const cerrarModalNotif = document.querySelector("#miModal .cerrar");
     if (cerrarModalNotif) {
-        cerrarModalNotif.onclick = function() {
+        cerrarModalNotif.onclick = function () {
             document.getElementById("miModal").style.display = "none";
         }
     }
 
     // Notificaciones iniciales
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', '../../ejecutar_notificaciones.php', true); 
-    xhr.onreadystatechange = function() {
+    xhr.open('GET', '../../ejecutar_notificaciones.php', true);
+    xhr.onreadystatechange = function () {
         if (xhr.readyState == 4 && xhr.status == 200) {
             // Notificaciones ejecutadas exitosamente
         }
