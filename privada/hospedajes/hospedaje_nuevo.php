@@ -67,6 +67,27 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
             color: #000 !important;
             opacity: 1 !important;
         }
+
+        /* FORZAR VISIBILIDAD DE ERRORES (Rojo sobre el estilo negro) */
+        .was-validated .form-control:invalid,
+        .was-validated .form-select:invalid {
+            border-color: #dc3545 !important;
+            padding-right: calc(1.5em + 0.75rem);
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right calc(0.375em + 0.1875rem) center !important;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) !important;
+        }
+
+        .invalid-feedback {
+            color: #dc3545 !important;
+            font-weight: bold !important;
+            display: none;
+        }
+
+        .was-validated :invalid~.invalid-feedback {
+            display: block !important;
+        }
     </style>
 
     <script>
@@ -366,6 +387,43 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
             </div>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            autocompletarCheckout();
+
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function (event) {
+                    const alertaSaldo = document.getElementById('alertaSaldo');
+                    if (alertaSaldo) alertaSaldo.style.display = 'none';
+
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        form.classList.add('was-validated');
+                        if (alertaSaldo) {
+                            alertaSaldo.innerHTML = "<i class='fas fa-exclamation-circle'></i> <b>¡ATENCIÓN!</b> Falta completar campos obligatorios.";
+                            alertaSaldo.style.display = 'block';
+                        }
+                        return false;
+                    }
+
+                    const saldo = parseFloat(document.getElementById('displaySaldoPendiente').innerText) || 0;
+                    if (Math.abs(saldo) > 0.01) {
+                        event.preventDefault();
+                        if (alertaSaldo) {
+                            alertaSaldo.innerHTML = "<i class='fas fa-exclamation-triangle'></i> <b>¡AHORRE!</b> El saldo debe ser 0.00";
+                            alertaSaldo.style.display = 'block';
+                        }
+                        return false;
+                    }
+                    form.classList.add('was-validated');
+                });
+            }
+
+        });
+    </script>
 </body>
+
 
 </html>

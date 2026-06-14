@@ -3,7 +3,7 @@
  * Ubicación: privada/js/hospedaje_pagos.js
  */
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Inicializar la primera fila de pago si está vacío
     actualizarResumenPagos();
 });
@@ -22,10 +22,12 @@ function agregarFilaPago() {
             <select class="form-control form-control-sm select-fp" name="pagos[${index}][formaPagoID]" required onchange="actualizarResumenPagos()">
                 ${selectTemplate}
             </select>
+            <div class="invalid-feedback">Seleccione una forma de pago.</div>
         </div>
         <div class="col-md-4">
             <input type="number" class="form-control form-control-sm input-monto-pago" name="pagos[${index}][monto]" 
                    placeholder="Monto" step="0.5" required oninput="actualizarResumenPagos()">
+            <div class="invalid-feedback">Ingrese un monto válido.</div>
         </div>
         <div class="col-md-1 text-end">
             <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="eliminarFilaPago(this)">
@@ -49,14 +51,14 @@ function eliminarFilaPago(btn) {
 function actualizarResumenPagos() {
     const totalHospedaje = parseFloat(document.getElementById('monto_total').value) || 0;
     const inputsMonto = document.querySelectorAll('.input-monto-pago');
-    
+
     let totalPagado = 0;
     inputsMonto.forEach(input => {
         totalPagado += parseFloat(input.value) || 0;
     });
 
     const saldoPendiente = totalHospedaje - totalPagado;
-    
+
     // Actualizar UI
     const displayPagado = document.getElementById('displayTotalPagado');
     const displaySaldo = document.getElementById('displaySaldoPendiente');
@@ -65,7 +67,7 @@ function actualizarResumenPagos() {
     if (displayPagado) displayPagado.innerText = totalPagado.toFixed(2);
     if (displaySaldo) {
         displaySaldo.innerText = saldoPendiente.toFixed(2);
-        
+
         // Visualización de alertas (No bloquea botones)
         if (saldoPendiente === 0) {
             displaySaldo.className = 'text-success fw-bold';

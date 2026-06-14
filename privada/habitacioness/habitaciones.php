@@ -8,44 +8,30 @@ $empresaID = $_SESSION['empresaID'];
 // Ajustar orden según preferencia del usuario
 $orderBy = (isset($_GET['orden']) && $_GET['orden'] == 'tipo') ? "thab.nombre, hab.numero ASC" : "hab.numero ASC";
 
-// Consulta SQL actualizada
+// Consulta SQL OPTIMIZADA (JOIN único para evitar saturación del servidor)
 $sql = "SELECT  thab.tipohabitacionID, hab.habitacionID, hab.bano, hab.tv, hab.ventilador, 
                 thab.nombre, thab.precio, hab.estado as estado, hab.numero as numero, 
                 hab.descripcion as descripcion,
+                hos.hospedajeID as hospedaje_activo_id,
+                hos.checkout as checkout_activo,
+                hos.monto as precio_pactado,
                 (SELECT GROUP_CONCAT(CONCAT('- ', c.nombres, ' ', c.apellido1) SEPARATOR '<br>')
-                 FROM hospedajes h 
-                 JOIN hospedajes_clientes hc ON h.hospedajeID = hc.hospedajeID 
+                 FROM hospedajes_clientes hc 
                  JOIN clientes c ON hc.clienteID = c.clienteID 
-                 WHERE h.habitacionID = hab.habitacionID 
-                 AND h.empresaID = ?
-                 AND h.estado = 'ACTIVO' AND h._estado <> 'X' AND hc._estado <> 'X' AND c._estado <> 'X') AS cliente_activo,
-                (SELECT h.checkout 
-                 FROM hospedajes h 
-                 WHERE h.habitacionID = hab.habitacionID 
-                 AND h.empresaID = ?
-                 AND h.estado = 'ACTIVO' AND h._estado <> 'X'
-                 ORDER BY h.hospedajeID DESC LIMIT 1) AS checkout_activo,
-                (SELECT h.monto 
-                 FROM hospedajes h 
-                 WHERE h.habitacionID = hab.habitacionID 
-                 AND h.empresaID = ?
-                 AND h.estado = 'ACTIVO' AND h._estado <> 'X'
-                 ORDER BY h.hospedajeID DESC LIMIT 1) AS precio_pactado,
-                (SELECT h.hospedajeID
-                 FROM hospedajes h
-                 WHERE h.habitacionID = hab.habitacionID
-                 AND h.empresaID = ?
-                 AND h.estado = 'ACTIVO'
-                 AND h._estado <> 'X'
-                 LIMIT 1) AS hospedaje_activo_id
+                 WHERE hc.hospedajeID = hos.hospedajeID 
+                 AND hc._estado <> 'X' AND c._estado <> 'X') AS cliente_activo
         FROM    habitaciones hab
         JOIN    tipo_habitaciones thab ON hab.tipohabitacionID = thab.tipohabitacionID
+        LEFT JOIN hospedajes hos ON hab.habitacionID = hos.habitacionID 
+                 AND hos.empresaID = ? 
+                 AND hos.estado = 'ACTIVO' 
+                 AND hos._estado <> 'X'
         WHERE   thab._estado <> 'X'
         AND     hab._estado <> 'X'
         AND     hab.empresaID = ?
         ORDER BY $orderBy";
 
-$rs = $db->obtenerTodo($sql, array($empresaID, $empresaID, $empresaID, $empresaID, $empresaID));
+$rs = $db->obtenerTodo($sql, array($empresaID, $empresaID));
 
 
 // Guardar en sesión para ver después de redirección
@@ -95,13 +81,13 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                         ?>
                         <?php
                         // LÓGICA SMART BIDIRECCIONAL: Sincronización Real de Ocupación
-                              // CASO A: Si hay un hospedaje ACTIVO en BD pero la habitación NO está marcada como OCUPADA (ej: está en LIMPIEZA)
+                        // CASO A: Si hay un hospedaje ACTIVO en BD pero la habitación NO está marcada como OCUPADA (ej: está en LIMPIEZA)
                         if (!empty($habitacion['hospedaje_activo_id']) && $habitacion['estado'] !== 'OCUPADA') {
                             $habitacion['estado'] = 'OCUPADA';
                             // Sincronización silenciosa opcional (opcional para no saturar BD, pero asegura coherencia)
                             $db->ejecutar("UPDATE habitaciones SET estado = 'OCUPADA' WHERE habitacionID = ?", [$habitacion['habitacionID']]);
                         }
-                        
+
                         // CASO B: Si la habitación dice estar ocupada o en deuda, pero NO hay ningún hospedaje ACTIVO en BD
                         else if (in_array($habitacion['estado'], ['OCUPADA', 'DEUDA']) && empty($habitacion['hospedaje_activo_id'])) {
                             $habitacion['estado'] = 'LIMPIEZA';
