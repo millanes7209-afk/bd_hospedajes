@@ -389,7 +389,6 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            autocompletarCheckout();
 
             const form = document.querySelector('form');
             if (form) {

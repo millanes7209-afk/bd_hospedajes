@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const buscarNombres = document.getElementById("buscarNombres");
     const buscarApellidos = document.getElementById("buscarApellidos");
     const buscarCI = document.getElementById("buscarCI");
+    const botonBuscar = document.getElementById("botonBuscar");
     const tbody = document.querySelector("table tbody");
     const thead = document.querySelector("table thead");
 
@@ -23,9 +24,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     <th scope="col">Fecha Salida</th>
                     <th scope="col">Habitación</th>
                     <th scope="col">Monto</th>
-                    <th scope="col">Forma Pago</th>
-                    <th scope="col"><img src='../../imagenes/modificar.gif' alt='Modificar'></th>
-                    <th scope="col"><img src='../../imagenes/borrar.jpeg' alt='Eliminar'></th>
+                    <th scope="col">Estado</th>
+                    <th colspan="2" class="text-center">Acciones</th>
                 </tr>
             `;
         } else {
@@ -37,10 +37,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     <th scope="col">Fecha Salida</th>
                     <th scope="col">Habitación</th>
                     <th scope="col">Monto</th>
-                    <th scope="col">Forma Pago</th>
                     <th scope="col">Estado</th>
-                    <th scope="col"><img src='../../imagenes/modificar.gif' alt='Modificar'></th>
-                    <th scope="col"><img src='../../imagenes/borrar.jpeg' alt='Eliminar'></th>
+                    <th colspan="2" class="text-center">Acciones</th>
                 </tr>
             `;
         }
@@ -54,20 +52,22 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch("buscar_hospedajes.php", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({ nombre, apellido, ci }),
+            body: new URLSearchParams({ nombre, apellido, ci, auth: 'hospedajes.php' }),
         })
             .then((response) => response.json())
             .then((data) => {
+                const resultados = data || [];
                 const isSeparated = nombre || apellido || ci;
-
                 updateTableHeader(isSeparated);
-
-                // El filtrado ya viene hecho desde el servidor (SQL) para mayor rendimiento
-                const resultadosFiltrados = data;
 
                 tbody.innerHTML = "";
 
-                resultadosFiltrados.forEach((fila) => {
+                if (resultados.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="11" class="text-center text-muted">No se encontraron resultados</td></tr>`;
+                    return;
+                }
+
+                resultados.forEach((fila) => {
                     tbody.innerHTML += `
                         <tr>
                             <td>${highlight(fila.usuario)}</td>
@@ -77,9 +77,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             ` : `<td>${highlight(fila.clientes)}</td>`}
                             <td>${fila.checkin}</td>
                             <td>${fila.checkout}</td>
-                            <td>${fila.habitacion_numero}</td>
-                            <td>${fila.monto}</td>
-                            <td>${fila.estado}</td>
+                            <td class="text-center">${fila.habitacion_numero}</td>
+                            <td class="text-center">Bs. ${fila.monto}</td>
+                            <td class="text-center">${fila.estado}</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-4">
                                     <form name="formModif${fila.hospedajeID}" method="post" action="hospedaje_modificar.php" style="display:inline;">
@@ -97,30 +97,25 @@ document.addEventListener("DOMContentLoaded", function () {
                         </tr>
                     `;
                 });
+            })
+            .catch(error => {
+                console.error("Error en la búsqueda:", error);
             });
     }
 
-    // Función debounce: espera 500ms después de escribir para ejecutar
-    function debounce(func, wait) {
-        let timeout;
-        return function(...args) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), wait);
-        };
+    if (botonBuscar) {
+        botonBuscar.addEventListener("click", filtrarDatos);
     }
 
-    // Búsqueda automática con debounce
-    const busquedaAutomatica = debounce(filtrarDatos, 500);
-
-    // Búsqueda inmediata al presionar el botón Buscar
-    document.getElementById("botonBuscar").addEventListener("click", filtrarDatos);
-
-    // Búsqueda al presionar ENTER en cualquier campo
-    [buscarNombres, buscarApellidos, buscarCI].forEach(input => {
-        input.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") {
-                filtrarDatos();
-            }
-        });
+    const inputs = [buscarNombres, buscarApellidos, buscarCI];
+    inputs.forEach(input => {
+        if (input) {
+            input.addEventListener("keypress", function (e) {
+                if (e.key === "Enter") {
+                    filtrarDatos();
+                }
+            });
+        }
     });
+
 });

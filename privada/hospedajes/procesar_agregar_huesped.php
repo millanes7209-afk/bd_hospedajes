@@ -35,7 +35,7 @@ try {
     // Vincular solo los nuevos clientes
     foreach ($clientes as $clienteID) {
         // Verificar si ya está vinculado para evitar duplicados en la tabla pivote
-        $sqlCheck = "SELECT hcID FROM hospedajes_clientes WHERE hospedajeID = ? AND clienteID = ? AND _estado <> 'X'";
+        $sqlCheck = "SELECT * FROM hospedajes_clientes WHERE hospedajeID = ? AND clienteID = ? AND _estado <> 'X'";
         $existe = $db->obtenerFila($sqlCheck, [$hospedajeID, $clienteID]);
 
         if (!$existe) {
@@ -52,7 +52,8 @@ try {
     header("Location: ../habitacioness/habitaciones.php");
 
 } catch (Exception $e) {
-    if ($db->inTransaction()) $db->rollBack();
+    if ($db->inTransaction())
+        $db->rollBack();
     echo "Error crítico al añadir acompañante: " . $e->getMessage();
     exit;
 }

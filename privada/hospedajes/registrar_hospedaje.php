@@ -79,8 +79,9 @@ try {
     foreach ($pagos as $pago) {
         $monto_pago = floatval(str_replace(',', '.', $pago['monto']));
         if ($monto_pago > 0) {
-            $sqlIP = "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto, _fec_insercion) VALUES (?, ?, ?, ?)";
-            if ($db->ejecutar($sqlIP, [$ingresoID, $pago['formaPagoID'], $monto_pago, $ahora]) === false) {
+            $sqlIP = "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto, _fec_insercion, _fec_modificacion, _usuario, _estado) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?)";
+            if ($db->ejecutar($sqlIP, [$ingresoID, $pago['formaPagoID'], $monto_pago, $ahora, $ahora, $usuarioID, 'A']) === false) {
                 throw new Exception("Error BD: No se pudo registrar el desglose del pago.");
             }
         }

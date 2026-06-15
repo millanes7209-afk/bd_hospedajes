@@ -58,8 +58,7 @@ try {
     }
 
     echo json_encode($rs);
-
 } catch (Exception $e) {
-    echo json_encode(['status' => 'ERROR', 'message' => $e->getMessage()]);
+    echo json_encode([]);
 }
 ?>
