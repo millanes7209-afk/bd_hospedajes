@@ -8,9 +8,13 @@ $paisID = isset($_POST['paisID']) ? $_POST['paisID'] : '';
 
 if (!empty($ci) && !empty($paisID)) {
 
-    // 2. Consulta buscando la combinación exacta de CI y País, verificando si tiene hospedaje activo EN ESTA EMPRESA
+    // 2. Consulta avanzada: Datos del cliente + Visitas + Detalle de Incidentes
     $empresaID = $_SESSION['empresaID'];
     $sql = "SELECT c.*, p.nombre AS nombre_pais,
+            (SELECT COUNT(*) FROM hospedajes_clientes hc WHERE hc.clienteID = c.clienteID AND hc._estado <> 'X') as total_visitas,
+            (SELECT GROUP_CONCAT(CONCAT('• ', descripcion, ' (', estado, ')') SEPARATOR '<br>') 
+             FROM incidentes 
+             WHERE clienteID = c.clienteID AND estado <> 'RECHAZADO' AND _estado <> 'X') as incidentes_detalle,
             (SELECT hab.numero FROM hospedajes_clientes hc 
              JOIN hospedajes h ON hc.hospedajeID = h.hospedajeID 
              JOIN habitaciones hab ON h.habitacionID = hab.habitacionID
@@ -26,6 +30,8 @@ if (!empty($ci) && !empty($paisID)) {
             AND c._estado <> 'X'";
     $fila = $db->obtenerFila($sql, [$empresaID, $ci, $paisID]);
 
+
+
     if ($fila) {
         if (!empty($fila['habitacion_activa'])) {
             $nombre_completo = trim($fila['nombres'] . ' ' . $fila['apellido1'] . ' ' . $fila['apellido2']);
@@ -35,17 +41,35 @@ if (!empty($ci) && !empty($paisID)) {
             echo "</div>";
         } else {
             // --- CASO A: CLIENTE ENCONTRADO ---
-            // 'd-flex' alinea en horizontal, 'justify-content-between' separa los extremos
-            echo "<div class='alert alert-info d-flex justify-content-between align-items-center' style='padding: 10px 15px;'>";
+            echo "<div class='alert alert-info py-2 px-3 mb-0' style='border-left: 5px solid #0d6efd;'>";
 
-            echo "  <p class='mb-0'><strong>Cliente:</strong> " . $fila['ci'] . " - " . $fila['nombres'] . " " . $fila['apellido1'] . " " . $fila['apellido2'] . "</p>";
+            echo "  <div class='d-flex justify-content-between align-items-center mb-1'>";
+            echo "      <p class='mb-0'><strong>Cliente:</strong> " . $fila['ci'] . " - " . $fila['nombres'] . " " . $fila['apellido1'] . "</p>";
+            echo "      <button type='button' class='btn btn-primary btn-sm fw-bold' onclick='seleccionarCliente(" . $fila['clienteID'] . ")'>";
+            echo "          <i class='fas fa-plus-circle'></i> SELECCIONAR";
+            echo "      </button>";
+            echo "  </div>";
 
-            // Botón de selección más claro (Azul y con texto)
-            echo "  <button type='button' class='btn btn-primary btn-sm fw-bold' onclick='seleccionarCliente(" . $fila['clienteID'] . ")' style='display: flex; align-items: center; gap: 8px;'>
-                    <i class='fas fa-plus-circle'></i> SELECCIONAR
-                </button>";
+            // Mostrar Conteo de Visitas
+            $visitas = (int) $fila['total_visitas'];
+            echo "  <div class='small text-dark'>";
+            echo "      <i class='fas fa-history me-1'></i> Visitas registradas: <span class='fw-bold'>$visitas</span>";
+
+            // Mostrar Detalle de Incidentes si existen
+            $detalle = $fila['incidentes_detalle'];
+            if (!empty($detalle)) {
+                echo "      <div class='mt-2 p-2 border border-danger bg-white rounded'>";
+                echo "          <span class='text-danger fw-bold d-block'><i class='fas fa-exclamation-triangle'></i> ANTECEDENTES DEL CLIENTE:</span>";
+                echo "          <div class='small text-danger' style='line-height: 1.2;'>$detalle</div>";
+                echo "      </div>";
+            } else {
+                echo "      <span class='ms-3 text-success small'><i class='fas fa-check-circle'></i> Cliente ejemplar (Sin incidentes)</span>";
+            }
+            echo "  </div>";
 
             echo "</div>";
+
+
         }
 
     } else {

@@ -217,7 +217,8 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
 
                                     <div class="row g-2 mb-2">
                                         <div class="col-md-6">
-                                            <label for="paisID" class="form-label small fw-bold">País de Origen</label>
+                                            <label for="paisID" class="form-label small fw-bold">País Emisor del
+                                                Documento:</label>
                                             <select class="form-control" name="paisID" id="paisID" autofocus>
                                                 <?php
                                                 $sql_paises = "SELECT paisID, nombre FROM paises WHERE _estado <> 'X' ORDER BY nombre ASC";

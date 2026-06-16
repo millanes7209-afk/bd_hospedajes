@@ -18,7 +18,7 @@ if ((isset($_POST["accion"])) and ($_POST["accion"] == "Ingresar")) {
 
     // Verificar la contraseña (password_verify asume que está encriptada en la BD)
     if (password_verify($password, $clave_bd)) {
-        
+
         // 2. Obtener datos del EMPLEADO (antes era 'personas')
         // Ajustado a: empleadoID, nombres, apellidos
         $sql2 = "SELECT e.* FROM empleados e, usuarios u 
@@ -27,7 +27,7 @@ if ((isset($_POST["accion"])) and ($_POST["accion"] == "Ingresar")) {
                               AND e._estado <> 'X' 
                               AND u._estado <> 'X'";
         $rs2 = $db->obtenerTodo($sql2, array($nick));
-        
+
         if ($rs2) {
             $nombres = $rs2[0]["nombres"];
             $apellidos = $rs2[0]["apellidos"];
@@ -37,7 +37,7 @@ if ((isset($_POST["accion"])) and ($_POST["accion"] == "Ingresar")) {
         }
 
         // 3. Obtener los roles (Ajustado a: usuarioID, rolID, usuario_roles)
-        $sql ="SELECT u.*, ur.rolID, r.rol 
+        $sql = "SELECT u.*, ur.rolID, r.rol 
                              FROM usuarios u 
                              INNER JOIN usuarios_roles ur ON u.usuarioID = ur.usuarioID 
                              INNER JOIN roles r ON ur.rolID = r.rolID 
@@ -60,7 +60,14 @@ if ((isset($_POST["accion"])) and ($_POST["accion"] == "Ingresar")) {
                          WHERE ur.usuarioID = ? AND r.rol = 'ADMINISTRADOR' AND ur._estado <> 'X'";
             $res_admin = $db->obtenerFila($sql_admin, [$_SESSION["sesion_id_usuario"]]);
             $_SESSION["sesion_es_admin"] = $res_admin ? true : false;
-            
+
+            // IMPORTANTE: Definir el nombre del rol para acceso a TABS y Carpetas Privadas
+            if ($res_admin) {
+                $_SESSION["sesion_rol"] = "ADMINISTRADOR";
+                $_SESSION["sesion_id_rol"] = 1; // ID estándar de Admin
+            }
+
+
             // Vamos directo al selector de empresas
             header("Location: selector_empresa.php");
             exit();
