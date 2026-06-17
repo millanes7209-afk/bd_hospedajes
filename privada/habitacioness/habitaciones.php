@@ -14,7 +14,8 @@ $sql = "SELECT  thab.tipohabitacionID, hab.habitacionID, hab.bano, hab.tv, hab.v
                 hab.descripcion as descripcion,
                 hos.hospedajeID as hospedaje_activo_id,
                 hos.checkout as checkout_activo,
-                hos.monto as precio_pactado,
+                hos.precio_diario as precio_pactado,
+                hos.monto as monto_total_pagado,
                 (SELECT GROUP_CONCAT(CONCAT('- ', c.nombres, ' ', c.apellido1) SEPARATOR '<br>')
                  FROM hospedajes_clientes hc 
                  JOIN clientes c ON hc.clienteID = c.clienteID 
@@ -114,7 +115,8 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                                     $iter_date_limite->modify('+1 day');
                                 }
                                 $precio_diario = !empty($habitacion['precio_pactado']) ? $habitacion['precio_pactado'] : $habitacion['precio'];
-                                $habitacion['dias_deuda'] = $dias_cobro; // Guardamos los días
+                                $habitacion['dias_deuda'] = $dias_cobro;
+                                $habitacion['monto_deuda_total'] = $dias_cobro * $precio_diario;
                             }
                         }
 
@@ -164,11 +166,13 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                                 <!-- Ficha Flotante (Tooltip) para OCUPADAS y DEUDAS -->
                                 <?php if ($habitacion['estado'] === 'DEUDA'): ?>
                                     <span class="badge-precio" style="background:#dc3545; color:#fff; border-color:#dc3545;">
-                                        Bs. <?php echo number_format($habitacion['precio'], 0); ?> - DEBE
+                                        Bs. <?php echo number_format($habitacion['precio_pactado'] ?? $habitacion['precio'], 0); ?> -
+                                        DEBE
                                         <?php echo $habitacion['dias_deuda']; ?> DÍAS
                                     </span>
                                 <?php else: ?>
-                                    <span class="badge-precio">Bs. <?php echo number_format($habitacion['precio_pactado'], 0); ?></span>
+                                    <span class="badge-precio">Bs.
+                                        <?php echo number_format($habitacion['precio_pactado'] ?? $habitacion['precio'], 0); ?></span>
                                 <?php endif; ?>
 
                                 <div class="habitacion-info-tooltip">
