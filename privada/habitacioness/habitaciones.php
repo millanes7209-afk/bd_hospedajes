@@ -148,12 +148,18 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                             default:
                                 $btnClass .= ' btn btn-dark';
                         }
+
+                        $precio_diario = ($habitacion['estado'] === 'DEUDA' ? $habitacion['precio_pactado'] : (!empty($habitacion['precio_pactado']) ? $habitacion['precio_pactado'] : $habitacion['precio']));
                         ?>
                         <button id="habitacion-<?php echo $habitacion['habitacionID']; ?>"
                             class="<?php echo $btnClass; ?> habitacion-card"
                             data-tipo-id="<?php echo $habitacion['tipohabitacionID']; ?>"
-                            data-tipo-nombre="<?php echo $habitacion['nombre']; ?>" <?php echo $boton_estado; ?>
-                            onclick="handleHabitacionClick('<?php echo $habitacion['estado']; ?>', '<?php echo $habitacion['numero']; ?>', '<?php echo $habitacion['nombre']; ?>', '<?php echo ($habitacion['estado'] === 'DEUDA' ? $habitacion['precio_pactado'] : (!empty($habitacion['precio_pactado']) ? $habitacion['precio_pactado'] : $habitacion['precio'])); ?>', '<?php echo $habitacion['habitacionID']; ?>')">
+                            data-tipo-nombre="<?php echo $habitacion['nombre']; ?>"
+                            data-estado-actual="<?php echo $habitacion['estado']; ?>"
+                            data-cliente-actual="<?php echo str_replace('"', '&quot;', (string) ($habitacion['cliente_activo'] ?? '')); ?>"
+                            data-monto-actual="<?php echo $precio_diario; ?>"
+                            data-deuda-dias="<?php echo $habitacion['dias_deuda']; ?>" <?php echo $boton_estado; ?>
+                            onclick="handleHabitacionClick('<?php echo $habitacion['estado']; ?>', '<?php echo $habitacion['numero']; ?>', '<?php echo $habitacion['nombre']; ?>', '<?php echo $precio_diario; ?>', '<?php echo $habitacion['habitacionID']; ?>')">
 
                             <?php if ($habitacion['estado'] === 'DEUDA'): ?>
                                 <span>DEUDA</span>
@@ -256,7 +262,7 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                     hab.classList.add('d-none');
                 }
             });
-    }
+        }
     </script>
 
 </body>

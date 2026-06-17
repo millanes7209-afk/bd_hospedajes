@@ -322,24 +322,27 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
                                     <script>
                                         function recalcularMontoHospedajeNuevo() {
                                             const tipo = document.getElementById('tipo').value;
-                                            // Si es momentáneo, dejamos que actualizarSalida() maneje el precio fijo
-                                            if (tipo === 'MOMENTANEO') return;
-
                                             const precioDia = parseFloat(document.getElementById('precio_diario').value) || 0;
                                             const checkoutInput = document.getElementById('checkout').value;
 
-                                            if (!checkoutInput) return;
+                                            if (tipo === 'MOMENTANEO') {
+                                                // Para momentáneo, el precio pactado es el monto total (1 a 1)
+                                                document.getElementById('monto_total').value = precioDia.toFixed(2);
+                                            } else {
+                                                // Para hospedaje normal, calculamos por días
+                                                if (!checkoutInput) return;
 
-                                            const checkin = new Date();
-                                            const checkout = new Date(checkoutInput);
+                                                const checkin = new Date();
+                                                const checkout = new Date(checkoutInput);
 
-                                            let diff = checkout - checkin;
-                                            let dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                                                let diff = checkout - checkin;
+                                                let dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
-                                            if (dias <= 0) dias = 1;
+                                                if (dias <= 0) dias = 1;
 
-                                            const total = (precioDia * dias).toFixed(2);
-                                            document.getElementById('monto_total').value = total;
+                                                const total = (precioDia * dias).toFixed(2);
+                                                document.getElementById('monto_total').value = total;
+                                            }
 
                                             if (typeof actualizarResumenPagos === 'function') {
                                                 actualizarResumenPagos();

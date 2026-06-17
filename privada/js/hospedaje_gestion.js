@@ -21,9 +21,9 @@ function actualizarSalida() {
     var checkoutDate = new Date();
 
     if (tipo === 'MOMENTANEO') {
-        // Mostrar duración, ocultar precio por día
+        // Mostrar duración
         if (divDuracion) divDuracion.style.display = 'block';
-        if (contenedorPD) contenedorPD.style.display = 'none';
+        if (contenedorPD) contenedorPD.style.display = 'block'; // Siempre visible
 
         var duracion = parseInt(document.getElementById('duracion').value) || 1;
         var minutosGracia = duracion * 10;
@@ -33,17 +33,19 @@ function actualizarSalida() {
         if (duracion == 2) precioBase = 50;
         else if (duracion == 3) precioBase = 60;
 
+        // Sincronizar ambos campos
         if (inputMonto) inputMonto.value = precioBase;
+        if (inputPrecioDia) inputPrecioDia.value = precioBase;
 
         checkoutDate.setHours(hoy.getHours() + duracion);
         checkoutDate.setMinutes(hoy.getMinutes() + minutosGracia);
 
     } else {
-        // Ocultar duración, mostrar precio por día
+        // Ocultar duración
         if (divDuracion) divDuracion.style.display = 'none';
         if (contenedorPD) contenedorPD.style.display = 'block';
 
-        // Restaurar precio_diario a su valor original
+        // Restaurar precio_diario a su valor original de habitación
         if (inputPrecioDia) {
             var precioOriginal = inputPrecioDia.getAttribute('data-original');
             inputPrecioDia.value = precioOriginal;

@@ -352,18 +352,18 @@ function actualizarEstadoHabitaciones() {
                     // FILTRADO POR EMPRESA: El PHP 'obtener_estados_habitaciones.php' ya filtra estrictamente por la sesión del usuario.
 
                     // LÓGICA DE "MANTENER" EN VEZ DE "RECREAR":
-                    // Comprobamos si los datos clave han cambiado antes de tocar el DOM
                     const estadoPrevio = btnHabitacion.getAttribute('data-estado-actual');
                     const clientePrevio = btnHabitacion.getAttribute('data-cliente-actual');
                     const montoPrevio = btnHabitacion.getAttribute('data-monto-actual');
                     const deudaPrevia = btnHabitacion.getAttribute('data-deuda-dias');
 
-                    // Si nada ha cambiado, saltamos la actualización de este botón para no romper el hover/tooltip actual
+                    // SI EL ESTADO O EL CLIENTE CAMBIARON, FORZAMOS EL REDIBUJADO COMPLETO
+                    // Esto evita que habitaciones que pasan a DISPONIBLE se queden con la visualización anterior
                     if (estadoPrevio === habitacion.estado &&
                         clientePrevio === (habitacion.cliente_activo || '') &&
-                        montoPrevio === String(habitacion.precio_inteligente) &&
-                        deudaPrevia === String(habitacion.dias_deuda || 0)) {
-                        return;
+                        String(montoPrevio) === String(habitacion.precio_inteligente) &&
+                        String(deudaPrevia) === String(habitacion.dias_deuda || 0)) {
+                        return; // Solo retornamos si REALMENTE nada cambió
                     }
 
                     // Si llegamos aquí es porque algo cambió, procedemos a actualizar
