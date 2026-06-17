@@ -28,6 +28,12 @@ $sql = "SELECT hab.habitacionID, hab.estado, hab.numero, th.precio as precio_bas
                  AND h.empresaID = ?
                  AND h.estado = 'ACTIVO' AND h._estado <> 'X'
                  ORDER BY h.hospedajeID DESC LIMIT 1) AS monto_hospedaje,
+                (SELECT h.precio_diario 
+                 FROM hospedajes h 
+                 WHERE h.habitacionID = hab.habitacionID 
+                 AND h.empresaID = ?
+                 AND h.estado = 'ACTIVO' AND h._estado <> 'X'
+                 ORDER BY h.hospedajeID DESC LIMIT 1) AS precio_diario_pactado,
                 (SELECT h.hospedajeID
                  FROM hospedajes h
                  WHERE h.habitacionID = hab.habitacionID
@@ -41,7 +47,7 @@ $sql = "SELECT hab.habitacionID, hab.estado, hab.numero, th.precio as precio_bas
         AND hab.empresaID = ?
         ORDER BY hab.numero ASC";
 
-$rs = $db->obtenerTodo($sql, [$empresaID, $empresaID, $empresaID, $empresaID, $empresaID]);
+$rs = $db->obtenerTodo($sql, [$empresaID, $empresaID, $empresaID, $empresaID, $empresaID, $empresaID]);
 
 $habitaciones = array();
 
@@ -76,8 +82,8 @@ foreach ($rs as $habitacion) {
         'cliente_activo' => $habitacion['cliente_activo'],
         'checkout_activo' => $habitacion['checkout_activo'],
         'precio_base' => $habitacion['precio_base'],
-        'dias_deuda' => $dias_deuda, // Nuevo campo
-        'precio_inteligente' => $habitacion['monto_hospedaje'] ?? $habitacion['precio_base'],
+        'dias_deuda' => $dias_deuda,
+        'precio_inteligente' => $habitacion['precio_diario_pactado'] ?? $habitacion['precio_base'],
         'bano' => $habitacion['bano'],
         'tv' => $habitacion['tv'],
         'ventilador' => $habitacion['ventilador'],
