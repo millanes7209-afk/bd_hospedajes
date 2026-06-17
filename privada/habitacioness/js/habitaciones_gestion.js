@@ -405,6 +405,7 @@ function actualizarEstadoHabitaciones() {
                                 <p><strong>CLIENTE:</strong><br>${habitacion.cliente_activo.toUpperCase()}</p>
                                 <p><strong>SALIDA:</strong> ${formattedDate}</p>
                                 <p><strong>TIPO:</strong> ${habitacion.tipo}</p>
+                                ${habitacion.observaciones_activo ? `<p><strong>OBS:</strong> <span class="text-info">${habitacion.observaciones_activo.toUpperCase()}</span></p>` : ''}
                             </div>
                         </div>
                     `;

@@ -16,6 +16,7 @@ $sql = "SELECT  thab.tipohabitacionID, hab.habitacionID, hab.bano, hab.tv, hab.v
                 hos.checkout as checkout_activo,
                 hos.precio_diario as precio_pactado,
                 hos.monto as monto_total_pagado,
+                hos.observaciones as observaciones_activo,
                 (SELECT GROUP_CONCAT(CONCAT('- ', c.nombres, ' ', c.apellido1) SEPARATOR '<br>')
                  FROM hospedajes_clientes hc 
                  JOIN clientes c ON hc.clienteID = c.clienteID 
@@ -187,6 +188,11 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                                         <p><strong>SALIDA:</strong>
                                             <?php echo date('d/m H:i', strtotime($habitacion['checkout_activo'])); ?></p>
                                         <p><strong>TIPO:</strong> <?php echo $habitacion['nombre']; ?></p>
+                                        <?php if (!empty($habitacion['observaciones_activo'])): ?>
+                                            <p><strong>OBS:</strong> <span
+                                                    class="text-info"><?php echo mb_strtoupper((string) $habitacion['observaciones_activo']); ?></span>
+                                            </p>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             <?php elseif ($habitacion['estado'] === 'DISPONIBLE'): ?>
@@ -250,7 +256,7 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                     hab.classList.add('d-none');
                 }
             });
-        }
+    }
     </script>
 
 </body>

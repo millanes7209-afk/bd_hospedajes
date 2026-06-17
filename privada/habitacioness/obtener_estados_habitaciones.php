@@ -28,6 +28,12 @@ $sql = "SELECT hab.habitacionID, hab.estado, hab.numero, th.precio as precio_bas
                  AND h.empresaID = ?
                  AND h.estado = 'ACTIVO' AND h._estado <> 'X'
                  ORDER BY h.hospedajeID DESC LIMIT 1) AS monto_hospedaje,
+                (SELECT h.observaciones 
+                 FROM hospedajes h 
+                 WHERE h.habitacionID = hab.habitacionID 
+                 AND h.empresaID = ?
+                 AND h.estado = 'ACTIVO' AND h._estado <> 'X'
+                 ORDER BY h.hospedajeID DESC LIMIT 1) AS observaciones_activo,
                 (SELECT h.precio_diario 
                  FROM hospedajes h 
                  WHERE h.habitacionID = hab.habitacionID 
@@ -87,7 +93,8 @@ foreach ($rs as $habitacion) {
         'bano' => $habitacion['bano'],
         'tv' => $habitacion['tv'],
         'ventilador' => $habitacion['ventilador'],
-        'habitacion_descripcion' => $habitacion['habitacion_descripcion']
+        'habitacion_descripcion' => $habitacion['habitacion_descripcion'],
+        'observaciones_activo' => $habitacion['observaciones_activo']
     );
 }
 

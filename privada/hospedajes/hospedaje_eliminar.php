@@ -52,15 +52,20 @@ try {
     $sqlAudit = "INSERT INTO auditorias 
                  (hospedajeID, tipo_auditoria, monto_anterior, monto_nuevo, detalle_original, detalle_nuevo, motivo, usuarioID, fecha, empresaID) 
                  VALUES (?, 'ELIMINACION', ?, 0, ?, 'CANCELADO', ?, ?, ?, ?)";
-    
+
     if ($db->ejecutar($sqlAudit, [$hospedajeID, $montoAnterior, $detalleOriginal, $motivo, $usuarioID, $ahora, $empresaID]) === false) {
         throw new Exception("No se pudo registrar la auditoría de eliminación.");
     }
 
-    // 3. Anular contablemente el INGRESO maestro
+    // 3. Anular contablemente el INGRESO maestro y sus PAGOS
     $sqlAnularI = "UPDATE ingresos SET _estado = 'X', _fec_modificacion = ? WHERE ingresoID = ? AND empresaID = ?";
     if ($db->ejecutar($sqlAnularI, [$ahora, $ingresoID, $empresaID]) === false) {
         throw new Exception("Error al anular el ingreso financiero relacionado.");
+    }
+
+    $sqlAnularP = "UPDATE ingreso_pagos SET _estado = 'X' WHERE ingresoID = ?";
+    if ($db->ejecutar($sqlAnularP, [$ingresoID]) === false) {
+        throw new Exception("Error al anular el desglose de pagos relacionado.");
     }
 
     // 4. Marcar Hospedaje como eliminado (_estado = 'X')

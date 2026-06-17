@@ -36,15 +36,23 @@ if (!$movimientos_caja) {
     $movimientos_caja = []; // Fallback por si no hay registros aún
 }
 
-// 2. Calcular los totales líquidos del turno matemáticamente
+// 2. Calcular los totales líquidos del turno por FORMA DE PAGO
 $total_ingresos = 0;
 $total_egresos = 0;
+$desglose_pagos = [];
 
 foreach ($movimientos_caja as $mov) {
+    $fp = mb_strtoupper($mov['forma_pago']);
+    if (!isset($desglose_pagos[$fp])) {
+        $desglose_pagos[$fp] = ['ingresos' => 0, 'egresos' => 0];
+    }
+
     if ($mov['tipo'] === 'INGRESO') {
         $total_ingresos += (float) $mov['monto'];
+        $desglose_pagos[$fp]['ingresos'] += (float) $mov['monto'];
     } elseif ($mov['tipo'] === 'EGRESO') {
         $total_egresos += (float) $mov['monto'];
+        $desglose_pagos[$fp]['egresos'] += (float) $mov['monto'];
     }
 }
 
@@ -178,24 +186,25 @@ $saldo_final = $total_ingresos - $total_egresos;
                                     <?php endif; ?>
                                 </tbody>
                                 <tfoot class="bg-light border-top">
-                                    <tr>
-                                        <th colspan="5" class="text-right align-middle text-muted">TOTAL INGRESOS:</th>
-                                        <th class="text-right font-weight-bold">
-                                            <?php echo number_format($total_ingresos, 2, '.', ','); ?> Bs.
+                                    <?php foreach ($desglose_pagos as $metodo => $valores): 
+                                        $saldo_metodo = $valores['ingresos'] - $valores['egresos'];
+                                        if ($saldo_metodo == 0) continue;
+                                    ?>
+                                        <tr class="text-secondary">
+                                            <th colspan="5" class="text-right align-middle font-weight-normal">
+                                                TOTAL LÍQUIDO EN <span class="text-dark fw-bold"><?php echo $metodo; ?></span>:
+                                            </th>
+                                            <th class="text-right">
+                                                <?php echo number_format($saldo_metodo, 2, '.', ','); ?> Bs.
+                                            </th>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                    
+                                    <tr class="bg-dark text-white">
+                                        <th colspan="5" class="text-right align-middle font-weight-bold">
+                                            <span style="font-size: 1.1rem;">SALDO TOTAL NETO DEL TURNO:</span>
                                         </th>
-                                    </tr>
-                                    <tr>
-                                        <th colspan="5" class="text-right align-middle text-muted">TOTAL EGRESOS /
-                                            GASTOS:</th>
-                                        <th class="text-right font-weight-bold">
-                                            - <?php echo number_format($total_egresos, 2, '.', ','); ?> Bs.
-                                        </th>
-                                    </tr>
-                                    <tr class="bg-white">
-                                        <th colspan="5" class="text-right align-middle font-weight-bold">SALDO LÍQUIDO
-                                            DEL TURNO:</th>
-                                        <th class="text-right font-weight-bold"
-                                            style="border-top: 2px solid #000; font-size: 1.1rem;">
+                                        <th class="text-right font-weight-bold" style="font-size: 1.2rem;">
                                             <?php echo number_format($saldo_final, 2, '.', ','); ?> Bs.
                                         </th>
                                     </tr>
