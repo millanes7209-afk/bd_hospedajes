@@ -115,7 +115,9 @@ function hospedar_ocupar(action, numero, tipo, precio, habitacionID) {
 
 function agregar_huesped(action, numero, tipo, habitacionID) {
     // Redirección profesional usando POST enviando hospedajeID real
-    fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&auth=habitaciones.php')
+    fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&auth=habitaciones.php', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
         .then(response => response.json())
         .then(data => {
             if (data.error) {
@@ -152,12 +154,47 @@ function cambiarEstado(habitacionID, nuevoEstado) {
     const modalOpciones = bootstrap.Modal.getInstance(document.getElementById('menu-opciones'));
     if (modalOpciones) modalOpciones.hide();
 
-    fetch('ajax_cambiar_estado.php?habitacionID=' + habitacionID + '&nuevoEstado=' + nuevoEstado)
+    fetch('ajax_cambiar_estado.php?habitacionID=' + habitacionID + '&nuevoEstado=' + nuevoEstado, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Si el cambio fue exitoso en BD, actualizamos el mapa inmediatamente
-                actualizarEstadoHabitaciones();
+                // ACTUALIZACIÓN EN TIEMPO REAL SIN RECARGAR TODO EL MAPA
+                const btnHab = document.getElementById('habitacion-' + habitacionID);
+                if (btnHab) {
+                    // 1. Gestionar clases de color según Bootstrap
+                    btnHab.classList.remove('btn-success', 'btn-secondary', 'btn-dark', 'btn-primary', 'btn-danger', 'btn-info', 'btn-warning');
+
+                    let nuevaClase = 'btn-dark';
+                    if (nuevoEstado === 'DISPONIBLE') nuevaClase = 'btn-success';
+                    else if (nuevoEstado === 'LIMPIEZA') nuevaClase = 'btn-secondary';
+                    else if (nuevoEstado === 'OCUPADA') nuevaClase = 'btn-primary';
+                    else if (nuevoEstado === 'DEUDA') nuevaClase = 'btn-danger';
+                    else if (nuevoEstado === 'RESERVADA') nuevaClase = 'btn-info';
+                    else if (nuevoEstado === 'MOMENTANEO') nuevaClase = 'btn-warning';
+
+                    btnHab.classList.add('btn', nuevaClase);
+
+                    // 2. Actualizar etiquetas de texto y atributos de estado
+                    btnHab.setAttribute('data-estado-actual', nuevoEstado);
+
+                    const numero = btnHab.querySelector('strong') ? btnHab.querySelector('strong').innerText : '';
+                    const tipo = btnHab.getAttribute('data-tipo-nombre') || '';
+                    const precio = btnHab.getAttribute('data-monto-actual') || '0';
+
+                    btnHab.setAttribute('onclick', `handleHabitacionClick('${nuevoEstado}', '${numero}', '${tipo}', '${precio}', '${habitacionID}')`);
+
+                    // 3. Reconstrucción básica del contenido visual
+                    let label = nuevoEstado === 'MANTENIMIENTO' ? 'MANT.' : nuevoEstado;
+                    let inner = `<span>${label}</span><strong>${numero}</strong>`;
+
+                    if (nuevoEstado === 'DISPONIBLE') {
+                        inner = `<span class="badge-precio">Bs. ${parseInt(precio)}</span>` + inner;
+                    }
+
+                    btnHab.innerHTML = inner;
+                }
             } else {
                 alert('Error al cambiar el estado: ' + (data.error || 'Desconocido'));
             }
@@ -234,7 +271,9 @@ function mostrarModalCambioHabitacion(habitacionID) {
     if (modalOpciones) modalOpciones.hide();
 
     const vStamp = new Date().getTime();
-    fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&auth=habitaciones.php&v=' + vStamp)
+    fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&auth=habitaciones.php&v=' + vStamp, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
         .then(response => response.text())
         .then(text => {
             try {
@@ -253,7 +292,9 @@ function mostrarModalCambioHabitacion(habitacionID) {
                 document.getElementById('cambio-texto-actual').innerText = data.numero;
 
                 // Llenar combo disponibles evitando cache
-                fetch('get_habitaciones_disponibles.php?auth=habitaciones.php&v=' + vStamp)
+                fetch('get_habitaciones_disponibles.php?auth=habitaciones.php&v=' + vStamp, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
                     .then(res => res.text())
                     .then(text2 => {
                         try {
@@ -316,7 +357,9 @@ function ocuparDesdeReserva(habitacionID) {
     var modalOpciones = bootstrap.Modal.getInstance(document.getElementById('menu-opciones'));
     if (modalOpciones) modalOpciones.hide();
 
-    fetch('obtener_datos_reserva.php?habitacionID=' + habitacionID + '&auth=habitaciones.php')
+    fetch('obtener_datos_reserva.php?habitacionID=' + habitacionID + '&auth=habitaciones.php', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
         .then(response => response.json())
         .then(data => {
             if (data.error) {
@@ -333,7 +376,9 @@ function ocuparDesdeReserva(habitacionID) {
  * ACTUALIZACIÓN AUTOMÁTICA DE ESTADOS (Polling)
  */
 function actualizarEstadoHabitaciones() {
-    fetch('obtener_estados_habitaciones.php?auth=habitaciones.php')
+    fetch('obtener_estados_habitaciones.php?auth=habitaciones.php', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
         .then(response => response.json())
         .then(data => {
             data.forEach(function (habitacion) {

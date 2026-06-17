@@ -53,7 +53,7 @@ $sql = "SELECT hab.habitacionID, hab.estado, hab.numero, th.precio as precio_bas
         AND hab.empresaID = ?
         ORDER BY hab.numero ASC";
 
-$rs = $db->obtenerTodo($sql, [$empresaID, $empresaID, $empresaID, $empresaID, $empresaID, $empresaID]);
+$rs = $db->obtenerTodo($sql, [$empresaID, $empresaID, $empresaID, $empresaID, $empresaID, $empresaID, $empresaID]);
 
 $habitaciones = array();
 

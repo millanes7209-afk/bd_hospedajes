@@ -97,12 +97,17 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                         }
 
                         // CASO C: SINCRONIZACIÓN DE DEUDA (Si la habitación está OCUPADA y el checkout ya pasó)
-                        if ($habitacion['estado'] === 'OCUPADA' && !empty($habitacion['checkout_activo'])) {
+                        // Inicializar variables de estado inteligente
+                        $habitacion['dias_deuda'] = 0;
+
+                        if (($habitacion['estado'] === 'OCUPADA' || $habitacion['estado'] === 'DEUDA') && !empty($habitacion['checkout_activo'])) {
                             $now_stamp = time();
                             if (strtotime($habitacion['checkout_activo']) < $now_stamp) {
-                                $habitacion['estado'] = 'DEUDA';
-                                // Persistencia real en la base de datos (SOLO HABITACIÓN)
-                                $db->ejecutar("UPDATE habitaciones SET estado = 'DEUDA' WHERE habitacionID = ? AND empresaID = ?", [$habitacion['habitacionID'], $empresaID]);
+                                // Si estaba ocupada pero venció, la pasamos a DEUDA en BD si no lo estaba ya
+                                if ($habitacion['estado'] === 'OCUPADA') {
+                                    $habitacion['estado'] = 'DEUDA';
+                                    $db->ejecutar("UPDATE habitaciones SET estado = 'DEUDA' WHERE habitacionID = ? AND empresaID = ?", [$habitacion['habitacionID'], $empresaID]);
+                                }
 
                                 // Regla de Hotelería: calcular deuda (cruzar las 13:00)
                                 $checkout_obj = new DateTime($habitacion['checkout_activo']);
