@@ -27,13 +27,15 @@ try {
     // 2. Obtener datos actuales del hospedaje filtrando por empresa
     $sql_h = "SELECT monto, checkout FROM hospedajes WHERE hospedajeID = ? AND empresaID = ?";
     $h_actual = $db->obtenerFila($sql_h, [$hospedajeID, $empresaID]);
-    if (!$h_actual) throw new Exception("No se encontró el hospedaje o no pertenece a esta empresa.");
+    if (!$h_actual)
+        throw new Exception("No se encontró el hospedaje o no pertenece a esta empresa.");
 
     $nuevo_monto_total = $h_actual['monto'] + $monto_adicional;
 
     // 2. REGISTRO CONTABLE (ingresos + ingreso_pagos)
     $cuenta = $db->obtenerFila("SELECT cuentaID FROM cuentas WHERE codigo = '402' AND empresaID = ?", [$empresaID]);
-    if (!$cuenta) throw new Exception("Error Contable: No se encontró la cuenta [402] para esta empresa.");
+    if (!$cuenta)
+        throw new Exception("Error Contable: No se encontró la cuenta [402] para esta empresa.");
     $cuentaID = $cuenta['cuentaID'];
 
     // Determinar concepto y estado según la acción
@@ -45,8 +47,9 @@ try {
     $sqlI = "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     $paramsI = [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto_adicional, $concepto . " HAB. " . $habitacionID, $ahora, $usuarioID];
-    
-    if ($db->ejecutar($sqlI, $paramsI) === false) throw new Exception("Error al registrar el ingreso maestro.");
+
+    if ($db->ejecutar($sqlI, $paramsI) === false)
+        throw new Exception("Error al registrar el ingreso maestro.");
     $ingresoID = $db->lastInsertId();
 
     // 6. DETALLE DE PAGOS
@@ -54,8 +57,8 @@ try {
         $monto_pago = floatval(str_replace(',', '.', $pago['monto']));
         $formaPagoID = $pago['formapagoID'] ?? null;
         if ($monto_pago > 0 && $formaPagoID) {
-            $sqlIP = "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto) VALUES (?, ?, ?)";
-            if ($db->ejecutar($sqlIP, [$ingresoID, $formaPagoID, $monto_pago]) === false) {
+            $sqlIP = "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto, _fec_insercion, _usuario) VALUES (?, ?, ?, ?, ?)";
+            if ($db->ejecutar($sqlIP, [$ingresoID, $formaPagoID, $monto_pago, $ahora, $usuarioID]) === false) {
                 throw new Exception("Error al registrar el desglose del pago.");
             }
         }
@@ -69,10 +72,21 @@ try {
                                       _fec_insercion, _fec_modificacion, _estado, _usuario) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $paramsNewH = [
-        $empresaID, $habitacionID, $cajaID, $ingresoID, $ahora, $nueva_salida, $monto_adicional, 
-        $estado_h, $concepto, $ahora, $ahora, 'A', $usuarioID
+        $empresaID,
+        $habitacionID,
+        $cajaID,
+        $ingresoID,
+        $ahora,
+        $nueva_salida,
+        $monto_adicional,
+        $estado_h,
+        $concepto,
+        $ahora,
+        $ahora,
+        'A',
+        $usuarioID
     ];
-    
+
     if ($db->ejecutar($sqlNewH, $paramsNewH) === false) {
         throw new Exception("Error al registrar el nuevo registro de hospedaje vinculado al pago.");
     }
@@ -83,22 +97,25 @@ try {
                   SELECT empresaID, ?, clienteID, ?, 'A' 
                   FROM hospedajes_clientes 
                   WHERE hospedajeID = ? AND empresaID = ? AND _estado <> 'X'",
-                  [$nuevoHospedajeID, $usuarioID, $hospedajeID, $empresaID]);
+        [$nuevoHospedajeID, $usuarioID, $hospedajeID, $empresaID]
+    );
 
     // 9. Actualizar la Habitación
-    $estado_hab = ($tipo_accion === 'SALIR') ? 'LIMPIEZA' : 'MOMENTANEO'; 
+    $estado_hab = ($tipo_accion === 'SALIR') ? 'LIMPIEZA' : 'MOMENTANEO';
     $sql_upd_hab = "UPDATE habitaciones SET estado = ? WHERE habitacionID = ?";
     $res_upd_hab = $db->ejecutar($sql_upd_hab, [$estado_hab, $habitacionID]);
-    if (!$res_upd_hab) throw new Exception("Error al actualizar el estado de la habitación.");
+    if (!$res_upd_hab)
+        throw new Exception("Error al actualizar el estado de la habitación.");
 
     $db->commit();
-    
+
     // Redirección con éxito
     header("Location: ../habitacioness/habitaciones.php?msg=ok");
     exit;
 
 } catch (Exception $e) {
-    if ($db->inTransaction()) $db->rollBack();
+    if ($db->inTransaction())
+        $db->rollBack();
     echo "<h1>Error Crítico</h1><p>" . $e->getMessage() . "</p>";
     echo "<a href='javascript:history.back()'>Volver atrás</a>";
 }

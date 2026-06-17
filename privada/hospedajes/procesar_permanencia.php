@@ -71,8 +71,8 @@ try {
     foreach ($pagos as $pago) {
         $monto_pago = floatval(str_replace(',', '.', $pago['monto']));
         if ($monto_pago > 0) {
-            $sqlIP = "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto, _fec_insercion) VALUES (?, ?, ?, ?)";
-            $db->ejecutar($sqlIP, [$ingresoID, $pago['formaPagoID'], $monto_pago, $ahora]);
+            $sqlIP = "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto, _fec_insercion, _usuario) VALUES (?, ?, ?, ?, ?)";
+            $db->ejecutar($sqlIP, [$ingresoID, $pago['formaPagoID'], $monto_pago, $ahora, $usuarioID]);
         }
     }
 

@@ -79,8 +79,8 @@ try {
         $ingresoID = $db->lastInsertId();
 
         // B. Detalle de Pago
-        $sqlIP = "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto) VALUES (?, ?, ?)";
-        if ($db->ejecutar($sqlIP, [$ingresoID, $formaPagoID, $monto_deuda]) === false) {
+        $sqlIP = "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto, _fec_insercion, _usuario) VALUES (?, ?, ?, ?, ?)";
+        if ($db->ejecutar($sqlIP, [$ingresoID, $formaPagoID, $monto_deuda, $ahora, $usuarioID]) === false) {
             throw new Exception("Error al registrar el desglose del pago.");
         }
 

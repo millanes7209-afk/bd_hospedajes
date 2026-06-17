@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ingresoID = $db->lastInsertId();
 
             // 2. DETALLE DE PAGO
-            $db->ejecutar("INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto, _fec_insercion) VALUES (?, ?, ?, ?)", [$ingresoID, $formaPagoID, $monto, $fecha_actual]);
+            $db->ejecutar("INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto, _fec_insercion, _usuario) VALUES (?, ?, ?, ?, ?)", [$ingresoID, $formaPagoID, $monto, $fecha_actual, $usuarioID]);
 
             // 3. Registro completado
 
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $egresoID = $db->lastInsertId();
 
             // 2. DETALLE DE PAGO
-            $db->ejecutar("INSERT INTO egreso_pagos (egresoID, formapagoID, monto, _fec_insercion) VALUES (?, ?, ?, ?)", [$egresoID, $formaPagoID, $monto, $fecha_actual]);
+            $db->ejecutar("INSERT INTO egreso_pagos (egresoID, formapagoID, monto, _fec_insercion, _usuario) VALUES (?, ?, ?, ?, ?)", [$egresoID, $formaPagoID, $monto, $fecha_actual, $usuarioID]);
         }
 
         $db->commit();

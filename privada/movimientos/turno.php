@@ -27,7 +27,7 @@ $sql = "SELECT
             monto,
             fecha AS fecha_registro
         FROM " . $db->getVistaMovimientos() . " as t
-        WHERE cajaID = ? AND empresaID = ?
+        WHERE cajaID = ? AND empresaID = ? AND t._estado <> 'X' AND t._estado <> 'X'
         ORDER BY fecha DESC";
 
 $movimientos_caja = $db->obtenerTodo($sql, [$caja_abierta_id, $empresaID]);

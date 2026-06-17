@@ -2,14 +2,14 @@
 session_start();
 require_once("../../conexion.php");
 
-$descripcion  = strtoupper($_POST['descripcion'] ?? '');   // número de habitación (readonly)
+$descripcion = strtoupper($_POST['descripcion'] ?? '');   // número de habitación (readonly)
 $habitacionID = (int) $_POST["habitacionID"];
-$monto_total  = floatval($_POST['monto_total']);
-$pagos        = $_POST['pagos'] ?? [];
-$cajaID       = $_SESSION['caja_abierta_id'];
-$empresaID    = $_SESSION['empresaID'];
-$usuarioID    = $_SESSION["sesion_id_usuario"];
-$fecha_ahora  = date('Y-m-d H:i:s');
+$monto_total = floatval($_POST['monto_total']);
+$pagos = $_POST['pagos'] ?? [];
+$cajaID = $_SESSION['caja_abierta_id'];
+$empresaID = $_SESSION['empresaID'];
+$usuarioID = $_SESSION["sesion_id_usuario"];
+$fecha_ahora = date('Y-m-d H:i:s');
 
 try {
     // --- Validaciones previas ---
@@ -50,8 +50,8 @@ try {
         $monto_pago = floatval(str_replace(',', '.', $pago['monto'] ?? 0));
         if ($monto_pago > 0) {
             $db->ejecutar(
-                "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto) VALUES (?, ?, ?)",
-                [$ingresoID, $pago['formaPagoID'], $monto_pago]
+                "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto, _fec_insercion, _usuario) VALUES (?, ?, ?, ?, ?)",
+                [$ingresoID, $pago['formaPagoID'], $monto_pago, $fecha_ahora, $usuarioID]
             );
         }
     }
@@ -64,12 +64,13 @@ try {
 
     $db->commit();
 
-    $_SESSION['mensaje']      = "Momentáneo registrado. Ingreso contabilizado en caja.";
+    $_SESSION['mensaje'] = "Momentáneo registrado. Ingreso contabilizado en caja.";
     $_SESSION['mensaje_tipo'] = "success";
 
 } catch (Exception $e) {
-    if ($db->inTransaction()) $db->rollBack();
-    $_SESSION['mensaje']      = "Error al registrar: " . $e->getMessage();
+    if ($db->inTransaction())
+        $db->rollBack();
+    $_SESSION['mensaje'] = "Error al registrar: " . $e->getMessage();
     $_SESSION['mensaje_tipo'] = "danger";
 }
 
