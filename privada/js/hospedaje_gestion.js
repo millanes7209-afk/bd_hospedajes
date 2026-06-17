@@ -13,33 +13,43 @@ function autocompletarCheckout() {
 function actualizarSalida() {
     var tipo = document.getElementById('tipo').value;
     var divDuracion = document.getElementById('contenedorDuracion');
+    var contenedorPD = document.getElementById('contenedorPrecioDiario');
     var checkoutInput = document.getElementById('checkout');
-    var inputPrecio = document.getElementById('monto_total');
+    var inputMonto = document.getElementById('monto_total');
+    var inputPrecioDia = document.getElementById('precio_diario');
     var hoy = new Date();
     var checkoutDate = new Date();
 
     if (tipo === 'MOMENTANEO') {
+        // Mostrar duración, ocultar precio por día
         if (divDuracion) divDuracion.style.display = 'block';
-        
+        if (contenedorPD) contenedorPD.style.display = 'none';
+
         var duracion = parseInt(document.getElementById('duracion').value) || 1;
         var minutosGracia = duracion * 10;
-        
-        // Asignar precio dinámico según duración
-        if (duracion == 1) inputPrecio.value = 30;
-        else if (duracion == 2) inputPrecio.value = 50;
-        else if (duracion == 3) inputPrecio.value = 60;
+
+        // Precio fijo según horas
+        var precioBase = 30;
+        if (duracion == 2) precioBase = 50;
+        else if (duracion == 3) precioBase = 60;
+
+        if (inputMonto) inputMonto.value = precioBase;
 
         checkoutDate.setHours(hoy.getHours() + duracion);
         checkoutDate.setMinutes(hoy.getMinutes() + minutosGracia);
 
     } else {
+        // Ocultar duración, mostrar precio por día
         if (divDuracion) divDuracion.style.display = 'none';
-        
-        // Restaurar precio original
-        if (inputPrecio) {
-            inputPrecio.value = inputPrecio.getAttribute('data-original');
+        if (contenedorPD) contenedorPD.style.display = 'block';
+
+        // Restaurar precio_diario a su valor original
+        if (inputPrecioDia) {
+            var precioOriginal = inputPrecioDia.getAttribute('data-original');
+            inputPrecioDia.value = precioOriginal;
         }
-        
+
+        // Calcular checkout por defecto (mañana 13:00 si ya pasaron las 6am)
         var horaActual = hoy.getHours();
         if (horaActual >= 6) {
             checkoutDate.setDate(hoy.getDate() + 1);
@@ -53,7 +63,12 @@ function actualizarSalida() {
         checkoutInput.value = formatearFechaLocal(checkoutDate);
     }
 
-    // DISPARAR RECÁLCULO DE SALDO PARA QUE EL BOTÓN SE ACTUALICE
+    // Recalcular monto total (para HOSPEDAJE calcula días x precio; para MOMENTANEO ya lo fijamos arriba y la función sale sola)
+    if (typeof recalcularMontoHospedajeNuevo === 'function') {
+        recalcularMontoHospedajeNuevo();
+    }
+
+    // Actualizar resumen de saldo
     if (typeof actualizarResumenPagos === 'function') {
         actualizarResumenPagos();
     }

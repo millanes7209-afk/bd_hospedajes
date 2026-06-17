@@ -114,9 +114,12 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                                     $iter_date_limite->modify('+1 day');
                                 }
                                 $precio_diario = !empty($habitacion['precio_pactado']) ? $habitacion['precio_pactado'] : $habitacion['precio'];
-                                $habitacion['precio_pactado'] = $dias_cobro * $precio_diario;
+                                $habitacion['dias_deuda'] = $dias_cobro; // Guardamos los días
                             }
                         }
+
+
+
 
                         // Asignar la clase de Bootstrap según el estado
                         $btnClass = 'btn-habitacion';
@@ -160,8 +163,10 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                             <?php if (($habitacion['estado'] === 'OCUPADA' || $habitacion['estado'] === 'DEUDA') && !empty($habitacion['cliente_activo'])): ?>
                                 <!-- Ficha Flotante (Tooltip) para OCUPADAS y DEUDAS -->
                                 <?php if ($habitacion['estado'] === 'DEUDA'): ?>
-                                    <span class="badge-precio" style="background:#dc3545; color:#fff; border-color:#dc3545;">DEUDA Bs.
-                                        <?php echo number_format($habitacion['precio_pactado'], 0); ?></span>
+                                    <span class="badge-precio" style="background:#dc3545; color:#fff; border-color:#dc3545;">
+                                        Bs. <?php echo number_format($habitacion['precio'], 0); ?> - DEBE
+                                        <?php echo $habitacion['dias_deuda']; ?> DÍAS
+                                    </span>
                                 <?php else: ?>
                                     <span class="badge-precio">Bs. <?php echo number_format($habitacion['precio_pactado'], 0); ?></span>
                                 <?php endif; ?>

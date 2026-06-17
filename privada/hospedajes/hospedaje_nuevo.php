@@ -295,21 +295,78 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
                                         </div>
                                     </div>
 
-                                    <!-- FILA 2: PRECIO Y FECHA SALIDA -->
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label for="monto_total" class="form-label"><b>(*) Precio (Bs)</b></label>
-                                            <input type="number" class="form-control" name="monto_total"
-                                                id="monto_total" value="<?php echo $precio_habitacion; ?>" min="1"
-                                                step="0.5" oninput="actualizarResumenPagos()"
-                                                data-original="<?php echo $precio_habitacion; ?>">
+                                    <!-- FILA 2: PRECIO DIARIO, FECHA SALIDA Y MONTO TOTAL -->
+                                    <div class="row mb-3 align-items-end">
+                                        <div class="col-md-4" id="contenedorPrecioDiario">
+                                            <label for="precio_diario" class="form-label fw-bold">(*) Precio por Día
+                                                (Bs)</label>
+                                            <input type="number" class="form-control" name="precio_diario"
+                                                id="precio_diario" value="<?php echo $precio_habitacion; ?>"
+                                                data-original="<?php echo $precio_habitacion; ?>" step="0.5"
+                                                oninput="recalcularMontoHospedajeNuevo()">
                                         </div>
-                                        <div class="col-md-6">
-                                            <label for="checkout" class="form-label"><b>(*) Fecha Salida</b></label>
+                                        <div class="col-md-4">
+                                            <label for="checkout" class="form-label fw-bold">(*) Fecha Salida</label>
                                             <input type="datetime-local" class="form-control" name="checkout"
-                                                id="checkout" required>
+                                                id="checkout" required onchange="recalcularMontoHospedajeNuevo()">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="monto_total" class="form-label fw-bold">(*) Monto Total
+                                                (Bs)</label>
+                                            <input type="number" class="form-control" name="monto_total"
+                                                id="monto_total" value="<?php echo $precio_habitacion; ?>" step="0.5"
+                                                oninput="actualizarResumenPagos()">
                                         </div>
                                     </div>
+
+                                    <script>
+                                        function recalcularMontoHospedajeNuevo() {
+                                            const tipo = document.getElementById('tipo').value;
+                                            // Si es momentáneo, dejamos que actualizarSalida() maneje el precio fijo
+                                            if (tipo === 'MOMENTANEO') return;
+
+                                            const precioDia = parseFloat(document.getElementById('precio_diario').value) || 0;
+                                            const checkoutInput = document.getElementById('checkout').value;
+
+                                            if (!checkoutInput) return;
+
+                                            const checkin = new Date();
+                                            const checkout = new Date(checkoutInput);
+
+                                            let diff = checkout - checkin;
+                                            let dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+                                            if (dias <= 0) dias = 1;
+
+                                            const total = (precioDia * dias).toFixed(2);
+                                            document.getElementById('monto_total').value = total;
+
+                                            if (typeof actualizarResumenPagos === 'function') {
+                                                actualizarResumenPagos();
+                                            }
+                                        }
+
+                                        // Forzar el salto de TAB desde Monto Total al primer select de pagos
+                                        document.getElementById('monto_total').addEventListener('keydown', function (e) {
+                                            if (e.key === 'Tab' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                const primerPago = document.querySelector('#contenedorPagos select');
+                                                if (primerPago) {
+                                                    primerPago.focus();
+                                                } else {
+                                                    const btnAdd = document.querySelector('button[onclick="agregarFilaPago()"]');
+                                                    if (btnAdd) btnAdd.focus();
+                                                }
+                                            }
+                                        });
+
+                                        // Cálculo inicial al cargar la página
+                                        // autocompletarCheckout() ya rellena el checkout en el onload del body,
+                                        // por eso esperamos un tick antes de recalcular.
+                                        document.addEventListener('DOMContentLoaded', function () {
+                                            setTimeout(recalcularMontoHospedajeNuevo, 50);
+                                        });
+                                    </script>
 
                                     <!-- FILA 3: SECCIÓN DE PAGO -->
                                     <div class="row mb-3">

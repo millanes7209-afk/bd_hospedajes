@@ -17,6 +17,10 @@ $fecha_inicio = $_GET['fecha_inicio'] ?? date('Y-m-d', strtotime('-6 days'));
 $fecha_fin = $_GET['fecha_fin'] ?? date('Y-m-d');
 $usuarioID_filtro = $_GET['usuarioID'] ?? '';
 
+// AJUSTE DE RANGO CON HORAS EXTREMAS (00:00:00 a 23:59:59)
+$fec_inicio_full = $fecha_inicio . " 00:00:00";
+$fec_fin_full = $fecha_fin . " 23:59:59";
+
 // Obtener usuarioID actual
 $usuarioID_actual = $_SESSION['sesion_id_usuario'] ?? $_SESSION['usuarioID'] ?? 0;
 
@@ -67,93 +71,88 @@ while ($fecha_actual <= $fecha_fin_obj) {
     $fecha_actual->add(new DateInterval('P1D'));
 }
 
-// Para cada fecha, obtener movimientos
-foreach ($fechas_rango as $fecha) {
-    // FILTRO ESTRICTO: Cajas con ingresos/egresos de habitaciones O de baños pendientes de entrega
-    $where_entrega = " AND (EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.cajaID AND i.entregado = 0 AND i._estado <> 'X') 
-                         OR EXISTS (SELECT 1 FROM egresos e WHERE e.cajaID = c.cajaID AND e.entregado = 0 AND e._estado <> 'X')
-                         OR EXISTS (SELECT 1 FROM banos b WHERE b.cajaID = c.cajaID AND b.entregado = 0)) ";
+// --- CONSULTA UNIFICADA POR RANGO Y ORDENADA ---
+// FILTRO ESTRICTO: Cajas con ingresos/egresos de habitaciones O de baños pendientes de entrega
+$where_entrega = " AND (EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.cajaID AND i.entregado = 0 AND i._estado <> 'X') 
+                     OR EXISTS (SELECT 1 FROM egresos e WHERE e.cajaID = c.cajaID AND e.entregado = 0 AND e._estado <> 'X')
+                     OR EXISTS (SELECT 1 FROM banos b WHERE b.cajaID = c.cajaID AND b.entregado = 0)) ";
 
-    // Armar consulta según el rol (Filtrar por el RESPONSABLE DEL CIERRE)
-    if ($rol_usuario === 'RECEPCIONISTA') {
+if ($rol_usuario === 'RECEPCIONISTA') {
+    $where_user = "AND cc._usuario = ?";
+    $params_mov = [$fec_inicio_full, $fec_fin_full, $empresaID_filtro, $usuarioID_actual];
+} else {
+    if (!empty($usuarioID_filtro)) {
         $where_user = "AND cc._usuario = ?";
-        $params_mov = [$fecha, $empresaID_filtro, $usuarioID_actual];
+        $params_mov = [$fec_inicio_full, $fec_fin_full, $empresaID_filtro, $usuarioID_filtro];
     } else {
-        if (!empty($usuarioID_filtro)) {
-            $where_user = "AND cc._usuario = ?";
-            $params_mov = [$fecha, $empresaID_filtro, $usuarioID_filtro];
-        } else {
-            $where_user = "";
-            $params_mov = [$fecha, $empresaID_filtro];
-        }
+        $where_user = "";
+        $params_mov = [$fec_inicio_full, $fec_fin_full, $empresaID_filtro];
+    }
+}
+
+$sql_all_movs = "SELECT 
+                    cc.monto,
+                    'INGRESO' as mov_tipo, 
+                    u.usuario as nombre_usuario,
+                    fp.tipo as forma_pago,
+                    cc.cajaID,
+                    c.fecha_apertura,
+                    c.fecha_cierre
+                FROM cierre_cajas cc
+                INNER JOIN cajas c ON cc.cajaID = c.cajaID
+                INNER JOIN usuarios u ON c.usuarioID = u.usuarioID
+                INNER JOIN formas_pago fp ON cc.formapagoID = fp.formapagoID
+                WHERE c.fecha_cierre BETWEEN ? AND ?
+                  AND c.empresaID = ? 
+                  AND c.estado = 'CERRADA'
+                  AND c._estado <> 'X'
+                  AND cc._estado <> 'X'
+                  $where_user
+                  $where_entrega
+                ORDER BY c.fecha_cierre ASC, cc.cajaID ASC"; // ORDEN CRONOLÓGICO ESTRICTO
+
+$todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
+
+// Agrupamos los resultados en la estructura de vista_semanal para el renderizado
+foreach ($todos_los_movimientos as $mov) {
+    $fecha_cierre_dia = date('Y-m-d', strtotime($mov['fecha_cierre']));
+    $cajaID = $mov['cajaID'];
+
+    // Asegurar que la fecha exista en el array si el rango fue generado
+    if (!isset($vista_semanal[$fecha_cierre_dia])) {
+        $vista_semanal[$fecha_cierre_dia] = ['fecha' => $fecha_cierre_dia, 'movimientos' => []];
     }
 
-    $sql_movimientos_dia = "SELECT 
-                              cc.monto,
-                              'INGRESO' as mov_tipo, 
-                              u.usuario as nombre_usuario,
-                              fp.tipo as forma_pago,
-                              cc.cajaID,
-                              c.fecha_apertura
-                            FROM cierre_cajas cc
-                            INNER JOIN cajas c ON cc.cajaID = c.cajaID
-                            INNER JOIN usuarios u ON c.usuarioID = u.usuarioID
-                            INNER JOIN formas_pago fp ON cc.formapagoID = fp.formapagoID
-                            WHERE DATE(c.fecha_cierre) = ? 
-                              AND c.empresaID = ? 
-                              AND c.estado = 'CERRADA'
-                              AND c._estado <> 'X'
-                              AND cc._estado <> 'X'
-                              $where_user
-                              $where_entrega
-                            ORDER BY c.fecha_cierre DESC";
-
-    $movimientos_dia = $db->obtenerTodo($sql_movimientos_dia, $params_mov);
-
-    // Agrupar movimientos por usuario y caja
-    $agrupados = [];
-    foreach ($movimientos_dia as $mov) {
-        $clave = $mov['cajaID'];
-
-        if (!isset($agrupados[$clave])) {
-            $agrupados[$clave] = [
-                'usuario' => $mov['nombre_usuario'],
-                'fecha_apertura' => $mov['fecha_apertura'],
-                'saldos' => [],
-                'movimientos_count' => 0,
-                'cajaID' => $mov['cajaID']
-            ];
-        }
-
-        // Acumular saldos por forma de pago
-        $forma_pago = $mov['forma_pago'];
-        if (!isset($agrupados[$clave]['saldos'][$forma_pago])) {
-            $agrupados[$clave]['saldos'][$forma_pago] = 0;
-        }
-
-        // Sumar o restar según tipo de movimiento
-        if ($mov['mov_tipo'] == 'INGRESO') {
-            $agrupados[$clave]['saldos'][$forma_pago] += $mov['monto'];
-        } else {
-            $agrupados[$clave]['saldos'][$forma_pago] -= $mov['monto'];
-        }
-
-        $agrupados[$clave]['movimientos_count']++;
+    // Si la caja no está en los movimientos de ese día, la inicializamos
+    if (!isset($vista_semanal[$fecha_cierre_dia]['movimientos'][$cajaID])) {
+        $vista_semanal[$fecha_cierre_dia]['movimientos'][$cajaID] = [
+            'usuario' => $mov['nombre_usuario'],
+            'fecha_apertura' => $mov['fecha_apertura'],
+            'saldos' => [],
+            'movimientos_count' => 0,
+            'cajaID' => $cajaID,
+            'saldo_bano' => 0
+        ];
     }
 
-    $agrupados_final = array_values($agrupados);
+    $forma_pago = $mov['forma_pago'];
+    if (!isset($vista_semanal[$fecha_cierre_dia]['movimientos'][$cajaID]['saldos'][$forma_pago])) {
+        $vista_semanal[$fecha_cierre_dia]['movimientos'][$cajaID]['saldos'][$forma_pago] = 0;
+    }
 
-    // NUEVO: Obtener saldo de BAÑOS por cada cajaID encontrada
-    foreach ($agrupados_final as &$caja_data) {
-        $cid = $caja_data['cajaID'];
+    $vista_semanal[$fecha_cierre_dia]['movimientos'][$cajaID]['saldos'][$forma_pago] += $mov['monto'];
+    $vista_semanal[$fecha_cierre_dia]['movimientos'][$cajaID]['movimientos_count']++;
+}
+
+// CÁLCULO DE SALDOS DE BAÑOS (Post-agrupación para eficiencia)
+foreach ($vista_semanal as $fecha => &$datos) {
+    foreach ($datos['movimientos'] as $cajaID => &$caja_data) {
         $sql_b = "SELECT SUM(CASE WHEN tipo = 'INGRESO' THEN monto ELSE 0 END) - 
                          SUM(CASE WHEN tipo = 'EGRESO' THEN monto ELSE 0 END) as saldo
                   FROM banos WHERE cajaID = ? AND entregado = 0";
-        $rb = $db->obtenerFila($sql_b, [$cid]);
+        $rb = $db->obtenerFila($sql_b, [$cajaID]);
         $caja_data['saldo_bano'] = (float) ($rb['saldo'] ?? 0);
     }
-
-    $vista_semanal[$fecha]['movimientos'] = $agrupados_final;
 }
 ?>
 

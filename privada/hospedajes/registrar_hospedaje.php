@@ -10,6 +10,7 @@ require_once("../../conexion.php");
 $habitacionID = $_POST['habitacionID'];
 $tipo_estadia = $_POST['tipo'];
 $monto_total = $_POST['monto_total'];
+$precio_diario = !empty($_POST['precio_diario']) ? floatval($_POST['precio_diario']) : null; // REFERENCIA: precio pactado por día
 $checkout = $_POST['checkout'];
 $descripcion = $_POST['descripcion'];
 $habitacion_numero = $_POST['habitacion_numero'];
@@ -88,9 +89,9 @@ try {
     }
 
     // 7. INSERTAR HOSPEDAJE (Vinculado al ingresoID)
-    $sqlH = "INSERT INTO hospedajes (empresaID, habitacionID, cajaID, ingresoID, checkin, checkout, monto, estado, observaciones, 
+    $sqlH = "INSERT INTO hospedajes (empresaID, habitacionID, cajaID, ingresoID, checkin, checkout, monto, precio_diario, estado, observaciones, 
                                    _fec_insercion, _fec_modificacion, _estado, _usuario) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $paramsH = [
         $empresaID,
         $habitacionID,
@@ -99,6 +100,7 @@ try {
         $ahora,
         $checkout,
         $monto_total,
+        $precio_diario,
         'ACTIVO',
         $descripcion,
         $ahora,

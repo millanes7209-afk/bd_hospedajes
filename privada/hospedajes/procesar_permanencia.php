@@ -3,6 +3,7 @@ session_start();
 require_once("../../conexion.php");
 $hospedajeID_anterior = $_POST['hospedajeID_anterior'];
 $habitacionID = $_POST['habitacionID'];
+$precio_diario = !empty($_POST['precio_diario']) ? floatval($_POST['precio_diario']) : null;
 $checkout = $_POST['checkout'];
 $monto_total = $_POST['monto_total'];
 $descripcion = $_POST['descripcion'];
@@ -76,9 +77,9 @@ try {
     }
 
     // 4. CREAR NUEVO HOSPEDAJE (CONTINUIDAD)
-    $sqlNew = "INSERT INTO hospedajes (empresaID, habitacionID, cajaID, ingresoID, checkin, checkout, monto, estado, observaciones, 
+    $sqlNew = "INSERT INTO hospedajes (empresaID, habitacionID, cajaID, ingresoID, checkin, checkout, monto, precio_diario, estado, observaciones, 
                                      _fec_insercion, _fec_modificacion, _estado, _usuario) 
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $paramsNew = [
         $empresaID,
         $habitacionID,
@@ -87,6 +88,7 @@ try {
         $ahora,
         $checkout,
         $monto_total,
+        $precio_diario,
         'ACTIVO',
         $descripcion,
         $ahora,

@@ -356,11 +356,13 @@ function actualizarEstadoHabitaciones() {
                     const estadoPrevio = btnHabitacion.getAttribute('data-estado-actual');
                     const clientePrevio = btnHabitacion.getAttribute('data-cliente-actual');
                     const montoPrevio = btnHabitacion.getAttribute('data-monto-actual');
+                    const deudaPrevia = btnHabitacion.getAttribute('data-deuda-dias');
 
                     // Si nada ha cambiado, saltamos la actualización de este botón para no romper el hover/tooltip actual
                     if (estadoPrevio === habitacion.estado &&
                         clientePrevio === (habitacion.cliente_activo || '') &&
-                        montoPrevio === String(habitacion.precio_inteligente)) {
+                        montoPrevio === String(habitacion.precio_inteligente) &&
+                        deudaPrevia === String(habitacion.dias_deuda || 0)) {
                         return;
                     }
 
@@ -369,6 +371,7 @@ function actualizarEstadoHabitaciones() {
                     btnHabitacion.setAttribute('data-estado-actual', habitacion.estado);
                     btnHabitacion.setAttribute('data-cliente-actual', habitacion.cliente_activo || '');
                     btnHabitacion.setAttribute('data-monto-actual', habitacion.precio_inteligente);
+                    btnHabitacion.setAttribute('data-deuda-dias', habitacion.dias_deuda || 0);
 
                     // Actualizar el atributo onclick con el precio inteligente
                     btnHabitacion.setAttribute('onclick', `handleHabitacionClick('${habitacion.estado}', '${habitacion.numero}', '${habitacion.tipo}', '${habitacion.precio_inteligente}', '${habitacion.habitacionID}')`);
@@ -389,10 +392,10 @@ function actualizarEstadoHabitaciones() {
                         let formattedDate = ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
 
                         let badgeColor = (habitacion.estado === 'DEUDA') ? 'background:#dc3545; color:#fff; border-color:#dc3545;' : '';
-                        let badgeLabel = (habitacion.estado === 'DEUDA') ? 'DEUDA Bs.' : 'Bs.';
+                        let badgeLabel = (habitacion.estado === 'DEUDA') ? `Bs. ${parseInt(habitacion.precio_inteligente)} - DEBE ${habitacion.dias_deuda} DÍAS` : `Bs. ${parseInt(habitacion.precio_inteligente)}`;
 
                         innerHTML += `
-                        <span class="badge-precio" style="${badgeColor}">${badgeLabel} ${parseInt(habitacion.precio_inteligente)}</span>
+                        <span class="badge-precio" style="${badgeColor}">${badgeLabel}</span>
                         <div class="habitacion-info-tooltip">
                             <div class="tooltip-header" ${habitacion.estado === 'DEUDA' ? 'style="background-color: #dc3545;"' : ''}>
                                 <i class="fas ${habitacion.estado === 'DEUDA' ? 'fa-exclamation-triangle' : 'fa-user-circle'}"></i>

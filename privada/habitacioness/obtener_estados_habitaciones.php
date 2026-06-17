@@ -53,10 +53,19 @@ foreach ($rs as $habitacion) {
         $db->ejecutar("UPDATE habitaciones SET estado = 'DEUDA' WHERE habitacionID = ? AND empresaID = ?", [$habitacion['habitacionID'], $empresaID]);
     }
 
-    // LÓGICA DE LIMPIEZA AUTOMÁTICA: Si está marcada como OCUPADA o DEUDA pero no tiene hospedaje ACTIVO real vinculado
-    if (in_array($habitacion['estado'], ['OCUPADA', 'DEUDA']) && empty($habitacion['hospedaje_activo_id'])) {
-        $habitacion['estado'] = 'LIMPIEZA';
-        $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ? AND empresaID = ?", [$habitacion['habitacionID'], $empresaID]);
+    // LÓGICA DE DEUDA: Calcular días de exceso si corresponde
+    $dias_deuda = 0;
+    if ($habitacion['estado'] === 'DEUDA' && !empty($habitacion['checkout_activo'])) {
+        $checkout_obj = new DateTime($habitacion['checkout_activo']);
+        $ahora_obj = new DateTime();
+        $dias_deuda = 1;
+        $iter_date_limite = clone $checkout_obj;
+        $iter_date_limite->modify('+1 day');
+        $iter_date_limite->setTime(13, 0, 0);
+        while ($iter_date_limite <= $ahora_obj) {
+            $dias_deuda++;
+            $iter_date_limite->modify('+1 day');
+        }
     }
 
     $habitaciones[] = array(
@@ -67,6 +76,7 @@ foreach ($rs as $habitacion) {
         'cliente_activo' => $habitacion['cliente_activo'],
         'checkout_activo' => $habitacion['checkout_activo'],
         'precio_base' => $habitacion['precio_base'],
+        'dias_deuda' => $dias_deuda, // Nuevo campo
         'precio_inteligente' => $habitacion['monto_hospedaje'] ?? $habitacion['precio_base'],
         'bano' => $habitacion['bano'],
         'tv' => $habitacion['tv'],
