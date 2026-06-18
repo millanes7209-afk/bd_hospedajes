@@ -94,6 +94,25 @@ $sql_all_movs = "SELECT
 
 $todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
 
+// --- PANEL DEPURADOR (Solo visible para diagnóstico) ---
+echo "<div style='position:fixed; top:10px; right:10px; width:450px; max-height:400px; overflow-y:auto; background:rgba(0,0,0,0.9); color:white; padding:15px; font-family:monospace; font-size:11px; z-index:99999; border:2px solid #00ff00; border-radius:5px;'>
+    <h4 style='color:#00ff00; margin:0 0 10px 0;'>[DEBUG TERMINAL]</h4>
+    <strong>RESULTADOS:</strong> " . count($todos_los_movimientos) . " filas.<br><br>";
+if (!empty($todos_los_movimientos)) {
+    echo "<table style='width:100%; border-collapse:collapse; color:#fff;'>
+            <tr style='border-bottom:1px solid #555;'><th>ID</th><th>Apertura</th><th>Monto</th><th>FP</th></tr>";
+    foreach (array_slice($todos_los_movimientos, 0, 30) as $m) {
+        echo "<tr>
+                <td>{$m['cajaID']}</td>
+                <td>{$m['fecha_apertura']}</td>
+                <td>{$m['monto']}</td>
+                <td style='color:yellow;'>{$m['forma_pago']}</td>
+            </tr>";
+    }
+    echo "</table>";
+}
+echo "</div>";
+
 // Agrupar en vista_semanal
 foreach ($todos_los_movimientos as $mov) {
     $f_apertura = substr($mov['fecha_apertura'], 0, 10);
@@ -315,7 +334,8 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                                     $suma_footer_total_general += $total_fila;
                                                     ?>
                                                     <td class="text-end align-middle fw-bold">Bs.
-                                                        <?= number_format($total_fila, 2) ?></td>
+                                                        <?= number_format($total_fila, 2) ?>
+                                                    </td>
                                                     <?php if ($rol_usuario !== 'RECEPCIONISTA'): ?>
                                                         <td class="text-center align-middle"
                                                             style="width:40px; border-left:1px solid #dee2e6;">
@@ -356,7 +376,8 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                                 style="text-align:right;">TOTAL GENERAL:</th>
                                             <?php foreach ($formas_pago as $forma_pago): ?>
                                                 <th class="text-center">
-                                                    <?= number_format($suma_footer_formas[$forma_pago['tipo']], 2) ?> Bs.</th>
+                                                    <?= number_format($suma_footer_formas[$forma_pago['tipo']], 2) ?> Bs.
+                                                </th>
                                             <?php endforeach; ?>
                                             <?php if ($tiene_banos): ?>
                                                 <th class="text-center text-info">
