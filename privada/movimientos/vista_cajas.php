@@ -73,20 +73,17 @@ if ($rol_usuario === 'RECEPCIONISTA') {
 // FIX PRINCIPAL: usar fecha_apertura para el rango pero también
 // incluir cajas abiertas en el rango aunque se hayan cerrado después
 $sql_all_movs = "SELECT 
-                    cc.monto,
                     c.cajaID, 
                     c.fecha_apertura, 
                     c.fecha_cierre,
                     u.usuario as nombre_usuario,
-                    fp.tipo as forma_pago
+                    'TEST' as forma_pago,
+                    0 as monto
                 FROM cajas c
-                INNER JOIN cierre_cajas cc ON c.cajaID = cc.cajaID
                 INNER JOIN usuarios u ON c.usuarioID = u.usuarioID
-                INNER JOIN formas_pago fp ON cc.formapagoID = fp.formapagoID
                 WHERE DATE(c.fecha_apertura) BETWEEN ? AND ?
                   AND c.empresaID = ? 
                   AND c._estado <> 'X'
-                  AND cc._estado <> 'X'
                   $where_user
                   $where_entrega
                 ORDER BY c.fecha_apertura ASC, c.cajaID ASC";
