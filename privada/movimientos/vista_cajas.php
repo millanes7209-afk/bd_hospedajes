@@ -113,35 +113,36 @@ $sql_all_movs = "SELECT
 
 $todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
 
-// --- DEPURADOR EN CONSOLA (Solo si se añade ?debug=1 a la URL) ---
+// --- PANEL DEPURADOR FLOTANTE (Solo si ?debug=1) ---
 if (isset($_GET['debug'])) {
-    $debug_params = [
-        'filtros' => [
-            'fecha_inicio' => $fecha_inicio,
-            'fecha_fin' => $fecha_fin,
-            'usuarioID' => $usuarioID_filtro ?: 'TODOS',
-            'empresaID' => $empresaID_filtro
-        ],
-        'conteo_registros' => count($todos_los_movimientos),
-        'sql_base' => $sql_all_movs,
-        'datos_recibidos' => array_map(function($m) {
-            return [
-                'cajaID' => $m['cajaID'],
-                'apertura' => $m['fecha_apertura'],
-                'cierre' => $m['fecha_cierre'],
-                'usuario' => $m['nombre_usuario'],
-                'monto' => $m['monto']
-            ];
-        }, $todos_los_movimientos)
-    ];
-    echo "<script>
-        console.group('%c [DEBUG] VISTA_CAJAS ', 'background: #222; color: #bada55; font-size: 14px;');
-        console.log('FILTROS ENVIADOS:', " . json_encode($debug_params['filtros']) . ");
-        console.log('TOTAL REGISTROS:', " . $debug_params['conteo_registros'] . ");
-        console.table(" . json_encode($debug_params['datos_recibidos']) . ");
-        console.log('SQL:', " . json_encode($debug_params['sql_base']) . ");
-        console.groupEnd();
-    </script>";
+    echo "<div style='position:fixed; top:10px; right:10px; width:400px; max-height:500px; overflow-y:auto; background:rgba(0,0,0,0.9); color:#00ff00; padding:15px; font-family:monospace; font-size:11px; z-index:99999; border:1px solid #444; border-radius:5px; box-shadow:0 0 20px rgba(0,0,0,0.5);'>
+        <h4 style='color:#fff; margin:0 0 10px 0; border-bottom:1px solid #444; padding-bottom:5px;'>[DEBUG TERMINAL]</h4>
+        <strong>FILTROS:</strong><br>
+        Inicio: $fecha_inicio<br>
+        Fin: $fecha_fin<br>
+        UserID: " . ($usuarioID_filtro ?: 'TODOS') . "<br>
+        Empresa: $empresaID_filtro<br><br>
+        
+        <strong>SQL WHERE:</strong><br>
+        <div style='color:#aaa; margin-bottom:10px;'>DATE(c.fecha_apertura) BETWEEN '$fecha_inicio' AND '$fecha_fin'</div>
+        
+        <strong>RESULTADOS:</strong> " . count($todos_los_movimientos) . " filas encontradas.<br><br>";
+
+    if (!empty($todos_los_movimientos)) {
+        echo "<table style='width:100%; border-collapse:collapse; color:#fff;'>
+            <tr style='border-bottom:1px solid #444;'><th>ID</th><th>Apertura</th><th>Monto</th></tr>";
+        foreach (array_slice($todos_los_movimientos, 0, 15) as $m) {
+            echo "<tr>
+                <td>{$m['cajaID']}</td>
+                <td style='color:#00ff00;'>" . date('d/m H:i', strtotime($m['fecha_apertura'])) . "</td>
+                <td>{$m['monto']}</td>
+            </tr>";
+        }
+        echo "</table>";
+    } else {
+        echo "<div style='color:#ff0000; font-weight:bold;'>!!! NO SE ENCONTRARON REGISTROS !!!</div>";
+    }
+    echo "</div>";
 }
 
 // Agrupamos los resultados en la estructura de vista_semanal para el renderizado
