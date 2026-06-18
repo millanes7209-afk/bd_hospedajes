@@ -145,19 +145,21 @@ echo "</div>";
 
 // Agrupamos los resultados en la estructura de vista_semanal para el renderizado
 foreach ($todos_los_movimientos as $mov) {
-    $fecha_apertura_dia = date('Y-m-d', strtotime($mov['fecha_apertura']));
+    // Forzamos la extracción de la fecha limpia solo año-mes-día
+    $f_apertura = substr($mov['fecha_apertura'], 0, 10);
     $cajaID = $mov['cajaID'];
 
-    // Usamos la fecha de apertura para agrupar en la vista semanal
-    if (!isset($vista_semanal[$fecha_apertura_dia])) {
-        $vista_semanal[$fecha_apertura_dia] = ['fecha' => $fecha_apertura_dia, 'movimientos' => []];
+    // Si por alguna razón el día no existe en el array inicial, lo creamos al vuelo
+    if (!isset($vista_semanal[$f_apertura])) {
+        $vista_semanal[$f_apertura] = ['fecha' => $f_apertura, 'movimientos' => []];
     }
 
     // Si la caja no está en los movimientos de ese día, la inicializamos
-    if (!isset($vista_semanal[$fecha_apertura_dia]['movimientos'][$cajaID])) {
-        $vista_semanal[$fecha_apertura_dia]['movimientos'][$cajaID] = [
-            'usuario' => $mov['nombre_usuario'],
+    if (!isset($vista_semanal[$f_apertura]['movimientos'][$cajaID])) {
+        $vista_semanal[$f_apertura]['movimientos'][$cajaID] = [
+            'nombre_usuario' => $mov['nombre_usuario'],
             'fecha_apertura' => $mov['fecha_apertura'],
+            'fecha_cierre' => $mov['fecha_cierre'],
             'saldos' => [],
             'movimientos_count' => 0,
             'cajaID' => $cajaID,
@@ -166,12 +168,11 @@ foreach ($todos_los_movimientos as $mov) {
     }
 
     $forma_pago = $mov['forma_pago'];
-    if (!isset($vista_semanal[$fecha_apertura_dia]['movimientos'][$cajaID]['saldos'][$forma_pago])) {
-        $vista_semanal[$fecha_apertura_dia]['movimientos'][$cajaID]['saldos'][$forma_pago] = 0;
+    if (!isset($vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$forma_pago])) {
+        $vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$forma_pago] = 0;
     }
-
-    $vista_semanal[$fecha_apertura_dia]['movimientos'][$cajaID]['saldos'][$forma_pago] += $mov['monto'];
-    $vista_semanal[$fecha_apertura_dia]['movimientos'][$cajaID]['movimientos_count']++;
+    $vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$forma_pago] += (float) $mov['monto'];
+    $vista_semanal[$f_apertura]['movimientos'][$cajaID]['movimientos_count']++;
 }
 
 // CÁLCULO DE SALDOS DE BAÑOS (Post-agrupación para eficiencia)
