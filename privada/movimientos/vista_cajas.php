@@ -74,14 +74,13 @@ if ($rol_usuario === 'RECEPCIONISTA') {
 // incluir cajas abiertas en el rango aunque se hayan cerrado después
 $sql_all_movs = "SELECT 
                     cc.monto,
-                    'INGRESO' as mov_tipo, 
+                    c.cajaID, 
+                    c.fecha_apertura, 
+                    c.fecha_cierre,
                     u.usuario as nombre_usuario,
-                    fp.tipo as forma_pago,
-                    cc.cajaID,
-                    c.fecha_apertura,
-                    c.fecha_cierre
-                FROM cierre_cajas cc
-                INNER JOIN cajas c ON cc.cajaID = c.cajaID
+                    fp.tipo as forma_pago
+                FROM cajas c
+                INNER JOIN cierre_cajas cc ON c.cajaID = cc.cajaID
                 INNER JOIN usuarios u ON c.usuarioID = u.usuarioID
                 INNER JOIN formas_pago fp ON cc.formapagoID = fp.formapagoID
                 WHERE DATE(c.fecha_apertura) BETWEEN ? AND ?
@@ -90,7 +89,7 @@ $sql_all_movs = "SELECT
                   AND cc._estado <> 'X'
                   $where_user
                   $where_entrega
-                ORDER BY c.fecha_apertura ASC, cc.cajaID ASC";
+                ORDER BY c.fecha_apertura ASC, c.cajaID ASC";
 
 $todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
 
