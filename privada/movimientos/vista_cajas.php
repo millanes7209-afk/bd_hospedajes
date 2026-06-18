@@ -122,14 +122,24 @@ $sql_all_movs = "SELECT
 $todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
 
 // --- MOSTRAR RESULTADOS EN EL PANEL DEPURADOR ---
-echo "<strong>RESULTADOS:</strong> " . count($todos_los_movimientos) . " filas.<br><br>";
+echo "<strong>RESULTADOS:</strong> " . count($todos_los_movimientos) . " filas encontradas.<br>";
+echo "Rango: $fec_inicio_full a $fec_fin_full<br><br>";
 if (!empty($todos_los_movimientos)) {
-    echo "<table style='width:100%; border-collapse:collapse; color:#fff;'>
-        <tr><th>ID</th><th>Apertura</th><th>Monto</th></tr>";
-    foreach (array_slice($todos_los_movimientos, 0, 10) as $m) {
-        echo "<tr><td>{$m['cajaID']}</td><td>{$m['fecha_apertura']}</td><td>{$m['monto']}</td></tr>";
+    echo "<table style='width:100%; border-collapse:collapse; color:#fff; font-size:10px;'>
+        <tr style='border-bottom:1px solid #555;'><th>ID</th><th>Apertura</th><th>Monto</th><th>Usuario</th></tr>";
+    foreach (array_slice($todos_los_movimientos, 0, 30) as $m) {
+        echo "<tr style='border-bottom:1px solid #333;'>
+            <td>{$m['cajaID']}</td>
+            <td style='color:#00ff00;'>{$m['fecha_apertura']}</td>
+            <td>{$m['monto']}</td>
+            <td style='color:#aaa;'>{$m['nombre_usuario']}</td>
+        </tr>";
     }
     echo "</table>";
+    if (count($todos_los_movimientos) > 30)
+        echo "<br>... y " . (count($todos_los_movimientos) - 30) . " más.";
+} else {
+    echo "<b style='color:red;'>LA CONSULTA NO DEVOLVIÓ NADA.</b>";
 }
 echo "</div>";
 
