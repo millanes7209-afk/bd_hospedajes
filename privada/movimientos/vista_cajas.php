@@ -91,9 +91,7 @@ $sql_all_movs = "SELECT
 $todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
 
 // --- PANEL DEPURADOR (Solo visible para diagnóstico) ---
-echo "<div style='position:fixed; top:10px; right:10px; width:450px; max-height:400px; overflow-y:auto; background:rgba(0,0,0,0.9); color:white; padding:15px; font-family:monospace; font-size:11px; z-index:99999; border:2px solid #00ff00; border-radius:5px;'>
-    <h4 style='color:#00ff00; margin:0 0 10px 0;'>[DEBUG TERMINAL]</h4>
-    <strong>RESULTADOS:</strong> " . count($todos_los_movimientos) . " filas.<br><br>";
+
 if (!empty($todos_los_movimientos)) {
     echo "<table style='width:100%; border-collapse:collapse; color:#fff;'>
             <tr style='border-bottom:1px solid #555;'><th>ID</th><th>Apertura</th><th>Monto</th><th>FP</th></tr>";
@@ -114,7 +112,8 @@ echo "<script>
     console.log('1. VARIABLES RECIBIDAS: Inicio: $fecha_inicio, Fin: $fecha_fin');
     console.log('2. CALENDARIO GENERADO:', " . json_encode(array_keys($vista_semanal)) . ");
     console.log('3. DATA DE BASE DE DATOS (CRUDA):', " . json_encode(array_map(function ($m) {
-    return ['ID' => $m['cajaID'], 'Fecha' => $m['fecha_apertura']]; }, $todos_los_movimientos)) . ");
+    return ['ID' => $m['cajaID'], 'Fecha' => $m['fecha_apertura']];
+}, $todos_los_movimientos)) . ");
 </script>";
 
 // Agrupar en vista_semanal
@@ -159,6 +158,8 @@ foreach ($vista_semanal as $fecha => &$datos) {
         $caja_data['saldo_bano'] = (float) ($rb['saldo'] ?? 0);
     }
 }
+unset($datos);
+unset($caja_data);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -307,18 +308,20 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php 
+                                    <?php
                                     $hayRegistros = false;
-                                    foreach ($vista_semanal as $fecha => $datos): 
+                                    foreach ($vista_semanal as $fecha => $datos):
                                         echo "<script>console.log('5. INTENTANDO PINTAR DÍA: $fecha, Movimientos:', " . count($datos['movimientos'] ?? []) . ");</script>";
                                         if (!empty($datos['movimientos'])):
                                             $hayRegistros = true;
-                                            foreach ($datos['movimientos'] as $movimiento): 
-                                    ?>
+                                            foreach ($datos['movimientos'] as $movimiento):
+                                                ?>
                                                 <tr>
                                                     <td class="text-center align-middle">
-                                                        <span class="d-block"><?= date('d/m/Y', strtotime($movimiento['fecha_apertura'])) ?></span>
-                                                        <small class="text-muted"><?= date('H:i', strtotime($movimiento['fecha_apertura'])) ?></small>
+                                                        <span
+                                                            class="d-block"><?= date('d/m/Y', strtotime($movimiento['fecha_apertura'])) ?></span>
+                                                        <small
+                                                            class="text-muted"><?= date('H:i', strtotime($movimiento['fecha_apertura'])) ?></small>
                                                     </td>
                                                     <td class="text-center font-weight-bold">
                                                         <?= mb_strtoupper($movimiento['nombre_usuario']) ?>
