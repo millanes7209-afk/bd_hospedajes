@@ -51,7 +51,7 @@ while ($fecha_actual->format('Ymd') <= $fecha_fin_obj->format('Ymd')) {
     $fecha_str = $fecha_actual->format('Y-m-d');
     $fechas_rango[] = $fecha_str;
     $vista_semanal[$fecha_str] = ['fecha' => $fecha_str, 'movimientos' => []];
-    $fecha_actual->modify('+1 day');
+    $fecha_actual->add(new DateInterval('P1D'));
 }
 
 $where_entrega = " AND (EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.cajaID AND i.entregado = 0 AND i._estado <> 'X') 
@@ -76,7 +76,6 @@ if ($rol_usuario === 'RECEPCIONISTA') {
 $sql_all_movs = "SELECT 
                     c.cajaID, 
                     c.fecha_apertura, 
-                    c.fecha_cierre,
                     u.usuario as nombre_usuario,
                     'TEST' as forma_pago,
                     0 as monto
@@ -123,7 +122,6 @@ foreach ($todos_los_movimientos as $mov) {
         $vista_semanal[$f_apertura]['movimientos'][$cajaID] = [
             'nombre_usuario' => $mov['nombre_usuario'],
             'fecha_apertura' => $mov['fecha_apertura'],
-            'fecha_cierre' => $mov['fecha_cierre'],
             'saldos' => [],
             'movimientos_count' => 0,
             'cajaID' => $cajaID,
