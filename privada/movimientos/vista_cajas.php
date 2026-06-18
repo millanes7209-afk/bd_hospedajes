@@ -121,23 +121,33 @@ $sql_all_movs = "SELECT
 
 $todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
 
+// --- DEPURADOR EN CONSOLA (Solo si ?debug=1) ---
+if (isset($_GET['debug'])) {
+    echo "<script>
+        console.group('%c [DIAGNÓSTICO VISTA_CAJAS] ', 'background: #222; color: #bada55');
+        console.log('FILTROS:', " . json_encode(['inicio' => $fecha_inicio, 'fin' => $fecha_fin]) . ");
+        console.log('SQL:', " . json_encode($sql_all_movs) . ");
+        console.log('FILAS:', " . count($todos_los_movimientos) . ");
+        console.table(" . json_encode(array_map(function ($m) {
+        return ['ID' => $m['cajaID'], 'Apertura' => $m['fecha_apertura'], 'Monto' => $m['monto']]; }, $todos_los_movimientos)) . ");
+        console.groupEnd();
+    </script>";
+}
+
 // Agrupamos los resultados en la estructura de vista_semanal para el renderizado
 foreach ($todos_los_movimientos as $mov) {
-    // Forzamos la extracción de la fecha limpia solo año-mes-día
     $f_apertura = substr($mov['fecha_apertura'], 0, 10);
     $cajaID = $mov['cajaID'];
 
-    // Si por alguna razón el día no existe en el array inicial, lo creamos al vuelo
     if (!isset($vista_semanal[$f_apertura])) {
         $vista_semanal[$f_apertura] = ['fecha' => $f_apertura, 'movimientos' => []];
     }
 
-    // Si la caja no está en los movimientos de ese día, la inicializamos
     if (!isset($vista_semanal[$f_apertura]['movimientos'][$cajaID])) {
         $vista_semanal[$f_apertura]['movimientos'][$cajaID] = [
             'nombre_usuario' => $mov['nombre_usuario'],
             'fecha_apertura' => $mov['fecha_apertura'],
-            'fecha_cierre' => $mov['fecha_cierre'],
+            'fecha_cierre' => $mov['fecha_cierre'] ?? '',
             'saldos' => [],
             'movimientos_count' => 0,
             'cajaID' => $cajaID,
@@ -145,11 +155,11 @@ foreach ($todos_los_movimientos as $mov) {
         ];
     }
 
-    $forma_pago = $mov['forma_pago'];
-    if (!isset($vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$forma_pago])) {
-        $vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$forma_pago] = 0;
+    $fp_tipo = $mov['forma_pago'];
+    if (!isset($vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$fp_tipo])) {
+        $vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$fp_tipo] = 0;
     }
-    $vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$forma_pago] += (float) $mov['monto'];
+    $vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$fp_tipo] += (float) $mov['monto'];
     $vista_semanal[$f_apertura]['movimientos'][$cajaID]['movimientos_count']++;
 }
 
@@ -410,13 +420,12 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                                 <th class="text-center text-info">
                                                     <?php
                                                     $total_banos_footer = 0;
-                                                    foreach ($vista_semanal as $d) {
-                                                        if (!empty($d['movimientos'])) {
-                                                            foreach ($d['movimientos'] as $m) {
-                                                                $total_banos_footer += $m['saldo_bano'];
-                                                            }
-                                                        }
-                                                    }
+                                                    foreach ($vista_semanal as $dia):
+                                                        if (empty($dia['movimientos']))
+                                                            continue;
+                                                        foreach ($dia['movimientos'] as $m)
+                                                            $total_banos_footer += $m['saldo_bano'];
+                                                    endforeach;
                                                     echo number_format($total_banos_footer, 2);
                                                     ?> Bs.
                                                 </th>
