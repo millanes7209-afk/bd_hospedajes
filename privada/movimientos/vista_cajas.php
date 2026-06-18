@@ -355,7 +355,8 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                                         <small
                                                             class="text-muted"><?= date('H:i', strtotime($movimiento['fecha_apertura'])) ?></small>
                                                     </td>
-                                                    <td class="text-center align-middle"><?= $movimiento['usuario'] ?></td>
+                                                    <td class="text-center font-weight-bold">
+                                                        <?php echo mb_strtoupper($movimiento['nombre_usuario']); ?></td>
 
                                                     <?php
                                                     $total_fila = 0;
