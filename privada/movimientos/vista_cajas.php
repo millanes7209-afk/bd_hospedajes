@@ -4,74 +4,55 @@ require_once("../../conexion.php");
 require_once("../../libreria_menu.php");
 require_once("../hospedajes/utils/hospedajes_utilidades.php");
 
-// Verificar si el usuario está logueado
 if (!isset($_SESSION['sesion_usuario'])) {
     header("Location: ../../index.php");
     exit();
 }
 
-// Obtener roles y parámetros de filtro
 $rol_usuario = $_SESSION['sesion_rol'] ?? '';
 $empresaID_filtro = $_SESSION['empresaID'];
 $fecha_inicio = $_GET['fecha_inicio'] ?? date('Y-m-d', strtotime('-6 days'));
 $fecha_fin = $_GET['fecha_fin'] ?? date('Y-m-d');
 $usuarioID_filtro = $_GET['usuarioID'] ?? '';
-// AJUSTE DE RANGO CON HORAS EXTREMAS (00:00:00 a 23:59:59)
-$fec_inicio_full = $fecha_inicio . " 00:00:00";
-$fec_fin_full = $fecha_fin . " 23:59:59";
 
-// Obtener usuarioID actual
 $usuarioID_actual = $_SESSION['sesion_id_usuario'] ?? $_SESSION['usuarioID'] ?? 0;
 
-// Verificar si la empresa tiene el módulo de baños activo (funcionalidadID = 4)
 $tiene_banos = (bool) $db->obtenerFila(
     "SELECT 1 FROM empresa_funcionalidades WHERE empresaID = ? AND funcionalidadID = 4 AND estado = 'ACTIVO' AND _estado <> 'X'",
     [$empresaID_filtro]
 );
 
-// Obtener usuarios para filtro si tiene privilegios
-$usuarios_mov = [];
-// Obtener usuarios solo de la empresa actual
 $sql_usuarios = "SELECT DISTINCT u.usuarioID, u.usuario 
-                     FROM usuarios u
-                     INNER JOIN empleado_empresas ee ON u.empleadoID = ee.empleadoID
-                     WHERE u._estado <> 'X' AND ee.empresaID = ? AND ee._estado <> 'X'
-                     ORDER BY u.usuario";
+                 FROM usuarios u
+                 INNER JOIN empleado_empresas ee ON u.empleadoID = ee.empleadoID
+                 WHERE u._estado <> 'X' AND ee.empresaID = ? AND ee._estado <> 'X'
+                 ORDER BY u.usuario";
 $usuarios_mov = $db->obtenerTodo($sql_usuarios, [$empresaID_filtro]);
 
-// Obtener formas de pago disponibles
 $sql_formas_pago = "SELECT fp.formapagoID, fp.tipo 
-                   FROM formas_pago fp 
-                   WHERE fp.empresaID = ? AND fp._estado <> 'X'
-                   ORDER BY fp.tipo";
+                    FROM formas_pago fp 
+                    WHERE fp.empresaID = ? AND fp._estado <> 'X'
+                    ORDER BY fp.tipo";
 $formas_pago = $db->obtenerTodo($sql_formas_pago, [$empresaID_filtro]);
 
-// Generar vista semanal basada en movimientos
 $vista_semanal = [];
 $fechas_rango = [];
-
-// Array para sumatorias finales (footer)
 $suma_footer_formas = [];
 $suma_footer_total_general = 0;
 foreach ($formas_pago as $fp) {
     $suma_footer_formas[$fp['tipo']] = 0;
 }
 
-// Generar rango de fechas
+// Generar rango de fechas — incluye el día fin correctamente
 $fecha_actual = new DateTime($fecha_inicio);
 $fecha_fin_obj = new DateTime($fecha_fin);
 while ($fecha_actual->format('Y-m-d') <= $fecha_fin_obj->format('Y-m-d')) {
     $fecha_str = $fecha_actual->format('Y-m-d');
     $fechas_rango[] = $fecha_str;
-    $vista_semanal[$fecha_str] = [
-        'fecha' => $fecha_str,
-        'movimientos' => []
-    ];
+    $vista_semanal[$fecha_str] = ['fecha' => $fecha_str, 'movimientos' => []];
     $fecha_actual->add(new DateInterval('P1D'));
 }
 
-// --- CONSULTA UNIFICADA POR RANGO Y ORDENADA ---
-// FILTRO ESTRICTO: Cajas con ingresos/egresos de habitaciones O de baños pendientes de entrega
 $where_entrega = " AND (EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.cajaID AND i.entregado = 0 AND i._estado <> 'X') 
                      OR EXISTS (SELECT 1 FROM egresos e WHERE e.cajaID = c.cajaID AND e.entregado = 0 AND e._estado <> 'X')
                      OR EXISTS (SELECT 1 FROM banos b WHERE b.cajaID = c.cajaID AND b.entregado = 0)) ";
@@ -89,6 +70,8 @@ if ($rol_usuario === 'RECEPCIONISTA') {
     }
 }
 
+// FIX PRINCIPAL: usar fecha_apertura para el rango pero también
+// incluir cajas abiertas en el rango aunque se hayan cerrado después
 $sql_all_movs = "SELECT 
                     cc.monto,
                     'INGRESO' as mov_tipo, 
@@ -103,51 +86,23 @@ $sql_all_movs = "SELECT
                 INNER JOIN formas_pago fp ON cc.formapagoID = fp.formapagoID
                 WHERE DATE(c.fecha_apertura) BETWEEN ? AND ?
                   AND c.empresaID = ? 
-                  AND c.estado = 'CERRADA'
                   AND c._estado <> 'X'
                   AND cc._estado <> 'X'
                   $where_user
                   $where_entrega
-                ORDER BY c.fecha_apertura ASC, cc.cajaID ASC"; // ORDEN CRONOLÓGICO ESTRICTO POR APERTURA
+                ORDER BY c.fecha_apertura ASC, cc.cajaID ASC";
 
 $todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
 
-// --- MOSTRAR RESULTADOS EN EL PANEL DEPURADOR ---
-echo "<strong>RESULTADOS:</strong> " . count($todos_los_movimientos) . " filas encontradas.<br>";
-echo "Rango: $fec_inicio_full a $fec_fin_full<br><br>";
-if (!empty($todos_los_movimientos)) {
-    echo "<table style='width:100%; border-collapse:collapse; color:#fff; font-size:10px;'>
-            <tr style='border-bottom:1px solid #555;'><th>ID</th><th>Apertura</th><th>Monto</th><th>Usuario</th><th>Forma Pago</th></tr>";
-    foreach (array_slice($todos_los_movimientos, 0, 30) as $m) {
-        echo "<tr style='border-bottom:1px solid #333;'>
-            <td>{$m['cajaID']}</td>
-            <td style='color:#00ff00;'>{$m['fecha_apertura']}</td>
-            <td>{$m['monto']}</td>
-            <td style='color:#aaa;'>{$m['nombre_usuario']}</td>
-            <td style='color:yellow;'>{$m['forma_pago']}</td>
-        </tr>";
-    }
-    echo "</table>";
-    if (count($todos_los_movimientos) > 30)
-        echo "<br>... y " . (count($todos_los_movimientos) - 30) . " más.";
-} else {
-    echo "<b style='color:red;'>LA CONSULTA NO DEVOLVIÓ NADA.</b><br>";
-    echo "<small style='color:#ccc;'>Esto suele pasar si todas las cajas del rango ya fueron recaudadas (entregado=1).</small>";
-}
-echo "<script>console.log('MOVIMIENTOS:', " . json_encode($todos_los_movimientos) . ");</script>";
-
-// Agrupamos los resultados en la estructura de vista_semanal para el renderizado
+// Agrupar en vista_semanal
 foreach ($todos_los_movimientos as $mov) {
-    // Forzamos la extracción de la fecha limpia solo año-mes-día
     $f_apertura = substr($mov['fecha_apertura'], 0, 10);
     $cajaID = $mov['cajaID'];
 
-    // Si por alguna razón el día no existe en el array inicial, lo creamos al vuelo
     if (!isset($vista_semanal[$f_apertura])) {
         $vista_semanal[$f_apertura] = ['fecha' => $f_apertura, 'movimientos' => []];
     }
 
-    // Si la caja no está en los movimientos de ese día, la inicializamos
     if (!isset($vista_semanal[$f_apertura]['movimientos'][$cajaID])) {
         $vista_semanal[$f_apertura]['movimientos'][$cajaID] = [
             'nombre_usuario' => $mov['nombre_usuario'],
@@ -168,7 +123,7 @@ foreach ($todos_los_movimientos as $mov) {
     $vista_semanal[$f_apertura]['movimientos'][$cajaID]['movimientos_count']++;
 }
 
-// CÁLCULO DE SALDOS DE BAÑOS (Post-agrupación para eficiencia)
+// Saldos de baños
 foreach ($vista_semanal as $fecha => &$datos) {
     foreach ($datos['movimientos'] as $cajaID => &$caja_data) {
         $sql_b = "SELECT SUM(CASE WHEN tipo = 'INGRESO' THEN monto ELSE 0 END) - 
@@ -179,7 +134,6 @@ foreach ($vista_semanal as $fecha => &$datos) {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 
@@ -204,8 +158,6 @@ foreach ($vista_semanal as $fecha => &$datos) {
         vertical-align: middle !important;
     }
 
-
-
     #recaudacion-bar {
         position: fixed;
         bottom: 0;
@@ -220,19 +172,15 @@ foreach ($vista_semanal as $fecha => &$datos) {
     }
 
     @media print {
-
-        /* Ocultar TODO por defecto */
         body * {
             visibility: hidden;
         }
 
-        /* Mostrar solo el contenedor del reporte y sus hijos */
         #area-impresion,
         #area-impresion * {
             visibility: visible;
         }
 
-        /* Posicionar el área de impresión al inicio de la página */
         #area-impresion {
             position: absolute;
             left: 0;
@@ -240,7 +188,6 @@ foreach ($vista_semanal as $fecha => &$datos) {
             width: 100% !important;
         }
 
-        /* Ajustes de estilo para la tabla */
         .table {
             font-size: 11px;
             width: 100% !important;
@@ -253,7 +200,6 @@ foreach ($vista_semanal as $fecha => &$datos) {
             padding: 4px !important;
         }
 
-        /* Ocultar elementos específicos dentro del área de impresión que no queremos */
         .no-print,
         .btn,
         .card-header,
@@ -272,7 +218,6 @@ foreach ($vista_semanal as $fecha => &$datos) {
 
 <body>
     <div class="container-fluid mt-4 mb-5" id="area-impresion">
-        <!-- Encabezado de Impresión -->
         <?= generarEncabezadoImpresion('REPORTE DE CAJAS (DINERO PENDIENTE)', $fecha_inicio, $fecha_fin) ?>
 
         <div class="row justify-content-center">
@@ -287,7 +232,6 @@ foreach ($vista_semanal as $fecha => &$datos) {
                         </button>
                     </div>
                     <div class="card-body">
-                        <!-- Filtros -->
                         <div class="row mb-4 no-print">
                             <div class="col-md-3">
                                 <label for="fecha_inicio">Fecha Inicio:</label>
@@ -311,8 +255,9 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                 </div>
                             <?php endif; ?>
                             <div class="col-md-3 d-flex align-items-end">
-                                <button onclick="filtrar()" class="btn btn-secondary w-100"><i
-                                        class="fas fa-filter"></i> Filtrar</button>
+                                <button onclick="filtrar()" class="btn btn-secondary w-100">
+                                    <i class="fas fa-filter"></i> Filtrar
+                                </button>
                             </div>
                         </div>
 
@@ -336,8 +281,7 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php
-                                    $hayRegistros = false;
+                                    <?php $hayRegistros = false;
                                     foreach ($vista_semanal as $fecha => $datos): ?>
                                         <?php if (!empty($datos['movimientos'])):
                                             $hayRegistros = true;
@@ -349,9 +293,8 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                                             class="text-muted"><?= date('H:i', strtotime($movimiento['fecha_apertura'])) ?></small>
                                                     </td>
                                                     <td class="text-center font-weight-bold">
-                                                        <?php echo mb_strtoupper($movimiento['nombre_usuario']); ?>
+                                                        <?= mb_strtoupper($movimiento['nombre_usuario']) ?>
                                                     </td>
-
                                                     <?php
                                                     $total_fila = 0;
                                                     foreach ($formas_pago as $forma_pago):
@@ -361,25 +304,21 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                                         ?>
                                                         <td class="text-center align-middle">Bs. <?= number_format($monto, 2) ?></td>
                                                     <?php endforeach; ?>
-
                                                     <?php if ($tiene_banos): ?>
                                                         <td class="text-center align-middle text-info fw-bold">
                                                             Bs. <?= number_format($movimiento['saldo_bano'], 2) ?>
                                                         </td>
                                                     <?php endif; ?>
-
                                                     <?php
                                                     if ($tiene_banos)
                                                         $total_fila += $movimiento['saldo_bano'];
                                                     $suma_footer_total_general += $total_fila;
                                                     ?>
                                                     <td class="text-end align-middle fw-bold">Bs.
-                                                        <?= number_format($total_fila, 2) ?>
-                                                    </td>
-
+                                                        <?= number_format($total_fila, 2) ?></td>
                                                     <?php if ($rol_usuario !== 'RECEPCIONISTA'): ?>
                                                         <td class="text-center align-middle"
-                                                            style="width: 40px; border-left: 1px solid #dee2e6;">
+                                                            style="width:40px; border-left:1px solid #dee2e6;">
                                                             <button class="btn btn-sm btn-outline-secondary border-0"
                                                                 onclick="verDetalleCaja(<?= $movimiento['cajaID'] ?>)"
                                                                 title="Auditar Movimientos">
@@ -387,10 +326,10 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                                             </button>
                                                         </td>
                                                         <td class="text-center align-middle col-recaudar"
-                                                            style="width: 40px; border-left: 1px solid #dee2e6;">
+                                                            style="width:40px; border-left:1px solid #dee2e6;">
                                                             <input type="checkbox"
                                                                 class="check-recaudar form-check-input m-0 d-block mx-auto"
-                                                                style="width: 18px; height: 18px; cursor: pointer; border: 1px solid #adb5bd;"
+                                                                style="width:18px; height:18px; cursor:pointer; border:1px solid #adb5bd;"
                                                                 data-cajaid="<?= $movimiento['cajaID'] ?>"
                                                                 data-monto="<?= array_sum($movimiento['saldos']) + $movimiento['saldo_bano'] ?>"
                                                                 onclick="actualizarTotal()">
@@ -410,16 +349,14 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                         </tr>
                                     <?php endif; ?>
                                 </tbody>
-
                                 <?php if ($hayRegistros): ?>
                                     <tfoot class="bg-light border-top">
                                         <tr>
                                             <th colspan="2" class="text-right align-middle text-muted"
-                                                style="text-align: right;">TOTAL GENERAL:</th>
+                                                style="text-align:right;">TOTAL GENERAL:</th>
                                             <?php foreach ($formas_pago as $forma_pago): ?>
                                                 <th class="text-center">
-                                                    <?= number_format($suma_footer_formas[$forma_pago['tipo']], 2) ?> Bs.
-                                                </th>
+                                                    <?= number_format($suma_footer_formas[$forma_pago['tipo']], 2) ?> Bs.</th>
                                             <?php endforeach; ?>
                                             <?php if ($tiene_banos): ?>
                                                 <th class="text-center text-info">
@@ -435,12 +372,12 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                                     ?> Bs.
                                                 </th>
                                             <?php endif; ?>
-                                            <th class="text-end" style="font-size: 1.1rem; border-left: 1px solid #dee2e6;">
+                                            <th class="text-end" style="font-size:1.1rem; border-left:1px solid #dee2e6;">
                                                 <?= number_format($suma_footer_total_general, 2) ?> Bs.
                                             </th>
                                             <?php if ($rol_usuario !== 'RECEPCIONISTA'): ?>
-                                                <th style="border-left: 1px solid #dee2e6;"></th>
-                                                <th class="col-recaudar" style="border-left: 1px solid #dee2e6;"></th>
+                                                <th style="border-left:1px solid #dee2e6;"></th>
+                                                <th class="col-recaudar" style="border-left:1px solid #dee2e6;"></th>
                                             <?php endif; ?>
                                         </tr>
                                     </tfoot>
@@ -458,7 +395,7 @@ foreach ($vista_semanal as $fecha => &$datos) {
             <div>
                 <span class="h5 mb-0">TOTAL A RECOGER: </span>
                 <span id="txt-total-recaudar" class="h4 mb-0 fw-bold text-success">Bs. 0.00</span>
-                <span class="ms-3 text-muted" style="color: white !important;" id="txt-count-recaudar">0 turnos
+                <span class="ms-3 text-muted" style="color:white !important;" id="txt-count-recaudar">0 turnos
                     seleccionados</span>
             </div>
             <button class="btn btn-success btn-lg fw-bold" id="btn-confirmar-recaudacion"
@@ -468,20 +405,18 @@ foreach ($vista_semanal as $fecha => &$datos) {
         </div>
     </div>
 
-    <!-- Modal Auditoría de Turno -->
+    <!-- Modal Auditoría -->
     <div class="modal fade" id="modalDetalleCaja" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold">AUDITORÍA DE MOVIMIENTOS DEL TURNO</h5>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"
-                        style="background:none; border:none; font-size:1.5rem;">&times;</button>
+                    <button type="button" class="close" data-bs-dismiss="modal"
+                        style="background:none;border:none;font-size:1.5rem;">&times;</button>
                 </div>
                 <div class="modal-body" id="modalDetalleContenido">
                     <div class="text-center py-5">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando...</span>
-                        </div>
+                        <div class="spinner-border text-primary" role="status"></div>
                         <p class="mt-2 text-muted">Cargando desglose financiero...</p>
                     </div>
                 </div>
@@ -492,14 +427,14 @@ foreach ($vista_semanal as $fecha => &$datos) {
         </div>
     </div>
 
-    <!-- Modal de Confirmación (Bootstrap Estilo Card) -->
+    <!-- Modal Confirmación -->
     <div class="modal fade" id="modalConfirmarRecaudacion" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content shadow-sm">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold text-dark">CONFIRMAR RECAUDACIÓN</h5>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"
-                        style="background:none; border:none; font-size:1.5rem;">&times;</button>
+                    <button type="button" class="close" data-bs-dismiss="modal"
+                        style="background:none;border:none;font-size:1.5rem;">&times;</button>
                 </div>
                 <div class="modal-body py-3">
                     <div class="card border-0 bg-light mb-0">
@@ -519,17 +454,17 @@ foreach ($vista_semanal as $fecha => &$datos) {
         </div>
     </div>
 
-    <!-- Modal de Mensaje (Bootstrap) -->
+    <!-- Modal Mensaje -->
     <div class="modal fade" id="modalMensajeApp" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
             <div class="modal-content border-0 shadow-lg">
                 <div id="modalMensajeHeader" class="modal-header">
                     <h5 class="modal-title fw-bold" id="modalMensajeTitulo"></h5>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"
-                        style="background:none; border:none; font-size:1.5rem;">&times;</button>
+                    <button type="button" class="close" data-bs-dismiss="modal"
+                        style="background:none;border:none;font-size:1.5rem;">&times;</button>
                 </div>
                 <div class="modal-body text-center py-4">
-                    <div id="modalMensajeIcono" class="mb-3" style="font-size: 3.5rem;"></div>
+                    <div id="modalMensajeIcono" class="mb-3" style="font-size:3.5rem;"></div>
                     <p id="modalMensajeTexto" class="fs-5 mb-0 px-3"></p>
                 </div>
                 <div class="modal-footer border-0 justify-content-center pb-4">
@@ -550,10 +485,8 @@ foreach ($vista_semanal as $fecha => &$datos) {
             const tituloEl = document.getElementById('modalMensajeTitulo');
             const textoEl = document.getElementById('modalMensajeTexto');
             const iconoEl = document.getElementById('modalMensajeIcono');
-
             tituloEl.innerText = titulo;
             textoEl.innerText = texto;
-
             if (tipo === 'success') {
                 header.className = 'modal-header bg-success text-white py-3';
                 iconoEl.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
@@ -561,7 +494,6 @@ foreach ($vista_semanal as $fecha => &$datos) {
                 header.className = 'modal-header bg-danger text-white py-3';
                 iconoEl.innerHTML = '<i class="fas fa-exclamation-circle text-danger"></i>';
             }
-
             modalMensaje.show();
         }
 
@@ -569,29 +501,22 @@ foreach ($vista_semanal as $fecha => &$datos) {
             const contenedor = document.getElementById('modalDetalleContenido');
             contenedor.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Cargando desglose financiero...</p></div>';
             modalAuditoria.show();
-
             fetch('ajax_detalle_caja.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: 'cajaID=' + cajaID
             })
                 .then(r => r.text())
-                .then(html => {
-                    contenedor.innerHTML = html;
-                })
-                .catch(err => {
-                    contenedor.innerHTML = '<div class="alert alert-danger">Error de conexión al cargar los detalles.</div>';
-                });
+                .then(html => { contenedor.innerHTML = html; })
+                .catch(() => { contenedor.innerHTML = '<div class="alert alert-danger">Error de conexión al cargar los detalles.</div>'; });
         }
 
         function actualizarTotal() {
-            let total = 0;
-            let count = 0;
+            let total = 0, count = 0;
             document.querySelectorAll('.check-recaudar:checked').forEach(chk => {
                 total += parseFloat(chk.dataset.monto);
                 count++;
             });
-
             const bar = document.getElementById('recaudacion-bar');
             if (count > 0) {
                 bar.style.display = 'block';
@@ -605,35 +530,23 @@ foreach ($vista_semanal as $fecha => &$datos) {
         function procesarRecaudacion() {
             const seleccionados = Array.from(document.querySelectorAll('.check-recaudar:checked'));
             const ids = seleccionados.map(chk => chk.dataset.cajaid);
-
-            // Extraer fechas únicas
             const fechasUnicas = [...new Set(seleccionados.map(chk => {
                 const fila = chk.closest('tr');
-                return fila.cells[0].innerText.split(' ')[0];
+                return fila.cells[0].innerText.split('\n')[0].trim();
             }))];
-
-            // Ordenar fechas
             fechasUnicas.sort((a, b) => {
                 const [da, ma, ya] = a.split('/');
                 const [db, mb, yb] = b.split('/');
                 return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
             });
-
-            const listaFechas = fechasUnicas.join('<br>');
-
             document.getElementById('txtConfirmarCuerpo').innerHTML = `
                 ¿Confirma que ha recibido el dinero de los <b>${ids.length}</b> turnos seleccionados?<br><br>
-                <div class="text-center fw-bold">
-                    ${listaFechas}
-                </div>
+                <div class="text-center fw-bold">${fechasUnicas.join('<br>')}</div>
             `;
-
-            // Asignar el evento al botón de aceptar del modal
             document.getElementById('btnAceptarRecaudacion').onclick = function () {
                 modalConfirmar.hide();
                 ejecutarRecaudacion(ids);
             };
-
             modalConfirmar.show();
         }
 
@@ -641,7 +554,6 @@ foreach ($vista_semanal as $fecha => &$datos) {
             const btn = document.getElementById('btn-confirmar-recaudacion');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESANDO...';
-
             fetch('ajax_recaudar.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -670,11 +582,8 @@ foreach ($vista_semanal as $fecha => &$datos) {
             const params = new URLSearchParams();
             params.set('fecha_inicio', document.getElementById('fecha_inicio').value);
             params.set('fecha_fin', document.getElementById('fecha_fin').value);
-
             const usuarioID = document.getElementById('usuarioID');
-            if (usuarioID) {
-                params.set('usuarioID', usuarioID.value);
-            }
+            if (usuarioID) params.set('usuarioID', usuarioID.value);
             window.location.href = '?' + params.toString();
         }
     </script>
