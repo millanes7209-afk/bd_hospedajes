@@ -43,14 +43,15 @@ foreach ($formas_pago as $fp) {
     $suma_footer_formas[$fp['tipo']] = 0;
 }
 
-// Generar rango de fechas — incluye el día fin correctamente
+// Generar rango de fechas — INCLUYE EL DÍA FIN FORZADAMENTE
 $fecha_actual = new DateTime($fecha_inicio);
 $fecha_fin_obj = new DateTime($fecha_fin);
-while ($fecha_actual->format('Y-m-d') <= $fecha_fin_obj->format('Y-m-d')) {
+// Usamos una comparación de strings YYYYMMDD que es infalible en PHP
+while ($fecha_actual->format('Ymd') <= $fecha_fin_obj->format('Ymd')) {
     $fecha_str = $fecha_actual->format('Y-m-d');
     $fechas_rango[] = $fecha_str;
     $vista_semanal[$fecha_str] = ['fecha' => $fecha_str, 'movimientos' => []];
-    $fecha_actual->add(new DateInterval('P1D'));
+    $fecha_actual->modify('+1 day');
 }
 
 $where_entrega = " AND (EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.cajaID AND i.entregado = 0 AND i._estado <> 'X') 
