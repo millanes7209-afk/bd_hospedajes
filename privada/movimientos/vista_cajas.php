@@ -78,11 +78,11 @@ $where_entrega = " AND (EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.caja
                      OR EXISTS (SELECT 1 FROM banos b WHERE b.cajaID = c.cajaID AND b.entregado = 0)) ";
 
 if ($rol_usuario === 'RECEPCIONISTA') {
-    $where_user = "AND cc._usuario = ?";
+    $where_user = "AND c.usuarioID = ?";
     $params_mov = [$fecha_inicio, $fecha_fin, $empresaID_filtro, $usuarioID_actual];
 } else {
     if (!empty($usuarioID_filtro)) {
-        $where_user = "AND cc._usuario = ?";
+        $where_user = "AND c.usuarioID = ?";
         $params_mov = [$fecha_inicio, $fecha_fin, $empresaID_filtro, $usuarioID_filtro];
     } else {
         $where_user = "";
