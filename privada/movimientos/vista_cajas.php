@@ -60,7 +60,7 @@ foreach ($formas_pago as $fp) {
 // Generar rango de fechas
 $fecha_actual = new DateTime($fecha_inicio);
 $fecha_fin_obj = new DateTime($fecha_fin);
-while ($fecha_actual <= $fecha_fin_obj) {
+while ($fecha_actual->format('Y-m-d') <= $fecha_fin_obj->format('Y-m-d')) {
     $fecha_str = $fecha_actual->format('Y-m-d');
     $fechas_rango[] = $fecha_str;
     $vista_semanal[$fecha_str] = [
