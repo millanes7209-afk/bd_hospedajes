@@ -615,24 +615,38 @@ document.addEventListener('DOMContentLoaded', function () {
             // 1. Validar campos requeridos nativos (monto, etc)
             if (!form.reportValidity()) return;
 
-            // 2. Validar que el saldo sea CERO (Monto pagado == Monto total)
+            // 2. Validar que el monto total sea mayor a 0
             const total = parseFloat(document.getElementById('mom-monto_total').value) || 0;
-            let pagado = 0;
-            document.querySelectorAll('.input-monto-mom').forEach(i => { pagado += parseFloat(i.value) || 0; });
-
-            if (Math.abs(total - pagado) > 0.01) {
-                alert("ERROR: El monto pagado (Bs. " + pagado.toFixed(2) + ") no coincide con el total (Bs. " + total.toFixed(2) + "). El saldo debe ser 0 para registrar.");
+            if (total <= 0) {
+                alert("ERROR: Debe ingresar un monto total válido mayor a 0.");
                 return;
             }
 
-            // 3. Validar que todas las formas de pago seleccionadas sean válidas
+            // 3. Validar que existan filas de pago y que el saldo sea CERO
+            const filasPago = document.querySelectorAll('.fila-pago-mom');
+            if (filasPago.length === 0) {
+                alert("ERROR: Debe añadir al menos una forma de pago (Efectivo, QR, etc.).");
+                return;
+            }
+
+            let pagado = 0;
             let pagosValidos = true;
-            document.querySelectorAll('.fila-pago-mom select').forEach(s => {
-                if (s.value === "") pagosValidos = false;
+
+            filasPago.forEach(fila => {
+                const montoInput = fila.querySelector('.input-monto-mom');
+                const selectPago = fila.querySelector('select');
+
+                pagado += parseFloat(montoInput.value) || 0;
+                if (selectPago.value === "") pagosValidos = false;
             });
 
             if (!pagosValidos) {
-                alert("ERROR: Debe seleccionar la forma de pago para todos los montos ingresados.");
+                alert("ERROR: Debe seleccionar la forma de pago (Efectivo, QR, etc.) para todos los montos.");
+                return;
+            }
+
+            if (Math.abs(total - pagado) > 0.01) {
+                alert("ERROR: El monto pagado (Bs. " + pagado.toFixed(2) + ") no coincide con el total pactado (Bs. " + total.toFixed(2) + ").");
                 return;
             }
 
