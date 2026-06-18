@@ -290,8 +290,12 @@ unset($caja_data);
                                                 ?>
                                                 <tr>
                                                     <td class="text-center align-middle">
-                                                        <span
-                                                            class="d-block"><?= date('d/m/Y', strtotime($movimiento['fecha_apertura'])) ?></span>
+                                                        <?php
+                                                        $dias = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+                                                        $n_dia = $dias[date('w', strtotime($movimiento['fecha_apertura']))];
+                                                        ?>
+                                                                    <span class="d-block font-weight-bold"><?= $n_dia ?></span>
+                                                                    <span class="d-block text-nowrap"><?= date('d/m/Y', strtotime($movimiento['fecha_apertura'])) ?></span>
                                                         <small
                                                             class="text-muted"><?= date('H:i', strtotime($movimiento['fecha_apertura'])) ?></small>
                                                     </td>
