@@ -437,12 +437,13 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                                 <th class="text-center text-info">
                                                     <?php
                                                     $total_banos_footer = 0;
-                                                    foreach ($vista_semanal as $dia):
-                                                        if (empty($dia['movimientos']))
-                                                            continue;
-                                                        foreach ($dia['movimientos'] as $m)
-                                                            $total_banos_footer += $m['saldo_bano'];
-                                                    endforeach;
+                                                    foreach ($vista_semanal as $d) {
+                                                        if (!empty($d['movimientos'])) {
+                                                            foreach ($d['movimientos'] as $m) {
+                                                                $total_banos_footer += $m['saldo_bano'];
+                                                            }
+                                                        }
+                                                    }
                                                     echo number_format($total_banos_footer, 2);
                                                     ?> Bs.
                                                 </th>
