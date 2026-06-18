@@ -606,11 +606,38 @@ function mantenimiento(numero, habitacionID) {
  * EVENT LISTENERS AL CARGAR
  */
 document.addEventListener('DOMContentLoaded', function () {
-    // Guardar Momentaneo
+    // Guardar Momentaneo con VALIDACIÓN ESTRICTA
     const btnGuardarMom = document.getElementById("guardar-momentaneo");
     if (btnGuardarMom) {
         btnGuardarMom.addEventListener("click", function () {
-            document.getElementById("form-momentaneo").submit();
+            const form = document.getElementById("form-momentaneo");
+
+            // 1. Validar campos requeridos nativos (monto, etc)
+            if (!form.reportValidity()) return;
+
+            // 2. Validar que el saldo sea CERO (Monto pagado == Monto total)
+            const total = parseFloat(document.getElementById('mom-monto_total').value) || 0;
+            let pagado = 0;
+            document.querySelectorAll('.input-monto-mom').forEach(i => { pagado += parseFloat(i.value) || 0; });
+
+            if (Math.abs(total - pagado) > 0.01) {
+                alert("ERROR: El monto pagado (Bs. " + pagado.toFixed(2) + ") no coincide con el total (Bs. " + total.toFixed(2) + "). El saldo debe ser 0 para registrar.");
+                return;
+            }
+
+            // 3. Validar que todas las formas de pago seleccionadas sean válidas
+            let pagosValidos = true;
+            document.querySelectorAll('.fila-pago-mom select').forEach(s => {
+                if (s.value === "") pagosValidos = false;
+            });
+
+            if (!pagosValidos) {
+                alert("ERROR: Debe seleccionar la forma de pago para todos los montos ingresados.");
+                return;
+            }
+
+            // Si todo está bien, enviar
+            form.submit();
         });
     }
 

@@ -113,6 +113,33 @@ $sql_all_movs = "SELECT
 
 $todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
 
+// --- DEPURADOR DE CONSULTA (Solo si se añade ?debug=1 a la URL) ---
+if (isset($_GET['debug'])) {
+    echo "<div style='background:#f8f9fa; border:2px solid #dee2e6; padding:20px; margin:20px; font-family:monospace; position:relative; z-index:9999;'>";
+    echo "<h3 style='color:#0d6efd;'>[DEBUG] ANÁLISIS DE VISTA_CAJAS</h3>";
+    echo "<strong>FECHA_INICIO:</strong> $fecha_inicio | <strong>FECHA_FIN:</strong> $fecha_fin<br>";
+    echo "<strong>USUARIO FILTRO:</strong> " . ($usuarioID_filtro ?: 'TODOS') . "<br>";
+    echo "<strong>EMPRESA ID:</strong> $empresaID_filtro<br>";
+    echo "<strong>SQL EJECUTADO:</strong> <pre style='background:#eee; padding:10px; border-radius:5px;'>$sql_all_movs</pre>";
+    echo "<strong>RESULTADOS ENCONTRADOS:</strong> " . count($todos_los_movimientos) . "<br><br>";
+    
+    if (empty($todos_los_movimientos)) {
+        echo "<span style='color:red;'><strong>ALERTA:</strong> No se encontraron registros. Causas posibles:</span><br>";
+        echo "1. No hay registros en <strong>cierre_cajas</strong> para este rango.<br>";
+        echo "2. Los registros existen pero <strong>no tienen ingresos/egresos pendientes de entrega</strong> (entregado=1).<br>";
+        echo "3. El estado de la caja no es <strong>CERRADA</strong>.<br>";
+    } else {
+        echo "<table border='1' style='width:100%; border-collapse:collapse;'>";
+        echo "<tr><th>CajaID</th><th>Apertura</th><th>Usuario</th><th>Monto</th></tr>";
+        foreach (array_slice($todos_los_movimientos, 0, 10) as $m) {
+            echo "<tr><td>{$m['cajaID']}</td><td>{$m['fecha_apertura']}</td><td>{$m['nombre_usuario']}</td><td>{$m['monto']}</td></tr>";
+        }
+        echo "</table>";
+        if (count($todos_los_movimientos) > 10) echo "... y " . (count($todos_los_movimientos) - 10) . " más.";
+    }
+    echo "</div>";
+}
+
 // Agrupamos los resultados en la estructura de vista_semanal para el renderizado
 foreach ($todos_los_movimientos as $mov) {
     $fecha_apertura_dia = date('Y-m-d', strtotime($mov['fecha_apertura']));
