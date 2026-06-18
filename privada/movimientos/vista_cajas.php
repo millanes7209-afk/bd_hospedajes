@@ -17,6 +17,14 @@ $fecha_inicio = $_GET['fecha_inicio'] ?? date('Y-m-d', strtotime('-6 days'));
 $fecha_fin = $_GET['fecha_fin'] ?? date('Y-m-d');
 $usuarioID_filtro = $_GET['usuarioID'] ?? '';
 
+// --- PANEL DEPURADOR SIEMPRE VISIBLE (FORZADO) ---
+echo "<div id='fix-debug' style='position:fixed; top:0; left:0; width:100%; background:red; color:white; font-family:sans-serif; font-size:12px; z-index:100000; text-align:center; padding:5px;'>
+    DEPURADOR ACTIVO - Buscando desde: $fecha_inicio hasta: $fecha_fin | Empresa: $empresaID_filtro
+</div>";
+
+echo "<div style='position:fixed; top:30px; right:10px; width:410px; max-height:400px; overflow-y:auto; background:rgba(0,0,0,0.95); color:#00ff00; padding:15px; font-family:monospace; font-size:11px; z-index:99999; border:2px solid red; border-radius:5px;'>
+    <h4 style='color:#fff; margin:0 0 10px 0;'>[TERMINAL DE DIAGNÓSTICO]</h4>";
+
 // AJUSTE DE RANGO CON HORAS EXTREMAS (00:00:00 a 23:59:59)
 $fec_inicio_full = $fecha_inicio . " 00:00:00";
 $fec_fin_full = $fecha_fin . " 23:59:59";
@@ -113,37 +121,17 @@ $sql_all_movs = "SELECT
 
 $todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
 
-// --- PANEL DEPURADOR FLOTANTE (Solo si ?debug=1) ---
-if (isset($_GET['debug'])) {
-    echo "<div style='position:fixed; top:10px; right:10px; width:400px; max-height:500px; overflow-y:auto; background:rgba(0,0,0,0.9); color:#00ff00; padding:15px; font-family:monospace; font-size:11px; z-index:99999; border:1px solid #444; border-radius:5px; box-shadow:0 0 20px rgba(0,0,0,0.5);'>
-        <h4 style='color:#fff; margin:0 0 10px 0; border-bottom:1px solid #444; padding-bottom:5px;'>[DEBUG TERMINAL]</h4>
-        <strong>FILTROS:</strong><br>
-        Inicio: $fecha_inicio<br>
-        Fin: $fecha_fin<br>
-        UserID: " . ($usuarioID_filtro ?: 'TODOS') . "<br>
-        Empresa: $empresaID_filtro<br><br>
-        
-        <strong>SQL WHERE:</strong><br>
-        <div style='color:#aaa; margin-bottom:10px;'>DATE(c.fecha_apertura) BETWEEN '$fecha_inicio' AND '$fecha_fin'</div>
-        
-        <strong>RESULTADOS:</strong> " . count($todos_los_movimientos) . " filas encontradas.<br><br>";
-
-    if (!empty($todos_los_movimientos)) {
-        echo "<table style='width:100%; border-collapse:collapse; color:#fff;'>
-            <tr style='border-bottom:1px solid #444;'><th>ID</th><th>Apertura</th><th>Monto</th></tr>";
-        foreach (array_slice($todos_los_movimientos, 0, 15) as $m) {
-            echo "<tr>
-                <td>{$m['cajaID']}</td>
-                <td style='color:#00ff00;'>" . date('d/m H:i', strtotime($m['fecha_apertura'])) . "</td>
-                <td>{$m['monto']}</td>
-            </tr>";
-        }
-        echo "</table>";
-    } else {
-        echo "<div style='color:#ff0000; font-weight:bold;'>!!! NO SE ENCONTRARON REGISTROS !!!</div>";
+// --- MOSTRAR RESULTADOS EN EL PANEL DEPURADOR ---
+echo "<strong>RESULTADOS:</strong> " . count($todos_los_movimientos) . " filas.<br><br>";
+if (!empty($todos_los_movimientos)) {
+    echo "<table style='width:100%; border-collapse:collapse; color:#fff;'>
+        <tr><th>ID</th><th>Apertura</th><th>Monto</th></tr>";
+    foreach (array_slice($todos_los_movimientos, 0, 10) as $m) {
+        echo "<tr><td>{$m['cajaID']}</td><td>{$m['fecha_apertura']}</td><td>{$m['monto']}</td></tr>";
     }
-    echo "</div>";
+    echo "</table>";
 }
+echo "</div>";
 
 // Agrupamos los resultados en la estructura de vista_semanal para el renderizado
 foreach ($todos_los_movimientos as $mov) {
