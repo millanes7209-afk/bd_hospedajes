@@ -126,20 +126,21 @@ echo "<strong>RESULTADOS:</strong> " . count($todos_los_movimientos) . " filas e
 echo "Rango: $fec_inicio_full a $fec_fin_full<br><br>";
 if (!empty($todos_los_movimientos)) {
     echo "<table style='width:100%; border-collapse:collapse; color:#fff; font-size:10px;'>
-        <tr style='border-bottom:1px solid #555;'><th>ID</th><th>Apertura</th><th>Monto</th><th>Usuario</th></tr>";
+            <tr style='border-bottom:1px solid #555;'><th>ID</th><th>Apertura</th><th>Monto</th><th>Usuario</th></tr>";
     foreach (array_slice($todos_los_movimientos, 0, 30) as $m) {
         echo "<tr style='border-bottom:1px solid #333;'>
-            <td>{$m['cajaID']}</td>
-            <td style='color:#00ff00;'>{$m['fecha_apertura']}</td>
-            <td>{$m['monto']}</td>
-            <td style='color:#aaa;'>{$m['nombre_usuario']}</td>
-        </tr>";
+                <td>{$m['cajaID']}</td>
+                <td style='color:#00ff00;'>{$m['fecha_apertura']}</td>
+                <td>{$m['monto']}</td>
+                <td style='color:#aaa;'>{$m['nombre_usuario']}</td>
+            </tr>";
     }
     echo "</table>";
     if (count($todos_los_movimientos) > 30)
         echo "<br>... y " . (count($todos_los_movimientos) - 30) . " más.";
 } else {
-    echo "<b style='color:red;'>LA CONSULTA NO DEVOLVIÓ NADA.</b>";
+    echo "<b style='color:red;'>LA CONSULTA NO DEVOLVIÓ NADA.</b><br>";
+    echo "<small style='color:#ccc;'>Esto suele pasar si todas las cajas del rango ya fueron recaudadas (entregado=1).</small>";
 }
 echo "</div>";
 
@@ -356,7 +357,8 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                                             class="text-muted"><?= date('H:i', strtotime($movimiento['fecha_apertura'])) ?></small>
                                                     </td>
                                                     <td class="text-center font-weight-bold">
-                                                        <?php echo mb_strtoupper($movimiento['nombre_usuario']); ?></td>
+                                                        <?php echo mb_strtoupper($movimiento['nombre_usuario']); ?>
+                                                    </td>
 
                                                     <?php
                                                     $total_fila = 0;
@@ -431,9 +433,12 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                                 <th class="text-center text-info">
                                                     <?php
                                                     $total_banos_footer = 0;
-                                                    foreach ($vista_semanal as $d)
-                                                        foreach ($d['movimientos'] as $m)
+                                                    foreach ($vista_semanal as $dia):
+                                                        if (empty($dia['movimientos']))
+                                                            continue;
+                                                        foreach ($dia['movimientos'] as $m)
                                                             $total_banos_footer += $m['saldo_bano'];
+                                                    endforeach;
                                                     echo number_format($total_banos_footer, 2);
                                                     ?> Bs.
                                                 </th>
