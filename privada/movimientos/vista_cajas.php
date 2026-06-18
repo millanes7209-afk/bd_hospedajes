@@ -121,20 +121,46 @@ $sql_all_movs = "SELECT
 
 $todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
 
+// --- MOSTRAR RESULTADOS EN EL PANEL DEPURADOR ---
+echo "<strong>RESULTADOS:</strong> " . count($todos_los_movimientos) . " filas encontradas.<br>";
+echo "Rango: $fec_inicio_full a $fec_fin_full<br><br>";
+if (!empty($todos_los_movimientos)) {
+    echo "<table style='width:100%; border-collapse:collapse; color:#fff; font-size:10px;'>
+            <tr style='border-bottom:1px solid #555;'><th>ID</th><th>Apertura</th><th>Monto</th><th>Usuario</th></tr>";
+    foreach (array_slice($todos_los_movimientos, 0, 30) as $m) {
+        echo "<tr style='border-bottom:1px solid #333;'>
+                <td>{$m['cajaID']}</td>
+                <td style='color:#00ff00;'>{$m['fecha_apertura']}</td>
+                <td>{$m['monto']}</td>
+                <td style='color:#aaa;'>{$m['nombre_usuario']}</td>
+            </tr>";
+    }
+    echo "</table>";
+    if (count($todos_los_movimientos) > 30)
+        echo "<br>... y " . (count($todos_los_movimientos) - 30) . " más.";
+} else {
+    echo "<b style='color:red;'>LA CONSULTA NO DEVOLVIÓ NADA.</b><br>";
+    echo "<small style='color:#ccc;'>Esto suele pasar si todas las cajas del rango ya fueron recaudadas (entregado=1).</small>";
+}
+echo "</div>";
+
 // Agrupamos los resultados en la estructura de vista_semanal para el renderizado
 foreach ($todos_los_movimientos as $mov) {
+    // Forzamos la extracción de la fecha limpia solo año-mes-día
     $f_apertura = substr($mov['fecha_apertura'], 0, 10);
     $cajaID = $mov['cajaID'];
 
+    // Si por alguna razón el día no existe en el array inicial, lo creamos al vuelo
     if (!isset($vista_semanal[$f_apertura])) {
         $vista_semanal[$f_apertura] = ['fecha' => $f_apertura, 'movimientos' => []];
     }
 
+    // Si la caja no está en los movimientos de ese día, la inicializamos
     if (!isset($vista_semanal[$f_apertura]['movimientos'][$cajaID])) {
         $vista_semanal[$f_apertura]['movimientos'][$cajaID] = [
             'nombre_usuario' => $mov['nombre_usuario'],
             'fecha_apertura' => $mov['fecha_apertura'],
-            'fecha_cierre' => $mov['fecha_cierre'] ?? '',
+            'fecha_cierre' => $mov['fecha_cierre'],
             'saldos' => [],
             'movimientos_count' => 0,
             'cajaID' => $cajaID,
@@ -142,11 +168,11 @@ foreach ($todos_los_movimientos as $mov) {
         ];
     }
 
-    $fp_tipo = $mov['forma_pago'];
-    if (!isset($vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$fp_tipo])) {
-        $vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$fp_tipo] = 0;
+    $forma_pago = $mov['forma_pago'];
+    if (!isset($vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$forma_pago])) {
+        $vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$forma_pago] = 0;
     }
-    $vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$fp_tipo] += (float) $mov['monto'];
+    $vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$forma_pago] += (float) $mov['monto'];
     $vista_semanal[$f_apertura]['movimientos'][$cajaID]['movimientos_count']++;
 }
 
