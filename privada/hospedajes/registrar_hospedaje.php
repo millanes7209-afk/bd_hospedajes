@@ -66,10 +66,10 @@ try {
     $cuentaID = $cuenta['cuentaID'];
 
     // 5. INSERTAR EN LA SUPER-TABLA INGRESOS (Cabecera única)
-    $sqlI = "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario, _fec_insercion) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $sqlI = "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario, _fec_insercion, _fec_modificacion) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $concepto_ingreso = "$tipo_estadia HAB. $habitacion_numero" . ($descripcion ? " - $descripcion" : "");
-    $paramsI = [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto_total, $concepto_ingreso, $ahora, $usuarioID, $ahora];
+    $paramsI = [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto_total, $concepto_ingreso, $ahora, $usuarioID, $ahora, $ahora];
 
     if ($db->ejecutar($sqlI, $paramsI) === false) {
         throw new Exception("Error BD: No se pudo registrar el ingreso maestro.");

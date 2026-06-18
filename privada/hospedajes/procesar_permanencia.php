@@ -61,10 +61,11 @@ try {
     }
 
     // Insertar Ingreso Maestro
-    $sqlI = "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario, _fec_insercion) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $sqlI = "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario, _fec_insercion, _fec_modificacion) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $concepto_i = "EXTENSIÓN $tipo_label HAB. $habitacion_numero" . ($descripcion ? " - $descripcion" : "");
-    $db->ejecutar($sqlI, [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto_total, $concepto_i, $ahora, $usuarioID, $ahora]);
+    $paramsI = [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto_total, $concepto_i, $ahora, $usuarioID, $ahora, $ahora];
+    $db->ejecutar($sqlI, $paramsI);
     $ingresoID = $db->ultimoInsertId();
 
     // Detalle de Pagos
