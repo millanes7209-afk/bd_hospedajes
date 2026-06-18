@@ -109,6 +109,14 @@ if (!empty($todos_los_movimientos)) {
 }
 echo "</div>";
 
+echo "<script>
+    console.group('%c [DIAGNÓSTICO PASO A PASO] ', 'background: #000; color: #00ff00; font-size: 16px;');
+    console.log('1. VARIABLES RECIBIDAS: Inicio: $fecha_inicio, Fin: $fecha_fin');
+    console.log('2. CALENDARIO GENERADO:', " . json_encode(array_keys($vista_semanal)) . ");
+    console.log('3. DATA DE BASE DE DATOS (CRUDA):', " . json_encode(array_map(function ($m) {
+    return ['ID' => $m['cajaID'], 'Fecha' => $m['fecha_apertura']]; }, $todos_los_movimientos)) . ");
+</script>";
+
 // Agrupar en vista_semanal
 foreach ($todos_los_movimientos as $mov) {
     $f_apertura = substr($mov['fecha_apertura'], 0, 10);
@@ -136,6 +144,10 @@ foreach ($todos_los_movimientos as $mov) {
     $vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$forma_pago] += (float) $mov['monto'];
     $vista_semanal[$f_apertura]['movimientos'][$cajaID]['movimientos_count']++;
 }
+
+echo "<script>
+    console.log('4. AGRUPACIÓN COMPLETA (vista_semanal):', " . json_encode($vista_semanal) . ");
+</script>";
 
 // Saldos de baños
 foreach ($vista_semanal as $fecha => &$datos) {
@@ -295,16 +307,18 @@ foreach ($vista_semanal as $fecha => &$datos) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php $hayRegistros = false;
-                                    foreach ($vista_semanal as $fecha => $datos): ?>
-                                        <?php if (!empty($datos['movimientos'])):
+                                    <?php 
+                                    $hayRegistros = false;
+                                    foreach ($vista_semanal as $fecha => $datos): 
+                                        echo "<script>console.log('5. INTENTANDO PINTAR DÍA: $fecha, Movimientos:', " . count($datos['movimientos'] ?? []) . ");</script>";
+                                        if (!empty($datos['movimientos'])):
                                             $hayRegistros = true;
-                                            foreach ($datos['movimientos'] as $movimiento): ?>
+                                            foreach ($datos['movimientos'] as $movimiento): 
+                                    ?>
                                                 <tr>
                                                     <td class="text-center align-middle">
-                                                        <?= date('d/m/Y', strtotime($movimiento['fecha_apertura'])) ?><br>
-                                                        <small
-                                                            class="text-muted"><?= date('H:i', strtotime($movimiento['fecha_apertura'])) ?></small>
+                                                        <span class="d-block"><?= date('d/m/Y', strtotime($movimiento['fecha_apertura'])) ?></span>
+                                                        <small class="text-muted"><?= date('H:i', strtotime($movimiento['fecha_apertura'])) ?></small>
                                                     </td>
                                                     <td class="text-center font-weight-bold">
                                                         <?= mb_strtoupper($movimiento['nombre_usuario']) ?>
