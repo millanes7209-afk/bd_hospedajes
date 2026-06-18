@@ -79,14 +79,14 @@ $where_entrega = " AND (EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.caja
 
 if ($rol_usuario === 'RECEPCIONISTA') {
     $where_user = "AND cc._usuario = ?";
-    $params_mov = [$fec_inicio_full, $fec_fin_full, $empresaID_filtro, $usuarioID_actual];
+    $params_mov = [$fecha_inicio, $fecha_fin, $empresaID_filtro, $usuarioID_actual];
 } else {
     if (!empty($usuarioID_filtro)) {
         $where_user = "AND cc._usuario = ?";
-        $params_mov = [$fec_inicio_full, $fec_fin_full, $empresaID_filtro, $usuarioID_filtro];
+        $params_mov = [$fecha_inicio, $fecha_fin, $empresaID_filtro, $usuarioID_filtro];
     } else {
         $where_user = "";
-        $params_mov = [$fec_inicio_full, $fec_fin_full, $empresaID_filtro];
+        $params_mov = [$fecha_inicio, $fecha_fin, $empresaID_filtro];
     }
 }
 
@@ -102,7 +102,7 @@ $sql_all_movs = "SELECT
                 INNER JOIN cajas c ON cc.cajaID = c.cajaID
                 INNER JOIN usuarios u ON c.usuarioID = u.usuarioID
                 INNER JOIN formas_pago fp ON cc.formapagoID = fp.formapagoID
-                WHERE c.fecha_apertura BETWEEN ? AND ?
+                WHERE DATE(c.fecha_apertura) BETWEEN ? AND ?
                   AND c.empresaID = ? 
                   AND c.estado = 'CERRADA'
                   AND c._estado <> 'X'
