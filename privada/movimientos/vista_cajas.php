@@ -121,19 +121,6 @@ $sql_all_movs = "SELECT
 
 $todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
 
-// --- DEPURADOR EN CONSOLA (Solo si ?debug=1) ---
-if (isset($_GET['debug'])) {
-    echo "<script>
-        console.group('%c [DIAGNÓSTICO VISTA_CAJAS] ', 'background: #222; color: #bada55');
-        console.log('FILTROS:', " . json_encode(['inicio' => $fecha_inicio, 'fin' => $fecha_fin]) . ");
-        console.log('SQL:', " . json_encode($sql_all_movs) . ");
-        console.log('FILAS:', " . count($todos_los_movimientos) . ");
-        console.table(" . json_encode(array_map(function ($m) {
-        return ['ID' => $m['cajaID'], 'Apertura' => $m['fecha_apertura'], 'Monto' => $m['monto']]; }, $todos_los_movimientos)) . ");
-        console.groupEnd();
-    </script>";
-}
-
 // Agrupamos los resultados en la estructura de vista_semanal para el renderizado
 foreach ($todos_los_movimientos as $mov) {
     $f_apertura = substr($mov['fecha_apertura'], 0, 10);
