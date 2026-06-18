@@ -74,47 +74,24 @@ if ($rol_usuario === 'RECEPCIONISTA') {
 // FIX PRINCIPAL: usar fecha_apertura para el rango pero también
 // incluir cajas abiertas en el rango aunque se hayan cerrado después
 $sql_all_movs = "SELECT 
+                    cc.monto,
                     c.cajaID, 
                     c.fecha_apertura, 
                     u.usuario as nombre_usuario,
-                    'TEST' as forma_pago,
-                    0 as monto
+                    fp.tipo as forma_pago
                 FROM cajas c
+                INNER JOIN cierre_cajas cc ON c.cajaID = cc.cajaID
                 INNER JOIN usuarios u ON c.usuarioID = u.usuarioID
+                INNER JOIN formas_pago fp ON cc.formapagoID = fp.formapagoID
                 WHERE DATE(c.fecha_apertura) BETWEEN ? AND ?
                   AND c.empresaID = ? 
                   AND c._estado <> 'X'
+                  AND cc._estado <> 'X'
                   $where_user
                   $where_entrega
                 ORDER BY c.fecha_apertura ASC, c.cajaID ASC";
 
 $todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
-
-// --- PANEL DEPURADOR (Solo visible para diagnóstico) ---
-
-if (!empty($todos_los_movimientos)) {
-    echo "<table style='width:100%; border-collapse:collapse; color:#fff;'>
-            <tr style='border-bottom:1px solid #555;'><th>ID</th><th>Apertura</th><th>Monto</th><th>FP</th></tr>";
-    foreach (array_slice($todos_los_movimientos, 0, 30) as $m) {
-        echo "<tr>
-                <td>{$m['cajaID']}</td>
-                <td>{$m['fecha_apertura']}</td>
-                <td>{$m['monto']}</td>
-                <td style='color:yellow;'>{$m['forma_pago']}</td>
-            </tr>";
-    }
-    echo "</table>";
-}
-echo "</div>";
-
-echo "<script>
-    console.group('%c [DIAGNÓSTICO PASO A PASO] ', 'background: #000; color: #00ff00; font-size: 16px;');
-    console.log('1. VARIABLES RECIBIDAS: Inicio: $fecha_inicio, Fin: $fecha_fin');
-    console.log('2. CALENDARIO GENERADO:', " . json_encode(array_keys($vista_semanal)) . ");
-    console.log('3. DATA DE BASE DE DATOS (CRUDA):', " . json_encode(array_map(function ($m) {
-    return ['ID' => $m['cajaID'], 'Fecha' => $m['fecha_apertura']];
-}, $todos_los_movimientos)) . ");
-</script>";
 
 // Agrupar en vista_semanal
 foreach ($todos_los_movimientos as $mov) {
@@ -143,10 +120,6 @@ foreach ($todos_los_movimientos as $mov) {
     $vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$forma_pago] += (float) $mov['monto'];
     $vista_semanal[$f_apertura]['movimientos'][$cajaID]['movimientos_count']++;
 }
-
-echo "<script>
-    console.log('4. AGRUPACIÓN COMPLETA (vista_semanal):', " . json_encode($vista_semanal) . ");
-</script>";
 
 // Saldos de baños
 foreach ($vista_semanal as $fecha => &$datos) {
@@ -311,7 +284,6 @@ unset($caja_data);
                                     <?php
                                     $hayRegistros = false;
                                     foreach ($vista_semanal as $fecha => $datos):
-                                        echo "<script>console.log('5. INTENTANDO PINTAR DÍA: $fecha, Movimientos:', " . count($datos['movimientos'] ?? []) . ");</script>";
                                         if (!empty($datos['movimientos'])):
                                             $hayRegistros = true;
                                             foreach ($datos['movimientos'] as $movimiento):
