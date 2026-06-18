@@ -119,28 +119,32 @@ $sql_all_movs = "SELECT
                   $where_entrega
                 ORDER BY c.fecha_apertura ASC, cc.cajaID ASC"; // ORDEN CRONOLÓGICO ESTRICTO POR APERTURA
 
+// --- PANEL DEPURADOR SIEMPRE VISIBLE (FORZADO) ---
+echo "<div id='fix-debug' style='position:fixed; top:0; left:0; width:100%; background:red; color:white; font-family:sans-serif; font-size:12px; z-index:100000; text-align:center; padding:5px;'>
+    DEPURADOR ACTIVO - Buscando desde: $fecha_inicio hasta: $fecha_fin | Empresa: $empresaID_filtro
+</div>";
+
+echo "<div style='position:fixed; top:35px; right:10px; width:450px; max-height:450px; overflow-y:auto; background:rgba(0,0,0,0.95); color:#ffffff; padding:15px; font-family:monospace; font-size:11px; z-index:99999; border:2px solid #00ff00; border-radius:5px; box-shadow:0 0 15px #000;'>
+    <h4 style='color:#00ff00; margin:0 0 10px 0; border-bottom:1px solid #333;'>[TERMINAL DE DIAGNÓSTICO]</h4>
+    <strong>RANGO SQL:</strong> $fec_inicio_full al $fec_fin_full<br><br>";
+
 $todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
 
-// --- MOSTRAR RESULTADOS EN EL PANEL DEPURADOR ---
-echo "<strong>RESULTADOS:</strong> " . count($todos_los_movimientos) . " filas encontradas.<br>";
-echo "Rango: $fec_inicio_full a $fec_fin_full<br><br>";
+echo "<strong>FILAS ENCONTRADAS:</strong> " . count($todos_los_movimientos) . "<br><br>";
 if (!empty($todos_los_movimientos)) {
     echo "<table style='width:100%; border-collapse:collapse; color:#fff; font-size:10px;'>
-            <tr style='border-bottom:1px solid #555;'><th>ID</th><th>Apertura</th><th>Monto</th><th>Usuario</th></tr>";
+        <tr style='border-bottom:1px solid #555; text-align:left;'><th>ID</th><th>APERTURA</th><th>MONTO</th><th>USUARIO</th></tr>";
     foreach (array_slice($todos_los_movimientos, 0, 30) as $m) {
-        echo "<tr style='border-bottom:1px solid #333;'>
-                <td>{$m['cajaID']}</td>
-                <td style='color:#00ff00;'>{$m['fecha_apertura']}</td>
-                <td>{$m['monto']}</td>
-                <td style='color:#aaa;'>{$m['nombre_usuario']}</td>
-            </tr>";
+        echo "<tr style='border-bottom:1px solid #222;'>
+            <td>{$m['cajaID']}</td>
+            <td style='color:#00ff00;'>{$m['fecha_apertura']}</td>
+            <td>{$m['monto']}</td>
+            <td>{$m['nombre_usuario']}</td>
+        </tr>";
     }
     echo "</table>";
-    if (count($todos_los_movimientos) > 30)
-        echo "<br>... y " . (count($todos_los_movimientos) - 30) . " más.";
 } else {
-    echo "<b style='color:red;'>LA CONSULTA NO DEVOLVIÓ NADA.</b><br>";
-    echo "<small style='color:#ccc;'>Esto suele pasar si todas las cajas del rango ya fueron recaudadas (entregado=1).</small>";
+    echo "<b style='color:red;'>SQL NO DEVOLVIÓ NADA.</b>";
 }
 echo "</div>";
 
