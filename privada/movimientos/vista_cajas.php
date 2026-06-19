@@ -24,8 +24,13 @@ $tiene_banos = (bool) $db->obtenerFila(
 
 $sql_usuarios = "SELECT DISTINCT u.usuarioID, u.usuario 
                  FROM usuarios u
+                 INNER JOIN usuarios_roles ur ON u.usuarioID = ur.usuarioID
+                 INNER JOIN roles r ON ur.rolID = r.rolID
                  INNER JOIN empleado_empresas ee ON u.empleadoID = ee.empleadoID
-                 WHERE u._estado <> 'X' AND ee.empresaID = ? AND ee._estado <> 'X'
+                 WHERE u._estado <> 'X' 
+                   AND ee.empresaID = ? 
+                   AND ee._estado <> 'X'
+                   AND r.rol = 'RECEPCIONISTA'
                  ORDER BY u.usuario";
 $usuarios_mov = $db->obtenerTodo($sql_usuarios, [$empresaID_filtro]);
 
@@ -294,8 +299,9 @@ unset($caja_data);
                                                         $dias = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
                                                         $n_dia = $dias[date('w', strtotime($movimiento['fecha_apertura']))];
                                                         ?>
-                                                                    <span class="d-block font-weight-bold"><?= $n_dia ?></span>
-                                                                    <span class="d-block text-nowrap"><?= date('d/m/Y', strtotime($movimiento['fecha_apertura'])) ?></span>
+                                                        <span class="d-block font-weight-bold"><?= $n_dia ?></span>
+                                                        <span
+                                                            class="d-block text-nowrap"><?= date('d/m/Y', strtotime($movimiento['fecha_apertura'])) ?></span>
                                                         <small
                                                             class="text-muted"><?= date('H:i', strtotime($movimiento['fecha_apertura'])) ?></small>
                                                     </td>

@@ -18,6 +18,8 @@ if (empty($cajaIDs)) {
     exit();
 }
 
+date_default_timezone_set('America/La_Paz');
+
 try {
     $procesados = 0;
     $ahora = date('Y-m-d H:i:s');
@@ -43,18 +45,35 @@ try {
             $recepcionistaID = $caja_info['usuarioID'];
             $comprobante = "REC-" . date("Ymd") . "-" . $cajaID;
 
-            // 2. Crear registro en recaudaciones
-            $sql_rec = "INSERT INTO recaudaciones (empresaID, usuariorecepcionistaID, usuariopropietarioID, monto, comprobante_nro, fecha, _usuario, _estado) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, 'A')";
-            $db->ejecutar($sql_rec, [$empresaID, $recepcionistaID, $usuarioPropietarioID, $monto_neto, $comprobante, $ahora, $usuarioPropietarioID]);
+            // 2. Crear registro en recaudaciones (Incluimos cajaID y forzamos fechas de auditoría para sincronizar)
+            $sql_rec = "INSERT INTO recaudaciones (empresaID, cajaID, usuariorecepcionistaID, usuariopropietarioID, monto, comprobante_nro, fecha, _fec_insercion, _fec_modificacion, _usuario, _estado) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'A')";
+            $db->ejecutar($sql_rec, [
+                $empresaID,
+                $cajaID,
+                $recepcionistaID,
+                $usuarioPropietarioID,
+                $monto_neto,
+                $comprobante,
+                $ahora,
+                $ahora,
+                $ahora,
+                $usuarioPropietarioID
+            ]);
 
             $recaudacionID = $db->ultimoInsertId();
 
-            // 3. Marcar INGRESOS como entregados
-            $db->ejecutar("UPDATE ingresos SET entregado = 1, fecha_entrega = ?, recaudacionID = ?, _fec_modificacion = ?, _usuario = ? WHERE cajaID = ? AND entregado = 0", [$ahora, $recaudacionID, $ahora, $usuarioPropietarioID, $cajaID]);
+            // 3. Marcar INGRESOS como entregados (QUITAMOS la edición de _usuario para no borrar al recepcionista original)
+            $db->ejecutar(
+                "UPDATE ingresos SET entregado = 1, fecha_entrega = ?, recaudacionID = ?, _fec_modificacion = ? WHERE cajaID = ? AND entregado = 0",
+                [$ahora, $recaudacionID, $ahora, $cajaID]
+            );
 
-            // 4. Marcar EGRESOS como entregados
-            $db->ejecutar("UPDATE egresos SET entregado = 1, fecha_entrega = ?, recaudacionID = ?, _fec_modificacion = ?, _usuario = ? WHERE cajaID = ? AND entregado = 0", [$ahora, $recaudacionID, $ahora, $usuarioPropietarioID, $cajaID]);
+            // 4. Marcar EGRESOS como entregados (Idem: no tocamos _usuario)
+            $db->ejecutar(
+                "UPDATE egresos SET entregado = 1, fecha_entrega = ?, recaudacionID = ?, _fec_modificacion = ? WHERE cajaID = ? AND entregado = 0",
+                [$ahora, $recaudacionID, $ahora, $cajaID]
+            );
 
             // 5. Marcar BAÑOS como entregados
             $db->ejecutar("UPDATE banos SET entregado = 1, recaudacionID = ? WHERE cajaID = ? AND entregado = 0", [$recaudacionID, $cajaID]);
