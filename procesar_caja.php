@@ -27,11 +27,11 @@ if (isset($_POST['accion'])) {
         // Si no hay caja abierta, abrir una nueva
         $fecha_apertura = date('Y-m-d H:i:s');
 
-        $sql_abrir_caja = "INSERT INTO cajas (_fec_insercion, _usuario, usuarioID, empresaID, _estado, fecha_apertura, estado) 
-            VALUES (?, ?, ?, ?, 'A', ?, 'ABIERTA')
+        $sql_abrir_caja = "INSERT INTO cajas (_fec_insercion, _fec_modificacion, _usuario, usuarioID, empresaID, _estado, fecha_apertura, estado) 
+            VALUES (?, ?, ?, ?, ?, 'A', ?, 'ABIERTA')
         ";
 
-        $result = $db->ejecutar($sql_abrir_caja, array($fecha_apertura, $usuarioID, $usuarioID, $empresaID, $fecha_apertura));
+        $result = $db->ejecutar($sql_abrir_caja, array($fecha_apertura, $fecha_apertura, $usuarioID, $usuarioID, $empresaID, $fecha_apertura));
 
         if ($result) {
             // Guardar el ID de la nueva caja en la sesión

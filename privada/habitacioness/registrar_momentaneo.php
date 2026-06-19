@@ -39,9 +39,9 @@ try {
     // 2. Insertar cabecera de ingreso
     $concepto = "MOMENTANEO HAB-$descripcion";
     $db->ejecutar(
-        "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _fec_insercion, _usuario, _estado)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'A')",
-        [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto_total, $concepto, $fecha_ahora, $fecha_ahora, $usuarioID]
+        "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _fec_insercion, _fec_modificacion, _usuario, _estado)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'A')",
+        [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto_total, $concepto, $fecha_ahora, $fecha_ahora, $fecha_ahora, $usuarioID]
     );
     $ingresoID = $db->lastInsertId();
 
@@ -50,8 +50,8 @@ try {
         $monto_pago = floatval(str_replace(',', '.', $pago['monto'] ?? 0));
         if ($monto_pago > 0) {
             $db->ejecutar(
-                "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto, _fec_insercion, _usuario) VALUES (?, ?, ?, ?, ?)",
-                [$ingresoID, $pago['formaPagoID'], $monto_pago, $fecha_ahora, $usuarioID]
+                "INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto, _fec_insercion, _fec_modificacion, _usuario) VALUES (?, ?, ?, ?, ?, ?)",
+                [$ingresoID, $pago['formaPagoID'], $monto_pago, $fecha_ahora, $fecha_ahora, $usuarioID]
             );
         }
     }

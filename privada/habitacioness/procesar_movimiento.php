@@ -29,25 +29,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($tipo_mov === 'INGRESO') {
             // 1. INSERTAR INGRESO MAESTRO
-            $sqlI = "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario, _fec_insercion) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            $db->ejecutar($sqlI, [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto, $descripcion, $fecha_actual, $usuarioID, $fecha_actual]);
+            $sqlI = "INSERT INTO ingresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario, _fec_insercion, _fec_modificacion) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $db->ejecutar($sqlI, [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto, $descripcion, $fecha_actual, $usuarioID, $fecha_actual, $fecha_actual]);
             $ingresoID = $db->lastInsertId();
 
             // 2. DETALLE DE PAGO
-            $db->ejecutar("INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto, _fec_insercion, _usuario) VALUES (?, ?, ?, ?, ?)", [$ingresoID, $formaPagoID, $monto, $fecha_actual, $usuarioID]);
+            $db->ejecutar("INSERT INTO ingreso_pagos (ingresoID, formapagoID, monto, _fec_insercion, _fec_modificacion, _usuario) VALUES (?, ?, ?, ?, ?, ?)", [$ingresoID, $formaPagoID, $monto, $fecha_actual, $fecha_actual, $usuarioID]);
 
             // 3. Registro completado
 
         } else {
             // 1. INSERTAR EGRESO MAESTRO
-            $sqlE = "INSERT INTO egresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario, _fec_insercion) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            $db->ejecutar($sqlE, [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto, $descripcion, $fecha_actual, $usuarioID, $fecha_actual]);
+            $sqlE = "INSERT INTO egresos (empresaID, cajaID, cuentaID, usuarioID, monto_total, concepto, fecha, _usuario, _fec_insercion, _fec_modificacion) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $db->ejecutar($sqlE, [$empresaID, $cajaID, $cuentaID, $usuarioID, $monto, $descripcion, $fecha_actual, $usuarioID, $fecha_actual, $fecha_actual]);
             $egresoID = $db->lastInsertId();
 
             // 2. DETALLE DE PAGO
-            $db->ejecutar("INSERT INTO egreso_pagos (egresoID, formapagoID, monto, _fec_insercion, _usuario) VALUES (?, ?, ?, ?, ?)", [$egresoID, $formaPagoID, $monto, $fecha_actual, $usuarioID]);
+            $db->ejecutar("INSERT INTO egreso_pagos (egresoID, formapagoID, monto, _fec_insercion, _fec_modificacion, _usuario) VALUES (?, ?, ?, ?, ?, ?)", [$egresoID, $formaPagoID, $monto, $fecha_actual, $fecha_actual, $usuarioID]);
         }
 
         $db->commit();
