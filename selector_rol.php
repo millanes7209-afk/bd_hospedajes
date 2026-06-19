@@ -22,11 +22,15 @@ $sql_roles_cont = "SELECT r.rolID, r.rol
                   AND ee.estado_laboral = 'ACTIVO' AND ee._estado <> 'X'";
 $roles_cont = $db->obtenerTodo($sql_roles_cont, [$empleadoID, $empresaID]);
 
-// B. Roles globales del usuario (como ADMINISTRADOR)
+// B. Roles globales del usuario (solo ADMINISTRADOR — son los únicos verdaderamente globales)
+// Propietario y Recepcionista deben venir exclusivamente del contrato en empleado_empresas.
+// Sin este filtro, un usuario que sea Propietario en otra empresa aparecería como Propietario
+// también en empresas donde solo es Recepcionista.
 $sql_roles_glob = "SELECT r.rolID, r.rol 
                   FROM usuarios_roles ur 
                   INNER JOIN roles r ON ur.rolID = r.rolID 
-                  WHERE ur.usuarioID = ? AND ur._estado <> 'X'";
+                  WHERE ur.usuarioID = ? AND ur._estado <> 'X'
+                  AND UPPER(r.rol) = 'ADMINISTRADOR'";
 $roles_glob = $db->obtenerTodo($sql_roles_glob, [$usuarioID]);
 
 // Combinamos ambos evitando duplicados
@@ -64,6 +68,7 @@ if (empty($roles)) {
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Seleccionar Cargo - Dulces Sueños</title>
@@ -71,15 +76,76 @@ if (empty($roles)) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background: #f0f2f5; height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', sans-serif; }
-        .selector-card { background: white; border-radius: 16px; padding: 40px; width: 100%; max-width: 450px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
-        .company-badge { background: #e7f0ff; color: #0d6efd; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: inline-block; margin-bottom: 20px; }
-        .role-option { background: #ffffff; border: 2px solid #f0f2f5; border-radius: 12px; padding: 15px 20px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; text-decoration: none; color: #333; }
-        .role-option:hover { border-color: #0d6efd; background: #f8fbff; transform: translateY(-2px); }
-        .role-icon { font-size: 1.2rem; margin-right: 15px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #f0f2f5; border-radius: 10px; color: #0d6efd; }
-        .role-name { font-weight: 600; font-size: 1rem; }
+        body {
+            background: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .selector-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .company-badge {
+            background: #e7f0ff;
+            color: #0d6efd;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .role-option {
+            background: #ffffff;
+            border: 2px solid #f0f2f5;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .role-option:hover {
+            border-color: #0d6efd;
+            background: #f8fbff;
+            transform: translateY(-2px);
+        }
+
+        .role-icon {
+            font-size: 1.2rem;
+            margin-right: 15px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f2f5;
+            border-radius: 10px;
+            color: #0d6efd;
+        }
+
+        .role-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
     </style>
 </head>
+
 <body>
     <div class="selector-card">
         <div class="company-badge text-uppercase">
@@ -87,14 +153,14 @@ if (empty($roles)) {
         </div>
         <h3 class="fw-bold mb-1">¿Qué cargo ocuparás?</h3>
         <p class="text-muted mb-4 small">Selecciona tu función para continuar:</p>
-        
+
         <div class="mt-4">
             <?php foreach ($roles as $r): ?>
                 <a href="?rolID=<?php echo $r['rolID']; ?>" class="role-option">
                     <div class="role-icon">
-                        <i class="fas <?php 
-                            echo (stripos($r['rol'], 'admin') !== false) ? 'fa-user-tie' : 
-                                 ((stripos($r['rol'], 'recep') !== false) ? 'fa-concierge-bell' : 'fa-id-badge'); 
+                        <i class="fas <?php
+                        echo (stripos($r['rol'], 'admin') !== false) ? 'fa-user-tie' :
+                            ((stripos($r['rol'], 'recep') !== false) ? 'fa-concierge-bell' : 'fa-id-badge');
                         ?>"></i>
                     </div>
                     <div class="role-name text-uppercase"><?php echo $r['rol']; ?></div>
@@ -110,4 +176,5 @@ if (empty($roles)) {
         </div>
     </div>
 </body>
+
 </html>
