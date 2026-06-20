@@ -21,9 +21,9 @@ $sql = "SELECT r.*,
         FROM recaudaciones r
         INNER JOIN usuarios u1 ON r.usuariorecepcionistaID = u1.usuarioID
         INNER JOIN usuarios u2 ON r.usuariopropietarioID = u2.usuarioID
-        LEFT JOIN cajas c ON r.cajaID = c.cajaID
+        INNER JOIN cajas c ON r.cajaID = c.cajaID
         WHERE r.empresaID = ? 
-          AND DATE(r.fecha) BETWEEN ? AND ?
+          AND DATE(c.fecha_apertura) BETWEEN ? AND ?
           AND r._estado <> 'X'
         ORDER BY r.fecha DESC";
 
@@ -162,7 +162,8 @@ $recaudaciones = $db->obtenerTodo($sql, [$empresaID, $fecha_inicio, $fecha_fin])
                                         <?= $r['fecha_apertura'] ? date('d/m/Y H:i', strtotime($r['fecha_apertura'])) : '- - -' ?>
                                     </td>
                                     <td class="text-center text-primary fw-bold">
-                                        <?= date('d/m/Y H:i', strtotime($r['fecha'])) ?></td>
+                                        <?= date('d/m/Y H:i', strtotime($r['fecha'])) ?>
+                                    </td>
                                     <td class="text-center fw-bold"><?= $r['comprobante_nro'] ?></td>
                                     <td><?= $r['recepcionista'] ?></td>
                                     <td><?= $r['propietario'] ?></td>
@@ -185,7 +186,8 @@ $recaudaciones = $db->obtenerTodo($sql, [$empresaID, $fecha_inicio, $fecha_fin])
                                         TOTAL RECAUDADO EN EL PERIODO:</th>
                                     <th colspan="2" class="text-start"
                                         style="font-size: 1.1rem; border-left: 1px solid #dee2e6;">Bs.
-                                        <?= number_format($total_general, 2) ?></th>
+                                        <?= number_format($total_general, 2) ?>
+                                    </th>
                                 </tr>
                             </tfoot>
                         <?php endif; ?>
