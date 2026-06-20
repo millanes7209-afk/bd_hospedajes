@@ -17,7 +17,23 @@ if (!isset($_SESSION['sesion_id_usuario']) || !in_array($_SESSION['sesion_rol'],
     <title>Dashboard Estadístico</title>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
+        .bg-success {
+            background-color: #28a745 !important;
+            color: #fff !important;
+        }
+
+        .bg-danger {
+            background-color: #dc3545 !important;
+            color: #fff !important;
+        }
+
+        .bg-primary {
+            background-color: #0d6efd !important;
+            color: #fff !important;
+        }
+
         .stat-card {
             border: 0;
             box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075);
