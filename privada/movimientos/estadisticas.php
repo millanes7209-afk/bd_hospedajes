@@ -20,17 +20,17 @@ if (!isset($_SESSION['sesion_id_usuario']) || !in_array($_SESSION['sesion_rol'],
 
     <style>
         .bg-success {
-            background-color: #28a745 !important;
+            background: linear-gradient(135deg, #1fa463 0%, #178a50 100%) !important;
             color: #fff !important;
         }
 
         .bg-danger {
-            background-color: #dc3545 !important;
+            background: linear-gradient(135deg, #e35d5d 0%, #c13d3d 100%) !important;
             color: #fff !important;
         }
 
         .bg-primary {
-            background-color: #0d6efd !important;
+            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%) !important;
             color: #fff !important;
         }
 
@@ -46,6 +46,14 @@ if (!isset($_SESSION['sesion_id_usuario']) || !in_array($_SESSION['sesion_rol'],
             display: flex;
             align-items: center;
             justify-content: center;
+            border-radius: 15px !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12) !important;
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card-total:hover {
+            transform: translateY(-3px);
         }
 
         .stat-header {
