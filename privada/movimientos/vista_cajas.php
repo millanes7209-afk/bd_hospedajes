@@ -281,7 +281,12 @@ unset($caja_data);
                                         <th class="text-end">Total</th>
                                         <?php if ($rol_usuario !== 'RECEPCIONISTA'): ?>
                                             <th width="4%"></th>
-                                            <th width="4%" class="text-center"></th>
+                                            <th width="4%" class="text-center" title="Seleccionar todos">
+                                                <input type="checkbox" id="check-all"
+                                                    class="form-check-input m-0 d-block mx-auto"
+                                                    style="width:18px; height:18px; cursor:pointer;"
+                                                    onclick="toggleSeleccionarTodo(this)">
+                                            </th>
                                         <?php endif; ?>
                                     </tr>
                                 </thead>
@@ -540,6 +545,20 @@ unset($caja_data);
             } else {
                 bar.style.display = 'none';
             }
+            // Sincronizar el estado del check-all
+            const todos = document.querySelectorAll('.check-recaudar');
+            const checkAll = document.getElementById('check-all');
+            if (checkAll) {
+                checkAll.checked = todos.length > 0 && count === todos.length;
+                checkAll.indeterminate = count > 0 && count < todos.length;
+            }
+        }
+
+        function toggleSeleccionarTodo(chkAll) {
+            document.querySelectorAll('.check-recaudar').forEach(chk => {
+                chk.checked = chkAll.checked;
+            });
+            actualizarTotal();
         }
 
         function procesarRecaudacion() {
