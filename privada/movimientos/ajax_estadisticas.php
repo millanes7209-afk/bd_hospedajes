@@ -20,7 +20,7 @@ try {
     $vista = $db->getVistaMovimientos();
     $sql_finanzas = "SELECT DATE(fecha) as fecha, tipo, SUM(monto) as total
                      FROM $vista as t
-                     WHERE empresaID = ? AND DATE(fecha) BETWEEN ? AND ?
+                     WHERE empresaID = ? AND DATE(fecha) BETWEEN ? AND ? AND _estado <> 'X'
                      GROUP BY DATE(fecha), tipo
                      ORDER BY fecha ASC";
     $datos['finanzas'] = $db->obtenerTodo($sql_finanzas, [$empresaID, $fecha_inicio, $fecha_fin]);
@@ -28,7 +28,7 @@ try {
     // 2. Métodos de Pago
     $sql_pagos = "SELECT forma_pago as metodo, SUM(monto) as total
                   FROM $vista as t
-                  WHERE empresaID = ? AND tipo = 'INGRESO' AND DATE(fecha) BETWEEN ? AND ?
+                  WHERE empresaID = ? AND tipo = 'INGRESO' AND DATE(fecha) BETWEEN ? AND ? AND _estado <> 'X'
                   GROUP BY forma_pago";
     $datos['metodos_pago'] = $db->obtenerTodo($sql_pagos, [$empresaID, $fecha_inicio, $fecha_fin]);
 
@@ -50,7 +50,7 @@ try {
                             (SUM(CASE WHEN m.tipo = 'INGRESO' THEN m.monto ELSE 0 END) - SUM(CASE WHEN m.tipo = 'EGRESO' THEN m.monto ELSE 0 END)) as neto
                      FROM $vista m
                      INNER JOIN usuarios u ON m.usuarioID = u.usuarioID
-                     WHERE m.empresaID = ? AND DATE(m.fecha) BETWEEN ? AND ?
+                     WHERE m.empresaID = ? AND DATE(m.fecha) BETWEEN ? AND ? AND m._estado <> 'X'
                      GROUP BY m.usuarioID
                      ORDER BY neto DESC";
     $datos['personal'] = $db->obtenerTodo($sql_personal, [$empresaID, $fecha_inicio, $fecha_fin]);
@@ -95,7 +95,7 @@ try {
     // 8. Categorías de Movimientos (Ingresos) - Usando cuenta_nombre
     $sql_categorias_in = "SELECT cuenta_nombre as categoria, SUM(monto) as total
                        FROM $vista as t
-                       WHERE empresaID = ? AND tipo = 'INGRESO' AND DATE(fecha) BETWEEN ? AND ?
+                       WHERE empresaID = ? AND tipo = 'INGRESO' AND DATE(fecha) BETWEEN ? AND ? AND _estado <> 'X'
                        GROUP BY cuenta_nombre
                        ORDER BY total DESC";
     $datos['categorias_ingreso'] = $db->obtenerTodo($sql_categorias_in, [$empresaID, $fecha_inicio, $fecha_fin]);
@@ -103,7 +103,7 @@ try {
     // 9. Categorías de Movimientos (Egresos) - Usando cuenta_nombre
     $sql_categorias_out = "SELECT cuenta_nombre as categoria, SUM(monto) as total
                        FROM $vista as t
-                       WHERE empresaID = ? AND tipo = 'EGRESO' AND DATE(fecha) BETWEEN ? AND ?
+                       WHERE empresaID = ? AND tipo = 'EGRESO' AND DATE(fecha) BETWEEN ? AND ? AND _estado <> 'X'
                        GROUP BY cuenta_nombre
                        ORDER BY total DESC";
     $datos['categorias_egreso'] = $db->obtenerTodo($sql_categorias_out, [$empresaID, $fecha_inicio, $fecha_fin]);
