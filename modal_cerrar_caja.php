@@ -111,7 +111,7 @@ function mostrarDatosCaja() {
     
     while ((match = regex.exec(saldoText)) !== null) {
         const formaPago = match[1];
-        const monto = parseFloat(match[2].replace(',', '.'));
+        const monto = parseFloat(match[2].replace(/,/g, ''));
         saldos[formaPago] = monto;
         totalHab += monto;
     }
