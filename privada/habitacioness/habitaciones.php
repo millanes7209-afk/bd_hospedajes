@@ -201,7 +201,7 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                                         <p><strong>TIPO:</strong> <?php echo $habitacion['nombre']; ?></p>
                                         <?php if (!empty($habitacion['observaciones_activo'])): ?>
                                             <p><strong>OBS:</strong> <span
-                                                    class="text-info"><?php echo mb_strtoupper((string) $habitacion['observaciones_activo']); ?></span>
+                                                    style="color: #000 !important; font-weight: bold;"><?php echo mb_strtoupper((string) $habitacion['observaciones_activo']); ?></span>
                                             </p>
                                         <?php endif; ?>
                                     </div>
