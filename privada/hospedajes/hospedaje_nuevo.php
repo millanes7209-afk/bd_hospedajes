@@ -335,10 +335,21 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
                                                 const checkin = new Date();
                                                 const checkout = new Date(checkoutInput);
 
-                                                let diff = checkout - checkin;
-                                                let dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                                                // Enfoque de Ciclos: Normalizar fechas a solo día para el cálculo
+                                                const d1 = new Date(checkin.getFullYear(), checkin.getMonth(), checkin.getDate());
+                                                const d2 = new Date(checkout.getFullYear(), checkout.getMonth(), checkout.getDate());
 
-                                                if (dias <= 0) dias = 1;
+                                                // Si entró antes de las 6am, se considera que ocupó la habitación desde 'ayer'
+                                                if (checkin.getHours() < 6) {
+                                                    d1.setDate(d1.getDate() - 1);
+                                                }
+
+                                                // Calculamos la diferencia de días calendario
+                                                let dias = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+
+                                                if (dias <= 0) {
+                                                    dias = 1;
+                                                }
 
                                                 const total = (precioDia * dias).toFixed(2);
                                                 document.getElementById('monto_total').value = total;
