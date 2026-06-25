@@ -15,16 +15,16 @@
     flex-direction: column;
     padding: 5px;
     border-radius: 10px;
-    box-shadow: 0px 3px 6px rgba(0,0,0,0.15);
+    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.15);
     transition: all 0.2s ease;
     cursor: pointer;
-    overflow: visible; 
+    overflow: visible;
 }
 
 .btn-habitacion:hover {
     transform: scale(1.08);
     z-index: 50;
-    box-shadow: 0px 8px 15px rgba(0,0,0,0.2);
+    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2);
 }
 
 .btn-habitacion strong {
@@ -37,7 +37,8 @@
     visibility: hidden;
     opacity: 0;
     position: absolute;
-    bottom: 110%; /* Aparece arriba del botón */
+    bottom: 110%;
+    /* Aparece arriba del botón */
     left: 50%;
     transform: translateX(-50%);
     background-color: #1a1a1a;
@@ -46,10 +47,11 @@
     border-radius: 8px;
     width: 220px;
     text-align: left;
-    box-shadow: 0px 5px 20px rgba(0,0,0,0.5);
+    box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.5);
     z-index: 1000;
     transition: opacity 0.3s, visibility 0.3s;
-    pointer-events: none; /* Que no interfiera con otros clicks */
+    pointer-events: none;
+    /* Que no interfiera con otros clicks */
     border: 1px solid #444;
 }
 
@@ -78,7 +80,7 @@
 
 .tooltip-body p strong {
     font-size: 11px;
-    color: #222;
+    color: #bbb;
     margin-right: 4px;
 }
 
@@ -106,7 +108,8 @@
 /* Reducción de ancho específicamente para el modal de opciones de habitación */
 #menu-opciones .modal-dialog {
     max-width: 350px;
-    margin-top: 25vh; /* Bajar el modal para que no tape la cabecera */
+    margin-top: 25vh;
+    /* Bajar el modal para que no tape la cabecera */
 }
 
 /* Usar estilo estándar de Bootstrap para cerrar modales */
@@ -132,7 +135,8 @@
     margin-right: 20px;
 }
 
-.btn-ingreso, .btn-egreso {
+.btn-ingreso,
+.btn-egreso {
     width: 120px;
     height: 30px;
     font-size: 14px;
@@ -151,7 +155,7 @@
 
 /* Modal personalizado de notificaciones */
 #miModal .modal {
-    display: none;  
+    display: none;
     position: fixed;
     z-index: 9999;
     left: 0;
@@ -219,6 +223,7 @@
         opacity: 0;
         transform: scale(0.9);
     }
+
     to {
         opacity: 1;
         transform: scale(1);

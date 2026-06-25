@@ -288,6 +288,7 @@ if (isset($_SESSION["sesion_id_rol"])) {
         .text-muted,
         .header-leyenda {
             color: #000000 !important;
+            opacity: 1 !important;
         }
 
         /* --- Estilos para la Leyenda de Puntos (Contextual) --- */
@@ -635,13 +636,14 @@ if (isset($_SESSION["sesion_id_rol"])) {
                     <form id="formNuevaNota" class="mb-4">
                         <div class="input-group">
                             <input type="text" class="form-control" id="txtNotaMensaje"
+                                style="color: #000 !important; font-weight: bold;"
                                 placeholder="Anotar pendiente para el siguiente turno..." required>
                             <button class="btn btn-dark" type="submit">Anotar</button>
                         </div>
                         <div id="msgNotaError" class="text-danger small mt-1 d-none"></div>
                     </form>
 
-                    <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">Pendientes Actuales</h6>
+                    <h6 class="fw-bold border-bottom pb-2 mb-3" style="color: #000 !important;">Pendientes Actuales</h6>
                     <ul class="list-group" id="listaNovedades">
                         <!-- Las notas se inyectan por AJAX -->
                         <li class="list-group-item text-center text-muted border-0 bg-transparent">Cargando...</li>
@@ -704,8 +706,8 @@ if (isset($_SESSION["sesion_id_rol"])) {
                 li.className = 'list-group-item d-flex justify-content-between align-items-start shadow-sm mb-2 rounded border-start border-warning border-4';
                 li.innerHTML = `
                 <div class="ms-2 me-auto">
-                    <div class="fw-bold">${nota.mensaje}</div>
-                    <small class="text-muted"><i class="fas fa-user-edit"></i> ${nota.autor} &nbsp;|&nbsp; <i class="fas fa-clock"></i> ${nota.hora} (${nota.dia})</small>
+                    <div style="color: #000 !important; font-weight: 900; font-size: 1.05rem;">${nota.mensaje}</div>
+                    <small style="color: #000 !important; font-weight: bold;"><i class="fas fa-user-edit"></i> ${nota.autor} &nbsp;|&nbsp; <i class="fas fa-clock"></i> ${nota.hora} (${nota.dia})</small>
                 </div>
                 <button class="btn btn-sm btn-outline-secondary border-0" onclick="completarNota(${nota.notificacionID})" title="Marcar como completado">
                     <i class="far fa-square fs-5"></i>

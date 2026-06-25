@@ -249,7 +249,8 @@
       <div class="modal-content">
         <div class="modal-header bg-success text-white">
           <h5 class="modal-title" id="modal-cambio-label"><i class="fas fa-exchange-alt"></i> Cambiar Habitación &mdash;
-            <span id="cambio-texto-actual"></span></h5>
+            <span id="cambio-texto-actual"></span>
+          </h5>
           <button type="button" class="close text-white" data-bs-dismiss="modal"
             style="border:none; background:none; font-size: 1.5rem; line-height: 1;">&times;</button>
         </div>
@@ -342,8 +343,8 @@
           <div class="card border-0 bg-light mb-3">
             <div class="card-body py-2">
               <p class="mb-1 text-dark"><strong>Habitación:</strong> <span id="pago-deuda-habitacion"></span></p>
-              <p class="mb-0 text-dark fw-bold small" style="color: #000 !important;">El monto es referencial. El
-                recepcionista puede modificarlo según acuerdo con el cliente.</p>
+              <p class="mb-0 text-dark text-muted small">El monto es referencial. El recepcionista puede modificarlo
+                según acuerdo con el cliente.</p>
             </div>
           </div>
 

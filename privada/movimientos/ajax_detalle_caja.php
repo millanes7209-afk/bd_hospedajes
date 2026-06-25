@@ -104,8 +104,7 @@ $totalEgresos = 0;
                         <td>
                             <span class="text-dark"><strong><?= htmlspecialchars($mov['concepto']) ?></strong></span>
                             <?php if (!empty($mov['detalle'])): ?>
-                                <br><small class="text-dark fw-bold"
-                                    style="color: #000 !important;"><?= htmlspecialchars($mov['detalle']) ?></small>
+                                <br><small class="text-muted"><?= htmlspecialchars($mov['detalle']) ?></small>
                             <?php endif; ?>
                         </td>
                         <td class="text-center text-dark"><?= htmlspecialchars($mov['forma_pago']) ?></td>
