@@ -11,8 +11,8 @@ if (!isset($_SESSION['sesion_usuario'])) {
 
 $rol_usuario = $_SESSION['sesion_rol'] ?? '';
 $empresaID_filtro = $_SESSION['empresaID'];
-$fecha_inicio = $_GET['fecha_inicio'] ?? date('Y-m-d', strtotime('-6 days'));
-$fecha_fin = $_GET['fecha_fin'] ?? date('Y-m-d');
+$fecha_inicio = $_GET['fecha_inicio'] ?? ""; // Por defecto vacío para ver todo lo pendiente
+$fecha_fin = $_GET['fecha_fin'] ?? "";
 $usuarioID_filtro = $_GET['usuarioID'] ?? '';
 
 $usuarioID_actual = $_SESSION['sesion_id_usuario'] ?? $_SESSION['usuarioID'] ?? 0;
@@ -48,14 +48,26 @@ foreach ($formas_pago as $fp) {
     $suma_footer_formas[$fp['tipo']] = 0;
 }
 
-// Generar rango de fechas — INCLUYE EL DÍA FIN FORZADAMENTE
-$fecha_actual = new DateTime($fecha_inicio);
-$fecha_fin_obj = new DateTime($fecha_fin);
-// Usamos una comparación de strings YYYYMMDD que es infalible en PHP
+// Determinar rango base para la cuadrícula visual
+$f_ini_grid = !empty($fecha_inicio) ? $fecha_inicio : date('Y-m-d', strtotime('-7 days'));
+$f_fin_grid = !empty($fecha_fin) ? $fecha_fin : date('Y-m-d');
+
+$fechas_rango = [];
+$vista_semanal = [];
+
+function agregarFechaAlRango($fecha_str, &$fechas_rango, &$vista_semanal)
+{
+    if (!isset($vista_semanal[$fecha_str])) {
+        $fechas_rango[] = $fecha_str;
+        $vista_semanal[$fecha_str] = ['fecha' => $fecha_str, 'movimientos' => []];
+    }
+}
+
+// 1. Llenar con el rango seleccionado (o los últimos 7 días por defecto)
+$fecha_actual = new DateTime($f_ini_grid);
+$fecha_fin_obj = new DateTime($f_fin_grid);
 while ($fecha_actual->format('Ymd') <= $fecha_fin_obj->format('Ymd')) {
-    $fecha_str = $fecha_actual->format('Y-m-d');
-    $fechas_rango[] = $fecha_str;
-    $vista_semanal[$fecha_str] = ['fecha' => $fecha_str, 'movimientos' => []];
+    agregarFechaAlRango($fecha_actual->format('Y-m-d'), $fechas_rango, $vista_semanal);
     $fecha_actual->add(new DateInterval('P1D'));
 }
 
@@ -65,14 +77,32 @@ $where_entrega = " AND (EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.caja
 
 if ($rol_usuario === 'RECEPCIONISTA') {
     $where_user = "AND c.usuarioID = ?";
-    $params_mov = [$fecha_inicio, $fecha_fin, $empresaID_filtro, $usuarioID_actual];
+    if (!empty($fecha_inicio)) {
+        $where_date = "AND DATE(c.fecha_apertura) BETWEEN ? AND ?";
+        $params_mov = [$fecha_inicio, $fecha_fin, $empresaID_filtro, $usuarioID_actual];
+    } else {
+        $where_date = "";
+        $params_mov = [$empresaID_filtro, $usuarioID_actual];
+    }
 } else {
     if (!empty($usuarioID_filtro)) {
         $where_user = "AND c.usuarioID = ?";
-        $params_mov = [$fecha_inicio, $fecha_fin, $empresaID_filtro, $usuarioID_filtro];
+        if (!empty($fecha_inicio)) {
+            $where_date = "AND DATE(c.fecha_apertura) BETWEEN ? AND ?";
+            $params_mov = [$fecha_inicio, $fecha_fin, $empresaID_filtro, $usuarioID_filtro];
+        } else {
+            $where_date = "";
+            $params_mov = [$empresaID_filtro, $usuarioID_filtro];
+        }
     } else {
         $where_user = "";
-        $params_mov = [$fecha_inicio, $fecha_fin, $empresaID_filtro];
+        if (!empty($fecha_inicio)) {
+            $where_date = "AND DATE(c.fecha_apertura) BETWEEN ? AND ?";
+            $params_mov = [$fecha_inicio, $fecha_fin, $empresaID_filtro];
+        } else {
+            $where_date = "";
+            $params_mov = [$empresaID_filtro];
+        }
     }
 }
 
@@ -88,43 +118,47 @@ $sql_all_movs = "SELECT
                 INNER JOIN cierre_cajas cc ON c.cajaID = cc.cajaID
                 INNER JOIN usuarios u ON c.usuarioID = u.usuarioID
                 INNER JOIN formas_pago fp ON cc.formapagoID = fp.formapagoID
-                WHERE DATE(c.fecha_apertura) BETWEEN ? AND ?
+                WHERE 1=1
+                  $where_date
                   AND c.empresaID = ? 
                   AND c._estado <> 'X'
                   AND cc._estado <> 'X'
                   $where_user
                   $where_entrega
                 ORDER BY c.fecha_apertura ASC, c.cajaID ASC";
+$rs_all_movs = $db->obtenerTodo($sql_all_movs, $params_mov);
 
-$todos_los_movimientos = $db->obtenerTodo($sql_all_movs, $params_mov);
+if ($rs_all_movs) {
+    foreach ($rs_all_movs as $reg) {
+        $fecha_caja = date('Y-m-d', strtotime($reg['fecha_apertura']));
 
-// Agrupar en vista_semanal
-foreach ($todos_los_movimientos as $mov) {
-    $f_apertura = substr($mov['fecha_apertura'], 0, 10);
-    $cajaID = $mov['cajaID'];
+        // ASEGURAR QUE LA FECHA EXISTA EN EL RANGO (Inyección dinámica de deudas antiguas)
+        agregarFechaAlRango($fecha_caja, $fechas_rango, $vista_semanal);
 
-    if (!isset($vista_semanal[$f_apertura])) {
-        $vista_semanal[$f_apertura] = ['fecha' => $f_apertura, 'movimientos' => []];
+        $cajaID = $reg['cajaID'];
+        if (!isset($vista_semanal[$fecha_caja]['movimientos'][$cajaID])) {
+            $vista_semanal[$fecha_caja]['movimientos'][$cajaID] = [
+                'cajaID' => $cajaID,
+                'nombre_usuario' => $reg['nombre_usuario'],
+                'fecha_apertura' => $reg['fecha_apertura'],
+                'saldos' => [],
+                'movimientos_count' => 0,
+                'saldo_bano' => 0
+            ];
+        }
+
+        $forma_pago = $reg['forma_pago'];
+        if (!isset($vista_semanal[$fecha_caja]['movimientos'][$cajaID]['saldos'][$forma_pago])) {
+            $vista_semanal[$fecha_caja]['movimientos'][$cajaID]['saldos'][$forma_pago] = 0;
+        }
+        $vista_semanal[$fecha_caja]['movimientos'][$cajaID]['saldos'][$forma_pago] += (float) $reg['monto'];
+        $vista_semanal[$fecha_caja]['movimientos'][$cajaID]['movimientos_count']++;
     }
-
-    if (!isset($vista_semanal[$f_apertura]['movimientos'][$cajaID])) {
-        $vista_semanal[$f_apertura]['movimientos'][$cajaID] = [
-            'nombre_usuario' => $mov['nombre_usuario'],
-            'fecha_apertura' => $mov['fecha_apertura'],
-            'saldos' => [],
-            'movimientos_count' => 0,
-            'cajaID' => $cajaID,
-            'saldo_bano' => 0
-        ];
-    }
-
-    $forma_pago = $mov['forma_pago'];
-    if (!isset($vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$forma_pago])) {
-        $vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$forma_pago] = 0;
-    }
-    $vista_semanal[$f_apertura]['movimientos'][$cajaID]['saldos'][$forma_pago] += (float) $mov['monto'];
-    $vista_semanal[$f_apertura]['movimientos'][$cajaID]['movimientos_count']++;
 }
+
+// Ordenar las fechas para que las deudas antiguas aparezcan arriba
+ksort($vista_semanal);
+$fechas_rango = array_keys($vista_semanal);
 
 // Saldos de baños
 foreach ($vista_semanal as $fecha => &$datos) {
