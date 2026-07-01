@@ -33,11 +33,13 @@ if ($es_admin) {
     // El propietario puede elegir qué caja ver vía GET
     $caja_seleccionada = (int) ($_GET['cajaID'] ?? $cajas_abiertas[0]['cajaID']);
 
-    // Obtener nombre del recepcionista de la caja seleccionada
+    // Obtener nombre del recepcionista de la caja seleccionada e inicio del turno
     $cajero_seleccionado = '';
+    $inicio_turno_caja = '';
     foreach ($cajas_abiertas as $c) {
         if ($c['cajaID'] == $caja_seleccionada) {
             $cajero_seleccionado = mb_strtoupper($c['nombre_usuario']);
+            $inicio_turno_caja = date('d/m/Y H:i', strtotime($c['fecha_apertura']));
             break;
         }
     }
@@ -52,6 +54,11 @@ if ($es_admin) {
               </div></div></body></html>";
         exit;
     }
+
+    // Obtener fecha de apertura de la caja del recepcionista actual
+    $caja_datos = $db->obtenerFila("SELECT fecha_apertura FROM cajas WHERE cajaID = ?", [$caja_abierta_id]);
+    $inicio_turno_caja = $caja_datos ? date('d/m/Y H:i', strtotime($caja_datos['fecha_apertura'])) : 'N/A';
+
     $cajas_abiertas = [];
     $caja_seleccionada = $caja_abierta_id;
     $cajero_seleccionado = mb_strtoupper($usuarioActual);
@@ -99,20 +106,6 @@ $saldo_final = $total_ingresos - $total_egresos;
     <meta charset="UTF-8">
     <title>Flujo Financiero del Turno</title>
     <style>
-        thead {
-            color: black !important;
-            background: #b5b5b5 !important;
-        }
-
-        .card {
-            margin: 20px;
-        }
-
-        .tabla-turno th,
-        .tabla-turno td {
-            vertical-align: middle !important;
-        }
-
         .badge-ingreso {
             background-color: #28a745;
             color: white;
@@ -142,156 +135,134 @@ $saldo_final = $total_ingresos - $total_egresos;
             font-size: 1.1rem;
         }
 
-        .selector-caja-bar {
-            background: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-            padding: 10px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
+        .text-cajero-info {
+            font-size: 1.05rem;
+            font-weight: 900;
         }
 
-        .selector-caja-bar label {
-            font-weight: bold;
-            margin-bottom: 0;
-            white-space: nowrap;
-        }
-
-        .selector-caja-bar select {
-            max-width: 380px;
+        th {
+            font-weight: bold !important;
         }
     </style>
 </head>
 
 <body>
-    <div class="container-fluid mt-4 mb-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <div class="card shadow-sm border-0">
+    <div class="card">
+        <!-- CABECERA SIMPLIFICADA (Igual a hospedajes.php) -->
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h3 class="mb-0">FLUJO FINANCIERO DEL TURNO</h3>
+            <span class="text-dark text-cajero-info uppercase">
+                <i class="fas fa-user-circle"></i> CAJERO: <strong><?= $cajero_seleccionado ?></strong>
+                &nbsp;|&nbsp;
+                <i class="fas fa-clock"></i> APERTURA: <strong><?= $inicio_turno_caja ?></strong>
+            </span>
+        </div>
 
-                    <!-- CABECERA -->
-                    <div class="card-header d-flex justify-content-between align-items-center py-3 flex-wrap gap-2">
-                        <h3 class="mb-0" style="font-size: 1.4rem;">
-                            <i class="fas fa-cash-register mr-2"></i> Flujo Financiero del Turno
-                        </h3>
-                        <span class="text-muted small">
-                            <i class="fas fa-user"></i> Cajero: <strong><?= $cajero_seleccionado ?></strong>
-                            &nbsp;|&nbsp;
-                            <i class="fas fa-hashtag"></i> Caja #<strong><?= $caja_seleccionada ?></strong>
-                        </span>
-                    </div>
-
-                    <!-- SELECTOR DE CAJA (Solo Admin/Propietario) -->
-                    <?php if ($es_admin && count($cajas_abiertas) > 1): ?>
-                        <div class="selector-caja-bar">
-                            <label><i class="fas fa-exchange-alt"></i> Ver turno de:</label>
-                            <select class="form-control form-control-sm"
-                                onchange="window.location.href='turno.php?cajaID='+this.value">
-                                <?php foreach ($cajas_abiertas as $c): ?>
-                                    <option value="<?= $c['cajaID'] ?>" <?= ($c['cajaID'] == $caja_seleccionada) ? 'selected' : '' ?>>
-                                        <?= mb_strtoupper($c['nombre_usuario']) ?>
-                                        — Abierta: <?= date('d/m H:i', strtotime($c['fecha_apertura'])) ?>
-                                        (Caja #<?= $c['cajaID'] ?>)
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <span class="badge badge-info small"><?= count($cajas_abiertas) ?> caja(s) abiertas</span>
-                        </div>
-                    <?php endif; ?>
-
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped tabla-turno border-bottom mb-0">
-                                <thead>
-                                    <tr>
-                                        <th width="15%">TIPO</th>
-                                        <th width="35%">CONCEPTO DE OPERACIÓN</th>
-                                        <th width="15%">FORMA DE PAGO</th>
-                                        <th width="15%">CAJERO</th>
-                                        <th width="10%">FECHA Y HORA</th>
-                                        <th width="10%">MONTO (Bs)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (count($movimientos_caja) > 0): ?>
-                                        <?php foreach ($movimientos_caja as $mov): ?>
-                                            <tr>
-                                                <td>
-                                                    <?php if ($mov['tipo'] === 'INGRESO'): ?>
-                                                        <span class="badge-ingreso"><i class="fas fa-plus-circle"></i>
-                                                            INGRESO</span>
-                                                    <?php else: ?>
-                                                        <span class="badge-egreso"><i class="fas fa-minus-circle"></i> EGRESO</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td class="td-concepto text-dark text-uppercase">
-                                                    <?= htmlspecialchars($mov['descripcion']) ?>
-                                                    <?php if (!empty($mov['detalle'])): ?>
-                                                        <br><small class="text-muted text-lowercase" style="font-style: italic;">
-                                                            <i class="fas fa-comment-dots text-secondary"></i>
-                                                            <?= htmlspecialchars($mov['detalle']) ?>
-                                                        </small>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td class="text-secondary font-weight-bold">
-                                                    <i class="fas fa-money-bill-wave"></i>
-                                                    <?= mb_strtoupper($mov['forma_pago']) ?>
-                                                </td>
-                                                <td class="text-secondary">
-                                                    <i class="fas fa-user"></i> <?= mb_strtoupper($cajero_seleccionado) ?>
-                                                </td>
-                                                <td class="text-muted small">
-                                                    <?= date('d/m/Y H:i', strtotime($mov['fecha_registro'])) ?>
-                                                </td>
-                                                <td
-                                                    class="text-right font-weight-bold monto-td <?= ($mov['tipo'] === 'INGRESO') ? 'text-success' : 'text-danger' ?>">
-                                                    <?= ($mov['tipo'] === 'INGRESO' ? '+' : '-') ?>
-                                                    <?= number_format($mov['monto'], 2, '.', ',') ?>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <tr>
-                                            <td colspan="6" class="text-center text-muted py-5">
-                                                <i class="fas fa-folder-open mb-3"
-                                                    style="font-size: 3rem; opacity: 0.5;"></i><br>
-                                                <h5 class="font-weight-light">El turno actual está vacío.</h5>
-                                                <p class="mb-0">No existen movimientos registrados en la Caja
-                                                    #<?= $caja_seleccionada ?>.</p>
-                                            </td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                                <tfoot class="bg-light border-top">
-                                    <?php foreach ($desglose_pagos as $metodo => $valores):
-                                        $saldo_metodo = $valores['ingresos'] - $valores['egresos'];
-                                        if ($saldo_metodo == 0)
-                                            continue;
-                                        ?>
-                                        <tr class="text-secondary">
-                                            <th colspan="5" class="text-right align-middle font-weight-normal">
-                                                TOTAL LÍQUIDO EN <span class="text-dark fw-bold"><?= $metodo ?></span>:
-                                            </th>
-                                            <th class="text-right">
-                                                <?= number_format($saldo_metodo, 2, '.', ',') ?> Bs.
-                                            </th>
-                                        </tr>
-                                    <?php endforeach; ?>
-
-                                    <tr class="bg-dark text-white">
-                                        <th colspan="5" class="text-right align-middle font-weight-bold">
-                                            <span style="font-size: 1.1rem;">SALDO TOTAL NETO DEL TURNO:</span>
-                                        </th>
-                                        <th class="text-right font-weight-bold" style="font-size: 1.2rem;">
-                                            <?= number_format($saldo_final, 2, '.', ',') ?> Bs.
-                                        </th>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+        <div class="card-body">
+            <!-- SELECTOR DE CAJA INTEGRADO EN CARD-BODY (Solo Admin/Propietario) -->
+            <?php if ($es_admin && count($cajas_abiertas) > 1): ?>
+                <div class="form-group row align-items-end mb-4">
+                    <div class="col-md-4">
+                        <label class="small fw-bold"><i class="fas fa-exchange-alt"></i> CAMBIAR DE TURNO / CAJERO:</label>
+                        <select class="form-control form-control-sm"
+                            onchange="window.location.href='turno.php?cajaID='+this.value">
+                            <?php foreach ($cajas_abiertas as $c): ?>
+                                <option value="<?= $c['cajaID'] ?>" <?= ($c['cajaID'] == $caja_seleccionada) ? 'selected' : '' ?>>
+                                    <?= mb_strtoupper($c['nombre_usuario']) ?>
+                                    — ABIERTA: <?= date('d/m/Y H:i', strtotime($c['fecha_apertura'])) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                 </div>
+            <?php endif; ?>
+
+            <!-- TABLA DE MOVIMIENTOS -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col" width="15%">Tipo</th>
+                            <th scope="col" width="35%">Concepto de Operación</th>
+                            <th scope="col" width="15%">Forma de Pago</th>
+                            <th scope="col" width="15%">Cajero</th>
+                            <th scope="col" width="10%">Fecha y Hora</th>
+                            <th scope="col" width="10%" class="text-right">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (count($movimientos_caja) > 0): ?>
+                            <?php foreach ($movimientos_caja as $mov): ?>
+                                <tr>
+                                    <td>
+                                        <?php if ($mov['tipo'] === 'INGRESO'): ?>
+                                            <span class="badge-ingreso"><i class="fas fa-plus-circle"></i> INGRESO</span>
+                                        <?php else: ?>
+                                            <span class="badge-egreso"><i class="fas fa-minus-circle"></i> EGRESO</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="td-concepto text-dark text-uppercase">
+                                        <?= htmlspecialchars($mov['descripcion']) ?>
+                                        <?php if (!empty($mov['detalle'])): ?>
+                                            <br><small class="text-muted text-lowercase" style="font-style: italic;">
+                                                <i class="fas fa-comment-dots text-secondary"></i>
+                                                <?= htmlspecialchars($mov['detalle']) ?>
+                                            </small>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-secondary font-weight-bold">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                        <?= mb_strtoupper($mov['forma_pago']) ?>
+                                    </td>
+                                    <td class="text-secondary">
+                                        <i class="fas fa-user"></i> <?= mb_strtoupper($cajero_seleccionado) ?>
+                                    </td>
+                                    <td class="text-muted small">
+                                        <?= date('d/m/Y H:i', strtotime($mov['fecha_registro'])) ?>
+                                    </td>
+                                    <td
+                                        class="text-right font-weight-bold monto-td <?= ($mov['tipo'] === 'INGRESO') ? 'text-success' : 'text-danger' ?>">
+                                        <?= ($mov['tipo'] === 'INGRESO' ? '+' : '-') ?>
+                                        <?= number_format($mov['monto'], 2, '.', ',') ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-5">
+                                    <i class="fas fa-folder-open mb-3" style="font-size: 3rem; opacity: 0.5;"></i><br>
+                                    <h5 class="font-weight-light">El turno actual está vacío.</h5>
+                                    <p class="mb-0">No existen movimientos registrados en esta caja.</p>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                    <tfoot class="bg-light border-top">
+                        <?php foreach ($desglose_pagos as $metodo => $valores):
+                            $saldo_metodo = $valores['ingresos'] - $valores['egresos'];
+                            if ($saldo_metodo == 0)
+                                continue;
+                            ?>
+                            <tr class="text-secondary">
+                                <th colspan="5" class="text-right align-middle font-weight-normal">
+                                    TOTAL LÍQUIDO EN <span class="text-dark fw-bold"><?= $metodo ?></span>:
+                                </th>
+                                <th class="text-right">
+                                    <?= number_format($saldo_metodo, 2, '.', ',') ?> Bs.
+                                </th>
+                            </tr>
+                        <?php endforeach; ?>
+
+                        <tr class="bg-dark text-white">
+                            <th colspan="5" class="text-right align-middle font-weight-bold">
+                                <span style="font-size: 1.1rem;">SALDO TOTAL NETO DEL TURNO:</span>
+                            </th>
+                            <th class="text-right font-weight-bold" style="font-size: 1.2rem;">
+                                <?= number_format($saldo_final, 2, '.', ',') ?> Bs.
+                            </th>
+                        </tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
     </div>
