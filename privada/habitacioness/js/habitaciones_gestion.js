@@ -417,6 +417,8 @@ function actualizarEstadoHabitaciones() {
                     btnHabitacion.setAttribute('data-cliente-actual', habitacion.cliente_activo || '');
                     btnHabitacion.setAttribute('data-monto-actual', habitacion.precio_inteligente);
                     btnHabitacion.setAttribute('data-deuda-dias', habitacion.dias_deuda || 0);
+                    btnHabitacion.setAttribute('data-horas-deuda', habitacion.horas_deuda || 0);
+                    btnHabitacion.setAttribute('data-es-momentaneo', habitacion.es_momentaneo_formal || 0);
 
                     // Actualizar el atributo onclick con el precio inteligente
                     btnHabitacion.setAttribute('onclick', `handleHabitacionClick('${habitacion.estado}', '${habitacion.numero}', '${habitacion.tipo}', '${habitacion.precio_inteligente}', '${habitacion.habitacionID}')`);
@@ -433,24 +435,76 @@ function actualizarEstadoHabitaciones() {
 
                     // 2. Tooltips y Badges (Fichas Flotantes)
                     if ((habitacion.estado === 'OCUPADA' || habitacion.estado === 'DEUDA') && habitacion.cliente_activo) {
+                        const esMomentaneo = habitacion.es_momentaneo_formal == 1;
+                        const horasDeuda = parseInt(habitacion.horas_deuda || 0);
+                        const diasDeuda = parseInt(habitacion.dias_deuda || 0);
+
+                        // --- Badge del botón ---
+                        let badgeStyle = '';
+                        let badgeLabel = `Bs. ${parseInt(habitacion.precio_inteligente)}`;
+
+                        if (esMomentaneo && horasDeuda > 0) {
+                            badgeStyle = 'background:#dc3545; color:#fff; border-color:#dc3545;';
+                            // Calcular bloques consumidos para saber si ya es día completo
+                            const checkinTs = habitacion.checkin_activo ? new Date(habitacion.checkin_activo).getTime() / 1000 : 0;
+                            const checkoutTs = habitacion.checkout_activo ? new Date(habitacion.checkout_activo).getTime() / 1000 : 0;
+                            const ahoraTs = Date.now() / 1000;
+                            const minTotales = (ahoraTs - checkinTs) / 60;
+                            const bloquesConsumidos = Math.ceil(minTotales / 70);
+                            if (bloquesConsumidos > 3) {
+                                badgeLabel = `Bs. 70 - DÍA COMPLETO`;
+                            } else {
+                                badgeLabel = `Bs. ${parseInt(habitacion.precio_inteligente)} - DEBE ${horasDeuda} HORA${horasDeuda > 1 ? 'S' : ''}`;
+                            }
+                        } else if (!esMomentaneo && (habitacion.estado === 'DEUDA') && diasDeuda > 0) {
+                            badgeStyle = 'background:#dc3545; color:#fff; border-color:#dc3545;';
+                            badgeLabel = `Bs. ${parseInt(habitacion.precio_inteligente)} - DEBE ${diasDeuda} DÍA${diasDeuda > 1 ? 'S' : ''}`;
+                        }
+
+                        // --- Fecha de salida formateada ---
                         let d = new Date(habitacion.checkout_activo);
                         let formattedDate = ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
 
-                        let badgeColor = (habitacion.estado === 'DEUDA') ? 'background:#dc3545; color:#fff; border-color:#dc3545;' : '';
-                        let badgeLabel = (habitacion.estado === 'DEUDA') ? `Bs. ${parseInt(habitacion.precio_inteligente)} - DEBE ${habitacion.dias_deuda} DÍAS` : `Bs. ${parseInt(habitacion.precio_inteligente)}`;
+                        // --- Cabecera del Tooltip ---
+                        let tooltipHeaderStyle = '';
+                        let tooltipHeaderIcon = 'fa-user-circle';
+                        let tooltipHeaderText = esMomentaneo ? 'MOMENTÁNEO' : 'HOSPEDAJE';
+                        if (habitacion.estado === 'DEUDA' && !esMomentaneo) {
+                            tooltipHeaderStyle = 'background-color: #dc3545;';
+                            tooltipHeaderIcon = 'fa-exclamation-triangle';
+                            tooltipHeaderText = 'DEUDA VENCIDA';
+                        } else if (esMomentaneo && horasDeuda > 0) {
+                            tooltipHeaderStyle = 'background-color: #dc3545;';
+                            tooltipHeaderIcon = 'fa-exclamation-triangle';
+                        }
+
+                        // --- Deuda en horas (extra al tooltip) ---
+                        let deudaHorasHTML = '';
+                        if (esMomentaneo && horasDeuda > 0) {
+                            const checkinTs2 = habitacion.checkin_activo ? new Date(habitacion.checkin_activo).getTime() / 1000 : 0;
+                            const ahoraTs2 = Date.now() / 1000;
+                            const minTotales2 = (ahoraTs2 - checkinTs2) / 60;
+                            const bloquesConsumidos2 = Math.ceil(minTotales2 / 70);
+                            if (bloquesConsumidos2 > 3) {
+                                deudaHorasHTML = `<p style="color:#dc3545; font-weight:bold;"><i class="fas fa-exclamation-triangle"></i> DÍA COMPLETO POR EXCESO</p>`;
+                            } else {
+                                deudaHorasHTML = `<p style="color:#dc3545; font-weight:bold;"><i class="fas fa-clock"></i> DEBE ${horasDeuda} HORA${horasDeuda > 1 ? 'S' : ''} EXTRA${horasDeuda > 1 ? 'S' : ''}</p>`;
+                            }
+                        }
 
                         innerHTML += `
-                        <span class="badge-precio" style="${badgeColor}">${badgeLabel}</span>
+                        <span class="badge-precio" style="${badgeStyle}">${badgeLabel}</span>
                         <div class="habitacion-info-tooltip">
-                            <div class="tooltip-header" ${habitacion.estado === 'DEUDA' ? 'style="background-color: #dc3545;"' : ''}>
-                                <i class="fas ${habitacion.estado === 'DEUDA' ? 'fa-exclamation-triangle' : 'fa-user-circle'}"></i>
-                                ${habitacion.estado === 'DEUDA' ? 'DEUDA VENCIDA' : 'DETALLE OCUPACIÓN'}
+                            <div class="tooltip-header" style="${tooltipHeaderStyle}">
+                                <i class="fas ${tooltipHeaderIcon}"></i>
+                                ${tooltipHeaderText}
                             </div>
                             <div class="tooltip-body">
                                 <p><strong>CLIENTE:</strong><br>${habitacion.cliente_activo.toUpperCase()}</p>
                                 <p><strong>SALIDA:</strong> ${formattedDate}</p>
                                 <p><strong>TIPO:</strong> ${habitacion.tipo}</p>
                                 ${habitacion.observaciones_activo ? `<p><strong>OBS:</strong> <span class="text-info">${habitacion.observaciones_activo.toUpperCase()}</span></p>` : ''}
+                                ${deudaHorasHTML}
                             </div>
                         </div>
                     `;

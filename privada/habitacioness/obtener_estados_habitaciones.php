@@ -46,14 +46,28 @@ $sql = "SELECT hab.habitacionID, hab.estado, hab.numero, th.precio as precio_bas
                  AND h.empresaID = ?
                  AND h.estado = 'ACTIVO'
                  AND h._estado <> 'X'
-                 LIMIT 1) AS hospedaje_activo_id
+                 LIMIT 1) AS hospedaje_activo_id,
+                (SELECT h.checkin
+                 FROM hospedajes h
+                 WHERE h.habitacionID = hab.habitacionID
+                 AND h.empresaID = ?
+                 AND h.estado = 'ACTIVO' AND h._estado <> 'X'
+                 ORDER BY h.hospedajeID DESC LIMIT 1) AS checkin_activo,
+                (SELECT cue.codigo
+                 FROM hospedajes h
+                 JOIN ingresos ing ON h.ingresoID = ing.ingresoID
+                 JOIN cuentas cue ON ing.cuentaID = cue.cuentaID
+                 WHERE h.habitacionID = hab.habitacionID
+                 AND h.empresaID = ?
+                 AND h.estado = 'ACTIVO' AND h._estado <> 'X'
+                 ORDER BY h.hospedajeID DESC LIMIT 1) AS cuenta_codigo
         FROM habitaciones hab 
         JOIN tipo_habitaciones th ON hab.tipohabitacionID = th.tipohabitacionID
         WHERE hab._estado <> 'X' 
         AND hab.empresaID = ?
         ORDER BY hab.numero ASC";
 
-$rs = $db->obtenerTodo($sql, [$empresaID, $empresaID, $empresaID, $empresaID, $empresaID, $empresaID, $empresaID]);
+$rs = $db->obtenerTodo($sql, [$empresaID, $empresaID, $empresaID, $empresaID, $empresaID, $empresaID, $empresaID, $empresaID, $empresaID]);
 
 $habitaciones = array();
 
@@ -80,6 +94,26 @@ foreach ($rs as $habitacion) {
         }
     }
 
+    // LÓGICA DE MOMENTÁNEO FORMAL: Calcular deuda en bloques de 70 minutos
+    $horas_deuda_mom = 0;
+    $es_momentaneo_formal = ($habitacion['cuenta_codigo'] === '402' && !empty($habitacion['checkin_activo']));
+    if ($es_momentaneo_formal && !empty($habitacion['checkout_activo'])) {
+        $ahora_ts = time();
+        $checkin_ts = strtotime($habitacion['checkin_activo']);
+        $checkout_ts = strtotime($habitacion['checkout_activo']);
+        if ($ahora_ts > $checkout_ts) {
+            // Minutos transcurridos desde el checkin
+            $minutos_totales = ($ahora_ts - $checkin_ts) / 60;
+            // Bloques de 70 minutos consumidos (redondeo hacia arriba)
+            $bloques_consumidos = (int) ceil($minutos_totales / 70);
+            // Bloques pactados originalmente (checkin->checkout en bloques de 70 min)
+            $minutos_pactados = ($checkout_ts - $checkin_ts) / 60;
+            $bloques_pactados = (int) round($minutos_pactados / 70);
+            $bloques_pactados = max(1, $bloques_pactados); // Mínimo 1 bloque
+            $horas_deuda_mom = max(0, $bloques_consumidos - $bloques_pactados);
+        }
+    }
+
     $habitaciones[] = array(
         'habitacionID' => $habitacion['habitacionID'],
         'estado' => $habitacion['estado'],
@@ -87,8 +121,11 @@ foreach ($rs as $habitacion) {
         'tipo' => $habitacion['tipo'],
         'cliente_activo' => $habitacion['cliente_activo'],
         'checkout_activo' => $habitacion['checkout_activo'],
+        'checkin_activo' => $habitacion['checkin_activo'],
         'precio_base' => $habitacion['precio_base'],
         'dias_deuda' => $dias_deuda,
+        'horas_deuda' => $horas_deuda_mom,
+        'es_momentaneo_formal' => $es_momentaneo_formal ? 1 : 0,
         'precio_inteligente' => $habitacion['precio_diario_pactado'] ?? $habitacion['precio_base'],
         'bano' => $habitacion['bano'],
         'tv' => $habitacion['tv'],

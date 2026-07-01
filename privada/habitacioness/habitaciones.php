@@ -13,10 +13,12 @@ $sql = "SELECT  thab.tipohabitacionID, hab.habitacionID, hab.bano, hab.tv, hab.v
                 thab.nombre, thab.precio, hab.estado as estado, hab.numero as numero, 
                 hab.descripcion as descripcion,
                 hos.hospedajeID as hospedaje_activo_id,
+                hos.checkin as checkin_activo,
                 hos.checkout as checkout_activo,
                 hos.precio_diario as precio_pactado,
                 hos.monto as monto_total_pagado,
                 hos.observaciones as observaciones_activo,
+                cue.codigo as cuenta_codigo,
                 (SELECT GROUP_CONCAT(CONCAT('- ', c.nombres, ' ', c.apellido1) SEPARATOR '<br>')
                  FROM hospedajes_clientes hc 
                  JOIN clientes c ON hc.clienteID = c.clienteID 
@@ -28,6 +30,8 @@ $sql = "SELECT  thab.tipohabitacionID, hab.habitacionID, hab.bano, hab.tv, hab.v
                  AND hos.empresaID = ? 
                  AND hos.estado = 'ACTIVO' 
                  AND hos._estado <> 'X'
+        LEFT JOIN ingresos ing ON hos.ingresoID = ing.ingresoID
+        LEFT JOIN cuentas cue ON ing.cuentaID = cue.cuentaID
         WHERE   thab._estado <> 'X'
         AND     hab._estado <> 'X'
         AND     hab.empresaID = ?
@@ -176,11 +180,47 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
 
                             <?php if (($habitacion['estado'] === 'OCUPADA' || $habitacion['estado'] === 'DEUDA') && !empty($habitacion['cliente_activo'])): ?>
                                 <!-- Ficha Flotante (Tooltip) para OCUPADAS y DEUDAS -->
-                                <?php if ($habitacion['estado'] === 'DEUDA'): ?>
+                                <?php
+                                // Detectar si es momentáneo formal por la cuenta contable 402
+                                $es_momentaneo_formal = ($habitacion['cuenta_codigo'] === '402' && !empty($habitacion['checkin_activo']));
+
+                                // Calcular deuda en bloques de 70 minutos para momentáneos formales
+                                $horas_deuda_mom = 0;
+                                if ($es_momentaneo_formal && !empty($habitacion['checkout_activo'])) {
+                                    $ahora_ts = time();
+                                    $checkin_ts = strtotime($habitacion['checkin_activo']);
+                                    $checkout_ts = strtotime($habitacion['checkout_activo']);
+                                    if ($ahora_ts > $checkout_ts) {
+                                        $minutos_totales = ($ahora_ts - $checkin_ts) / 60;
+                                        $bloques_consumidos = (int) ceil($minutos_totales / 70);
+                                        $minutos_pactados = ($checkout_ts - $checkin_ts) / 60;
+                                        $bloques_pactados = max(1, (int) round($minutos_pactados / 70));
+                                        $horas_deuda_mom = max(0, $bloques_consumidos - $bloques_pactados);
+                                    }
+                                }
+
+                                // Calcular total de bloques para ver si ya es día completo
+                                $es_dia_completo_mom = false;
+                                if ($es_momentaneo_formal && !empty($habitacion['checkin_activo'])) {
+                                    $minutos_desde_checkin = (time() - strtotime($habitacion['checkin_activo'])) / 60;
+                                    $es_dia_completo_mom = ceil($minutos_desde_checkin / 70) > 3;
+                                }
+
+                                // --- Badge ---
+                                if ($es_momentaneo_formal && $horas_deuda_mom > 0):
+                                    if ($es_dia_completo_mom): ?>
+                                        <span class="badge-precio" style="background:#dc3545; color:#fff; border-color:#dc3545;">Bs. 70 -
+                                            DÍA COMPLETO</span>
+                                    <?php else: ?>
+                                        <span class="badge-precio" style="background:#dc3545; color:#fff; border-color:#dc3545;">Bs.
+                                            <?php echo number_format($habitacion['precio_pactado'] ?? $habitacion['precio'], 0); ?> - DEBE
+                                            <?php echo $horas_deuda_mom; ?> HORA<?php echo $horas_deuda_mom > 1 ? 'S' : ''; ?></span>
+                                    <?php endif;
+                                elseif ($habitacion['estado'] === 'DEUDA'): ?>
                                     <span class="badge-precio" style="background:#dc3545; color:#fff; border-color:#dc3545;">
                                         Bs. <?php echo number_format($habitacion['precio_pactado'] ?? $habitacion['precio'], 0); ?> -
-                                        DEBE
-                                        <?php echo $habitacion['dias_deuda']; ?> DÍAS
+                                        DEBE <?php echo $habitacion['dias_deuda']; ?>
+                                        DÍA<?php echo $habitacion['dias_deuda'] > 1 ? 'S' : ''; ?>
                                     </span>
                                 <?php else: ?>
                                     <span class="badge-precio">Bs.
@@ -188,10 +228,29 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                                 <?php endif; ?>
 
                                 <div class="habitacion-info-tooltip">
-                                    <div class="tooltip-header" <?php echo ($habitacion['estado'] === 'DEUDA') ? 'style="background-color: #dc3545;"' : ''; ?>>
-                                        <i
-                                            class="fas <?php echo ($habitacion['estado'] === 'DEUDA') ? 'fa-exclamation-triangle' : 'fa-user-circle'; ?>"></i>
-                                        <?php echo ($habitacion['estado'] === 'DEUDA') ? 'DEUDA VENCIDA' : 'DETALLE OCUPACIÓN'; ?>
+                                    <?php
+                                    // Cabecera del tooltip
+                                    if ($es_momentaneo_formal && $horas_deuda_mom > 0):
+                                        $header_style = 'style="background-color: #dc3545;"';
+                                        $header_icon = 'fa-exclamation-triangle';
+                                        $header_text = 'MOMENTÁNEO';
+                                    elseif ($habitacion['estado'] === 'DEUDA'):
+                                        $header_style = 'style="background-color: #dc3545;"';
+                                        $header_icon = 'fa-exclamation-triangle';
+                                        $header_text = 'DEUDA VENCIDA';
+                                    elseif ($es_momentaneo_formal):
+                                        $header_style = '';
+                                        $header_icon = 'fa-user-circle';
+                                        $header_text = 'MOMENTÁNEO';
+                                    else:
+                                        $header_style = '';
+                                        $header_icon = 'fa-user-circle';
+                                        $header_text = 'HOSPEDAJE';
+                                    endif;
+                                    ?>
+                                    <div class="tooltip-header" <?php echo $header_style; ?>>
+                                        <i class="fas <?php echo $header_icon; ?>"></i>
+                                        <?php echo $header_text; ?>
                                     </div>
                                     <div class="tooltip-body">
                                         <p><strong>CLIENTE:</strong><br>
@@ -202,6 +261,13 @@ $boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
                                         <?php if (!empty($habitacion['observaciones_activo'])): ?>
                                             <p><strong>OBS:</strong> <span
                                                     class="text-info"><?php echo mb_strtoupper((string) $habitacion['observaciones_activo']); ?></span>
+                                            </p>
+                                        <?php endif; ?>
+                                        <?php if ($es_momentaneo_formal && $horas_deuda_mom > 0): ?>
+                                            <p style="color:#dc3545; font-weight:bold;">
+                                                <i
+                                                    class="fas <?php echo $es_dia_completo_mom ? 'fa-exclamation-triangle' : 'fa-clock'; ?>"></i>
+                                                <?php echo $es_dia_completo_mom ? 'DÍA COMPLETO POR EXCESO' : 'DEBE ' . $horas_deuda_mom . ' HORA' . ($horas_deuda_mom > 1 ? 'S' : '') . ' EXTRA' . ($horas_deuda_mom > 1 ? 'S' : ''); ?>
                                             </p>
                                         <?php endif; ?>
                                     </div>

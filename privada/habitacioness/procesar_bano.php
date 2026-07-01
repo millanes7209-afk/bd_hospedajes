@@ -20,9 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         $fecha_actual = date('Y-m-d H:i:s');
-        $sql = "INSERT INTO banos (empresaID, cajaID, usuarioID, monto, tipo, descripcion, fecha, _fec_insercion, _usuario, _estado) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'A')";
-        $db->ejecutar($sql, [$empresaID, $cajaID, $usuarioID, $monto, $tipo, $descripcion, $fecha_actual, $fecha_actual, $usuarioID]);
+        $sql = "INSERT INTO banos (empresaID, cajaID, usuarioID, monto, tipo, descripcion, fecha) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $db->ejecutar($sql, [$empresaID, $cajaID, $usuarioID, $monto, $tipo, $descripcion, $fecha_actual]);
 
         $_SESSION['mensaje'] = "Registro de Baño ($tipo) guardado correctamente.";
         $_SESSION['mensaje_tipo'] = "success";
