@@ -367,6 +367,34 @@
             </select>
           </div>
 
+          <!-- Checkbox Incidente -->
+          <div class="form-check mb-3 mt-4">
+            <input class="form-check-input" type="checkbox" name="tiene_incidente" id="pago-deuda-check-incidente"
+              value="1">
+            <label class="form-check-label fw-bold text-danger" for="pago-deuda-check-incidente"
+              style="cursor:pointer;">
+              <i class="fas fa-exclamation-triangle"></i> ¿EL CLIENTE TUVO ALGÚN PROBLEMA / INCIDENTE?
+            </label>
+          </div>
+
+          <!-- Sección Incidente (oculta por defecto) -->
+          <div id="pago-deuda-seccion-incidente"
+            style="display:none; border-top: 1px solid #dee2e6; padding-top: 15px;">
+            <div class="mb-3">
+              <label class="form-label fw-bold text-dark">Huéspedes Registrados (Se penalizará a todos):</label>
+              <div id="pago-deuda-lista-clientes"
+                class="text-sm font-weight-bold p-2 bg-light border rounded text-dark text-uppercase">
+                <!-- Mostrado dinámicamente -->
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold text-dark">(*) Detalle del incidente / daño:</label>
+              <textarea class="form-control" name="descripcion" id="pago-deuda-descripcion" rows="3"
+                placeholder="Ej: Rompió frazadas, dañó el televisor y huyó sin pagar..."
+                oninput="this.value = this.value.toUpperCase()"></textarea>
+            </div>
+          </div>
+
           <!-- Campos ocultos -->
           <input type="hidden" name="habitacionID" id="pago-deuda-habitacionID">
           <input type="hidden" name="hospedajeID" id="pago-deuda-hospedajeID">
@@ -403,6 +431,60 @@
         </div>
         <div class="modal-footer">
           <button type="submit" id="btn-guardar-bano" class="btn btn-primary w-100">GUARDAR</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Confirmar Desocupar (Ocupada) llamando a desocupar.php -->
+<div class="modal fade" id="modal-confirmar-desocupar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form action="desocupar.php" method="post" id="form-desocupar">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">DESOCUPAR HABITACIÓN</h5>
+          <button type="button" class="close" data-bs-dismiss="modal"
+            style="border:none; background:none; font-size: 1.5rem; line-height: 1;">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="lead text-dark">¿Está seguro de que desea desocupar la <strong>Habitación <span
+                id="desocupar-habitacion-numero"></span></strong>?</p>
+          <p class="text-muted small">Esta acción liberará la habitación colocándola en estado de LIMPIEZA.</p>
+
+          <!-- Checkbox Incidente -->
+          <div class="form-check mb-3 mt-4">
+            <input class="form-check-input" type="checkbox" name="tiene_incidente" id="desocupar-check-incidente"
+              value="1">
+            <label class="form-check-label fw-bold text-danger" for="desocupar-check-incidente" style="cursor:pointer;">
+              <i class="fas fa-exclamation-triangle"></i> ¿EL CLIENTE TUVO ALGÚN PROBLEMA / INCIDENTE?
+            </label>
+          </div>
+
+          <!-- Sección Incidente (oculta por defecto) -->
+          <div id="desocupar-seccion-incidente" style="display:none; border-top: 1px solid #dee2e6; padding-top: 15px;">
+            <div class="mb-3">
+              <label class="form-label fw-bold text-dark">Huéspedes Registrados (Se penalizará a todos):</label>
+              <div id="desocupar-lista-clientes"
+                class="text-sm font-weight-bold p-2 bg-light border rounded text-dark text-uppercase">
+                <!-- Mostrado dinámicamente -->
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold text-dark">(*) Detalle del incidente / daño:</label>
+              <textarea class="form-control" name="descripcion" id="desocupar-descripcion" rows="3"
+                placeholder="Ej: Rompió frazadas, dañó el televisor y huyó sin pagar..."
+                oninput="this.value = this.value.toUpperCase()"></textarea>
+            </div>
+          </div>
+
+          <!-- Campos Ocultos -->
+          <input type="hidden" name="habitacionID" id="desocupar-habitacionID">
+          <input type="hidden" name="auth" value="habitaciones.php">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCELAR</button>
+          <button type="submit" class="btn btn-primary fw-bold">CONFIRMAR SALIDA</button>
         </div>
       </div>
     </form>

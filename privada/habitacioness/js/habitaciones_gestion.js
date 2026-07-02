@@ -206,7 +206,40 @@ function cambiarEstado(habitacionID, nuevoEstado) {
 }
 
 function desocupar(habitacionID) {
-    window.location.href = 'desocupar.php?habitacionID=' + habitacionID + '&auth=habitaciones.php';
+    var modalOpciones = bootstrap.Modal.getInstance(document.getElementById('menu-opciones'));
+    if (modalOpciones) modalOpciones.hide();
+
+    // Resetear campos
+    document.getElementById('desocupar-habitacionID').value = habitacionID;
+    document.getElementById('desocupar-check-incidente').checked = false;
+    document.getElementById('desocupar-seccion-incidente').style.display = 'none';
+    document.getElementById('desocupar-descripcion').required = false;
+    document.getElementById('desocupar-descripcion').value = '';
+
+    fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&auth=habitaciones.php')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.error) {
+                document.getElementById('desocupar-habitacion-numero').innerText = data.numero;
+
+                const divClientes = document.getElementById('desocupar-lista-clientes');
+                divClientes.innerHTML = '';
+                if (data.clientes && data.clientes.length > 0) {
+                    data.clientes.forEach(c => {
+                        const row = document.createElement('div');
+                        row.className = 'py-1 border-bottom border-light';
+                        row.innerText = `${c.nombres || ''} ${c.apellidos || ''} (CI: ${c.ci || ''})`.replace(/\s+/g, ' ').trim().toUpperCase();
+                        divClientes.appendChild(row);
+                    });
+                } else {
+                    divClientes.innerHTML = '<div class="text-muted">SIN HUÉSPEDES DETECTADOS</div>';
+                }
+            }
+        })
+        .catch(error => console.error('Error fetching stay details:', error));
+
+    var modalConfirm = new bootstrap.Modal(document.getElementById('modal-confirmar-desocupar'));
+    modalConfirm.show();
 }
 
 function desocupar1(habitacionID) {
@@ -547,11 +580,15 @@ function mostrarModalPagoDeuda(habitacionID, monto) {
     var modalOpciones = bootstrap.Modal.getInstance(document.getElementById('menu-opciones'));
     if (modalOpciones) modalOpciones.hide();
 
-    // Usar el monto ya calculado, sin necesidad de fetch
     document.getElementById('pago-deuda-monto_total').value = parseFloat(monto) || 0;
     document.getElementById('pago-deuda-habitacionID').value = habitacionID;
 
-    // Buscar el hospedajeID y número de la habitación desde los datos ya cargados
+    // Resetear sección incidente
+    document.getElementById('pago-deuda-check-incidente').checked = false;
+    document.getElementById('pago-deuda-seccion-incidente').style.display = 'none';
+    document.getElementById('pago-deuda-descripcion').required = false;
+    document.getElementById('pago-deuda-descripcion').value = '';
+
     fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&auth=habitaciones.php')
         .then(response => response.json())
         .then(data => {
@@ -559,6 +596,19 @@ function mostrarModalPagoDeuda(habitacionID, monto) {
                 document.getElementById('pago-deuda-habitacion').innerText = data.numero;
                 document.getElementById('pago-deuda-habitacion-numero').value = data.numero;
                 document.getElementById('pago-deuda-hospedajeID').value = data.hospedajeID;
+
+                const divClientes = document.getElementById('pago-deuda-lista-clientes');
+                divClientes.innerHTML = '';
+                if (data.clientes && data.clientes.length > 0) {
+                    data.clientes.forEach(c => {
+                        const row = document.createElement('div');
+                        row.className = 'py-1 border-bottom border-light';
+                        row.innerText = `${c.nombres || ''} ${c.apellidos || ''} (CI: ${c.ci || ''})`.replace(/\s+/g, ' ').trim().toUpperCase();
+                        divClientes.appendChild(row);
+                    });
+                } else {
+                    divClientes.innerHTML = '<div class="text-muted">SIN HUÉSPEDES DETECTADOS</div>';
+                }
             }
         })
         .catch(error => console.error('Error:', error));
@@ -723,6 +773,38 @@ document.addEventListener('DOMContentLoaded', function () {
         cerrarModalNotif.onclick = function () {
             document.getElementById("miModal").style.display = "none";
         }
+    }
+
+    // Toggle de sección incidentes en Confirmar Desocupar
+    const checkExIncDes = document.getElementById('desocupar-check-incidente');
+    if (checkExIncDes) {
+        checkExIncDes.addEventListener('change', function () {
+            const sec = document.getElementById('desocupar-seccion-incidente');
+            const txt = document.getElementById('desocupar-descripcion');
+            if (this.checked) {
+                sec.style.display = 'block';
+                txt.required = true;
+            } else {
+                sec.style.display = 'none';
+                txt.required = false;
+            }
+        });
+    }
+
+    // Toggle de sección incidentes en Pago Deuda / Desocupar
+    const checkExIncDeu = document.getElementById('pago-deuda-check-incidente');
+    if (checkExIncDeu) {
+        checkExIncDeu.addEventListener('change', function () {
+            const sec = document.getElementById('pago-deuda-seccion-incidente');
+            const txt = document.getElementById('pago-deuda-descripcion');
+            if (this.checked) {
+                sec.style.display = 'block';
+                txt.required = true;
+            } else {
+                sec.style.display = 'none';
+                txt.required = false;
+            }
+        });
     }
 
     // Notificaciones iniciales

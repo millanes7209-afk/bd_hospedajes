@@ -37,6 +37,23 @@ try {
     if (!$db->beginTransaction())
         throw new Exception("No se pudo iniciar la transacción.");
 
+    // Registrar incidente si se especificó en el modal de pago de deuda
+    if (isset($_POST['tiene_incidente']) && $_POST['tiene_incidente'] == '1') {
+        $descInc = strtoupper(trim($_POST['descripcion'] ?? ''));
+        if ($descInc) {
+            // Obtener todos los clientes asociados a este hospedaje
+            $sqlClis = "SELECT clienteID FROM hospedajes_clientes WHERE hospedajeID = ? AND _estado <> 'X'";
+            $clientesAsoc = $db->obtenerTodo($sqlClis, [$hospedajeID]);
+            foreach ($clientesAsoc as $c) {
+                $sqlInc = "INSERT INTO incidentes (
+                                clienteID, empresaID, descripcion, fecha, estado, 
+                                usuarioID, _usuario, _fec_insercion, _estado
+                            ) VALUES (?, ?, ?, ?, 'PENDIENTE', ?, ?, ?, 'A')";
+                $db->ejecutar($sqlInc, [$c['clienteID'], $empresaID, $descInc, $ahora, $usuarioID, $usuarioID, $ahora]);
+            }
+        }
+    }
+
     // 1. Marcar el hospedaje original como INACTIVO y actualizar checkout
     $sql_hospedaje = "UPDATE hospedajes 
                       SET estado = 'INACTIVO',

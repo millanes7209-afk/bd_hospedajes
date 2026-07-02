@@ -7,8 +7,9 @@ require_once("../../conexion.php");
  * Finaliza el hospedaje (ACTIVO o DEUDA) y pasa la habitación a LIMPIEZA.
  */
 
-if (isset($_GET['habitacionID'])) {
-    $habitacionID = $_GET['habitacionID'];
+$habitacionID = $_REQUEST['habitacionID'] ?? null;
+
+if ($habitacionID) {
     $usuarioID = $_SESSION["sesion_id_usuario"];
     $empresaID = $_SESSION["empresaID"];
 
@@ -23,6 +24,23 @@ if (isset($_GET['habitacionID'])) {
         $hospedaje = $db->obtenerFila($sql, [$habitacionID, $empresaID]);
 
         if ($hospedaje) {
+            // Registrar incidente si se especificó en el modal
+            if (isset($_POST['tiene_incidente']) && $_POST['tiene_incidente'] == '1') {
+                $descInc = strtoupper(trim($_POST['descripcion'] ?? ''));
+                if ($descInc) {
+                    // Obtener todos los clientes asociados a este hospedaje
+                    $sqlClis = "SELECT clienteID FROM hospedajes_clientes WHERE hospedajeID = ? AND _estado <> 'X'";
+                    $clientesAsoc = $db->obtenerTodo($sqlClis, [$hospedaje['hospedajeID']]);
+                    foreach ($clientesAsoc as $c) {
+                        $sqlInc = "INSERT INTO incidentes (
+                                        clienteID, empresaID, descripcion, fecha, estado, 
+                                        usuarioID, _usuario, _fec_insercion, _estado
+                                    ) VALUES (?, ?, ?, ?, 'PENDIENTE', ?, ?, ?, 'A')";
+                        $db->ejecutar($sqlInc, [$c['clienteID'], $empresaID, $descInc, $ahora, $usuarioID, $usuarioID, $ahora]);
+                    }
+                }
+            }
+
             // 2. Finalizar el hospedaje (Estado unificado: INACTIVO)
             $db->ejecutar("UPDATE hospedajes SET estado = 'INACTIVO', checkout = ?, _fec_modificacion = ?, _usuario = ? 
                           WHERE hospedajeID = ? AND empresaID = ?", [$ahora, $ahora, $usuarioID, $hospedaje['hospedajeID'], $empresaID]);
