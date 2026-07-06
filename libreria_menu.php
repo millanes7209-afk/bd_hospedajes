@@ -186,13 +186,13 @@ if (isset($_SESSION["sesion_id_rol"])) {
             .navbar-toggler {
                 order: 1 !important;
                 margin-left: 0 !important;
-                margin-right: auto !important;
+                margin-right: 15px !important;
             }
 
             .navbar-brand {
                 order: 2 !important;
-                margin-left: auto !important;
-                margin-right: 0 !important;
+                margin-left: 0 !important;
+                margin-right: auto !important;
             }
 
             .navbar-collapse {
@@ -224,13 +224,13 @@ if (isset($_SESSION["sesion_id_rol"])) {
             body:not(.menu-abierto) #sideNav .navbar-toggler {
                 order: 1 !important;
                 margin-left: 0 !important;
-                margin-right: auto !important;
+                margin-right: 15px !important;
             }
 
             body:not(.menu-abierto) #sideNav .navbar-brand {
                 order: 2 !important;
-                margin-left: auto !important;
-                margin-right: 0 !important;
+                margin-left: 0 !important;
+                margin-right: auto !important;
             }
 
             body:not(.menu-abierto) #sideNav .navbar-brand .d-none.d-lg-block {
