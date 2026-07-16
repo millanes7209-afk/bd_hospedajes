@@ -114,7 +114,8 @@ if ($rol_usuario === 'RECEPCIONISTA') {
 $sql_all_movs = "SELECT 
                     cc.monto,
                     c.cajaID, 
-                    c.fecha_apertura, 
+                    c.fecha_apertura,
+                    c.fecha_cierre,
                     u.usuario as nombre_usuario,
                     fp.tipo as forma_pago
                 FROM cajas c
@@ -143,6 +144,7 @@ if ($rs_all_movs) {
                 'cajaID' => $cajaID,
                 'nombre_usuario' => $reg['nombre_usuario'],
                 'fecha_apertura' => $reg['fecha_apertura'],
+                'fecha_cierre' => $reg['fecha_cierre'],
                 'saldos' => [],
                 'movimientos_count' => 0,
                 'saldo_bano' => 0
@@ -345,6 +347,12 @@ unset($caja_data);
                                                             class="d-block text-nowrap"><?= date('d/m/Y', strtotime($movimiento['fecha_apertura'])) ?></span>
                                                         <small
                                                             class="text-muted"><?= date('H:i', strtotime($movimiento['fecha_apertura'])) ?></small>
+                                                        <?php if (!empty($movimiento['fecha_cierre'])): ?>
+                                                            <span class="d-block text-nowrap text-muted" style="font-size:0.85em;">
+                                                                Cierre: <?= date('d/m/Y', strtotime($movimiento['fecha_cierre'])) ?>
+                                                            </span>
+                                                            <small class="text-muted"><?= date('H:i', strtotime($movimiento['fecha_cierre'])) ?></small>
+                                                        <?php endif; ?>
                                                     </td>
                                                     <td class="text-center font-weight-bold">
                                                         <?= mb_strtoupper($movimiento['nombre_usuario']) ?>
