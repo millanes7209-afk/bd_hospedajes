@@ -71,9 +71,12 @@ while ($fecha_actual->format('Ymd') <= $fecha_fin_obj->format('Ymd')) {
     $fecha_actual->add(new DateInterval('P1D'));
 }
 
-$where_entrega = " AND (EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.cajaID AND i.entregado = 0 AND i._estado <> 'X') 
+$where_entrega = " AND ((EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.cajaID AND i.entregado = 0 AND i._estado <> 'X') 
                      OR EXISTS (SELECT 1 FROM egresos e WHERE e.cajaID = c.cajaID AND e.entregado = 0 AND e._estado <> 'X')
-                     OR EXISTS (SELECT 1 FROM banos b WHERE b.cajaID = c.cajaID AND b.entregado = 0)) ";
+                     OR EXISTS (SELECT 1 FROM banos b WHERE b.cajaID = c.cajaID AND b.entregado = 0))
+                     OR (NOT EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.cajaID AND i._estado <> 'X')
+                         AND NOT EXISTS (SELECT 1 FROM egresos e WHERE e.cajaID = c.cajaID AND e._estado <> 'X')
+                         AND NOT EXISTS (SELECT 1 FROM banos b WHERE b.cajaID = c.cajaID))) ";
 
 if ($rol_usuario === 'RECEPCIONISTA') {
     $where_user = "AND c.usuarioID = ?";
