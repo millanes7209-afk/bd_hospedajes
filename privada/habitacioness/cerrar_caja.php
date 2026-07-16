@@ -41,6 +41,17 @@ if (count($rs_caja_abierta) > 0) {
             $db->ejecutar($sql_ins, [$caja_id, $row['formapagoID'], $row['total'], $ahora, $id_usuario]);
         }
 
+        // Si no hubo movimientos, insertar registro con monto 0 usando primera forma de pago de la empresa
+        if (empty($resumen)) {
+            $sql_forma_pago = "SELECT formapagoID FROM formas_pago WHERE empresaID = ? AND _estado <> 'X' LIMIT 1";
+            $forma_pago_defecto = $db->obtenerFila($sql_forma_pago, [$empresaID]);
+            if ($forma_pago_defecto) {
+                $sql_ins = "INSERT INTO cierre_cajas (cajaID, formapagoID, monto, _fec_insercion, _usuario, _estado) 
+                            VALUES (?, ?, 0, ?, ?, 'A')";
+                $db->ejecutar($sql_ins, [$caja_id, $forma_pago_defecto['formapagoID'], $ahora, $id_usuario]);
+            }
+        }
+
         // 3. Actualizar la caja para cerrarla
         $sql_cerrar_caja = "UPDATE cajas SET estado = 'CERRADA', fecha_cierre = ?, _fec_modificacion = ?, _usuario = ? WHERE cajaID = ?";
         $db->ejecutar($sql_cerrar_caja, [$ahora, $ahora, $id_usuario, $caja_id]);

@@ -84,6 +84,17 @@ if (isset($_POST['accion'])) {
                 $db->ejecutar($sql_snapshot, array($caja_abierta_id, $saldo['formapagoID'], $saldo['total_monto'], $fecha_cierre, $fecha_cierre, $usuarioID));
             }
 
+            // Si no hubo movimientos, insertar registro con monto 0 usando primera forma de pago de la empresa
+            if (empty($saldos)) {
+                $sql_forma_pago = "SELECT formapagoID FROM formas_pago WHERE empresaID = ? AND _estado <> 'X' LIMIT 1";
+                $forma_pago_defecto = $db->obtenerFila($sql_forma_pago, [$empresaID]);
+                if ($forma_pago_defecto) {
+                    $sql_snapshot = "INSERT INTO cierre_cajas (cajaID, formapagoID, monto, _fec_insercion, _fec_modificacion, _usuario, _estado) 
+                                     VALUES (?, ?, 0, ?, ?, ?, 'A')";
+                    $db->ejecutar($sql_snapshot, array($caja_abierta_id, $forma_pago_defecto['formapagoID'], $fecha_cierre, $fecha_cierre, $usuarioID));
+                }
+            }
+
             // Limpiar la caja abierta en la sesión
             $_SESSION['caja_abierta_id'] = null;
             $_SESSION['mensaje'] = "Caja cerrada exitosamente. Snapshots guardados.";

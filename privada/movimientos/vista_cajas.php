@@ -118,14 +118,13 @@ $sql_all_movs = "SELECT
                     u.usuario as nombre_usuario,
                     fp.tipo as forma_pago
                 FROM cajas c
-                INNER JOIN cierre_cajas cc ON c.cajaID = cc.cajaID
+                LEFT JOIN cierre_cajas cc ON c.cajaID = cc.cajaID AND cc._estado <> 'X'
                 INNER JOIN usuarios u ON c.usuarioID = u.usuarioID
-                INNER JOIN formas_pago fp ON cc.formapagoID = fp.formapagoID
+                LEFT JOIN formas_pago fp ON cc.formapagoID = fp.formapagoID
                 WHERE 1=1
                   $where_date
                   AND c.empresaID = ? 
                   AND c._estado <> 'X'
-                  AND cc._estado <> 'X'
                   $where_user
                   $where_entrega
                 ORDER BY c.fecha_apertura ASC, c.cajaID ASC";
