@@ -11,8 +11,37 @@ if (!isset($_SESSION['sesion_id_usuario']) || !in_array($_SESSION['sesion_rol'],
 }
 
 $empresaID = $_SESSION['empresaID'];
+$rol_usuario = $_SESSION['sesion_rol'] ?? '';
 $fecha_inicio = $_GET['fecha_inicio'] ?? date('Y-m-d', strtotime('-30 days'));
 $fecha_fin = $_GET['fecha_fin'] ?? date('Y-m-d');
+$usuarioID_filtro = $_GET['usuarioID'] ?? '';
+
+$usuarioID_actual = $_SESSION['sesion_id_usuario'] ?? $_SESSION['usuarioID'] ?? 0;
+
+$sql_usuarios = "SELECT DISTINCT u.usuarioID, u.usuario 
+                 FROM usuarios u
+                 INNER JOIN usuarios_roles ur ON u.usuarioID = ur.usuarioID
+                 INNER JOIN roles r ON ur.rolID = r.rolID
+                 INNER JOIN empleado_empresas ee ON u.empleadoID = ee.empleadoID
+                 WHERE u._estado <> 'X' 
+                   AND ee.empresaID = ? 
+                   AND ee._estado <> 'X'
+                   AND r.rol = 'RECEPCIONISTA'
+                 ORDER BY u.usuario";
+$usuarios_mov = $db->obtenerTodo($sql_usuarios, [$empresaID]);
+
+if ($rol_usuario === 'RECEPCIONISTA') {
+    $where_user = "AND c.usuarioID = ?";
+    $params = [$empresaID, $fecha_inicio, $fecha_fin, $usuarioID_actual];
+} else {
+    if (!empty($usuarioID_filtro)) {
+        $where_user = "AND c.usuarioID = ?";
+        $params = [$empresaID, $fecha_inicio, $fecha_fin, $usuarioID_filtro];
+    } else {
+        $where_user = "";
+        $params = [$empresaID, $fecha_inicio, $fecha_fin];
+    }
+}
 
 $sql = "SELECT r.*,
                c.fecha_apertura,
@@ -25,9 +54,10 @@ $sql = "SELECT r.*,
         WHERE r.empresaID = ? 
           AND DATE(c.fecha_apertura) BETWEEN ? AND ?
           AND r._estado <> 'X'
+          $where_user
         ORDER BY r.fecha DESC";
 
-$recaudaciones = $db->obtenerTodo($sql, [$empresaID, $fecha_inicio, $fecha_fin]);
+$recaudaciones = $db->obtenerTodo($sql, $params);
 ?>
 
 <!DOCTYPE html>
@@ -127,6 +157,19 @@ $recaudaciones = $db->obtenerTodo($sql, [$empresaID, $fecha_inicio, $fecha_fin])
                         <label>Hasta:</label>
                         <input type="date" name="fecha_fin" class="form-control" value="<?= $fecha_fin ?>">
                     </div>
+                    <?php if ($rol_usuario === 'PROPIETARIO' || $rol_usuario === 'ADMINISTRADOR'): ?>
+                        <div class="col-md-3">
+                            <label for="usuarioID">Filtrar por Usuario:</label>
+                            <select id="usuarioID" name="usuarioID" class="form-control">
+                                <option value="">Todos los usuarios</option>
+                                <?php foreach ($usuarios_mov as $usr): ?>
+                                    <option value="<?= $usr['usuarioID'] ?>" <?= $usuarioID_filtro == $usr['usuarioID'] ? 'selected' : '' ?>>
+                                        <?= $usr['usuario'] ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php endif; ?>
                     <div class="col-md-2 d-flex align-items-end">
                         <button type="submit" class="btn btn-secondary w-100">Filtrar</button>
                     </div>

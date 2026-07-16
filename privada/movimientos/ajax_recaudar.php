@@ -39,7 +39,7 @@ try {
 
         $monto_neto = $total_i - $total_e + $total_b;
 
-        if ($monto_neto != 0 || $total_i > 0 || $total_e > 0 || $total_b > 0) {
+        if (true) {
             // Obtenemos el usuario responsable de la caja para la recaudación
             $caja_info = $db->obtenerFila("SELECT usuarioID FROM cajas WHERE cajaID = ?", [$cajaID]);
             $recepcionistaID = $caja_info['usuarioID'];

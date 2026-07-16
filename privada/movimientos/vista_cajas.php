@@ -76,7 +76,8 @@ $where_entrega = " AND ((EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.caj
                      OR EXISTS (SELECT 1 FROM banos b WHERE b.cajaID = c.cajaID AND b.entregado = 0))
                      OR (NOT EXISTS (SELECT 1 FROM ingresos i WHERE i.cajaID = c.cajaID AND i._estado <> 'X')
                          AND NOT EXISTS (SELECT 1 FROM egresos e WHERE e.cajaID = c.cajaID AND e._estado <> 'X')
-                         AND NOT EXISTS (SELECT 1 FROM banos b WHERE b.cajaID = c.cajaID))) ";
+                         AND NOT EXISTS (SELECT 1 FROM banos b WHERE b.cajaID = c.cajaID)
+                         AND NOT EXISTS (SELECT 1 FROM recaudaciones r WHERE r.cajaID = c.cajaID AND r._estado <> 'X'))) ";
 
 if ($rol_usuario === 'RECEPCIONISTA') {
     $where_user = "AND c.usuarioID = ?";
