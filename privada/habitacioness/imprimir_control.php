@@ -303,6 +303,11 @@ foreach ($habitaciones as $hab) {
             page-break-inside: avoid;
         }
 
+        .room-deuda {
+            border: 2px solid #dc3545 !important;
+            background-color: #fce8e8 !important;
+        }
+
         .room-card-header {
             font-weight: bold;
             font-size: 9px;
@@ -578,11 +583,12 @@ foreach ($habitaciones as $hab) {
                         $is_deuda = false;
                         $deuda_texto = "";
                         $strong_watermark = false;
-                        $is_empty_state = in_array($h['estado'], ['LIMPIEZA', 'MANTENIMIENTO', 'MOMENTANEO']);
+                        $is_empty_state = in_array($h['estado'], ['LIMPIEZA', 'MANTENIMIENTO', 'MOMENTANEO', 'DISPONIBLE']);
 
                         switch ($h['estado']) {
                             case 'DISPONIBLE':
-                                $watermark = "D";
+                                $watermark = "L";
+                                $strong_watermark = true;
                                 break;
                             case 'LIMPIEZA':
                                 $watermark = "S";
@@ -597,6 +603,7 @@ foreach ($habitaciones as $hab) {
                                 break;
                             case 'MANTENIMIENTO':
                                 $watermark = "M";
+                                $strong_watermark = true;
                                 break;
                             case 'OCUPADA':
                             case 'MOMENTANEO':
@@ -605,7 +612,7 @@ foreach ($habitaciones as $hab) {
                                 break;
                         }
                         ?>
-                        <div class="room-card">
+                        <div class="room-card <?php echo $is_deuda ? 'room-deuda' : ''; ?>">
                             <!-- Cabecera con número y tipo -->
                             <div class="room-card-header">
                                 <?php echo $h['numero']; ?>         <?php echo $h['nombre']; ?>
@@ -615,18 +622,23 @@ foreach ($habitaciones as $hab) {
 
                             <!-- Cuerpo con líneas de control manual como columnas separadas verticalmente -->
                             <div class="room-card-body">
-                                <div id="obs-<?php echo $h['habitacionID']; ?>" style="font-size:8px; font-weight:bold; white-space:pre-wrap; text-align:center; padding-bottom: 3px;"></div>
+                                <div id="obs-<?php echo $h['habitacionID']; ?>"
+                                    style="font-size:8px; font-weight:bold; white-space:pre-wrap; text-align:center; padding-bottom: 3px;">
+                                </div>
 
                                 <?php if ($h['estado'] === 'MANTENIMIENTO'): ?>
-                                    <div style="font-size:8px; text-align:center; font-weight:bold; padding: 2px;">
-                                        MANTENIMIENTO:<br/>
-                                        <span style="font-weight:normal; font-style:italic;"><?php echo htmlspecialchars($h['descripcion']); ?></span>
+                                    <div
+                                        style="font-size:7.5px; text-align:center; font-weight:bold; position:absolute; bottom:4px; left:0; width:100%; padding:0 2px; box-sizing:border-box;">
+                                        MANTENIMIENTO:<br />
+                                        <span
+                                            style="font-weight:normal; font-style:italic;"><?php echo htmlspecialchars($h['descripcion']); ?></span>
                                     </div>
                                 <?php elseif (!$is_empty_state): ?>
                                     <div class="room-data-line">
                                         <div class="room-data-line-label">Pagado hasta:</div>
                                         <div style="font-size: 8px; font-weight: normal;">
-                                            <?php echo $pagado_hasta ? $pagado_hasta : ""; ?></div>
+                                            <?php echo $pagado_hasta ? $pagado_hasta : ""; ?>
+                                        </div>
                                         <div class="room-data-line-fill"
                                             style="border-bottom: <?php echo $pagado_hasta ? 'none' : '1px dotted #000'; ?>;"></div>
                                     </div>
@@ -653,7 +665,11 @@ foreach ($habitaciones as $hab) {
                             <?php if ($is_deuda): ?>
                                 <div class="room-status-deuda-text"><?php echo $deuda_texto; ?></div>
                             <?php elseif ($watermark && $watermark !== 'M'): ?>
-                                <div class="room-status-watermark <?php echo $strong_watermark ? 'strong-watermark' : ''; ?>"><?php echo $watermark; ?></div>
+                                <div class="room-status-watermark <?php echo $strong_watermark ? 'strong-watermark' : ''; ?>">
+                                    <?php echo $watermark; ?></div>
+                            <?php elseif ($watermark === 'M'): ?>
+                                <div class="room-status-watermark strong-watermark" style="top: 40%;"><?php echo $watermark; ?>
+                                </div>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
