@@ -572,6 +572,11 @@ if (isset($_SESSION["sesion_id_rol"])) {
                             <i class="fas fa-book"></i> NOTAS <span id="badgeNovedades"
                                 class="badge bg-danger rounded-pill d-none">0</span>
                         </button>
+
+                        <!-- Botón de Planilla de Control Diario (Impresión) -->
+                        <a href="imprimir_control.php" target="_blank" class="btn btn-sm btn-outline-success fw-bold">
+                            <i class="fas fa-print"></i> CONTROL
+                        </a>
                     </div>
 
                     <!-- Botones de Acción -->
