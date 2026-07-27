@@ -304,8 +304,8 @@ foreach ($habitaciones as $hab) {
         }
 
         .room-deuda {
-            border: 2px solid #b30000 !important;
-            background-color: #ffcccc !important;
+            border: 2px solid #ff0000 !important;
+            background-color: #ff6666 !important;
         }
 
         .room-card-header {
@@ -369,11 +369,11 @@ foreach ($habitaciones as $hab) {
         .room-status-deuda-text {
             font-size: 12px;
             font-weight: bold;
-            color: #b30000;
+            color: #ff0000;
             white-space: nowrap;
             background: #fff;
             padding: 1px 3px;
-            border: 1px dashed #b30000;
+            border: 1px dashed #ff0000;
             margin-left: auto;
         }
 
@@ -635,8 +635,12 @@ foreach ($habitaciones as $hab) {
                                     </div>
                                 <?php elseif (!$is_empty_state): ?>
                                     <div class="room-data-line">
-                                        <div class="room-data-line-label">Pagado hasta:</div>
-                                        <div style="font-size: 10px; font-weight: normal;">
+                                        <div class="room-data-line-label">Pagado</div>
+                                        <div class="room-data-line-fill"></div>
+                                    </div>
+                                    <div class="room-data-line">
+                                        <div class="room-data-line-label">hasta:</div>
+                                        <div style="font-size: 12px; font-weight: normal;">
                                             <?php echo $pagado_hasta ? $pagado_hasta : ""; ?>
                                         </div>
                                         <div class="room-data-line-fill"
