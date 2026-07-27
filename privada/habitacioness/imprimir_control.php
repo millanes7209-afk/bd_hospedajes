@@ -155,7 +155,7 @@ foreach ($habitaciones as $hab) {
             min-height: 33cm;
             /* Oficio portrait height de ~33cm */
             margin: 0 auto;
-            padding: 0.5cm;
+            padding: 0.3cm;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
             box-sizing: border-box;
             border-radius: 2px;
@@ -168,8 +168,8 @@ foreach ($habitaciones as $hab) {
             justify-content: space-between;
             align-items: center;
             border-bottom: 2.5px solid #000;
-            padding-bottom: 5px;
-            margin-bottom: 12px;
+            padding-bottom: 3px;
+            margin-bottom: 8px;
         }
 
         .header-title {
@@ -191,8 +191,8 @@ foreach ($habitaciones as $hab) {
         .top-control-section {
             display: flex;
             justify-content: space-between;
-            gap: 25px;
-            margin-bottom: 15px;
+            gap: 20px;
+            margin-bottom: 10px;
             page-break-inside: avoid;
         }
 
@@ -269,16 +269,16 @@ foreach ($habitaciones as $hab) {
 
         /* Estructura de Habitaciones */
         .floor-section {
-            margin-top: 15px;
+            margin-top: 10px;
             page-break-inside: avoid;
         }
 
         .floor-title {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             border-bottom: 2px solid #000;
-            padding-bottom: 2.5px;
-            margin-bottom: 8px;
+            padding-bottom: 2px;
+            margin-bottom: 6px;
             text-transform: uppercase;
         }
 
@@ -286,14 +286,14 @@ foreach ($habitaciones as $hab) {
         .rooms-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
+            gap: 4px;
         }
 
         /* Bloques de habitación compactos */
         .room-card {
             border: 1px solid #000;
-            padding: 4px;
-            min-height: 85px;
+            padding: 3px;
+            min-height: 75px;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -337,8 +337,8 @@ foreach ($habitaciones as $hab) {
         .room-data-line {
             display: flex;
             align-items: flex-end;
-            font-size: 10.5px;
-            height: 11px;
+            font-size: 10px;
+            height: 10px;
         }
 
         .room-data-line-label {
@@ -422,9 +422,8 @@ foreach ($habitaciones as $hab) {
         }
 
         @page {
-            size: legal;
-            /* vertical legal */
-            margin: 1cm;
+            size: legal portrait;
+            margin: 0.5cm;
         }
     </style>
 </head>
