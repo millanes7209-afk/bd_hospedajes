@@ -318,7 +318,7 @@ foreach ($habitaciones as $hab) {
             font-size: 12px;
             border-bottom: 1px solid #000;
             padding-bottom: 2px;
-            margin-bottom: 3px;
+            margin-bottom: 1px;
             text-transform: uppercase;
             white-space: nowrap;
             overflow: hidden;
@@ -639,10 +639,6 @@ foreach ($habitaciones as $hab) {
                                             style="font-weight:normal; font-style:italic;"><?php echo htmlspecialchars($h['descripcion']); ?></span>
                                     </div>
                                 <?php elseif (!$is_empty_state): ?>
-                                    <div class="room-data-line">
-                                        <div class="room-data-line-label">Pagado</div>
-                                        <div class="room-data-line-fill"></div>
-                                    </div>
                                     <div class="room-data-line">
                                         <div class="room-data-line-label">hasta:</div>
                                         <div style="font-size: 12px; font-weight: normal;">
