@@ -155,7 +155,7 @@ foreach ($habitaciones as $hab) {
             min-height: 33cm;
             /* Oficio portrait height de ~33cm */
             margin: 0 auto;
-            padding: 1cm;
+            padding: 0.5cm;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
             box-sizing: border-box;
             border-radius: 2px;
@@ -310,7 +310,7 @@ foreach ($habitaciones as $hab) {
 
         .room-card-header {
             font-weight: bold;
-            font-size: 11px;
+            font-size: 12px;
             border-bottom: 1px solid #000;
             padding-bottom: 2px;
             margin-bottom: 3px;
@@ -636,7 +636,7 @@ foreach ($habitaciones as $hab) {
                                 <?php elseif (!$is_empty_state): ?>
                                     <div class="room-data-line">
                                         <div class="room-data-line-label">Pagado hasta:</div>
-                                        <div style="font-size: 8px; font-weight: normal;">
+                                        <div style="font-size: 10px; font-weight: normal;">
                                             <?php echo $pagado_hasta ? $pagado_hasta : ""; ?>
                                         </div>
                                         <div class="room-data-line-fill"
