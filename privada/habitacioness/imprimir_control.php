@@ -306,6 +306,11 @@ foreach ($habitaciones as $hab) {
         .room-deuda {
             border: 2px solid #ff0000 !important;
             background-color: #ff6666 !important;
+            color: #ff0000 !important;
+        }
+
+        .room-deuda * {
+            color: #ff0000 !important;
         }
 
         .room-card-header {
