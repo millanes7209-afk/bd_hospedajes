@@ -304,13 +304,13 @@ foreach ($habitaciones as $hab) {
         }
 
         .room-deuda {
-            border: 2px solid #dc3545 !important;
-            background-color: #fce8e8 !important;
+            border: 2px solid #b30000 !important;
+            background-color: #ffcccc !important;
         }
 
         .room-card-header {
             font-weight: bold;
-            font-size: 9px;
+            font-size: 11px;
             border-bottom: 1px solid #000;
             padding-bottom: 2px;
             margin-bottom: 3px;
@@ -332,7 +332,7 @@ foreach ($habitaciones as $hab) {
         .room-data-line {
             display: flex;
             align-items: flex-end;
-            font-size: 8.5px;
+            font-size: 10.5px;
             height: 11px;
         }
 
@@ -367,17 +367,14 @@ foreach ($habitaciones as $hab) {
         }
 
         .room-status-deuda-text {
-            position: absolute;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: bold;
-            color: #000;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            color: #b30000;
             white-space: nowrap;
             background: #fff;
             padding: 1px 3px;
-            border: 1px dashed #000;
+            border: 1px dashed #b30000;
+            margin-left: auto;
         }
 
         /* Optimizaciones para imprimir físico */
@@ -616,6 +613,9 @@ foreach ($habitaciones as $hab) {
                             <!-- Cabecera con número y tipo -->
                             <div class="room-card-header">
                                 <?php echo $h['numero']; ?>         <?php echo $h['nombre']; ?>
+                                <?php if ($is_deuda): ?>
+                                    <span class="room-status-deuda-text"><?php echo $deuda_texto; ?></span>
+                                <?php endif; ?>
                                 <span class="btn-edit no-print" onclick="addCustomText('<?php echo $h['habitacionID']; ?>')"
                                     style="float: right; cursor: pointer; color: #007bff; font-size: 10px;">✎</span>
                             </div>
@@ -628,7 +628,7 @@ foreach ($habitaciones as $hab) {
 
                                 <?php if ($h['estado'] === 'MANTENIMIENTO'): ?>
                                     <div
-                                        style="font-size:7.5px; text-align:center; font-weight:bold; position:absolute; bottom:4px; left:0; width:100%; padding:0 2px; box-sizing:border-box;">
+                                        style="font-size:9px; text-align:center; font-weight:bold; position:absolute; bottom:4px; left:0; width:100%; padding:0 2px; box-sizing:border-box;">
                                         MANTENIMIENTO:<br />
                                         <span
                                             style="font-weight:normal; font-style:italic;"><?php echo htmlspecialchars($h['descripcion']); ?></span>
@@ -662,9 +662,7 @@ foreach ($habitaciones as $hab) {
                             </div>
 
                             <!-- Letra de Estado Central (Agua o Texto) -->
-                            <?php if ($is_deuda): ?>
-                                <div class="room-status-deuda-text"><?php echo $deuda_texto; ?></div>
-                            <?php elseif ($watermark && $watermark !== 'M'): ?>
+                            <?php if ($watermark && $watermark !== 'M'): ?>
                                 <div class="room-status-watermark <?php echo $strong_watermark ? 'strong-watermark' : ''; ?>">
                                     <?php echo $watermark; ?></div>
                             <?php elseif ($watermark === 'M'): ?>
