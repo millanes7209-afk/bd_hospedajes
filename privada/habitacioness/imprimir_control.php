@@ -627,7 +627,7 @@ foreach ($habitaciones as $hab) {
                             <!-- Cuerpo con líneas de control manual como columnas separadas verticalmente -->
                             <div class="room-card-body">
                                 <div id="obs-<?php echo $h['habitacionID']; ?>"
-                                    style="font-size:8px; font-weight:bold; white-space:pre-wrap; text-align:center; padding-bottom: 3px;">
+                                    style="font-size:12px; font-weight:bold; white-space:pre-wrap; text-align:center; padding-bottom: 3px;">
                                 </div>
 
                                 <?php if ($h['estado'] === 'MANTENIMIENTO'): ?>
