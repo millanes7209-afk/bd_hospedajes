@@ -573,6 +573,12 @@ if (isset($_SESSION["sesion_id_rol"])) {
                                 class="badge bg-danger rounded-pill d-none">0</span>
                         </button>
 
+                        <!-- Botón de Tienda -->
+                        <a href="../../privada/tienda/tienda.php?auth=habitaciones.php"
+                            class="btn btn-sm btn-outline-info fw-bold">
+                            <i class="fas fa-shopping-cart"></i> TIENDA
+                        </a>
+
                         <!-- Botón de Planilla de Control Diario (Impresión) -->
                         <a href="imprimir_control.php" target="_blank" class="btn btn-sm btn-outline-success fw-bold">
                             <i class="fas fa-print"></i> CONTROL

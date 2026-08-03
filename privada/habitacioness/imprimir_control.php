@@ -428,6 +428,35 @@ foreach ($habitaciones as $hab) {
     </style>
 </head>
 
+<?php
+// Cargar datos de productos y saldos de caja
+$empresaID = $_SESSION['empresaID'] ?? null;
+
+$productos = [];
+$saldo_efectivo = 0.00;
+$saldo_qr = 0.00;
+
+if ($empresaID) {
+    // 1. Productos y su stock actual
+    $sql_productos = "SELECT productoID, nombre, medida, stock FROM productos WHERE empresaID = ? AND _estado = 'A' ORDER BY nombre";
+    $productos = $db->obtenerTodo($sql_productos, [$empresaID]);
+    if (!is_array($productos))
+        $productos = [];
+
+    // 2. Saldos de caja actual (usando las columnas reales de la DB)
+    $sql_caja = "SELECT saldo_efectivo, saldo_qr, saldo_total 
+                FROM caja_tienda 
+                WHERE empresaID = ? AND _estado = 'A' 
+                ORDER BY caja_tiendaID DESC 
+                LIMIT 1";
+    $res_caja = $db->obtenerFila($sql_caja, [$empresaID]);
+    if ($res_caja) {
+        $saldo_efectivo = floatval($res_caja['saldo_efectivo']);
+        $saldo_qr = floatval($res_caja['saldo_qr']);
+    }
+}
+?>
+
 <body>
 
     <!-- Barra Superior de Control No Imprimible -->
@@ -458,111 +487,37 @@ foreach ($habitaciones as $hab) {
             </div>
         </div>
 
-        <!-- Contenedor Superior (Inventario Refrescos Izquierda + Control Caja Derecha) -->
-        <div class="top-control-section">
-            <!-- Inventario Refrescos -->
-            <div class="control-box">
+        <!-- Contenedor Superior (Control de Inventario) -->
+        <div class="top-control-section" style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+            <div class="control-box" style="width: auto; min-width: 260px; max-width: 340px;">
                 <div class="control-box-title">Control de Inventario</div>
                 <table class="table-compact">
                     <thead>
                         <tr>
                             <th class="col-prod">Producto</th>
-                            <th class="col-cant">Saldo I.</th>
-                            <th class="col-cant">Compr.</th>
-                            <th class="col-cant">Vent.</th>
+                            <th class="text-center" style="width: 28%;">Presentación (Lt)</th>
+                            <th class="col-cant">Stock</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>COCA COLA 1L</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td>FANTA 1/2L</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td>AGUA 2L</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td>AGUA 1L</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td>JUGO (...............................)</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td>AGUA 2L</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td>COCA COLA 2L</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td>FANTA 2L</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
+                        <?php foreach ($productos as $prod): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($prod['nombre']); ?></td>
+                                <td class="text-center"><?php echo htmlspecialchars($prod['medida'] ?? ''); ?></td>
+                                <td class="text-center" style="font-weight:bold;"><?php echo $prod['stock']; ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <tr style="background-color: #f8f9fa; font-weight: bold;">
                             <td>EFECTIVO</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            <td colspan="2" class="text-center">Bs. <?php echo number_format($saldo_efectivo, 2); ?>
+                            </td>
+                        </tr>
+                        <tr style="background-color: #f8f9fa; font-weight: bold;">
+                            <td>QR</td>
+                            <td colspan="2" class="text-center">Bs. <?php echo number_format($saldo_qr, 2); ?></td>
                         </tr>
                     </tbody>
                 </table>
-            </div>
-
-            <!-- Control de Caja del Turno -->
-            <div class="control-box">
-                <div class="control-box-title">Resumen de Caja del Turno</div>
-
-                <div class="caja-line">
-                    <span>Saldo Inicial Caja:</span>
-                    <div class="caja-line-fill"></div>
-                </div>
-                <div class="caja-line">
-                    <span>(+) Ingresos del Turno:</span>
-                    <div class="caja-line-fill"></div>
-                </div>
-                <div class="caja-line">
-                    <span>(-) Egresos del Turno:</span>
-                    <div class="caja-line-fill"></div>
-                </div>
-                <div class="caja-line">
-                    <span>Saldo Esperado en Caja:</span>
-                    <div class="caja-line-fill"></div>
-                </div>
-                <div class="caja-line">
-                    <span>Saldo Real en Caja:</span>
-                    <div class="caja-line-fill"></div>
-                </div>
-                <div class="caja-line">
-                    <span>Diferencia / Variación:</span>
-                    <div class="caja-line-fill"></div>
-                </div>
-
-                <div class="caja-notes-box">
-                    <strong>Observaciones / Detalles de Caja:</strong>
-                </div>
             </div>
         </div>
 
@@ -668,7 +623,8 @@ foreach ($habitaciones as $hab) {
                             <!-- Letra de Estado Central (Agua o Texto) -->
                             <?php if ($watermark && $watermark !== 'M'): ?>
                                 <div class="room-status-watermark <?php echo $strong_watermark ? 'strong-watermark' : ''; ?>">
-                                    <?php echo $watermark; ?></div>
+                                    <?php echo $watermark; ?>
+                                </div>
                             <?php elseif ($watermark === 'M'): ?>
                                 <div class="room-status-watermark strong-watermark" style="top: 40%;"><?php echo $watermark; ?>
                                 </div>
