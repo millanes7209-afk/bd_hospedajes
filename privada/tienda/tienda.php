@@ -189,20 +189,24 @@ require_once("../../libreria_menu.php");
             <div class="modal-body p-4 bg-light">
                 <div class="mb-3">
                     <label class="form-label fw-bold text-dark">Nombre del Producto *</label>
-                    <input type="text" id="nuevoNombre" class="form-control bg-white" placeholder="Ej. Coca Cola 2L">
+                    <input type="text" id="nuevoNombre" class="form-control bg-white" placeholder="Ej. Coca Cola 2L"
+                        onfocus="setTimeout(() => this.select(), 50)" onclick="setTimeout(() => this.select(), 50)">
                 </div>
                 <div class="row g-2 mb-3">
                     <div class="col-4">
                         <label class="form-label fw-bold text-dark">Medida / Litros</label>
-                        <input type="text" id="nuevaMedida" class="form-control bg-white" placeholder="Ej. 2">
+                        <input type="text" id="nuevaMedida" class="form-control bg-white" placeholder="Ej. 2"
+                            onfocus="setTimeout(() => this.select(), 50)" onclick="setTimeout(() => this.select(), 50)">
                     </div>
                     <div class="col-4">
                         <label class="form-label fw-bold text-dark">Precio Venta (Bs) *</label>
-                        <input type="number" id="nuevoPrecio" class="form-control bg-white" step="0.5" value="0">
+                        <input type="number" id="nuevoPrecio" class="form-control bg-white" step="0.5" value="0"
+                            onfocus="setTimeout(() => this.select(), 50)" onclick="setTimeout(() => this.select(), 50)">
                     </div>
                     <div class="col-4">
                         <label class="form-label fw-bold text-dark">Stock Inicial *</label>
-                        <input type="number" id="nuevoStock" class="form-control bg-white" min="0" value="0">
+                        <input type="number" id="nuevoStock" class="form-control bg-white" min="0" value="0"
+                            onfocus="setTimeout(() => this.select(), 50)" onclick="setTimeout(() => this.select(), 50)">
                     </div>
                 </div>
                 <div class="mb-3">
