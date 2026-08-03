@@ -9,7 +9,7 @@ $empresaID = $_SESSION['empresaID'] ?? null;
 $usuarioID = $_SESSION['sesion_id_usuario'] ?? null;
 
 if (!$empresaID || !$usuarioID) {
-    echo json_encode(['status' => 'error', 'mensaje' => 'No autorizado']);
+    echo json_encode(['status' => 'error', 'mensaje' => "No autorizado (empresaID: " . json_encode($empresaID) . ", usuarioID: " . json_encode($usuarioID) . ")"]);
     exit;
 }
 

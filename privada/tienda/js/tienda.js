@@ -544,9 +544,22 @@ function crearProducto() {
     formData.append('stock', stock);
     formData.append('imagen', imagenInput.files[0]);
 
+    console.log('[DEBUG CREAR PRODUCTO] Enviando FormData a ajax_producto.php:', { nombre, medida, precioVenta, stock, archivo: imagenInput.files[0].name });
+
     fetch('ajax_producto.php', { method: 'POST', body: formData })
-        .then(r => r.json())
+        .then(async r => {
+            console.log('[DEBUG CREAR PRODUCTO] HTTP Status:', r.status);
+            const text = await r.text();
+            console.log('[DEBUG CREAR PRODUCTO] Respuesta Servidor (RAW):', text);
+            try {
+                return JSON.parse(text);
+            } catch (err) {
+                console.error('[DEBUG CREAR PRODUCTO] Error al parsear JSON del servidor:', err);
+                throw new Error('Respuesta del servidor no es JSON: ' + text);
+            }
+        })
         .then(res => {
+            console.log('[DEBUG CREAR PRODUCTO] JSON decodificado:', res);
             if (res.status === 'ok') {
                 mostrarNotificacion('Éxito', 'Producto creado exitosamente', 'success');
                 modalNuevoProducto.hide();
@@ -556,7 +569,12 @@ function crearProducto() {
                 document.getElementById('nuevaImagen').value = '';
                 cargarProductos();
             } else {
+                console.error('[DEBUG CREAR PRODUCTO] Servidor devolvió status error:', res.mensaje);
                 mostrarNotificacion('Error', res.mensaje || 'Error al crear el producto', 'error');
             }
+        })
+        .catch(err => {
+            console.error('[DEBUG CREAR PRODUCTO] Excepción de conexión o parseo:', err);
+            mostrarNotificacion('Error', err.message, 'error');
         });
 }
