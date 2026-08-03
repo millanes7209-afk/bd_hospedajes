@@ -189,8 +189,9 @@ require_once("../../libreria_menu.php");
             <div class="modal-body p-4 bg-light">
                 <div class="mb-3">
                     <label class="form-label fw-bold text-dark">Nombre del Producto *</label>
-                    <input type="text" id="nuevoNombre" class="form-control bg-white" placeholder="Ej. Coca Cola 2L"
-                        onfocus="setTimeout(() => this.select(), 50)" onclick="setTimeout(() => this.select(), 50)">
+                    <input type="text" id="nuevoNombre" class="form-control bg-white" placeholder="Ej. COCA COLA 2L"
+                        oninput="this.value = this.value.toUpperCase()" onfocus="setTimeout(() => this.select(), 50)"
+                        onclick="setTimeout(() => this.select(), 50)">
                 </div>
                 <div class="row g-2 mb-3">
                     <div class="col-4">

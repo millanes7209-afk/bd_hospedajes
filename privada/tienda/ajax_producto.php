@@ -17,28 +17,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $accion = $_POST['accion'] ?? '';
 
     if ($accion === 'crear') {
-        $nombre = $_POST['nombre'] ?? '';
-        $medida = $_POST['medida'] ?? '1';
-        $stock = $_POST['stock'] ?? 0;
-        $precio_venta = $_POST['precio_venta'] ?? 0;
+        $nombre = mb_strtoupper(trim($_POST['nombre'] ?? ''), 'UTF-8');
+        $medida = trim($_POST['medida'] ?? '1');
+        $stock = (int) ($_POST['stock'] ?? 0);
+        $precio_venta = (float) ($_POST['precio_venta'] ?? 0);
 
         if (empty($nombre)) {
             echo json_encode(['status' => 'error', 'mensaje' => 'El nombre es obligatorio']);
             exit;
         }
 
-        $imagen = null;
+        // Default non-null image string to avoid MySQL strict mode "Column 'imagen' cannot be null" error on host
+        $imagen = 'img/tienda/default.jpg';
         if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = '../../img/tienda/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
+            $baseDir = __DIR__ . '/../../img/tienda/';
+            if (!file_exists($baseDir)) {
+                @mkdir($baseDir, 0777, true);
             }
 
-            $extension = pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION);
+            $extension = strtolower(pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION));
             $filename = uniqid() . '.' . $extension;
-            $filepath = $uploadDir . $filename;
+            $filepath = $baseDir . $filename;
 
-            if (move_uploaded_file($_FILES['imagen']['tmp_name'], $filepath)) {
+            if (@move_uploaded_file($_FILES['imagen']['tmp_name'], $filepath)) {
                 $imagen = 'img/tienda/' . $filename;
             }
         }
