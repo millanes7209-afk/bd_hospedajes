@@ -1,0 +1,64 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\MenuController;
+use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\ProductoController;
+use App\Http\Middleware\TenantMiddleware;
+use App\Http\Middleware\AdminAuthMiddleware;
+
+Route::middleware([TenantMiddleware::class])->group(function () {
+    Route::get('/', function () {
+        return redirect()->route('menu');
+    });
+
+    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::get('/menu', [MenuController::class, 'index'])->name('menu');
+
+    Route::match(['get', 'post'], '/order', [PedidoController::class, 'showCheckout'])->name('order.checkout');
+    Route::post('/order/confirm', [PedidoController::class, 'storeOrder'])->name('order.confirm');
+    Route::get('/ticket/{id}', [PedidoController::class, 'showTicket'])->name('ticket.show');
+    Route::get('/api/pedidos/{id}/estado', [PedidoController::class, 'getApiEstado'])->name('api.pedidos.estado');
+    Route::post('/pedidos/{id}/confirmar-pago', [PedidoController::class, 'confirmarPagoCliente'])->name('pedidos.confirmarPago');
+
+    Route::prefix('admin')->middleware([AdminAuthMiddleware::class])->group(function () {
+        Route::get('/productos', [ProductoController::class, 'index'])->name('admin.productos');
+        Route::get('/productos/crear', [ProductoController::class, 'create'])->name('admin.productos.create');
+        Route::post('/productos/crear', [ProductoController::class, 'store'])->name('admin.productos.store');
+        Route::get('/productos/editar/{id}', [ProductoController::class, 'edit'])->name('admin.productos.edit');
+        Route::post('/productos/editar/{id}', [ProductoController::class, 'update'])->name('admin.productos.update');
+        Route::get('/productos/toggle/{id}', [ProductoController::class, 'toggleDisponible'])->name('admin.productos.toggle');
+        Route::get('/productos/variantes/toggle/{producto_id}/{variante_id}', [ProductoController::class, 'toggleVariante'])->name('admin.productos.variantes.toggle');
+        Route::get('/productos/eliminar/{id}', [ProductoController::class, 'destroy'])->name('admin.productos.destroy');
+        Route::get('/pedidos', [PedidoController::class, 'index'])->name('admin.pedidos');
+        Route::get('/api/pedidos', [PedidoController::class, 'getAdminApiPedidos'])->name('api.admin.pedidos');
+        Route::post('/pedidos/aceptar/{id}', [PedidoController::class, 'aceptarPedido'])->name('admin.pedidos.aceptar');
+        Route::post('/pedidos/rechazar/{id}', [PedidoController::class, 'rechazarPedido'])->name('admin.pedidos.rechazar');
+        Route::post('/pedidos/estado/{id}', [PedidoController::class, 'updateEstado'])->name('admin.pedidos.estado');
+    });
+
+    // Fallbacks para enlaces antiguos
+    Route::get('/admin.php', function () {
+        return redirect()->route('admin.productos');
+    });
+    Route::get('/login.php', function () {
+        return redirect()->route('login');
+    });
+    Route::get('/menu.php', function () {
+        return redirect()->route('menu');
+    });
+    Route::get('/products.php', function () {
+        return redirect()->route('admin.productos');
+    });
+    Route::match(['get', 'post'], '/order.php', function () {
+        return redirect()->route('order.checkout');
+    });
+    Route::get('/ticket.php', function () {
+        $id = request()->query('id');
+        return $id ? redirect()->route('ticket.show', ['id' => $id]) : redirect()->route('menu');
+    });
+});
