@@ -1,0 +1,128 @@
+
+#header {
+  width: 250px; /* Ancho de la barra lateral */
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #eef1f3;
+  height: 100vh; /* Altura completa de la ventana */
+  position: fixed; /* Fijar la barra lateral */
+  top: 0;
+  left: 0;
+  border-right: 1px solid #101010;
+  overflow-y: auto; /* Permite desplazamiento vertical si el contenido es demasiado largo */
+}
+
+.cabecera {
+  text-align: center;
+  padding: 20px;
+  border-bottom: 1px solid #101010;
+}
+
+.cabecera img {
+  width: 5%; /* Ajustar el tamaño de la imagen */
+}
+
+.titulo {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.usuario {
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav > li {
+  display: block;
+}
+
+.nav li a {
+  display: block;
+  color: #090909;
+  text-decoration: none;
+  padding: 10px 20px;
+  transition: background-color 0.3s; /* Transición suave */
+}
+
+.nav li a:hover {
+  background-color: #53b7f5; /* Color de fondo al pasar el mouse */
+}
+
+.nav li ul {
+  display: none;
+  position: right; /* Cambiar posición para sidebar */
+  background-color: #f7eeee; /* Color de fondo del menú desplegable */
+  box-shadow: none; /* Eliminar sombra */
+}
+
+.nav li:hover > ul {
+  display: block;
+}
+
+.nav li ul li {
+  display: block;
+}
+
+.nav li ul li:hover {
+  background-color: #4427ed; /* Color de fondo al pasar el mouse en el menú desplegable */
+}
+
+.boton_cerrar {
+  position: fixed; /* Fijar la posición en la esquina superior derecha */
+  top: 10px;
+  right: 10px;
+  padding: 10px;
+  background-color: #ddd; /* Color de fondo del botón */
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.boton_cerrar:hover {
+  background-color: #020663; 
+  color: rgb(255, 255, 255);
+}
+
+.boton-iniciar-sesion {
+  position: fixed; /* Fijar la posición en la esquina superior derecha */
+  top: 10px;
+  right: 10px;
+  padding: 10px;
+  background-color: #fdf7f7; /* Color de fondo del botón */
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.boton-iniciar-sesion:hover {
+  background-color: #020663; 
+  color: rgb(255, 255, 255);
+}
+
+/* Estilo para el botón de Atrás */
+.boton-atras {
+  position: fixed; /* Fijar la posición en la esquina superior derecha */
+  top: 10px;
+  left: 10px;
+  padding: 10px;
+  background-color: #ddd; /* Color de fondo del botón */
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.boton-atras:hover {
+  background-color: #020663; 
+  color: rgb(255, 255, 255);
+}   

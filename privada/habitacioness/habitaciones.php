@@ -1,0 +1,341 @@
+<?php
+session_start();
+require_once("../../conexion.php");
+require_once("../../libreria_menu.php");
+
+$empresaID = $_SESSION['empresaID'];
+
+// Ajustar orden según preferencia del usuario
+$orderBy = (isset($_GET['orden']) && $_GET['orden'] == 'tipo') ? "thab.nombre, hab.numero ASC" : "hab.numero ASC";
+
+// Consulta SQL OPTIMIZADA (JOIN único para evitar saturación del servidor)
+$sql = "SELECT  thab.tipohabitacionID, hab.habitacionID, hab.bano, hab.tv, hab.ventilador, 
+                thab.nombre, thab.precio, hab.estado as estado, hab.numero as numero, 
+                hab.descripcion as descripcion,
+                hos.hospedajeID as hospedaje_activo_id,
+                hos.checkin as checkin_activo,
+                hos.checkout as checkout_activo,
+                hos.precio_diario as precio_pactado,
+                hos.monto as monto_total_pagado,
+                hos.observaciones as observaciones_activo,
+                cue.codigo as cuenta_codigo,
+                (SELECT GROUP_CONCAT(CONCAT('- ', c.nombres, ' ', c.apellido1) SEPARATOR '<br>')
+                 FROM hospedajes_clientes hc 
+                 JOIN clientes c ON hc.clienteID = c.clienteID 
+                 WHERE hc.hospedajeID = hos.hospedajeID 
+                 AND hc._estado <> 'X' AND c._estado <> 'X') AS cliente_activo
+        FROM    habitaciones hab
+        JOIN    tipo_habitaciones thab ON hab.tipohabitacionID = thab.tipohabitacionID
+        LEFT JOIN hospedajes hos ON hab.habitacionID = hos.habitacionID 
+                 AND hos.empresaID = ? 
+                 AND hos.estado = 'ACTIVO' 
+                 AND hos._estado <> 'X'
+        LEFT JOIN ingresos ing ON hos.ingresoID = ing.ingresoID
+        LEFT JOIN cuentas cue ON ing.cuentaID = cue.cuentaID
+        WHERE   thab._estado <> 'X'
+        AND     hab._estado <> 'X'
+        AND     hab.empresaID = ?
+        ORDER BY $orderBy";
+
+$rs = $db->obtenerTodo($sql, array($empresaID, $empresaID));
+
+
+// Guardar en sesión para ver después de redirección
+$_SESSION['debug_rs_count'] = is_array($rs) ? count($rs) : 'NO ES ARRAY';
+$_SESSION['debug_rs_empty'] = empty($rs) ? 'VACÍO' : 'CON DATOS';
+if (is_array($rs) && !empty($rs)) {
+    $_SESSION['debug_primer_registro'] = print_r($rs[0], true);
+}
+
+// Verificar si hay una caja abierta para el usuario actual
+$usuarioID = $_SESSION["sesion_id_usuario"] ?? 0;
+$sql_caja_abierta = "SELECT * FROM cajas WHERE estado = 'ABIERTA' AND usuarioID = ? AND empresaID = ?";
+$rs_caja_abierta = $db->obtenerTodo($sql_caja_abierta, array($usuarioID, $empresaID));
+$boton_estado = (count($rs_caja_abierta) > 0) ? "" : "disabled";
+
+?>
+
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Selección Habitaciones - Mapa Interactivo</title>
+
+    <!-- Bootstrap & Helpers -->
+    <script type='text/javascript' src='../../ajax.js'></script>
+    <script src='notificaciones.js'></script>
+
+    <!-- Estilos Personalizados (Modular) -->
+    <link rel="stylesheet" href="css/habitaciones_interactivo.css?v=<?php echo time(); ?>">
+</head>
+
+<body>
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-center">
+                <?php if ($rs): ?>
+                    <?php
+                    $tipoActual = "";
+                    foreach ($rs as $habitacion):
+                        // Lógica de Títulos por Agrupación
+                        if (isset($_GET['orden']) && $_GET['orden'] == 'tipo' && $tipoActual != $habitacion['nombre']) {
+                            $tipoActual = $habitacion['nombre'];
+                            echo '<div class="w-100 mt-4 mb-2"><h4 class="text-primary border-bottom pb-2 fw-bold"><i class="fas fa-tag"></i> ' . mb_strtoupper($tipoActual) . '</h4></div>';
+                        }
+                        ?>
+                        <?php
+                        // LÓGICA SMART BIDIRECCIONAL: Sincronización Real de Ocupación
+                        // CASO A: Si hay un hospedaje ACTIVO en BD pero la habitación NO está marcada como OCUPADA (ej: está en LIMPIEZA)
+                        if (!empty($habitacion['hospedaje_activo_id']) && $habitacion['estado'] !== 'OCUPADA') {
+                            $habitacion['estado'] = 'OCUPADA';
+                            // Sincronización silenciosa opcional (opcional para no saturar BD, pero asegura coherencia)
+                            $db->ejecutar("UPDATE habitaciones SET estado = 'OCUPADA' WHERE habitacionID = ?", [$habitacion['habitacionID']]);
+                        }
+
+                        // CASO B: Si la habitación dice estar ocupada o en deuda, pero NO hay ningún hospedaje ACTIVO en BD
+                        else if (in_array($habitacion['estado'], ['OCUPADA', 'DEUDA']) && empty($habitacion['hospedaje_activo_id'])) {
+                            $habitacion['estado'] = 'LIMPIEZA';
+                            $db->ejecutar("UPDATE habitaciones SET estado = 'LIMPIEZA' WHERE habitacionID = ? AND empresaID = ?", [$habitacion['habitacionID'], $empresaID]);
+                        }
+
+                        // CASO C: SINCRONIZACIÓN DE DEUDA (Si la habitación está OCUPADA y el checkout ya pasó)
+                        // Inicializar variables de estado inteligente
+                        $habitacion['dias_deuda'] = 0;
+
+                        if (($habitacion['estado'] === 'OCUPADA' || $habitacion['estado'] === 'DEUDA') && !empty($habitacion['checkout_activo'])) {
+                            $now_stamp = time();
+                            if (strtotime($habitacion['checkout_activo']) < $now_stamp) {
+                                // Si estaba ocupada pero venció, la pasamos a DEUDA en BD si no lo estaba ya
+                                if ($habitacion['estado'] === 'OCUPADA') {
+                                    $habitacion['estado'] = 'DEUDA';
+                                    $db->ejecutar("UPDATE habitaciones SET estado = 'DEUDA' WHERE habitacionID = ? AND empresaID = ?", [$habitacion['habitacionID'], $empresaID]);
+                                }
+
+                                // Regla de Hotelería: calcular deuda (cruzar las 13:00)
+                                $checkout_obj = new DateTime($habitacion['checkout_activo']);
+                                $ahora_obj = new DateTime();
+                                $dias_cobro = 1;
+                                $iter_date_limite = clone $checkout_obj;
+                                $iter_date_limite->modify('+1 day');
+                                $iter_date_limite->setTime(13, 0, 0);
+                                while ($iter_date_limite <= $ahora_obj) {
+                                    $dias_cobro++;
+                                    $iter_date_limite->modify('+1 day');
+                                }
+                                $precio_diario = !empty($habitacion['precio_pactado']) ? $habitacion['precio_pactado'] : $habitacion['precio'];
+                                $habitacion['dias_deuda'] = $dias_cobro;
+                                $habitacion['monto_deuda_total'] = $dias_cobro * $precio_diario;
+                            }
+                        }
+
+
+
+
+                        // Asignar la clase de Bootstrap según el estado
+                        $btnClass = 'btn-habitacion';
+                        switch ($habitacion['estado']) {
+                            case 'DISPONIBLE':
+                                $btnClass .= ' btn btn-success';
+                                break;
+                            case 'OCUPADA':
+                                $btnClass .= ' btn btn-primary';
+                                break;
+                            case 'DEUDA':
+                                $btnClass .= ' btn btn-danger';
+                                break;
+                            case 'LIMPIEZA':
+                                $btnClass .= ' btn btn-secondary';
+                                break;
+                            case 'RESERVADA':
+                                $btnClass .= ' btn btn-info';
+                                break;
+                            case 'MOMENTANEO':
+                                $btnClass .= ' btn btn-warning';
+                                break;
+                            default:
+                                $btnClass .= ' btn btn-dark';
+                        }
+
+                        $precio_diario = ($habitacion['estado'] === 'DEUDA' ? $habitacion['precio_pactado'] : (!empty($habitacion['precio_pactado']) ? $habitacion['precio_pactado'] : $habitacion['precio']));
+                        ?>
+                        <button id="habitacion-<?php echo $habitacion['habitacionID']; ?>"
+                            class="<?php echo $btnClass; ?> habitacion-card"
+                            data-tipo-id="<?php echo $habitacion['tipohabitacionID']; ?>"
+                            data-tipo-nombre="<?php echo $habitacion['nombre']; ?>"
+                            data-estado-actual="<?php echo $habitacion['estado']; ?>"
+                            data-cliente-actual="<?php echo str_replace('"', '&quot;', (string) ($habitacion['cliente_activo'] ?? '')); ?>"
+                            data-monto-actual="<?php echo $precio_diario; ?>"
+                            data-deuda-dias="<?php echo $habitacion['dias_deuda']; ?>" <?php echo $boton_estado; ?>
+                            onclick="handleHabitacionClick('<?php echo $habitacion['estado']; ?>', '<?php echo $habitacion['numero']; ?>', '<?php echo $habitacion['nombre']; ?>', '<?php echo $precio_diario; ?>', '<?php echo $habitacion['habitacionID']; ?>')">
+
+                            <?php if ($habitacion['estado'] === 'DEUDA'): ?>
+                                <span>DEUDA</span>
+                                <strong><?php echo $habitacion['numero']; ?></strong>
+                            <?php else: ?>
+                                <span><?php echo $habitacion['estado']; ?></span>
+                                <strong><?php echo $habitacion['numero']; ?></strong>
+                            <?php endif; ?>
+
+                            <?php if (($habitacion['estado'] === 'OCUPADA' || $habitacion['estado'] === 'DEUDA') && !empty($habitacion['cliente_activo'])): ?>
+                                <!-- Ficha Flotante (Tooltip) para OCUPADAS y DEUDAS -->
+                                <?php
+                                // Detectar si es momentáneo formal por la cuenta contable 402
+                                $es_momentaneo_formal = ($habitacion['cuenta_codigo'] === '402' && !empty($habitacion['checkin_activo']));
+
+                                // Calcular deuda en bloques de 70 minutos para momentáneos formales
+                                $horas_deuda_mom = 0;
+                                if ($es_momentaneo_formal && !empty($habitacion['checkout_activo'])) {
+                                    $ahora_ts = time();
+                                    $checkin_ts = strtotime($habitacion['checkin_activo']);
+                                    $checkout_ts = strtotime($habitacion['checkout_activo']);
+                                    if ($ahora_ts > $checkout_ts) {
+                                        $minutos_totales = ($ahora_ts - $checkin_ts) / 60;
+                                        $bloques_consumidos = (int) ceil($minutos_totales / 70);
+                                        $minutos_pactados = ($checkout_ts - $checkin_ts) / 60;
+                                        $bloques_pactados = max(1, (int) round($minutos_pactados / 70));
+                                        $horas_deuda_mom = max(0, $bloques_consumidos - $bloques_pactados);
+                                    }
+                                }
+
+                                // Calcular total de bloques para ver si ya es día completo
+                                $es_dia_completo_mom = false;
+                                if ($es_momentaneo_formal && !empty($habitacion['checkin_activo'])) {
+                                    $minutos_desde_checkin = (time() - strtotime($habitacion['checkin_activo'])) / 60;
+                                    $es_dia_completo_mom = ceil($minutos_desde_checkin / 70) > 3;
+                                }
+
+                                // --- Badge ---
+                                if ($es_momentaneo_formal && $horas_deuda_mom > 0):
+                                    if ($es_dia_completo_mom): ?>
+                                        <span class="badge-precio" style="background:#dc3545; color:#fff; border-color:#dc3545;">Bs. 70 -
+                                            DÍA COMPLETO</span>
+                                    <?php else: ?>
+                                        <span class="badge-precio" style="background:#dc3545; color:#fff; border-color:#dc3545;">Bs.
+                                            <?php echo number_format($habitacion['precio_pactado'] ?? $habitacion['precio'], 0); ?> - DEBE
+                                            <?php echo $horas_deuda_mom; ?> HORA<?php echo $horas_deuda_mom > 1 ? 'S' : ''; ?></span>
+                                    <?php endif;
+                                elseif ($habitacion['estado'] === 'DEUDA'): ?>
+                                    <span class="badge-precio" style="background:#dc3545; color:#fff; border-color:#dc3545;">
+                                        Bs. <?php echo number_format($habitacion['precio_pactado'] ?? $habitacion['precio'], 0); ?> -
+                                        DEBE <?php echo $habitacion['dias_deuda']; ?>
+                                        DÍA<?php echo $habitacion['dias_deuda'] > 1 ? 'S' : ''; ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="badge-precio">Bs.
+                                        <?php echo number_format($habitacion['precio_pactado'] ?? $habitacion['precio'], 0); ?></span>
+                                <?php endif; ?>
+
+                                <div class="habitacion-info-tooltip">
+                                    <?php
+                                    // Cabecera del tooltip
+                                    if ($es_momentaneo_formal && $horas_deuda_mom > 0):
+                                        $header_style = 'style="background-color: #dc3545;"';
+                                        $header_icon = 'fa-exclamation-triangle';
+                                        $header_text = 'MOMENTÁNEO';
+                                    elseif ($habitacion['estado'] === 'DEUDA'):
+                                        $header_style = 'style="background-color: #dc3545;"';
+                                        $header_icon = 'fa-exclamation-triangle';
+                                        $header_text = 'DEUDA VENCIDA';
+                                    elseif ($es_momentaneo_formal):
+                                        $header_style = '';
+                                        $header_icon = 'fa-user-circle';
+                                        $header_text = 'MOMENTÁNEO';
+                                    else:
+                                        $header_style = '';
+                                        $header_icon = 'fa-user-circle';
+                                        $header_text = 'HOSPEDAJE';
+                                    endif;
+                                    ?>
+                                    <div class="tooltip-header" <?php echo $header_style; ?>>
+                                        <i class="fas <?php echo $header_icon; ?>"></i>
+                                        <?php echo $header_text; ?>
+                                    </div>
+                                    <div class="tooltip-body">
+                                        <p><strong>CLIENTE:</strong><br>
+                                            <?php echo mb_strtoupper((string) $habitacion['cliente_activo']); ?></p>
+                                        <p><strong>SALIDA:</strong>
+                                            <?php echo date('d/m H:i', strtotime($habitacion['checkout_activo'])); ?></p>
+                                        <p><strong>TIPO:</strong> <?php echo $habitacion['nombre']; ?></p>
+                                        <?php if (!empty($habitacion['observaciones_activo'])): ?>
+                                            <p><strong>OBS:</strong> <span
+                                                    class="text-info"><?php echo mb_strtoupper((string) $habitacion['observaciones_activo']); ?></span>
+                                            </p>
+                                        <?php endif; ?>
+                                        <?php if ($es_momentaneo_formal && $horas_deuda_mom > 0): ?>
+                                            <p style="color:#dc3545; font-weight:bold;">
+                                                <i
+                                                    class="fas <?php echo $es_dia_completo_mom ? 'fa-exclamation-triangle' : 'fa-clock'; ?>"></i>
+                                                <?php echo $es_dia_completo_mom ? 'DÍA COMPLETO POR EXCESO' : 'DEBE ' . $horas_deuda_mom . ' HORA' . ($horas_deuda_mom > 1 ? 'S' : '') . ' EXTRA' . ($horas_deuda_mom > 1 ? 'S' : ''); ?>
+                                            </p>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php elseif ($habitacion['estado'] === 'DISPONIBLE'): ?>
+                                <!-- Precio visible directamente solo en DISPONIBLES -->
+                                <span class="badge-precio">Bs. <?php echo number_format($habitacion['precio'], 0); ?></span>
+
+                                <div
+                                    style="position: absolute; top: 4px; left: 4px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;">
+                                    <?php if ($habitacion['tv'] == 1): ?>
+                                        <span
+                                            style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">TV</span>
+                                    <?php endif; ?>
+                                    <?php if ($habitacion['bano'] == 1): ?>
+                                        <span
+                                            style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">BAÑO</span>
+                                    <?php endif; ?>
+                                    <?php if ($habitacion['ventilador'] == 1): ?>
+                                        <span
+                                            style="font-size: 7px; background: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 2px; line-height: 1;">VENT</span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php else: ?>
+                                <!-- Otros estados: Texto simple -->
+                                <span
+                                    class="estado-label"><?php echo ($habitacion['estado'] === 'MANTENIMIENTO') ? 'MANT.' : $habitacion['estado']; ?></span>
+
+                                <?php if ($habitacion['estado'] === 'MANTENIMIENTO' && trim((string) $habitacion['descripcion']) !== ''): ?>
+                                    <div class="habitacion-info-tooltip">
+                                        <div class="tooltip-header"
+                                            style="background-color: #343a40; color: white; border-color: #555;">
+                                            <i class="fas fa-tools"></i> MANTENIMIENTO
+                                        </div>
+                                        <div class="tooltip-body">
+                                            <p><strong>DESCRIPCIÓN:</strong><br>
+                                                <?php echo nl2br(htmlspecialchars($habitacion['descripcion'])); ?></p>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </button>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARGA DE MODALES (Modular) -->
+    <?php include "modales_habitaciones.php"; ?>
+
+    <!-- LÓGICA DE GESTIÓN (Modular) -->
+    <script src="js/habitaciones_gestion.js?v=<?php echo time(); ?>"></script>
+    <script>
+        function filtrarHabitacionesPorTipo(tipoID) {
+            const habitaciones = document.querySelectorAll('.habitacion-card');
+            habitaciones.forEach(hab => {
+                if (tipoID === 'TODOS' || hab.getAttribute('data-tipo-id') === tipoID) {
+                    hab.style.display = '';
+                    hab.classList.remove('d-none');
+                } else {
+                    hab.style.display = 'none';
+                    hab.classList.add('d-none');
+                }
+            });
+        }
+    </script>
+
+</body>
+
+</html>
