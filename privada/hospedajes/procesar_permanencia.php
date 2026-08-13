@@ -1,13 +1,14 @@
 <?php
 session_start();
 require_once("../../conexion.php");
-$hospedajeID_anterior = $_POST['hospedajeID_anterior'];
-$habitacionID = $_POST['habitacionID'];
+$hospedajeID_anterior = $_POST['hospedajeID_anterior'] ?? null;
+$habitacionID = $_POST['habitacionID'] ?? null;
 $precio_diario = !empty($_POST['precio_diario']) ? floatval($_POST['precio_diario']) : null;
-$checkout = $_POST['checkout'];
-$monto_total = $_POST['monto_total'];
-$descripcion = $_POST['descripcion'];
-$habitacion_numero = $_POST['habitacion_numero'];
+$checkout = $_POST['checkout'] ?? null;
+$monto_total = $_POST['monto_total'] ?? 0;
+$descripcion = $_POST['descripcion'] ?? '';
+$habitacion_numero = $_POST['habitacion_numero'] ?? '';
+
 
 $usuarioID = $_SESSION["sesion_id_usuario"];
 $empresaID = $_SESSION['empresaID'];
