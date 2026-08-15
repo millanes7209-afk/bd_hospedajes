@@ -37,22 +37,39 @@
   <header class="glass-card mb-6 p-4 border-b rounded-none"
     style="border-color:var(--color-card-border);background:var(--color-bg-alt)">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-12 h-8">
-          <img src="{{ asset('assets/logo.svg') }}" alt="LOGO" class="w-full h-full object-contain">
+      <div class="flex items-center justify-between w-full md:w-auto">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-8">
+            <img src="{{ asset('assets/logo.svg') }}" alt="LOGO" class="w-full h-full object-contain">
+          </div>
+          <div>
+            <h1 class="text-base md:text-lg font-black text-[#FFE66D] tracking-wider uppercase">RICO POLLO - PANEL ADMIN
+            </h1>
+          </div>
         </div>
-        <div>
-          <h1 class="text-base md:text-lg font-black text-[#FFE66D] tracking-wider uppercase">RICO POLLO - PANEL ADMIN
-          </h1>
-        </div>
+        <!-- Botón Menú Hamburguesa para Móvil -->
+        <button id="mobile-menu-btn" class="md:hidden text-xl text-gray-300 hover:text-white p-2 focus:outline-none">
+          <i class="fa-solid fa-bars"></i>
+        </button>
       </div>
-      <div class="flex items-center gap-2 flex-wrap">
+
+      <div id="nav-menu" class="hidden md:flex items-center gap-2 flex-wrap w-full md:w-auto">
         <a href="{{ route('admin.pedidos') }}"
           class="btn-outline text-xs font-bold uppercase !py-2 !px-4 hover:text-[#FFE66D]">
           <i class="fa-solid fa-clipboard-list mr-1.5"></i>GESTIÓN DE PEDIDOS
         </a>
         <a href="{{ route('admin.productos') }}" class="btn-primary text-xs font-black uppercase !py-2 !px-4 shadow-lg">
           <i class="fa-solid fa-utensils mr-1.5"></i>GESTIÓN DE PRODUCTOS
+        </a>
+        @if(Session::get('is_super_admin') || Session::get('rolID') === 'ADMINISTRADOR')
+          <a href="{{ route('admin.usuarios') }}"
+            class="btn-outline text-xs font-bold uppercase !py-2 !px-3 hover:text-[#FFE66D]">
+            <i class="fa-solid fa-users mr-1.5"></i>USUARIOS
+          </a>
+        @endif
+        <a href="{{ route('admin.perfil') }}"
+          class="btn-outline text-xs font-bold uppercase !py-2 !px-3 hover:text-[#FFE66D]">
+          <i class="fa-solid fa-user-gear mr-1.5"></i>MI PERFIL
         </a>
         <a href="{{ route('menu') }}" class="btn-outline text-xs font-bold uppercase !py-2 !px-3" target="_blank">
           <i class="fa-solid fa-store mr-1.5"></i>VER TIENDA
@@ -207,6 +224,15 @@
       <?php endif; ?>
     </div>
   </div>
+
+  <script>
+    document.getElementById('mobile-menu-btn')?.addEventListener('click', function () {
+      const menu = document.getElementById('nav-menu');
+      menu.classList.toggle('hidden');
+      menu.classList.toggle('flex');
+      menu.classList.toggle('flex-col');
+    });
+  </script>
 </body>
 
 </html>

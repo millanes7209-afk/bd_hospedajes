@@ -18,16 +18,24 @@
     <header class="glass-card mb-6 p-4 border-b rounded-none"
         style="border-color:var(--color-card-border);background:var(--color-bg-alt)">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-8">
-                    <img src="{{ asset('assets/logo.svg') }}" alt="LOGO" class="w-full h-full object-contain">
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-8">
+                        <img src="{{ asset('assets/logo.svg') }}" alt="LOGO" class="w-full h-full object-contain">
+                    </div>
+                    <div>
+                        <h1 class="text-base md:text-lg font-black text-[#FFE66D] tracking-wider uppercase">RICO POLLO -
+                            PANEL ADMIN</h1>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-base md:text-lg font-black text-[#FFE66D] tracking-wider uppercase">RICO POLLO -
-                        PANEL ADMIN</h1>
-                </div>
+                <!-- Botón Menú Hamburguesa para Móvil -->
+                <button id="mobile-menu-btn"
+                    class="md:hidden text-xl text-gray-300 hover:text-white p-2 focus:outline-none">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
             </div>
-            <div class="flex items-center gap-2 flex-wrap">
+
+            <div id="nav-menu" class="hidden md:flex items-center gap-2 flex-wrap w-full md:w-auto">
                 <a href="{{ route('admin.pedidos') }}"
                     class="btn-primary text-xs font-black uppercase !py-2 !px-4 shadow-lg">
                     <i class="fa-solid fa-clipboard-list mr-1.5"></i>GESTIÓN DE PEDIDOS
@@ -35,6 +43,16 @@
                 <a href="{{ route('admin.productos') }}"
                     class="btn-outline text-xs font-bold uppercase !py-2 !px-4 hover:text-[#FFE66D]">
                     <i class="fa-solid fa-utensils mr-1.5"></i>GESTIÓN DE PRODUCTOS
+                </a>
+                @if(Session::get('is_super_admin') || Session::get('rolID') === 'ADMINISTRADOR')
+                    <a href="{{ route('admin.usuarios') }}"
+                        class="btn-outline text-xs font-bold uppercase !py-2 !px-3 hover:text-[#FFE66D]">
+                        <i class="fa-solid fa-users mr-1.5"></i>USUARIOS
+                    </a>
+                @endif
+                <a href="{{ route('admin.perfil') }}"
+                    class="btn-outline text-xs font-bold uppercase !py-2 !px-3 hover:text-[#FFE66D]">
+                    <i class="fa-solid fa-user-gear mr-1.5"></i>MI PERFIL
                 </a>
                 <a href="{{ route('menu') }}" class="btn-outline text-xs font-bold uppercase !py-2 !px-3"
                     target="_blank">
@@ -58,13 +76,9 @@
                         class="fa-solid fa-clipboard-list mr-2 text-[#FFE66D]"></i>PEDIDOS Y SOLICITUDES</h2>
                 <span
                     class="text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1 rounded-full animate-pulse flex items-center gap-1.5 ml-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span> EN VIVO
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span> EN LÍNEA
                 </span>
             </div>
-            <button onclick="playChimeSound()"
-                class="text-xs font-bold text-gray-400 hover:text-white bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 flex items-center gap-1.5">
-                <i class="fa-solid fa-volume-high text-amber-400"></i> PROBAR SONIDO
-            </button>
         </div>
 
         @if (session('success'))
@@ -112,7 +126,7 @@
                     $msgKey = $esAceptadoQR ? 'aceptado_qr' : ($est);
                     $currWspMsg = urlencode($wspMsgs[$msgKey] ?? $wspMsgs['pendiente']);
                     $wspLink = "https://wa.me/591{$phoneClean}?text={$currWspMsg}";
-                                                                                ?>
+                                                                                                         ?>
 
                         <div
                             class="glass-card p-5 border <?php        echo $est === 'pendiente' ? 'border-amber-500/50 bg-amber-500/5' : 'border-white/10'; ?>">
@@ -123,14 +137,14 @@
                                         <span class="text-lg font-black text-[#FFE66D]">{{ $pedido['numero_pedido'] }}</span>
                                         <span
                                             class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider
-                                                                                                                                                @if($est === 'pendiente') bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse
-                                                                                                                                                @elseif($est === 'aceptado') bg-blue-500/20 text-blue-300 border border-blue-500/40
-                                                                                                                                                @elseif($est === 'preparando') bg-yellow-500/20 text-yellow-300 border border-yellow-500/40
-                                                                                                                                                @elseif($est === 'listo') bg-emerald-500/20 text-emerald-300 border border-emerald-500/40
-                                                                                                                                                @elseif($est === 'en_camino') bg-purple-500/20 text-purple-300 border border-purple-500/40
-                                                                                                                                                @elseif($est === 'entregado') bg-green-500/20 text-green-300 border border-green-500/40
-                                                                                                                                                @else bg-red-500/20 text-red-300 border border-red-500/40
-                                                                                                                                                @endif">
+                                                                                                                                                                         @if($est === 'pendiente') bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse
+                                                                                                                                                                         @elseif($est === 'aceptado') bg-blue-500/20 text-blue-300 border border-blue-500/40
+                                                                                                                                                                         @elseif($est === 'preparando') bg-yellow-500/20 text-yellow-300 border border-yellow-500/40
+                                                                                                                                                                         @elseif($est === 'listo') bg-emerald-500/20 text-emerald-300 border border-emerald-500/40
+                                                                                                                                                                         @elseif($est === 'en_camino') bg-purple-500/20 text-purple-300 border border-purple-500/40
+                                                                                                                                                                         @elseif($est === 'entregado') bg-green-500/20 text-green-300 border border-green-500/40
+                                                                                                                                                                         @else bg-red-500/20 text-red-300 border border-red-500/40
+                                                                                                                                                                         @endif">
                                             {{ strtoupper($pedido['estado']) }}
                                         </span>
                                     </div>
@@ -188,7 +202,7 @@
                                             'cancelado' => null,
                                         ];
                                         $next = $siguienteEstado[$est] ?? null;
-                                                                                                                                                                                                                ?>
+                                                                                                                                                                                                                                                                        ?>
                                                     @if($next)
                                                         <form action="{{ route('admin.pedidos.estado', $pedido['pedidoID']) }}" method="POST"
                                                             class="inline">
@@ -337,6 +351,13 @@
         }
 
         setInterval(checkRealtimeOrders, 3500);
+
+        document.getElementById('mobile-menu-btn')?.addEventListener('click', function () {
+            const menu = document.getElementById('nav-menu');
+            menu.classList.toggle('hidden');
+            menu.classList.toggle('flex');
+            menu.classList.toggle('flex-col');
+        });
     </script>
 
     <!-- ═══════════════════════════════════════════════════════════
