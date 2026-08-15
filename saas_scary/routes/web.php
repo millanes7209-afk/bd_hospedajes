@@ -8,6 +8,9 @@ use App\Http\Controllers\ProductoController;
 use App\Http\Middleware\TenantMiddleware;
 use App\Http\Middleware\AdminAuthMiddleware;
 
+use App\Http\Controllers\UserController;
+use App\Http\Middleware\CheckRole;
+
 Route::middleware([TenantMiddleware::class])->group(function () {
     Route::get('/', function () {
         return redirect()->route('menu');
@@ -39,6 +42,20 @@ Route::middleware([TenantMiddleware::class])->group(function () {
         Route::post('/pedidos/aceptar/{id}', [PedidoController::class, 'aceptarPedido'])->name('admin.pedidos.aceptar');
         Route::post('/pedidos/rechazar/{id}', [PedidoController::class, 'rechazarPedido'])->name('admin.pedidos.rechazar');
         Route::post('/pedidos/estado/{id}', [PedidoController::class, 'updateEstado'])->name('admin.pedidos.estado');
+
+        // Perfil personal para Cajeros y Administradores
+        Route::get('/perfil', [UserController::class, 'profile'])->name('admin.perfil');
+        Route::post('/perfil/password', [UserController::class, 'updatePassword'])->name('admin.perfil.password');
+
+        // Rutas protegidas solo para ADMINISTRADOR y SUPER_ADMIN
+        Route::middleware([CheckRole::class . ':ADMINISTRADOR'])->group(function () {
+            Route::get('/usuarios', [UserController::class, 'index'])->name('admin.usuarios');
+            Route::get('/usuarios/crear', [UserController::class, 'create'])->name('admin.usuarios.create');
+            Route::post('/usuarios/crear', [UserController::class, 'store'])->name('admin.usuarios.store');
+            Route::get('/usuarios/editar/{id}', [UserController::class, 'edit'])->name('admin.usuarios.edit');
+            Route::post('/usuarios/editar/{id}', [UserController::class, 'update'])->name('admin.usuarios.update');
+            Route::get('/usuarios/eliminar/{id}', [UserController::class, 'destroy'])->name('admin.usuarios.destroy');
+        });
     });
 
     // Fallbacks para enlaces antiguos
