@@ -15,57 +15,101 @@
 <body class="min-h-screen" style="background-color:var(--color-bg);color:var(--color-text);">
 
     <!-- Navbar -->
-    <header class="glass-card mb-6 p-4 border-b rounded-none"
+    <header class="glass-card mb-6 border-b rounded-none px-4 py-3"
         style="border-color:var(--color-card-border);background:var(--color-bg-alt)">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="flex items-center justify-between w-full md:w-auto">
-                <div class="flex items-center gap-3">
-                    <div class="w-12 h-8">
-                        <img src="{{ asset('assets/logo.svg') }}" alt="LOGO" class="w-full h-full object-contain">
-                    </div>
-                    <div>
-                        <h1 class="text-base md:text-lg font-black text-[#FFE66D] tracking-wider uppercase">RICO POLLO -
-                            PANEL ADMIN</h1>
-                    </div>
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <!-- Brand Logo & Title -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-8">
+                    <img src="{{ asset('assets/logo.svg') }}" alt="LOGO" class="w-full h-full object-contain">
                 </div>
-                <!-- Botón Menú Hamburguesa para Móvil -->
-                <button id="mobile-menu-btn"
-                    class="md:hidden text-xl text-gray-300 hover:text-white p-2 focus:outline-none">
-                    <i class="fa-solid fa-bars"></i>
-                </button>
+                <span class="text-base font-black text-[#FFE66D] tracking-wider uppercase">RICO POLLO</span>
             </div>
 
-            <div id="nav-menu" class="hidden md:flex items-center gap-2 flex-wrap w-full md:w-auto">
+            <!-- Right Side Navigation Links (Desktop) -->
+            <nav id="nav-menu" class="hidden md:flex items-center gap-1 text-xs font-bold uppercase tracking-wider">
                 <a href="{{ route('admin.pedidos') }}"
-                    class="btn-primary text-xs font-black uppercase !py-2 !px-4 shadow-lg">
-                    <i class="fa-solid fa-clipboard-list mr-1.5"></i>GESTIÓN DE PEDIDOS
+                    class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.pedidos*') ? 'bg-[#FFE66D]/15 text-[#FFE66D] font-extrabold' : 'text-gray-300 hover:text-white hover:bg-white/5' }}">
+                    <i class="fa-solid fa-clipboard-list text-sm"></i>Pedidos
                 </a>
+
                 <a href="{{ route('admin.productos') }}"
-                    class="btn-outline text-xs font-bold uppercase !py-2 !px-4 hover:text-[#FFE66D]">
-                    <i class="fa-solid fa-utensils mr-1.5"></i>GESTIÓN DE PRODUCTOS
+                    class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.productos*') ? 'bg-[#FFE66D]/15 text-[#FFE66D] font-extrabold' : 'text-gray-300 hover:text-white hover:bg-white/5' }}">
+                    <i class="fa-solid fa-utensils text-sm"></i>Productos
                 </a>
+
                 @if(Session::get('is_super_admin') || Session::get('rolID') === 'ADMINISTRADOR')
                     <a href="{{ route('admin.usuarios') }}"
-                        class="btn-outline text-xs font-bold uppercase !py-2 !px-3 hover:text-[#FFE66D]">
-                        <i class="fa-solid fa-users mr-1.5"></i>USUARIOS
+                        class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.usuarios*') ? 'bg-[#FFE66D]/15 text-[#FFE66D] font-extrabold' : 'text-gray-300 hover:text-white hover:bg-white/5' }}">
+                        <i class="fa-solid fa-users text-sm"></i>Usuarios
                     </a>
                 @endif
+
                 <a href="{{ route('admin.perfil') }}"
-                    class="btn-outline text-xs font-bold uppercase !py-2 !px-3 hover:text-[#FFE66D]">
-                    <i class="fa-solid fa-user-gear mr-1.5"></i>MI PERFIL
+                    class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.perfil*') ? 'bg-[#FFE66D]/15 text-[#FFE66D] font-extrabold' : 'text-gray-300 hover:text-white hover:bg-white/5' }}">
+                    <i class="fa-solid fa-user-gear text-sm"></i>Mi Perfil
                 </a>
-                <a href="{{ route('menu') }}" class="btn-outline text-xs font-bold uppercase !py-2 !px-3"
-                    target="_blank">
-                    <i class="fa-solid fa-store mr-1.5"></i>VER TIENDA
+
+                <a href="{{ route('menu') }}" target="_blank"
+                    class="px-3 py-2 rounded-lg transition-colors text-gray-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
+                    <i class="fa-solid fa-store text-sm"></i>Ver Tienda
                 </a>
+
+                <div class="h-4 w-px bg-white/10 mx-1"></div>
+
                 <form action="{{ route('logout') }}" method="POST" class="inline">
                     @csrf
                     <button type="submit"
-                        class="btn-outline text-xs font-bold uppercase !py-2 !px-3 border-red-500/40 text-red-400 hover:bg-red-950/30">
-                        <i class="fa-solid fa-right-from-bracket mr-1.5"></i>SALIR
+                        class="px-3 py-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors flex items-center gap-1.5 font-bold uppercase">
+                        <i class="fa-solid fa-right-from-bracket text-sm"></i>Salir
                     </button>
                 </form>
-            </div>
+            </nav>
+
+            <!-- Mobile Hamburger Button -->
+            <button id="mobile-menu-btn"
+                class="md:hidden text-gray-300 hover:text-white p-2 focus:outline-none text-lg">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Dropdown Navigation Menu -->
+        <div id="mobile-menu"
+            class="hidden md:hidden mt-3 pt-3 border-t border-white/10 flex flex-col gap-1 text-right text-xs font-bold uppercase tracking-wider">
+            <a href="{{ route('admin.pedidos') }}"
+                class="px-4 py-2.5 rounded-lg flex items-center justify-end gap-2.5 {{ request()->routeIs('admin.pedidos*') ? 'bg-[#FFE66D]/15 text-[#FFE66D]' : 'text-gray-300 hover:bg-white/5' }}">
+                <i class="fa-solid fa-clipboard-list text-sm"></i>Pedidos
+            </a>
+
+            <a href="{{ route('admin.productos') }}"
+                class="px-4 py-2.5 rounded-lg flex items-center justify-end gap-2.5 {{ request()->routeIs('admin.productos*') ? 'bg-[#FFE66D]/15 text-[#FFE66D]' : 'text-gray-300 hover:bg-white/5' }}">
+                <i class="fa-solid fa-utensils text-sm"></i>Productos
+            </a>
+
+            @if(Session::get('is_super_admin') || Session::get('rolID') === 'ADMINISTRADOR')
+                <a href="{{ route('admin.usuarios') }}"
+                    class="px-4 py-2.5 rounded-lg flex items-center justify-end gap-2.5 {{ request()->routeIs('admin.usuarios*') ? 'bg-[#FFE66D]/15 text-[#FFE66D]' : 'text-gray-300 hover:bg-white/5' }}">
+                    <i class="fa-solid fa-users text-sm"></i>Usuarios
+                </a>
+            @endif
+
+            <a href="{{ route('admin.perfil') }}"
+                class="px-4 py-2.5 rounded-lg flex items-center justify-end gap-2.5 {{ request()->routeIs('admin.perfil*') ? 'bg-[#FFE66D]/15 text-[#FFE66D]' : 'text-gray-300 hover:bg-white/5' }}">
+                <i class="fa-solid fa-user-gear text-sm"></i>Mi Perfil
+            </a>
+
+            <a href="{{ route('menu') }}" target="_blank"
+                class="px-4 py-2.5 rounded-lg flex items-center justify-end gap-2.5 text-gray-300 hover:bg-white/5">
+                <i class="fa-solid fa-store text-sm"></i>Ver Tienda
+            </a>
+
+            <form action="{{ route('logout') }}" method="POST" class="mt-1 pt-1 border-t border-white/10">
+                @csrf
+                <button type="submit"
+                    class="w-full text-right px-4 py-2.5 rounded-lg text-red-400 hover:bg-red-500/10 flex items-center justify-end gap-2.5 font-bold uppercase">
+                    <i class="fa-solid fa-right-from-bracket text-sm"></i>Salir
+                </button>
+            </form>
         </div>
     </header>
 
@@ -126,7 +170,7 @@
                     $msgKey = $esAceptadoQR ? 'aceptado_qr' : ($est);
                     $currWspMsg = urlencode($wspMsgs[$msgKey] ?? $wspMsgs['pendiente']);
                     $wspLink = "https://wa.me/591{$phoneClean}?text={$currWspMsg}";
-                                                                                                         ?>
+                                                                                                                     ?>
 
                         <div
                             class="glass-card p-5 border <?php        echo $est === 'pendiente' ? 'border-amber-500/50 bg-amber-500/5' : 'border-white/10'; ?>">
@@ -137,14 +181,14 @@
                                         <span class="text-lg font-black text-[#FFE66D]">{{ $pedido['numero_pedido'] }}</span>
                                         <span
                                             class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider
-                                                                                                                                                                         @if($est === 'pendiente') bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse
-                                                                                                                                                                         @elseif($est === 'aceptado') bg-blue-500/20 text-blue-300 border border-blue-500/40
-                                                                                                                                                                         @elseif($est === 'preparando') bg-yellow-500/20 text-yellow-300 border border-yellow-500/40
-                                                                                                                                                                         @elseif($est === 'listo') bg-emerald-500/20 text-emerald-300 border border-emerald-500/40
-                                                                                                                                                                         @elseif($est === 'en_camino') bg-purple-500/20 text-purple-300 border border-purple-500/40
-                                                                                                                                                                         @elseif($est === 'entregado') bg-green-500/20 text-green-300 border border-green-500/40
-                                                                                                                                                                         @else bg-red-500/20 text-red-300 border border-red-500/40
-                                                                                                                                                                         @endif">
+                                                                                                                                                                                     @if($est === 'pendiente') bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse
+                                                                                                                                                                                     @elseif($est === 'aceptado') bg-blue-500/20 text-blue-300 border border-blue-500/40
+                                                                                                                                                                                     @elseif($est === 'preparando') bg-yellow-500/20 text-yellow-300 border border-yellow-500/40
+                                                                                                                                                                                     @elseif($est === 'listo') bg-emerald-500/20 text-emerald-300 border border-emerald-500/40
+                                                                                                                                                                                     @elseif($est === 'en_camino') bg-purple-500/20 text-purple-300 border border-purple-500/40
+                                                                                                                                                                                     @elseif($est === 'entregado') bg-green-500/20 text-green-300 border border-green-500/40
+                                                                                                                                                                                     @else bg-red-500/20 text-red-300 border border-red-500/40
+                                                                                                                                                                                     @endif">
                                             {{ strtoupper($pedido['estado']) }}
                                         </span>
                                     </div>
@@ -202,7 +246,7 @@
                                             'cancelado' => null,
                                         ];
                                         $next = $siguienteEstado[$est] ?? null;
-                                                                                                                                                                                                                                                                        ?>
+                                                                                                                                                                                                                                                                                                    ?>
                                                     @if($next)
                                                         <form action="{{ route('admin.pedidos.estado', $pedido['pedidoID']) }}" method="POST"
                                                             class="inline">
@@ -353,10 +397,8 @@
         setInterval(checkRealtimeOrders, 3500);
 
         document.getElementById('mobile-menu-btn')?.addEventListener('click', function () {
-            const menu = document.getElementById('nav-menu');
-            menu.classList.toggle('hidden');
-            menu.classList.toggle('flex');
-            menu.classList.toggle('flex-col');
+            const menu = document.getElementById('mobile-menu');
+            menu?.classList.toggle('hidden');
         });
     </script>
 
