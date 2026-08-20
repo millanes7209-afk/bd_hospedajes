@@ -67,22 +67,24 @@ class AuthController extends Controller
             }
         }
 
-        // 3. Verificación de respaldo en la tabla legacy 'usuarios'
-        $usuarioLegacy = \App\Models\Usuario::where('correo_electronico', $correo)
-            ->orWhere('correo_electronico', strtolower($correoInput))
-            ->first();
+        // 3. Verificación de respaldo en la tabla legacy 'usuarios' (solo si aún existe en la BD)
+        if (\Illuminate\Support\Facades\Schema::hasTable('usuarios')) {
+            $usuarioLegacy = \App\Models\Usuario::where('correo_electronico', $correo)
+                ->orWhere('correo_electronico', strtolower($correoInput))
+                ->first();
 
-        if ($usuarioLegacy) {
-            if (password_verify($contrasena, $usuarioLegacy->contrasena) || Hash::check($contrasena, $usuarioLegacy->contrasena)) {
-                Auth::login($usuarioLegacy);
-                Session::put('usuarioID', $usuarioLegacy->usuarioID);
-                Session::put('nombre', $usuarioLegacy->nombre);
-                Session::put('rolID', strtoupper($usuarioLegacy->rolID));
-                Session::put('admin_logged_in', true);
+            if ($usuarioLegacy) {
+                if (password_verify($contrasena, $usuarioLegacy->contrasena) || Hash::check($contrasena, $usuarioLegacy->contrasena)) {
+                    Auth::login($usuarioLegacy);
+                    Session::put('usuarioID', $usuarioLegacy->usuarioID);
+                    Session::put('nombre', $usuarioLegacy->nombre);
+                    Session::put('rolID', strtoupper($usuarioLegacy->rolID));
+                    Session::put('admin_logged_in', true);
 
-                return redirect()->route('admin.pedidos');
-            } else {
-                return back()->withInput()->with('error', 'La contraseña ingresada es incorrecta.');
+                    return redirect()->route('admin.pedidos');
+                } else {
+                    return back()->withInput()->with('error', 'La contraseña ingresada es incorrecta.');
+                }
             }
         }
 
