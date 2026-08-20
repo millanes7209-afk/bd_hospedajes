@@ -387,7 +387,7 @@ if (!function_exists('obtenerPrecioActivo')) {
     <?php else: ?>
     <div class="space-y-12">
       <?php  foreach ($menuGrouped as $categoria => $items): ?>
-      <div>
+      <div data-category-block>
         <h2
           class="cat-header text-lg font-extrabold tracking-wider uppercase mb-5 flex items-center gap-2 border-b pb-2">
           <i class="fa-solid fa-fire cat-fire"></i>
@@ -398,7 +398,8 @@ if (!function_exists('obtenerPrecioActivo')) {
           <?php    foreach ($items as $p):
       $tieneVariantes = $p['tieneVariantes'] ?? false;
                 ?>
-          <div class="glass-card p-5 flex flex-col justify-between relative overflow-hidden group">
+          <div class="glass-card p-5 flex flex-col justify-between relative overflow-hidden group"
+            data-card-product-id="<?php      echo $p['productoID']; ?>">
             <!-- Glow decorativo -->
             <div class="absolute -right-16 -top-16 w-32 h-32 rounded-full blur-2xl pointer-events-none"
               style="background:rgba(226,62,26,0.08)"></div>
@@ -896,31 +897,55 @@ if (!function_exists('obtenerPrecioActivo')) {
 
         latestAvailability = { productos: prodMap, variantes: varMap };
 
-        // Actualizar UI de productos simples
-        document.querySelectorAll('[data-product-btn]').forEach(btn => {
-          const pId = btn.getAttribute('data-product-btn');
-          const isDisp = prodMap[pId] !== false;
-          if (!isDisp) {
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-            btn.innerHTML = '<i class="fa-solid fa-ban mr-1"></i>AGOTADO';
+        // Actualizar UI de tarjetas de productos y variantes (ocultar por completo si no están disponibles)
+        document.querySelectorAll('[data-card-product-id]').forEach(card => {
+          const pId = card.getAttribute('data-card-product-id');
+          const isProdDisp = prodMap[pId] !== false;
+
+          // Verificar chips de variantes dentro de la tarjeta
+          const chips = card.querySelectorAll('[data-variante-id]');
+          let hasVisibleVariant = false;
+
+          chips.forEach(chip => {
+            const vId = chip.getAttribute('data-variante-id');
+            const isVarDisp = varMap[vId] !== false;
+            if (!isVarDisp) {
+              chip.classList.add('hidden');
+            } else {
+              chip.classList.remove('hidden');
+              hasVisibleVariant = true;
+            }
+          });
+
+          const isVariantProduct = chips.length > 0;
+          const shouldHideCard = !isProdDisp || (isVariantProduct && !hasVisibleVariant);
+
+          if (shouldHideCard) {
+            card.classList.add('hidden');
           } else {
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-            if (btn.innerText.includes('AGOTADO')) {
-              btn.innerHTML = '<i class="fa-solid fa-plus mr-1"></i>AGREGAR';
+            card.classList.remove('hidden');
+
+            // Si es un producto con variantes, asegurarse de que haya una variante visible seleccionada
+            if (isVariantProduct) {
+              const visibleChips = Array.from(chips).filter(c => !c.classList.contains('hidden'));
+              if (visibleChips.length > 0) {
+                const currentSelected = selectedVariants[pId];
+                if (!currentSelected || varMap[currentSelected.varianteID] === false) {
+                  visibleChips[0].click();
+                }
+              }
             }
           }
         });
 
-        // Actualizar UI de chips de variantes
-        document.querySelectorAll('[data-variante-id]').forEach(chip => {
-          const vId = chip.getAttribute('data-variante-id');
-          const isDisp = varMap[vId] !== false;
-          if (!isDisp) {
-            chip.classList.add('opacity-40', 'line-through', 'pointer-events-none');
+        // Ocultar categorías sin productos visibles
+        document.querySelectorAll('[data-category-block]').forEach(catBlock => {
+          const cards = catBlock.querySelectorAll('[data-card-product-id]');
+          const visibleCards = Array.from(cards).filter(c => !c.classList.contains('hidden'));
+          if (visibleCards.length === 0) {
+            catBlock.classList.add('hidden');
           } else {
-            chip.classList.remove('opacity-40', 'line-through', 'pointer-events-none');
+            catBlock.classList.remove('hidden');
           }
         });
 
