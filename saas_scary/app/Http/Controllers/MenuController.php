@@ -84,9 +84,9 @@ class MenuController extends Controller
                 $menuGrouped[$cat][] = [
                     'productoID' => $p['productoID'],
                     'nombre' => $p['nombre'],
-                    'descripcion' => $p['descripcion'],
-                    'imagen' => $p['imagen'],
-                    'categoria_nombre' => $p['categoria_nombre'],
+                    'descripcion' => $p['descripcion'] ?? '',
+                    'imagen' => $p['imagen'] ?? null,
+                    'categoria_nombre' => $p['categoria_nombre'] ?? '',
                     'tieneVariantes' => true,
                     'variantes' => $activeVariants,
                 ];
@@ -94,12 +94,12 @@ class MenuController extends Controller
                 $menuGrouped[$cat][] = [
                     'productoID' => $p['productoID'],
                     'nombre' => $p['nombre'],
-                    'descripcion' => $p['descripcion'],
-                    'precio' => $p['precio'],
-                    'precio_promo' => $p['precio_promo'],
-                    'dias_promo' => $p['dias_promo'],
-                    'imagen' => $p['imagen'],
-                    'categoria_nombre' => $p['categoria_nombre'],
+                    'descripcion' => $p['descripcion'] ?? '',
+                    'precio' => $p['precio'] ?? 0,
+                    'precio_promo' => $p['precio_promo'] ?? null,
+                    'dias_promo' => $p['dias_promo'] ?? null,
+                    'imagen' => $p['imagen'] ?? null,
+                    'categoria_nombre' => $p['categoria_nombre'] ?? '',
                     'tieneVariantes' => false,
                 ];
             }
