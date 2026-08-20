@@ -12,5 +12,20 @@ class Producto extends Model
     const CREATED_AT = 'fecha_creacion';
     const UPDATED_AT = 'fecha_modificacion';
 
-    protected $fillable = ['categoriaID', 'nombre', 'slug', 'descripcion', 'precio', 'precio_promo', 'dias_promo', 'disponible', 'imagen', 'orden_mostrado'];
+    protected $fillable = [
+        'categoriaID',
+        'nombre',
+        'slug',
+        'descripcion',
+        'tipo',
+        'precio',
+        'precio_promo',
+        'dia_promo',
+        'stock',
+        'activo',
+        'disponible',
+        'disponible_desde',
+        'imagen',
+        'orden_mostrado'
+    ];
 }

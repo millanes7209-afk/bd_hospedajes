@@ -30,11 +30,12 @@ class UserController extends Controller
             'rol' => 'required|string|in:ADMINISTRADOR,CAJERO'
         ]);
 
-        User::create([
-            'name' => trim($request->input('name')),
-            'email' => strtolower(trim($request->input('email'))),
-            'password' => Hash::make($request->input('password')),
-            'rol' => strtoupper($request->input('rol')),
+        $user = User::create([
+            'name' => strtoupper(trim($request->name)),
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'rol' => $request->rol,
+            'estado' => 'A'
         ]);
 
         return redirect()->route('admin.usuarios')->with('success', 'Usuario creado exitosamente.');
@@ -57,7 +58,7 @@ class UserController extends Controller
             'password' => 'nullable|string|min:6'
         ]);
 
-        $usuario->name = trim($request->input('name'));
+        $usuario->name = strtoupper(trim($request->input('name')));
         $usuario->email = strtolower(trim($request->input('email')));
         $usuario->rol = strtoupper($request->input('rol'));
 
@@ -99,24 +100,19 @@ class UserController extends Controller
     public function updatePassword(Request $request)
     {
         $request->validate([
-            'current_password' => 'required',
-            'new_password' => 'required|string|min:6|confirmed'
+            'new_password' => 'required|string|min:6'
         ]);
 
         $isSuperAdmin = Session::get('is_super_admin', false);
 
         if ($isSuperAdmin) {
             $superAdmin = \App\Models\SuperAdmin::find(Session::get('usuarioID'));
-            if (!Hash::check($request->input('current_password'), $superAdmin->password)) {
-                return back()->with('error', 'La contraseña actual no es correcta.');
+            if ($superAdmin) {
+                $superAdmin->password = Hash::make($request->input('new_password'));
+                $superAdmin->save();
             }
-            $superAdmin->password = Hash::make($request->input('new_password'));
-            $superAdmin->save();
         } else {
             $user = User::findOrFail(Session::get('usuarioID'));
-            if (!Hash::check($request->input('current_password'), $user->password)) {
-                return back()->with('error', 'La contraseña actual no es correcta.');
-            }
             $user->password = Hash::make($request->input('new_password'));
             $user->save();
         }

@@ -169,22 +169,8 @@
                 </h4>
 
                 <div>
-                    <label class="block text-xs font-bold text-gray-300 uppercase mb-2">CONTRASEÑA ACTUAL *</label>
-                    <input type="password" name="current_password" required placeholder="Ingresa tu contraseña actual"
-                        class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#FFE66D] text-white">
-                </div>
-
-                <div>
                     <label class="block text-xs font-bold text-gray-300 uppercase mb-2">NUEVA CONTRASEÑA *</label>
                     <input type="password" name="new_password" required placeholder="Mínimo 6 caracteres"
-                        class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#FFE66D] text-white">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-300 uppercase mb-2">CONFIRMAR NUEVA CONTRASEÑA
-                        *</label>
-                    <input type="password" name="new_password_confirmation" required
-                        placeholder="Repite la nueva contraseña"
                         class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#FFE66D] text-white">
                 </div>
 
