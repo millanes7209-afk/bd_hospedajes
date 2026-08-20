@@ -32,7 +32,7 @@ class UserController extends Controller
 
         $user = User::create([
             'name' => strtoupper(trim($request->name)),
-            'email' => $request->email,
+            'email' => strtolower(trim($request->email)),
             'password' => Hash::make($request->password),
             'rol' => $request->rol,
             'estado' => 'A'
