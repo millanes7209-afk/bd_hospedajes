@@ -496,7 +496,7 @@ if (!function_exists('obtenerPrecioActivo')) {
                     class="price-symbol text-xs font-semibold">Bs.</span><?php          echo number_format($precioOriginal, 2); ?>
                   <?php        endif; ?>
                 </div>
-                <button type="button"
+                <button type="button" data-product-btn="<?php        echo $p['productoID']; ?>"
                   onclick="addToCart(<?php        echo $p['productoID']; ?>, <?php        echo $precioActivo; ?>, '<?php        echo addslashes(strtoupper($p['nombre'])); ?>')"
                   class="btn-primary text-xs !py-1.5 !px-4">
                   <i class="fa-solid fa-plus mr-1"></i><?php        echo strtoupper('AGREGAR'); ?>
@@ -875,11 +875,120 @@ if (!function_exists('obtenerPrecioActivo')) {
       applyTheme(html.classList.contains('light-mode') ? 'dark' : 'light');
     });
 
-    // ── Inicializar carrito al cargar
+    // ── Polling y Verificación de Disponibilidad en Tiempo Real
+    let latestAvailability = { productos: {}, variantes: {} };
+
+    async function checkRealtimeAvailability() {
+      try {
+        const response = await fetch('{{ route('api.menu.disponibilidad') }}');
+        const data = await response.json();
+        if (!data || !data.success) return data;
+
+        const prodMap = {};
+        data.productos.forEach(p => {
+          prodMap[p.productoID] = (p.disponible == 1 && p.activo == 1);
+        });
+
+        const varMap = {};
+        data.variantes.forEach(v => {
+          varMap[v.varianteID] = (v.disponible == 1 && v.activo == 1);
+        });
+
+        latestAvailability = { productos: prodMap, variantes: varMap };
+
+        // Actualizar UI de productos simples
+        document.querySelectorAll('[data-product-btn]').forEach(btn => {
+          const pId = btn.getAttribute('data-product-btn');
+          const isDisp = prodMap[pId] !== false;
+          if (!isDisp) {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+            btn.innerHTML = '<i class="fa-solid fa-ban mr-1"></i>AGOTADO';
+          } else {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+            if (btn.innerText.includes('AGOTADO')) {
+              btn.innerHTML = '<i class="fa-solid fa-plus mr-1"></i>AGREGAR';
+            }
+          }
+        });
+
+        // Actualizar UI de chips de variantes
+        document.querySelectorAll('[data-variante-id]').forEach(chip => {
+          const vId = chip.getAttribute('data-variante-id');
+          const isDisp = varMap[vId] !== false;
+          if (!isDisp) {
+            chip.classList.add('opacity-40', 'line-through', 'pointer-events-none');
+          } else {
+            chip.classList.remove('opacity-40', 'line-through', 'pointer-events-none');
+          }
+        });
+
+        // Verificar items en el carrito activo y remover si alguno ya no está disponible
+        const cart = getCart();
+        let updated = false;
+        for (const [key, item] of Object.entries(cart)) {
+          let itemDisponible = true;
+          if (item.type === 'variante' && varMap[item.varianteID] === false) {
+            itemDisponible = false;
+          } else if (item.type === 'producto' && prodMap[item.productoID] === false) {
+            itemDisponible = false;
+          }
+
+          if (!itemDisponible) {
+            delete cart[key];
+            updated = true;
+            showToast(`EL PLATILLO "${item.nombre}" YA NO ESTÁ DISPONIBLE Y FUE REMOVIDO DE TU CARRITO`, 'error');
+          }
+        }
+
+        if (updated) {
+          saveCart(cart);
+          renderCart();
+        }
+
+        return data;
+      } catch (err) {
+        console.error('Error al verificar disponibilidad:', err);
+      }
+    }
+
+    // Wrap addToCart con verificación previa
+    const originalAddToCart = addToCart;
+    addToCart = async function (productoID, precio, nombre) {
+      const data = await checkRealtimeAvailability();
+      if (latestAvailability.productos[productoID] === false) {
+        showToast('LO SENTIMOS, ESTE PLATILLO YA NO ESTÁ DISPONIBLE EN ESTE MOMENTO', 'error');
+        return;
+      }
+      originalAddToCart(productoID, precio, nombre);
+    };
+
+    // Wrap addSelectedVariantToCart con verificación previa
+    const originalAddSelectedVariantToCart = addSelectedVariantToCart;
+    addSelectedVariantToCart = async function (productoID) {
+      const selected = selectedVariants[productoID];
+      if (selected && latestAvailability.variantes[selected.varianteID] === false) {
+        showToast('LO SENTIMOS, ESTA PRESENTACIÓN YA NO ESTÁ DISPONIBLE EN ESTE MOMENTO', 'error');
+        return;
+      }
+      await checkRealtimeAvailability();
+      if (selected && latestAvailability.variantes[selected.varianteID] === false) {
+        showToast('LO SENTIMOS, ESTA PRESENTACIÓN YA NO ESTÁ DISPONIBLE EN ESTE MOMENTO', 'error');
+        return;
+      }
+      originalAddSelectedVariantToCart(productoID);
+    };
+
+    // ── Inicializar carrito y disponibilidad al cargar
     renderCart();
 
     // ── Inicializar variantes seleccionadas
     initializeSelectedVariants();
+
+    // Sincronización continua cada 8 segundos
+    checkRealtimeAvailability();
+    setInterval(checkRealtimeAvailability, 8000);
   </script>
 </body>
 

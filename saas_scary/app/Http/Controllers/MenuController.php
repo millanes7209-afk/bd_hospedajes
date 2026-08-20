@@ -151,4 +151,25 @@ class MenuController extends Controller
         $tenant = app()->bound('tenant') ? app('tenant') : null;
         return view('menu.index', compact('menuGrouped', 'catalogoJson', 'tenant'));
     }
+
+    /**
+     * Endpoint API para consultar disponibilidad de productos y variantes en tiempo real
+     */
+    public function getDisponibilidad()
+    {
+        $productos = DB::table('productos')
+            ->select('productoID', 'nombre', 'disponible', 'activo')
+            ->get();
+
+        $variantes = DB::table('producto_variantes')
+            ->select('varianteID', 'productoID', 'nombre_variante', 'disponible', 'activo')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'productos' => $productos,
+            'variantes' => $variantes,
+            'timestamp' => now()->toDateTimeString()
+        ]);
+    }
 }

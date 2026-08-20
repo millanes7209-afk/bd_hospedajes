@@ -21,6 +21,7 @@ Route::middleware([TenantMiddleware::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/menu', [MenuController::class, 'index'])->name('menu');
+    Route::get('/api/menu/disponibilidad', [MenuController::class, 'getDisponibilidad'])->name('api.menu.disponibilidad');
 
     Route::match(['get', 'post'], '/order', [PedidoController::class, 'showCheckout'])->name('order.checkout');
     Route::post('/order/confirm', [PedidoController::class, 'storeOrder'])->name('order.confirm');
