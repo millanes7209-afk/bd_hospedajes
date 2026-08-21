@@ -1011,9 +1011,13 @@ if (!function_exists('obtenerPrecioActivo')) {
     // ── Inicializar variantes seleccionadas
     initializeSelectedVariants();
 
-    // Sincronización continua cada 8 segundos
+    // Sincronización continua cada 2 segundos y en eventos de visibilidad
     checkRealtimeAvailability();
-    setInterval(checkRealtimeAvailability, 8000);
+    setInterval(checkRealtimeAvailability, 2000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) checkRealtimeAvailability();
+    });
+    window.addEventListener('focus', checkRealtimeAvailability);
   </script>
 </body>
 

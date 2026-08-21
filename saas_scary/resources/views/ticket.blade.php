@@ -425,10 +425,17 @@
     }
 
     @media print {
+      @page {
+        size: 80mm auto;
+        margin: 0mm;
+      }
+
       body {
-        background: white;
-        color: black;
-        padding: 0;
+        background: white !important;
+        color: black !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 80mm;
       }
 
       .status-card,
@@ -439,11 +446,22 @@
       }
 
       .container {
-        max-width: 100%;
+        max-width: 80mm !important;
+        width: 80mm !important;
+        padding: 0 !important;
+        margin: 0 !important;
       }
 
       .ticket-paper {
-        box-shadow: none;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 4mm !important;
+        width: 100% !important;
+        color: #000 !important;
+      }
+
+      .ticket-paper::after {
+        display: none !important;
       }
     }
   </style>

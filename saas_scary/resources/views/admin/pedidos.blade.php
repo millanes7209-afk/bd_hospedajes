@@ -170,7 +170,7 @@
                     $msgKey = $esAceptadoQR ? 'aceptado_qr' : ($est);
                     $currWspMsg = urlencode($wspMsgs[$msgKey] ?? $wspMsgs['pendiente']);
                     $wspLink = "https://wa.me/591{$phoneClean}?text={$currWspMsg}";
-                                                                                                                     ?>
+                                                                                                                                 ?>
 
                         <div
                             class="glass-card p-5 border <?php        echo $est === 'pendiente' ? 'border-amber-500/50 bg-amber-500/5' : 'border-white/10'; ?>">
@@ -181,14 +181,14 @@
                                         <span class="text-lg font-black text-[#FFE66D]">{{ $pedido['numero_pedido'] }}</span>
                                         <span
                                             class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider
-                                                                                                                                                                                     @if($est === 'pendiente') bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse
-                                                                                                                                                                                     @elseif($est === 'aceptado') bg-blue-500/20 text-blue-300 border border-blue-500/40
-                                                                                                                                                                                     @elseif($est === 'preparando') bg-yellow-500/20 text-yellow-300 border border-yellow-500/40
-                                                                                                                                                                                     @elseif($est === 'listo') bg-emerald-500/20 text-emerald-300 border border-emerald-500/40
-                                                                                                                                                                                     @elseif($est === 'en_camino') bg-purple-500/20 text-purple-300 border border-purple-500/40
-                                                                                                                                                                                     @elseif($est === 'entregado') bg-green-500/20 text-green-300 border border-green-500/40
-                                                                                                                                                                                     @else bg-red-500/20 text-red-300 border border-red-500/40
-                                                                                                                                                                                     @endif">
+                                                                                                                                                                                                 @if($est === 'pendiente') bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse
+                                                                                                                                                                                                 @elseif($est === 'aceptado') bg-blue-500/20 text-blue-300 border border-blue-500/40
+                                                                                                                                                                                                 @elseif($est === 'preparando') bg-yellow-500/20 text-yellow-300 border border-yellow-500/40
+                                                                                                                                                                                                 @elseif($est === 'listo') bg-emerald-500/20 text-emerald-300 border border-emerald-500/40
+                                                                                                                                                                                                 @elseif($est === 'en_camino') bg-purple-500/20 text-purple-300 border border-purple-500/40
+                                                                                                                                                                                                 @elseif($est === 'entregado') bg-green-500/20 text-green-300 border border-green-500/40
+                                                                                                                                                                                                 @else bg-red-500/20 text-red-300 border border-red-500/40
+                                                                                                                                                                                                 @endif">
                                             {{ strtoupper($pedido['estado']) }}
                                         </span>
                                     </div>
@@ -198,7 +198,13 @@
                                 </div>
 
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <!-- BOTÓN WHATSAPP: contextual según estado y método de pago -->
+                                    <!-- BOTÓN IMPRIMIR COMANDA TÉRMICA -->
+                                    <a href="{{ route('ticket.show', $pedido['pedidoID']) }}" target="_blank"
+                                        class="bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs py-1.5 px-3 rounded-lg flex items-center gap-1.5 shadow-md"
+                                        title="Imprimir comanda térmica 80mm (Rongta / Super Nova)">
+                                        <i class="fa-solid fa-print text-sm"></i> IMPRIMIR TICKET
+                                    </a>
+
                                     <?php        if ($esAceptadoQR): ?>
                                     {{-- Pedido aceptado con QR: solicitar comprobante --}}
                                     <a href="{{ $wspLink }}" target="_blank"
@@ -246,7 +252,7 @@
                                             'cancelado' => null,
                                         ];
                                         $next = $siguienteEstado[$est] ?? null;
-                                                                                                                                                                                                                                                                                                    ?>
+                                                                                                                                                                                                                                                                                                                                ?>
                                                     @if($next)
                                                         <form action="{{ route('admin.pedidos.estado', $pedido['pedidoID']) }}" method="POST"
                                                             class="inline">
