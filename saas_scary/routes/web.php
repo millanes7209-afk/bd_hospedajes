@@ -44,6 +44,16 @@ Route::middleware([TenantMiddleware::class])->group(function () {
         Route::post('/pedidos/rechazar/{id}', [PedidoController::class, 'rechazarPedido'])->name('admin.pedidos.rechazar');
         Route::post('/pedidos/estado/{id}', [PedidoController::class, 'updateEstado'])->name('admin.pedidos.estado');
 
+        // POS Mesas (Cuentas abiertas y cobro dividido)
+        Route::get('/mesas', [\App\Http\Controllers\MesaController::class, 'index'])->name('admin.mesas');
+        Route::post('/mesas/abrir/{id}', [\App\Http\Controllers\MesaController::class, 'abrirMesa'])->name('admin.mesas.abrir');
+        Route::post('/mesas/item/agregar/{id}', [\App\Http\Controllers\MesaController::class, 'agregarItem'])->name('admin.mesas.item.agregar');
+        Route::get('/mesas/item/remover/{id}', [\App\Http\Controllers\MesaController::class, 'removerItem'])->name('admin.mesas.item.remover');
+        Route::post('/mesas/pago/{id}', [\App\Http\Controllers\MesaController::class, 'registrarPago'])->name('admin.mesas.pago');
+
+        // Reportes y Estadísticas
+        Route::get('/reportes', [\App\Http\Controllers\ReporteController::class, 'index'])->name('admin.reportes');
+
         // Perfil personal para Cajeros y Administradores
         Route::get('/perfil', [UserController::class, 'profile'])->name('admin.perfil');
         Route::post('/perfil/password', [UserController::class, 'updatePassword'])->name('admin.perfil.password');
