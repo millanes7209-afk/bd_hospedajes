@@ -9,6 +9,9 @@ class Tenant extends Model
 {
     use HasFactory;
 
+    protected $connection = 'saas_control';
+    protected $table = 'tenants';
+
     protected $fillable = [
         'nombre',
         'subdominio',

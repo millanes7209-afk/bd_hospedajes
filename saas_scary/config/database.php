@@ -64,6 +64,19 @@ return [
             ]) : [],
         ],
 
+        'saas_control' => [
+            'driver' => 'mysql',
+            'host' => env('DB_CONTROL_HOST', 'sdb-90.hosting.stackcp.net'),
+            'port' => env('DB_CONTROL_PORT', '3306'),
+            'database' => env('DB_CONTROL_DATABASE', 'saas_control-35313139e726'),
+            'username' => env('DB_CONTROL_USERNAME', 'saas_control-35313139e726'),
+            'password' => env('DB_CONTROL_PASSWORD', 'NuevaNueva'),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => false,
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),
@@ -149,7 +162,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')) . '-database-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 

@@ -26,9 +26,11 @@ class TenantMiddleware
             }
         }
 
-        // Default fallback to 'ricopollo' during initial local dev testing if no subdomain found
-        if (empty($subdominio)) {
-            $subdominio = 'ricopollo';
+        // Si el subdominio es 'scary', estamos en el entorno del SuperAdmin Central
+        if ($subdominio === 'scary') {
+            app()->instance('is_super_admin_panel', true);
+            config(['database.default' => 'saas_control']);
+            return $next($request);
         }
 
         $tenant = Tenant::where('subdominio', $subdominio)->where('_estado', 'A')->first();

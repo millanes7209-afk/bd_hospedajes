@@ -12,7 +12,22 @@ use App\Http\Controllers\UserController;
 use App\Http\Middleware\CheckRole;
 
 Route::middleware([TenantMiddleware::class])->group(function () {
+    // Rutas del Panel Central SuperAdmin (scary.alloggibolivia.com)
+    Route::prefix('superadmin')->group(function () {
+        Route::get('/login', [\App\Http\Controllers\SuperAdminController::class, 'showLoginForm'])->name('superadmin.login');
+        Route::post('/login', [\App\Http\Controllers\SuperAdminController::class, 'login'])->name('superadmin.login.post');
+        Route::post('/logout', [\App\Http\Controllers\SuperAdminController::class, 'logout'])->name('superadmin.logout');
+
+        Route::get('/dashboard', [\App\Http\Controllers\SuperAdminController::class, 'dashboard'])->name('superadmin.dashboard');
+        Route::post('/tenants/store', [\App\Http\Controllers\SuperAdminController::class, 'storeTenant'])->name('superadmin.tenants.store');
+        Route::post('/tenants/update/{id}', [\App\Http\Controllers\SuperAdminController::class, 'updateTenant'])->name('superadmin.tenants.update');
+        Route::get('/tenants/estado/{id}', [\App\Http\Controllers\SuperAdminController::class, 'toggleState'])->name('superadmin.tenants.estado');
+    });
+
     Route::get('/', function () {
+        if (app()->bound('is_super_admin_panel')) {
+            return redirect()->route('superadmin.dashboard');
+        }
         return redirect()->route('menu');
     });
 

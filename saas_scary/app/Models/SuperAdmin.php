@@ -2,23 +2,25 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class SuperAdmin extends Authenticatable
 {
-    // Always use central database connection (mysql -> saas_control)
-    protected $connection = 'mysql';
+    use HasFactory;
+
+    protected $connection = 'saas_control';
     protected $table = 'super_admins';
 
     protected $fillable = [
         'nombre',
         'email',
         'password',
-        'rol',
         '_estado',
     ];
 
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 }
