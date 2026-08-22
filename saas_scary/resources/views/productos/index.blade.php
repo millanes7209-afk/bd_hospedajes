@@ -43,6 +43,11 @@
       </div>
 
       <nav id="nav-menu" class="hidden md:flex items-center gap-1 text-xs font-bold uppercase tracking-wider">
+        <a href="{{ route('admin.mesas') }}"
+          class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.mesas*') ? 'bg-[#FFE66D]/15 text-[#FFE66D] font-extrabold' : 'text-gray-300 hover:text-white hover:bg-white/5' }}">
+          <i class="fa-solid fa-chair text-sm"></i>Mesas / POS
+        </a>
+
         <a href="{{ route('admin.pedidos') }}"
           class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.pedidos*') ? 'bg-[#FFE66D]/15 text-[#FFE66D] font-extrabold' : 'text-gray-300 hover:text-white hover:bg-white/5' }}">
           <i class="fa-solid fa-clipboard-list text-sm"></i>Pedidos
@@ -53,21 +58,24 @@
           <i class="fa-solid fa-utensils text-sm"></i>Productos
         </a>
 
-        @if(Session::get('is_super_admin') || Session::get('rolID') === 'ADMINISTRADOR')
-          <a href="{{ route('admin.usuarios') }}"
-            class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.usuarios*') ? 'bg-[#FFE66D]/15 text-[#FFE66D] font-extrabold' : 'text-gray-300 hover:text-white hover:bg-white/5' }}">
-            <i class="fa-solid fa-users text-sm"></i>Usuarios
-          </a>
-        @endif
+        <a href="{{ route('admin.categorias') }}"
+          class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.categorias*') ? 'bg-[#FFE66D]/15 text-[#FFE66D] font-extrabold' : 'text-gray-300 hover:text-white hover:bg-white/5' }}">
+          <i class="fa-solid fa-layer-group text-sm"></i>Categorías
+        </a>
+
+        <a href="{{ route('admin.reportes') }}"
+          class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.reportes*') ? 'bg-[#FFE66D]/15 text-[#FFE66D] font-extrabold' : 'text-gray-300 hover:text-white hover:bg-white/5' }}">
+          <i class="fa-solid fa-chart-pie text-sm"></i>Reportes
+        </a>
+
+        <a href="{{ route('admin.configuracion') }}"
+          class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.configuracion*') ? 'bg-[#FFE66D]/15 text-[#FFE66D] font-extrabold' : 'text-gray-300 hover:text-white hover:bg-white/5' }}">
+          <i class="fa-solid fa-sliders text-sm"></i>Configuración
+        </a>
 
         <a href="{{ route('admin.perfil') }}"
           class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.perfil*') ? 'bg-[#FFE66D]/15 text-[#FFE66D] font-extrabold' : 'text-gray-300 hover:text-white hover:bg-white/5' }}">
           <i class="fa-solid fa-user-gear text-sm"></i>Mi Perfil
-        </a>
-
-        <a href="{{ route('menu') }}" target="_blank"
-          class="px-3 py-2 rounded-lg transition-colors text-gray-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
-          <i class="fa-solid fa-store text-sm"></i>Ver Tienda
         </a>
 
         <div class="h-4 w-px bg-white/10 mx-1"></div>
@@ -84,6 +92,46 @@
       <button id="mobile-menu-btn" class="md:hidden text-gray-300 hover:text-white p-2 focus:outline-none text-lg">
         <i class="fa-solid fa-bars"></i>
       </button>
+    </div>
+
+    <!-- Mobile Dropdown Navigation Menu -->
+    <div id="mobile-menu"
+      class="hidden md:hidden mt-3 pt-3 border-t border-white/10 flex flex-col gap-1 text-right text-xs font-bold uppercase tracking-wider">
+      <a href="{{ route('admin.mesas') }}"
+        class="px-4 py-2.5 rounded-lg flex items-center justify-end gap-2.5 {{ request()->routeIs('admin.mesas*') ? 'bg-[#FFE66D]/15 text-[#FFE66D]' : 'text-gray-300 hover:bg-white/5' }}">
+        <i class="fa-solid fa-chair text-sm"></i>Mesas / POS
+      </a>
+      <a href="{{ route('admin.pedidos') }}"
+        class="px-4 py-2.5 rounded-lg flex items-center justify-end gap-2.5 {{ request()->routeIs('admin.pedidos*') ? 'bg-[#FFE66D]/15 text-[#FFE66D]' : 'text-gray-300 hover:bg-white/5' }}">
+        <i class="fa-solid fa-clipboard-list text-sm"></i>Pedidos
+      </a>
+      <a href="{{ route('admin.productos') }}"
+        class="px-4 py-2.5 rounded-lg flex items-center justify-end gap-2.5 {{ request()->routeIs('admin.productos*') ? 'bg-[#FFE66D]/15 text-[#FFE66D]' : 'text-gray-300 hover:bg-white/5' }}">
+        <i class="fa-solid fa-utensils text-sm"></i>Productos
+      </a>
+      <a href="{{ route('admin.categorias') }}"
+        class="px-4 py-2.5 rounded-lg flex items-center justify-end gap-2.5 {{ request()->routeIs('admin.categorias*') ? 'bg-[#FFE66D]/15 text-[#FFE66D]' : 'text-gray-300 hover:bg-white/5' }}">
+        <i class="fa-solid fa-layer-group text-sm"></i>Categorías
+      </a>
+      <a href="{{ route('admin.reportes') }}"
+        class="px-4 py-2.5 rounded-lg flex items-center justify-end gap-2.5 {{ request()->routeIs('admin.reportes*') ? 'bg-[#FFE66D]/15 text-[#FFE66D]' : 'text-gray-300 hover:bg-white/5' }}">
+        <i class="fa-solid fa-chart-pie text-sm"></i>Reportes
+      </a>
+      <a href="{{ route('admin.configuracion') }}"
+        class="px-4 py-2.5 rounded-lg flex items-center justify-end gap-2.5 {{ request()->routeIs('admin.configuracion*') ? 'bg-[#FFE66D]/15 text-[#FFE66D]' : 'text-gray-300 hover:bg-white/5' }}">
+        <i class="fa-solid fa-sliders text-sm"></i>Configuración
+      </a>
+      <a href="{{ route('admin.perfil') }}"
+        class="px-4 py-2.5 rounded-lg flex items-center justify-end gap-2.5 {{ request()->routeIs('admin.perfil*') ? 'bg-[#FFE66D]/15 text-[#FFE66D]' : 'text-gray-300 hover:bg-white/5' }}">
+        <i class="fa-solid fa-user-gear text-sm"></i>Mi Perfil
+      </a>
+      <form action="{{ route('logout') }}" method="POST" class="mt-2 pt-2 border-t border-white/10">
+        @csrf
+        <button type="submit"
+          class="w-full text-right px-4 py-2.5 rounded-lg text-red-400 font-bold uppercase flex items-center justify-end gap-2">
+          <i class="fa-solid fa-right-from-bracket"></i>Salir
+        </button>
+      </form>
     </div>
   </header>
 
@@ -321,6 +369,17 @@
         btn.style.opacity = '1';
       }
     }
+
+    // Toggle Menú Hamburguesa en móvil
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('mobile-menu-btn');
+      const menu = document.getElementById('mobile-menu');
+      if (btn && menu) {
+        btn.addEventListener('click', () => {
+          menu.classList.toggle('hidden');
+        });
+      }
+    });
   </script>
 </body>
 
