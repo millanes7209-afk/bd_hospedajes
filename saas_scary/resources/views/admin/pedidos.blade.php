@@ -190,7 +190,7 @@
                     $msgKey = $esAceptadoQR ? 'aceptado_qr' : ($est);
                     $currWspMsg = urlencode($wspMsgs[$msgKey] ?? $wspMsgs['pendiente']);
                     $wspLink = "https://wa.me/591{$phoneClean}?text={$currWspMsg}";
-                                                                                                                                                                     ?>
+                                                                                                                                                                                 ?>
 
                         <div
                             class="glass-card p-5 border <?php        echo $est === 'pendiente' ? 'border-amber-500/50 bg-amber-500/5' : 'border-white/10'; ?>">
@@ -201,14 +201,14 @@
                                         <span class="text-lg font-black text-[#FFE66D]">{{ $pedido['numero_pedido'] }}</span>
                                         <span
                                             class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider
-                                                                                                                                                                                                                                     @if($est === 'pendiente') bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse
-                                                                                                                                                                                                                                     @elseif($est === 'aceptado') bg-blue-500/20 text-blue-300 border border-blue-500/40
-                                                                                                                                                                                                                                     @elseif($est === 'preparando') bg-yellow-500/20 text-yellow-300 border border-yellow-500/40
-                                                                                                                                                                                                                                     @elseif($est === 'listo') bg-emerald-500/20 text-emerald-300 border border-emerald-500/40
-                                                                                                                                                                                                                                     @elseif($est === 'en_camino') bg-purple-500/20 text-purple-300 border border-purple-500/40
-                                                                                                                                                                                                                                     @elseif($est === 'entregado') bg-green-500/20 text-green-300 border border-green-500/40
-                                                                                                                                                                                                                                     @else bg-red-500/20 text-red-300 border border-red-500/40
-                                                                                                                                                                                                                                     @endif">
+                                                                                                                                                                                                                                                 @if($est === 'pendiente') bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse
+                                                                                                                                                                                                                                                 @elseif($est === 'aceptado') bg-blue-500/20 text-blue-300 border border-blue-500/40
+                                                                                                                                                                                                                                                 @elseif($est === 'preparando') bg-yellow-500/20 text-yellow-300 border border-yellow-500/40
+                                                                                                                                                                                                                                                 @elseif($est === 'listo') bg-emerald-500/20 text-emerald-300 border border-emerald-500/40
+                                                                                                                                                                                                                                                 @elseif($est === 'en_camino') bg-purple-500/20 text-purple-300 border border-purple-500/40
+                                                                                                                                                                                                                                                 @elseif($est === 'entregado') bg-green-500/20 text-green-300 border border-green-500/40
+                                                                                                                                                                                                                                                 @else bg-red-500/20 text-red-300 border border-red-500/40
+                                                                                                                                                                                                                                                 @endif">
                                             {{ strtoupper($pedido['estado']) }}
                                         </span>
                                     </div>
@@ -246,11 +246,12 @@
                                     @if($est === 'pendiente')
                                         <!-- ACEPTAR O RECHAZAR SOLICITUD -->
                                         <form action="{{ route('admin.pedidos.aceptar', $pedido['pedidoID']) }}" method="POST"
+                                            onsubmit="window.open('{{ route('ticket.show', $pedido['pedidoID']) }}?print=1', '_blank')"
                                             class="inline">
                                             @csrf
                                             <button type="submit"
-                                                class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs py-1.5 px-3 rounded-lg shadow-md uppercase">
-                                                <i class="fa-solid fa-circle-check mr-1"></i>ACEPTAR SOLICITUD
+                                                class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs py-1.5 px-3 rounded-lg shadow-md uppercase flex items-center gap-1">
+                                                <i class="fa-solid fa-circle-check"></i>ACEPTAR E IMPRIMIR (58mm)
                                             </button>
                                         </form>
 
@@ -272,7 +273,7 @@
                                             'cancelado' => null,
                                         ];
                                         $next = $siguienteEstado[$est] ?? null;
-                                                                                                                                                                                                                                                                                                                                                                                                                    ?>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                ?>
                                                     @if($next)
                                                         <form action="{{ route('admin.pedidos.estado', $pedido['pedidoID']) }}" method="POST"
                                                             class="inline">
@@ -295,6 +296,11 @@
                                     <a href="{{ route('ticket.show', $pedido['pedidoID']) }}" target="_blank"
                                         class="btn-outline text-xs font-bold py-1.5 px-3">
                                         <i class="fa-solid fa-eye mr-1"></i>VER
+                                    </a>
+
+                                    <a href="{{ route('ticket.show', $pedido['pedidoID']) }}?print=1" target="_blank"
+                                        class="bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-300 text-xs font-black py-1.5 px-3 rounded-lg transition-colors flex items-center gap-1">
+                                        <i class="fa-solid fa-print"></i>IMPRIMIR (58mm)
                                     </a>
                                 </div>
                             </div>

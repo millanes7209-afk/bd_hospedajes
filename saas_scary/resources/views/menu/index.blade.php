@@ -557,8 +557,10 @@ if (!function_exists('obtenerPrecioActivo')) {
   <!-- ═════════════════════════════ CART OVERLAY ══════════════════════════ -->
   <div id="cart-overlay" onclick="closeCart()"></div>
 
-  <!-- ═════════════════════════════ TOAST NOTIFICATION ══════════════════════════ -->
-  <div id="toast-container" class="fixed top-4 right-4 z-[2000] space-y-2"></div>
+  <!-- ═════════════════════════════ TOAST NOTIFICATION (Encima de VER PEDIDO) ══════════════════════════ -->
+  <div id="toast-container"
+    class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[2000] flex flex-col items-center gap-2 pointer-events-none w-full max-w-sm px-4">
+  </div>
 
   <!-- ══════════════════════════════ CART PANEL ═══════════════════════════ -->
   <div id="cart-panel">

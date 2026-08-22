@@ -426,28 +426,32 @@
 
     @media print {
       @page {
-        size: 80mm auto;
+        size: 58mm auto;
         margin: 0mm;
       }
 
       body {
-        background: white !important;
-        color: black !important;
+        background: #ffffff !important;
+        color: #000000 !important;
         padding: 0 !important;
         margin: 0 !important;
-        width: 80mm;
+        width: 58mm !important;
+        font-family: 'Courier New', Courier, monospace !important;
+        font-size: 11px !important;
       }
 
       .status-card,
       .payment-module,
       .action-buttons,
-      .timeline {
+      .timeline,
+      header,
+      footer {
         display: none !important;
       }
 
       .container {
-        max-width: 80mm !important;
-        width: 80mm !important;
+        max-width: 58mm !important;
+        width: 58mm !important;
         padding: 0 !important;
         margin: 0 !important;
       }
@@ -455,14 +459,33 @@
       .ticket-paper {
         box-shadow: none !important;
         border-radius: 0 !important;
-        padding: 4mm !important;
-        width: 100% !important;
-        color: #000 !important;
+        padding: 2mm !important;
+        width: 58mm !important;
+        color: #000000 !important;
       }
 
       .ticket-paper::after {
         display: none !important;
       }
+
+      .paper-header h2 {
+        font-size: 15px !important;
+        font-weight: 900 !important;
+      }
+
+      .paper-header p,
+      .paper-details,
+      .paper-item,
+      .paper-footer {
+        font-size: 10px !important;
+        line-height: 1.3 !important;
+      }
+
+      .paper-total {
+        font-size: 13px !important;
+        font-weight: 900 !important;
+      }
+    }
     }
   </style>
 </head>
@@ -726,6 +749,15 @@ $wspUrl = "https://wa.me/591" . preg_replace('/[^0-9]/', '', $pedido['cliente_te
         })
         .catch(err => console.log('Polling error:', err));
     }, 4000);
+
+    // Auto impresión para Impresora Térmica 58mm (IMP006)
+    <?php if (request()->has('print') || request()->has('autoprint')): ?>
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          window.print();
+        }, 500);
+      });
+    <?php endif; ?>
   </script>
 </body>
 
