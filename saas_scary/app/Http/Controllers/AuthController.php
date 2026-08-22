@@ -25,25 +25,30 @@ class AuthController extends Controller
         $contrasena = $request->input('contrasena');
 
         // 1. Verificación en la base de datos central saas_control (Super Admin / Desarrollador)
-        $superAdmin = SuperAdmin::where(function ($query) use ($correoInput) {
-            $query->where('email', strtolower($correoInput))
-                ->orWhere('email', strtoupper($correoInput))
-                ->orWhere('email', $correoInput);
-        })->first();
+        try {
+            $superAdmin = SuperAdmin::where(function ($query) use ($correoInput) {
+                $query->where('email', strtolower($correoInput))
+                    ->orWhere('email', strtoupper($correoInput))
+                    ->orWhere('email', $correoInput);
+            })->first();
 
-        if ($superAdmin) {
-            if (Hash::check($contrasena, $superAdmin->password)) {
-                Auth::login($superAdmin);
-                Session::put('usuarioID', $superAdmin->id);
-                Session::put('nombre', $superAdmin->nombre);
-                Session::put('rolID', 'SUPER_ADMIN');
-                Session::put('is_super_admin', true);
-                Session::put('admin_logged_in', true);
+            if ($superAdmin) {
+                if (Hash::check($contrasena, $superAdmin->password)) {
+                    Auth::login($superAdmin);
+                    Session::put('usuarioID', $superAdmin->id);
+                    Session::put('nombre', $superAdmin->nombre);
+                    Session::put('rolID', 'SUPER_ADMIN');
+                    Session::put('is_super_admin', true);
+                    Session::put('admin_logged_in', true);
 
-                return redirect()->route('admin.pedidos');
-            } else {
-                return back()->withInput()->with('error', 'La contraseña ingresada es incorrecta.');
+                    return redirect()->route('admin.pedidos');
+                } else {
+                    return back()->withInput()->with('error', 'La contraseña ingresada es incorrecta.');
+                }
             }
+        } catch (\Throwable $e) {
+            // Si la BD central saas_control no está accesible, continuar con el login del tenant sin bloquear la aplicación
+            \Illuminate\Support\Facades\Log::warning('No se pudo consultar saas_control en AuthController: ' . $e->getMessage());
         }
 
         // 2. Verificación en la tabla 'users' de la empresa/tenant activa (usuarios del CRUD)
