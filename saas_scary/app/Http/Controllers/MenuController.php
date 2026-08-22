@@ -26,17 +26,21 @@ class MenuController extends Controller
             ->orderBy('p.productoID', 'desc')
             ->get();
 
-        // Obtener variantes activas y disponibles
-        $variantesRaw = DB::table('producto_variantes as v')
+        // Obtener variantes activas y disponibles (verificando dinámicamente si existe la columna orden_mostrado)
+        $hasOrdenVar = \Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'orden_mostrado');
+        $queryVar = DB::table('producto_variantes as v')
             ->where(function ($q) {
                 $q->whereNull('v.disponible')->orWhere('v.disponible', 1);
             })
             ->where(function ($q) {
                 $q->whereNull('v.activo')->orWhere('v.activo', 1);
-            })
-            ->orderBy('v.orden_mostrado', 'asc')
-            ->orderBy('v.varianteID', 'asc')
-            ->get();
+            });
+
+        if ($hasOrdenVar) {
+            $queryVar->orderBy('v.orden_mostrado', 'asc');
+        }
+
+        $variantesRaw = $queryVar->orderBy('v.varianteID', 'asc')->get();
 
         $variantesMap = [];
         foreach ($variantesRaw as $v) {
