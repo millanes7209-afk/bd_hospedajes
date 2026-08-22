@@ -373,6 +373,26 @@ if (!function_exists('obtenerPrecioActivo')) {
     </div>
   </div>
 
+  <!-- ════════════════ NAVEGACIÓN RÁPIDA POR CATEGORÍAS (STICKY) ════════════════ -->
+  <?php if (!empty($menuGrouped)): ?>
+  <div class="sticky top-0 z-30 bg-black/80 backdrop-blur-md border-b border-white/10 py-3 shadow-lg">
+    <div class="max-w-4xl mx-auto px-4 flex items-center gap-2 overflow-x-auto scrollbar-none no-scrollbar">
+      <a href="#cat-todos" onclick="scrollToCat(event, 'all')"
+        class="px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap bg-[#FFE66D] text-black shadow-sm transition-all hover:scale-105">
+        <i class="fa-solid fa-list-ul mr-1.5"></i>TODOS
+      </a>
+      <?php  foreach ($menuGrouped as $catNombre => $catItems):
+    $catSlug = 'cat-' . \Illuminate\Support\Str::slug($catNombre);
+      ?>
+      <a href="#<?php    echo $catSlug; ?>" onclick="scrollToCat(event, '<?php    echo $catSlug; ?>')"
+        class="px-4 py-2 rounded-full text-xs font-extrabold uppercase tracking-wider whitespace-nowrap bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/15 transition-all hover:scale-105">
+        <?php    echo htmlspecialchars($catNombre); ?>
+      </a>
+      <?php  endforeach; ?>
+    </div>
+  </div>
+  <?php endif; ?>
+
   <!-- ══════════════════════════ CONTENIDO PRINCIPAL ══════════════════════ -->
   <div class="max-w-4xl mx-auto px-4 pb-32 pt-8">
 
@@ -388,8 +408,10 @@ if (!function_exists('obtenerPrecioActivo')) {
     </div>
     <?php else: ?>
     <div class="space-y-12">
-      <?php  foreach ($menuGrouped as $categoria => $items): ?>
-      <div data-category-block>
+      <?php  foreach ($menuGrouped as $categoria => $items):
+    $blockId = 'cat-' . \Illuminate\Support\Str::slug($categoria);
+      ?>
+      <div id="<?php    echo $blockId; ?>" data-category-block class="scroll-mt-20">
         <h2
           class="cat-header text-lg font-extrabold tracking-wider uppercase mb-5 flex items-center gap-2 border-b pb-2">
           <i class="fa-solid fa-fire cat-fire"></i>
@@ -1012,6 +1034,21 @@ if (!function_exists('obtenerPrecioActivo')) {
 
     // ── Inicializar variantes seleccionadas
     initializeSelectedVariants();
+
+    // ── Navegación suave por categorías
+    function scrollToCat(e, id) {
+      if (e) e.preventDefault();
+      if (id === 'all') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      const el = document.getElementById(id);
+      if (el) {
+        const yOffset = -70;
+        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }
 
     // Sincronización continua cada 2 segundos y en eventos de visibilidad
     checkRealtimeAvailability();

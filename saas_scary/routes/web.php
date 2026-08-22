@@ -54,6 +54,12 @@ Route::middleware([TenantMiddleware::class])->group(function () {
         // Reportes y Estadísticas
         Route::get('/reportes', [\App\Http\Controllers\ReporteController::class, 'index'])->name('admin.reportes');
 
+        // Gestor de Categorías
+        Route::get('/categorias', [\App\Http\Controllers\CategoriaController::class, 'index'])->name('admin.categorias');
+        Route::post('/categorias', [\App\Http\Controllers\CategoriaController::class, 'store'])->name('admin.categorias.store');
+        Route::post('/categorias/update/{id}', [\App\Http\Controllers\CategoriaController::class, 'update'])->name('admin.categorias.update');
+        Route::get('/categorias/estado/{id}', [\App\Http\Controllers\CategoriaController::class, 'toggleEstado'])->name('admin.categorias.estado');
+
         // Configuración de Perfil de Empresa & Logo
         Route::get('/configuracion', [\App\Http\Controllers\ConfiguracionController::class, 'index'])->name('admin.configuracion');
         Route::post('/configuracion', [\App\Http\Controllers\ConfiguracionController::class, 'update'])->name('admin.configuracion.update');
