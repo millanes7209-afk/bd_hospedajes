@@ -348,24 +348,26 @@ if (!function_exists('obtenerPrecioActivo')) {
       </a>
     </div>
     <div class="max-w-4xl mx-auto px-4 flex flex-col items-center text-center relative z-10">
-      <div class="w-52 h-32 mb-3 hover:scale-105 transition-transform duration-300">
+      <div class="w-52 h-32 mb-3 hover:scale-105 transition-transform duration-300 flex items-center justify-center">
         @if (!empty($tenant->logo) && file_exists(public_path($tenant->logo)))
-          <img src="{{ asset($tenant->logo) }}" alt="{{ $tenant->nombre }}" class="w-full h-full object-contain">
-        @elseif (file_exists(public_path('assets/ricopollo.svg')))
-          <img src="{{ asset('assets/ricopollo.svg') }}" alt="LOGO" class="w-full h-full object-contain">
-        @elseif (file_exists(public_path('assets/logo.png')))
-          <img src="{{ asset('assets/logo.png') }}" alt="LOGO" class="w-full h-full object-contain">
+          <img src="{{ asset($tenant->logo) }}" alt="{{ $tenant->nombre ?? 'LOGO' }}"
+            class="w-full h-full object-contain">
+        @elseif (!empty($tenant->subdominio) && file_exists(public_path('assets/' . $tenant->subdominio . '.svg')))
+          <img src="{{ asset('assets/' . $tenant->subdominio . '.svg') }}" alt="{{ $tenant->nombre ?? 'LOGO' }}"
+            class="w-full h-full object-contain">
         @elseif (file_exists(public_path('assets/logo.svg')))
           <img src="{{ asset('assets/logo.svg') }}" alt="LOGO" class="w-full h-full object-contain">
+        @elseif (file_exists(public_path('assets/ricopollo.svg')))
+          <img src="{{ asset('assets/ricopollo.svg') }}" alt="LOGO" class="w-full h-full object-contain">
         @else
           <i class="fa-solid fa-utensils text-4xl text-[#FFE66D]"></i>
         @endif
       </div>
       <p class="hero-tagline font-bold text-sm tracking-widest uppercase mb-1">
-        <?php echo strtoupper('Sabor que cruje, pasión que deleita'); ?>
+        {{ strtoupper($tenant->eslogan ?? 'Sabor que cruje, pasión que deleita') }}
       </p>
       <h1 class="hero-title text-3xl md:text-4xl font-extrabold uppercase mb-3">
-        <?php echo strtoupper('NUESTRO MENÚ'); ?>
+        {{ strtoupper('NUESTRO MENÚ') }}
       </h1>
       <div class="w-16 h-1 bg-[#E23E1A] rounded"></div>
     </div>

@@ -18,6 +18,7 @@ class Tenant extends Model
         'db_usuario',
         'db_password',
         'logo',
+        'eslogan',
         'primary_color',
         'accent_color',
         'dark_bg_color',

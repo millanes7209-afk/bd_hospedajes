@@ -54,6 +54,10 @@ Route::middleware([TenantMiddleware::class])->group(function () {
         // Reportes y Estadísticas
         Route::get('/reportes', [\App\Http\Controllers\ReporteController::class, 'index'])->name('admin.reportes');
 
+        // Configuración de Perfil de Empresa & Logo
+        Route::get('/configuracion', [\App\Http\Controllers\ConfiguracionController::class, 'index'])->name('admin.configuracion');
+        Route::post('/configuracion', [\App\Http\Controllers\ConfiguracionController::class, 'update'])->name('admin.configuracion.update');
+
         // Perfil personal para Cajeros y Administradores
         Route::get('/perfil', [UserController::class, 'profile'])->name('admin.perfil');
         Route::post('/perfil/password', [UserController::class, 'updatePassword'])->name('admin.perfil.password');
