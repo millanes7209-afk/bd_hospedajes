@@ -59,8 +59,8 @@ if (!function_exists('obtenerPrecioActivo')) {
     }
 
     html.light-mode .hero-band {
-      background: linear-gradient(135deg, #1a1a24 0%, #0d0d13 100%);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     }
 
     html.dark-mode .hero-band {
@@ -120,21 +120,19 @@ if (!function_exists('obtenerPrecioActivo')) {
       border-color: rgba(255, 255, 255, 0.05);
     }
 
-    html.light-mode .hero-title,
-    html.light-mode .hero-tagline {
-      color: #fff;
-    }
-
-    html.dark-mode .hero-title,
-    html.dark-mode .hero-tagline {
-      color: #fff;
-    }
-
-    html.dark-mode .hero-tagline {
-      color: #FFE66D;
+    html.light-mode .hero-title {
+      color: #111827;
     }
 
     html.light-mode .hero-tagline {
+      color: var(--color-accent, #E23E1A);
+    }
+
+    html.dark-mode .hero-title {
+      color: #fff;
+    }
+
+    html.dark-mode .hero-tagline {
       color: #FFE66D;
     }
 
@@ -542,7 +540,8 @@ if (!function_exists('obtenerPrecioActivo')) {
     <footer class="footer-text mt-16 text-center text-xs border-t pt-5">
       <p class="uppercase font-semibold tracking-widest">&copy; <?php echo date('Y'); ?>
         {{ strtoupper($tenant->nombre ?? 'NUESTRA EMPRESA') }} &mdash;
-        {{ strtoupper($tenant->footer_texto ?? $tenant->eslogan ?? 'TODOS LOS DERECHOS RESERVADOS') }}</p>
+        {{ strtoupper($tenant->footer_texto ?? $tenant->eslogan ?? 'TODOS LOS DERECHOS RESERVADOS') }}
+      </p>
     </footer>
   </div>
 
