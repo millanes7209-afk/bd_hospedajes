@@ -29,9 +29,12 @@ class TenantMiddleware
         // Si el subdominio es 'scary', estamos en el entorno del SuperAdmin Central
         if ($subdominio === 'scary') {
             app()->instance('is_super_admin_panel', true);
-            self::setupSaasControlConnection();
+            self::setupSaasControlConnection(true);
             return $next($request);
         }
+
+        // Asegurar que saas_control esté configurada en segundo plano para consultas de SuperAdmin
+        self::setupSaasControlConnection(false);
 
         // Resolver Tenant sobre la base de datos por defecto o tenant
         try {
@@ -70,7 +73,7 @@ class TenantMiddleware
     /**
      * Configuración tolerante a fallos para la base de datos central saas_control
      */
-    public static function setupSaasControlConnection()
+    public static function setupSaasControlConnection(bool $setAsDefault = false)
     {
         $host = env('DB_CONTROL_HOST', 'sdb-90.hosting.stackcp.net');
         $db = env('DB_CONTROL_DATABASE', 'saas_control-35313139e726');
@@ -96,9 +99,12 @@ class TenantMiddleware
                         'collation' => 'utf8mb4_unicode_ci',
                         'prefix' => '',
                         'strict' => false,
-                    ],
-                    'database.default' => 'saas_control'
+                    ]
                 ]);
+
+                if ($setAsDefault) {
+                    config(['database.default' => 'saas_control']);
+                }
 
                 DB::purge('saas_control');
                 DB::reconnect('saas_control');
@@ -109,7 +115,8 @@ class TenantMiddleware
             }
         }
 
-        // Si falla la conexión remota a sdb-90, usar la conexión por defecto (mysql)
-        config(['database.default' => env('DB_CONNECTION', 'mysql')]);
+        if ($setAsDefault) {
+            config(['database.default' => env('DB_CONNECTION', 'mysql')]);
+        }
     }
 }
