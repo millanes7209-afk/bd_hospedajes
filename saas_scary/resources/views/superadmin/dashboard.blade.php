@@ -255,13 +255,23 @@
                     </div>
                     <div>
                         <label class="block uppercase text-gray-300 mb-1">RUBRO / CATEGORÍA *</label>
-                        <input type="text" name="rubro" required placeholder="Ej: PIZZERIA, RESTAURANTE, PASTELERIA"
+                        <input type="text" name="rubro" required placeholder="Ej: PIZZERIA, RESTAURANTE, SALTEÑERIA"
                             class="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-amber-400 focus:outline-none">
                     </div>
                     <div>
                         <label class="block uppercase text-gray-300 mb-1">LOGO DE LA EMPRESA (SVG / PNG)</label>
                         <input type="file" name="logo" accept="image/*"
                             class="w-full bg-black/50 border border-white/10 rounded-xl p-2.5 text-gray-300 focus:border-amber-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block uppercase text-gray-300 mb-1">ESLOGAN DE LA EMPRESA</label>
+                        <input type="text" name="eslogan" placeholder="Ej: El auténtico sabor de la salteña"
+                            class="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-amber-200 focus:border-amber-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block uppercase text-gray-300 mb-1">TEXTO PIE DE PÁGINA (FOOTER)</label>
+                        <input type="text" name="footer_texto" placeholder="Ej: Tradición, jugo y sabor inigualables"
+                            class="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-gray-300 focus:border-amber-400 focus:outline-none">
                     </div>
                 </div>
 
@@ -363,6 +373,18 @@
                         <input type="file" name="logo" accept="image/*"
                             class="w-full bg-black/50 border border-white/10 rounded-xl p-2.5 text-gray-300 focus:border-amber-400 focus:outline-none">
                     </div>
+                    <div>
+                        <label class="block uppercase text-gray-300 mb-1">ESLOGAN DE LA EMPRESA</label>
+                        <input type="text" id="edit_eslogan" name="eslogan"
+                            placeholder="Ej: El auténtico sabor de la salteña"
+                            class="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-amber-200 focus:border-amber-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block uppercase text-gray-300 mb-1">TEXTO PIE DE PÁGINA (FOOTER)</label>
+                        <input type="text" id="edit_footer_texto" name="footer_texto"
+                            placeholder="Ej: Tradición, jugo y sabor inigualables"
+                            class="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-gray-300 focus:border-amber-400 focus:outline-none">
+                    </div>
                 </div>
 
                 <hr class="border-white/10 my-4">
@@ -444,6 +466,8 @@
             document.getElementById('edit_nombre').value = t.nombre;
             document.getElementById('edit_subdominio').value = t.subdominio;
             document.getElementById('edit_rubro').value = t.rubro;
+            document.getElementById('edit_eslogan').value = t.eslogan || '';
+            document.getElementById('edit_footer_texto').value = t.footer_texto || '';
             document.getElementById('edit_db_host').value = t.db_host;
             document.getElementById('edit_db_nombre').value = t.db_nombre;
             document.getElementById('edit_db_usuario').value = t.db_usuario;

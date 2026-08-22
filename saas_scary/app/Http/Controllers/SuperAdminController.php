@@ -118,6 +118,8 @@ class SuperAdminController extends Controller
             'db_usuario' => $request->db_usuario,
             'db_password' => $request->db_password,
             'logo' => $logoPath,
+            'eslogan' => $request->eslogan ?? null,
+            'footer_texto' => $request->footer_texto ?? null,
             'primary_color' => $request->primary_color ?? '#FFE66D',
             'accent_color' => $request->accent_color ?? '#E23E1A',
             'dark_bg_color' => $request->dark_bg_color ?? '#09090c',
@@ -160,6 +162,8 @@ class SuperAdminController extends Controller
         $tenant->nombre = $request->nombre;
         $tenant->subdominio = strtolower(trim($request->subdominio));
         $tenant->rubro = strtoupper(trim($request->rubro));
+        $tenant->eslogan = $request->eslogan;
+        $tenant->footer_texto = $request->footer_texto;
         $tenant->db_host = $request->db_host;
         $tenant->db_nombre = $request->db_nombre;
         $tenant->db_usuario = $request->db_usuario;

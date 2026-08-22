@@ -540,8 +540,9 @@ if (!function_exists('obtenerPrecioActivo')) {
     <?php endif; ?>
 
     <footer class="footer-text mt-16 text-center text-xs border-t pt-5">
-      <p class="uppercase font-semibold tracking-widest">&copy; <?php echo date('Y'); ?> RICO POLLO &mdash; TODO EL
-        SABOR EN UN SOLO LUGAR</p>
+      <p class="uppercase font-semibold tracking-widest">&copy; <?php echo date('Y'); ?>
+        {{ strtoupper($tenant->nombre ?? 'NUESTRA EMPRESA') }} &mdash;
+        {{ strtoupper($tenant->footer_texto ?? $tenant->eslogan ?? 'TODOS LOS DERECHOS RESERVADOS') }}</p>
     </footer>
   </div>
 
