@@ -340,13 +340,6 @@ if (!function_exists('obtenerPrecioActivo')) {
     <div class="absolute inset-0 pointer-events-none"
       style="background:radial-gradient(circle at center,rgba(226,62,26,0.12) 0%,transparent 65%)"></div>
     <!-- TOP BAR -->
-    <div class="absolute top-4 left-4 z-20 flex items-center gap-2">
-      <button id="openMobileDrawerBtn" onclick="toggleMobileCatDrawer(true)"
-        class="btn-session font-black uppercase text-xs shadow-md">
-        <i class="fa-solid fa-bars text-sm text-[#FFE66D]"></i>
-        <span>CATEGORÍAS</span>
-      </button>
-    </div>
     <div class="absolute top-4 right-4 z-20 flex items-center gap-2">
       <button id="modeToggle" class="mode-toggle-btn" title="Cambiar modo"><span id="modeIcon">☀️</span></button>
       <a href="{{ route('login') }}" class="btn-session">
@@ -382,17 +375,19 @@ if (!function_exists('obtenerPrecioActivo')) {
 
   <!-- ════════════════ NAVEGACIÓN RÁPIDA POR CATEGORÍAS (STICKY) ════════════════ -->
   <?php if (!empty($menuGrouped)): ?>
-  <div class="sticky top-0 z-30 bg-black/80 backdrop-blur-md border-b border-white/10 py-3 shadow-lg">
-    <div class="max-w-4xl mx-auto px-4 flex items-center gap-2 overflow-x-auto scrollbar-none no-scrollbar">
-      <a href="#cat-todos" onclick="scrollToCat(event, 'all')"
-        class="px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap bg-[#FFE66D] text-black shadow-sm transition-all hover:scale-105">
+  <div class="sticky top-0 z-30 bg-black/85 backdrop-blur-md border-b border-white/10 py-3 shadow-lg">
+    <div id="cat-pills-container"
+      class="max-w-4xl mx-auto px-4 flex items-center gap-2 overflow-x-auto scrollbar-none no-scrollbar">
+      <a href="#cat-todos" data-cat-pill="all" onclick="scrollToCat(event, 'all')"
+        class="cat-pill px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap bg-[#FFE66D] text-black shadow-md transition-all scale-105">
         <i class="fa-solid fa-list-ul mr-1.5"></i>TODOS
       </a>
       <?php  foreach ($menuGrouped as $catNombre => $catItems):
     $catSlug = 'cat-' . \Illuminate\Support\Str::slug($catNombre);
       ?>
-      <a href="#<?php    echo $catSlug; ?>" onclick="scrollToCat(event, '<?php    echo $catSlug; ?>')"
-        class="px-4 py-2 rounded-full text-xs font-extrabold uppercase tracking-wider whitespace-nowrap bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/15 transition-all hover:scale-105">
+      <a href="#<?php    echo $catSlug; ?>" data-cat-pill="<?php    echo $catSlug; ?>"
+        onclick="scrollToCat(event, '<?php    echo $catSlug; ?>')"
+        class="cat-pill px-4 py-2 rounded-full text-xs font-extrabold uppercase tracking-wider whitespace-nowrap bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/15 transition-all">
         <?php    echo htmlspecialchars($catNombre); ?>
       </a>
       <?php  endforeach; ?>
@@ -1042,9 +1037,20 @@ if (!function_exists('obtenerPrecioActivo')) {
     // ── Inicializar variantes seleccionadas
     initializeSelectedVariants();
 
-    // ── Navegación suave por categorías
+    // ── Resaltado y Navegación activa por categorías
+    function setActiveCatPill(targetId) {
+      document.querySelectorAll('[data-cat-pill]').forEach(pill => {
+        if (pill.getAttribute('data-cat-pill') === targetId) {
+          pill.className = 'cat-pill px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap bg-[#FFE66D] text-black shadow-md transition-all scale-105';
+        } else {
+          pill.className = 'cat-pill px-4 py-2 rounded-full text-xs font-extrabold uppercase tracking-wider whitespace-nowrap bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/15 transition-all';
+        }
+      });
+    }
+
     function scrollToCat(e, id) {
       if (e) e.preventDefault();
+      setActiveCatPill(id);
       if (id === 'all') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
@@ -1057,70 +1063,30 @@ if (!function_exists('obtenerPrecioActivo')) {
       }
     }
 
-  <!-- ════════════════ DRAWER MENÚ HAMBURGUESA CATEGORÍAS ════════════════ -->
-  <div id="cat-drawer-overlay" onclick="toggleMobileCatDrawer(false)" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+    // Auto resaltado de categoría activa según la posición del scroll
+    document.addEventListener('DOMContentLoaded', () => {
+      const blocks = document.querySelectorAll('[data-category-block]');
+      if ('IntersectionObserver' in window && blocks.length > 0) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const id = entry.target.id;
+              if (id) setActiveCatPill(id);
+            }
+          });
+        }, { rootMargin: '-20% 0px -60% 0px' });
 
-  <div id="cat-drawer-panel" class="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-[#09090c] border-r border-white/10 z-50 transform -translate-x-full transition-transform duration-300 ease-out flex flex-col shadow-2xl">
-    <!-- Drawer Header -->
-    <div class="p-5 border-b border-white/10 flex items-center justify-between bg-black/40">
-      <div class="flex items-center gap-3">
-        <i class="fa-solid fa-layer-group text-[#FFE66D] text-lg"></i>
-        <h3 class="font-black text-sm uppercase text-white tracking-wider">CATEGORÍAS</h3>
-      </div>
-      <button onclick="toggleMobileCatDrawer(false)" class="text-gray-400 hover:text-white p-2 text-lg">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-
-    <!-- Category List -->
-    <div class="flex-1 overflow-y-auto p-4 space-y-2">
-      <button onclick="selectCatDrawer('all')" class="w-full text-left p-3.5 rounded-xl bg-[#FFE66D]/15 border border-[#FFE66D]/30 flex items-center justify-between font-black uppercase text-xs text-[#FFE66D]">
-        <span class="flex items-center gap-2.5"><i class="fa-solid fa-list-ul"></i> MOSTRAR TODO EL MENÚ</span>
-      </button>
-
-      <?php if (!empty($menuGrouped)): ?>
-        <?php  foreach ($menuGrouped as $catNombre => $catItems):
-    $catSlug = 'cat-' . \Illuminate\Support\Str::slug($catNombre);
-        ?>
-        <button onclick="selectCatDrawer('<?php    echo $catSlug; ?>')" class="w-full text-left p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center justify-between font-extrabold uppercase text-xs text-gray-200 transition-colors">
-          <span class="flex items-center gap-2.5">
-            <i class="fa-solid fa-fire text-[#E23E1A]"></i>
-            <?php    echo htmlspecialchars($catNombre); ?>
-          </span>
-          <span class="bg-white/10 text-gray-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-            <?php    echo count($catItems); ?>
-          </span>
-        </button>
-        <?php  endforeach; ?>
-      <?php endif; ?>
-    </div>
-
-    <!-- Drawer Footer -->
-    <div class="p-4 border-t border-white/10 bg-black/40 text-center text-[11px] text-gray-500 font-bold uppercase">
-      {{ strtoupper($tenant->nombre ?? 'MENÚ DIGITAL') }}
-    </div>
-  </div>
-
-  <script>
-    // ── Drawer Hamburguesa de Categorías
-    function toggleMobileCatDrawer(show) {
-      const overlay = document.getElementById('cat-drawer-overlay');
-      const panel = document.getElementById('cat-drawer-panel');
-      if (show) {
-        overlay.classList.remove('opacity-0', 'pointer-events-none');
-        panel.classList.remove('-translate-x-full');
-      } else {
-        overlay.classList.add('opacity-0', 'pointer-events-none');
-        panel.classList.add('-translate-x-full');
+        blocks.forEach(b => observer.observe(b));
       }
-    }
+    });
 
-    function selectCatDrawer(id) {
-      toggleMobileCatDrawer(false);
-      setTimeout(() => {
-        scrollToCat(null, id);
-      }, 200);
-    }
+    // Sincronización continua cada 2 segundos y en eventos de visibilidad
+    checkRealtimeAvailability();
+    setInterval(checkRealtimeAvailability, 2000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) checkRealtimeAvailability();
+    });
+    window.addEventListener('focus', checkRealtimeAvailability);
   </script>
 </body>
 
