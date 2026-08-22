@@ -32,14 +32,14 @@ if (!function_exists('obtenerPrecioActivo')) {
 }
 ?>
 <!doctype html>
-<html lang="es" class="dark-mode">
+<html lang="es" class="light-mode">
 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>RICO POLLO - MENÚ</title>
-  <meta name="description" content="Pide en línea tu pollo favorito. Recoger, domicilio o mesa. RICO POLLO.">
-  <script>(function () { var s = localStorage.getItem('rp_theme') || 'dark'; document.documentElement.className = s === 'light' ? 'light-mode' : 'dark-mode'; })();</script>
+  <title>MENÚ DIGITAL</title>
+  <meta name="description" content="Pide en línea tu comida favorita. Recoger, domicilio o mesa.">
+  <script>(function () { var s = localStorage.getItem('rp_theme') || 'light'; document.documentElement.className = s === 'dark' ? 'dark-mode' : 'light-mode'; })();</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -142,6 +142,51 @@ if (!function_exists('obtenerPrecioActivo')) {
 
     html.dark-mode .cat-fire {
       color: #E23E1A;
+    }
+
+    /* ── BARRA STICKY DE CATEGORÍAS ADAPTATIVA ── */
+    html.light-mode .cat-sticky-bar {
+      background-color: rgba(255, 255, 255, 0.92);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    html.dark-mode .cat-sticky-bar {
+      background-color: rgba(9, 9, 12, 0.88);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    }
+
+    html.light-mode .cat-pill-inactive {
+      background-color: rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.10);
+      color: #4b5563;
+    }
+
+    html.light-mode .cat-pill-inactive:hover {
+      background-color: rgba(0, 0, 0, 0.10);
+      color: #111827;
+    }
+
+    html.dark-mode .cat-pill-inactive {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      color: #d1d5db;
+    }
+
+    html.dark-mode .cat-pill-inactive:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+    }
+
+    html.light-mode .cat-pill-active {
+      background-color: var(--color-accent, #E23E1A);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(226, 62, 26, 0.35);
+    }
+
+    html.dark-mode .cat-pill-active {
+      background-color: #FFE66D;
+      color: #000000;
+      box-shadow: 0 4px 14px rgba(255, 230, 109, 0.35);
     }
 
     html.light-mode .price-symbol {
@@ -373,11 +418,11 @@ if (!function_exists('obtenerPrecioActivo')) {
 
   <!-- ════════════════ NAVEGACIÓN RÁPIDA POR CATEGORÍAS (STICKY) ════════════════ -->
   <?php if (!empty($menuGrouped)): ?>
-  <div class="sticky top-0 z-30 bg-black/85 backdrop-blur-md border-b border-white/10 py-3 shadow-lg">
+  <div class="cat-sticky-bar sticky top-0 z-30 backdrop-blur-md py-3 shadow-lg">
     <div id="cat-pills-container"
       class="max-w-4xl mx-auto px-4 flex items-center gap-2 overflow-x-auto scrollbar-none no-scrollbar">
       <a href="#cat-todos" data-cat-pill="all" onclick="scrollToCat(event, 'all')"
-        class="cat-pill px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap bg-[#FFE66D] text-black shadow-md transition-all scale-105">
+        class="cat-pill cat-pill-active px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap transition-all scale-105">
         <i class="fa-solid fa-list-ul mr-1.5"></i>TODOS
       </a>
       <?php  foreach ($menuGrouped as $catNombre => $catItems):
@@ -385,7 +430,7 @@ if (!function_exists('obtenerPrecioActivo')) {
       ?>
       <a href="#<?php    echo $catSlug; ?>" data-cat-pill="<?php    echo $catSlug; ?>"
         onclick="scrollToCat(event, '<?php    echo $catSlug; ?>')"
-        class="cat-pill px-4 py-2 rounded-full text-xs font-extrabold uppercase tracking-wider whitespace-nowrap bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/15 transition-all">
+        class="cat-pill cat-pill-inactive px-4 py-2 rounded-full text-xs font-extrabold uppercase tracking-wider whitespace-nowrap transition-all">
         <?php    echo htmlspecialchars($catNombre); ?>
       </a>
       <?php  endforeach; ?>
@@ -1043,9 +1088,9 @@ if (!function_exists('obtenerPrecioActivo')) {
     function setActiveCatPill(targetId) {
       document.querySelectorAll('[data-cat-pill]').forEach(pill => {
         if (pill.getAttribute('data-cat-pill') === targetId) {
-          pill.className = 'cat-pill px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap bg-[#FFE66D] text-black shadow-md transition-all scale-105';
+          pill.className = 'cat-pill cat-pill-active px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap transition-all scale-105';
         } else {
-          pill.className = 'cat-pill px-4 py-2 rounded-full text-xs font-extrabold uppercase tracking-wider whitespace-nowrap bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/15 transition-all';
+          pill.className = 'cat-pill cat-pill-inactive px-4 py-2 rounded-full text-xs font-extrabold uppercase tracking-wider whitespace-nowrap transition-all';
         }
       });
     }
