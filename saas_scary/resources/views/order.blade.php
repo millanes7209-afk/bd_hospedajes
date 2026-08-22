@@ -361,9 +361,17 @@
       if (el) el.textContent = total.toFixed(2);
     }
 
+    // ── Prevenir doble envío por doble clic
+    let isSubmittingOrder = false;
+
     // ── Preparar inputs ocultos del carrito antes de submit
     function prepareSubmit() {
       try {
+        if (isSubmittingOrder) {
+          console.warn('⚠️ Pedido ya en proceso de envío.');
+          return false;
+        }
+
         const keys = Object.keys(cartData);
 
         if (keys.length === 0) {
@@ -388,12 +396,23 @@
           add('cart_items_final[' + k + '][qty]', item.qty || 1);
         }
 
+        // Marcar bandera y deshabilitar botón submit para evitar doble clic
+        isSubmittingOrder = true;
+        const btnSubmit = document.querySelector('#order-form button[type="submit"]');
+        if (btnSubmit) {
+          btnSubmit.disabled = true;
+          btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-base"></i> ENVIANDO PEDIDO...';
+          btnSubmit.style.opacity = '0.65';
+          btnSubmit.style.pointerEvents = 'none';
+        }
+
         // Limpiar el carrito de localStorage al confirmar
         localStorage.removeItem('rp_cart');
 
         return true;
       } catch (error) {
         alert('ERROR AL PROCESAR EL PEDIDO: ' + error.message);
+        isSubmittingOrder = false;
         return false;
       }
     }

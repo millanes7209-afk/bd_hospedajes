@@ -126,6 +126,19 @@ class PedidoController extends Controller
             return redirect()->back()->withInput()->with('error', 'DEBES AGREGAR AL MENOS UN PRODUCTO.');
         }
 
+        // Protección anti-duplicados backend (Previene doble clic o peticiones simultáneas)
+        $pedidoReciente = DB::table('pedidos')
+            ->where('cliente_telefono', $cliente_telefono)
+            ->where('cliente_nombre', $cliente_nombre)
+            ->where('fecha_creacion', '>=', now()->subSeconds(10))
+            ->orderBy('pedidoID', 'desc')
+            ->first();
+
+        if ($pedidoReciente) {
+            // Si ya existe un pedido idéntico creado hace menos de 10 segundos, redirigir al ticket existente
+            return redirect()->route('ticket.show', ['id' => $pedidoReciente->pedidoID]);
+        }
+
         DB::beginTransaction();
         try {
             $pedidoID = DB::table('pedidos')->insertGetId([
