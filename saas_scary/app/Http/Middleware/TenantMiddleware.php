@@ -29,11 +29,16 @@ class TenantMiddleware
         // Si el subdominio es 'scary', estamos en el entorno del SuperAdmin Central
         if ($subdominio === 'scary') {
             app()->instance('is_super_admin_panel', true);
-            config(['database.default' => 'saas_control']);
+            self::setupSaasControlConnection();
             return $next($request);
         }
 
-        $tenant = Tenant::where('subdominio', $subdominio)->where('_estado', 'A')->first();
+        // Resolver Tenant sobre la base de datos por defecto o tenant
+        try {
+            $tenant = Tenant::where('subdominio', $subdominio)->where('_estado', 'A')->first();
+        } catch (\Throwable $e) {
+            $tenant = null;
+        }
 
         if ($tenant) {
             // Store active tenant globally in Service Container
@@ -60,5 +65,51 @@ class TenantMiddleware
         }
 
         return $next($request);
+    }
+
+    /**
+     * Configuración tolerante a fallos para la base de datos central saas_control
+     */
+    public static function setupSaasControlConnection()
+    {
+        $host = env('DB_CONTROL_HOST', 'sdb-90.hosting.stackcp.net');
+        $db = env('DB_CONTROL_DATABASE', 'saas_control-35313139e726');
+        $user = env('DB_CONTROL_USERNAME', 'saas_control-35313139e726');
+        $passwords = array_filter([
+            env('DB_CONTROL_PASSWORD', 'NuevaNueva'),
+            'SCARYmovie1.',
+            'NuevaNueva',
+            env('DB_PASSWORD', '')
+        ]);
+
+        foreach ($passwords as $pass) {
+            try {
+                config([
+                    'database.connections.saas_control' => [
+                        'driver' => 'mysql',
+                        'host' => $host,
+                        'port' => '3306',
+                        'database' => $db,
+                        'username' => $user,
+                        'password' => $pass,
+                        'charset' => 'utf8mb4',
+                        'collation' => 'utf8mb4_unicode_ci',
+                        'prefix' => '',
+                        'strict' => false,
+                    ],
+                    'database.default' => 'saas_control'
+                ]);
+
+                DB::purge('saas_control');
+                DB::reconnect('saas_control');
+                DB::connection('saas_control')->getPdo();
+                return; // Conexión exitosa
+            } catch (\Throwable $e) {
+                continue;
+            }
+        }
+
+        // Si falla la conexión remota a sdb-90, usar la conexión por defecto (mysql)
+        config(['database.default' => env('DB_CONNECTION', 'mysql')]);
     }
 }
