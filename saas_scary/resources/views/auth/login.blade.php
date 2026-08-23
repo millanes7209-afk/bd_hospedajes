@@ -42,8 +42,8 @@
     <div class="w-full max-w-md mx-auto">
         <!-- Logo Header Container -->
         <div class="flex flex-col items-center mb-8">
-            <div
-                class="w-48 h-32 mb-2 hover:scale-105 transition-transform duration-300 bg-black/90 rounded-2xl p-4 border border-white/10 flex items-center justify-center shadow-lg">
+            <div class="w-48 h-32 mb-2 hover:scale-105 transition-transform duration-300 admin-subcard rounded-2xl p-4 border flex items-center justify-center shadow-lg"
+                style="border-color:var(--color-card-border)">
                 @if (!empty($tenant->logo) && file_exists(public_path($tenant->logo)))
                     <img src="{{ asset($tenant->logo) }}" alt="{{ $tenant->nombre }}" class="w-full h-full object-contain">
                 @elseif (file_exists(public_path('assets/ricopollo.svg')))
@@ -53,16 +53,16 @@
                 @elseif (file_exists(public_path('assets/logo.svg')))
                     <img src="{{ asset('assets/logo.svg') }}" alt="LOGO" class="w-full h-full object-contain">
                 @else
-                    <i class="fa-solid fa-utensils text-4xl text-[#FFE66D]"></i>
+                    <i class="fa-solid fa-utensils text-4xl admin-text-gold"></i>
                 @endif
             </div>
         </div>
 
         <!-- Glassmorphism Login Card -->
         <div class="glass-card p-8">
-            <h2
-                class="text-xl font-bold text-center mb-6 tracking-wide text-white uppercase border-b border-white/10 pb-4">
-                <i class="fa-solid fa-lock text-[#FFE66D] mr-2"></i><?php echo strtoupper('INICIAR SESIÓN'); ?>
+            <h2 class="text-xl font-bold text-center mb-6 tracking-wide admin-text-main uppercase border-b pb-4"
+                style="border-color:var(--color-card-border)">
+                <i class="fa-solid fa-lock admin-text-gold mr-2"></i><?php echo strtoupper('INICIAR SESIÓN'); ?>
             </h2>
 
             <?php if ($error): ?>

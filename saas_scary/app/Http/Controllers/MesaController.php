@@ -19,25 +19,33 @@ class MesaController extends Controller
      */
     public function index()
     {
-        // Cargar mesas con su cuenta activa (si está ocupada)
-        $mesas = Mesa::with(['cuentaActiva.items', 'cuentaActiva.pagos'])->get();
-
-        // Si no existen mesas creadas, inicializar Mesa 1 y Mesa 2 por defecto
-        if ($mesas->isEmpty()) {
-            Mesa::create(['nombre' => 'Mesa 1', 'estado' => 'libre']);
-            Mesa::create(['nombre' => 'Mesa 2', 'estado' => 'libre']);
+        try {
+            // Cargar mesas con su cuenta activa (si está ocupada)
             $mesas = Mesa::with(['cuentaActiva.items', 'cuentaActiva.pagos'])->get();
+
+            // Si no existen mesas creadas, inicializar Mesa 1 y Mesa 2 por defecto
+            if ($mesas->isEmpty()) {
+                Mesa::create(['nombre' => 'Mesa 1', 'estado' => 'libre']);
+                Mesa::create(['nombre' => 'Mesa 2', 'estado' => 'libre']);
+                $mesas = Mesa::with(['cuentaActiva.items', 'cuentaActiva.pagos'])->get();
+            }
+        } catch (\Throwable $e) {
+            $mesas = collect([]);
         }
 
-        // Cargar catálogo de productos disponibles para agregar a cuentas
-        $productos = Producto::where('activo', 1)
-            ->where('disponible', 1)
-            ->with([
-                'variantes' => function ($q) {
-                    $q->where('activo', 1)->where('disponible', 1);
-                }
-            ])
-            ->get();
+        try {
+            // Cargar catálogo de productos disponibles para agregar a cuentas
+            $productos = Producto::where('activo', 1)
+                ->where('disponible', 1)
+                ->with([
+                    'variantes' => function ($q) {
+                        $q->where('activo', 1)->where('disponible', 1);
+                    }
+                ])
+                ->get();
+        } catch (\Throwable $e) {
+            $productos = collect([]);
+        }
 
         return view('admin.mesas.index', compact('mesas', 'productos'));
     }

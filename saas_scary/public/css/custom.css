@@ -19,19 +19,19 @@
 }
 
 .light-mode {
-    --color-bg: #eceef1;
-    --color-bg-alt: #f3f5f8;
-    --color-primary: #d9c45d;
-    --color-primary-rgb: 217, 196, 93;
+    --color-bg: #e2e8f0;
+    --color-bg-alt: #cbd5e1;
+    --color-primary: #b45309;
+    --color-primary-rgb: 180, 83, 9;
     --color-accent: #c52c0c;
     --color-accent-hover: #a0240a;
     --color-accent-rgb: 197, 44, 12;
-    --color-card: #ffffff;
-    --color-card-border: rgba(0, 0, 0, 0.1);
-    --color-text: #111827;
-    --color-text-muted: #6b7280;
-    --color-input-bg: #ffffff;
-    --color-input-border: rgba(0, 0, 0, 0.2);
+    --color-card: #f8fafc;
+    --color-card-border: rgba(0, 0, 0, 0.12);
+    --color-text: #1e293b;
+    --color-text-muted: #64748b;
+    --color-input-bg: #f1f5f9;
+    --color-input-border: rgba(0, 0, 0, 0.15);
     --color-table-row: rgba(0, 0, 0, 0.03);
     --color-table-hover: rgba(0, 0, 0, 0.06);
 }
