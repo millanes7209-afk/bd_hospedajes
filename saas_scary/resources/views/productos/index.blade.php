@@ -45,10 +45,10 @@
 
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h2 class="text-2xl font-black uppercase flex items-center gap-2 text-white">
+        <h2 class="text-2xl font-black uppercase flex items-center gap-2 admin-text-main">
           <i class="fa-solid fa-utensils text-[#FFE66D]"></i> GESTIÓN DE PRODUCTOS
         </h2>
-        <p class="text-xs text-gray-400 mt-1">Conmutadores de disponibilidad en tiempo real para caja y cocina.</p>
+        <p class="text-xs admin-text-muted mt-1">Conmutadores de disponibilidad en tiempo real para caja y cocina.</p>
       </div>
 
       <a href="{{ route('admin.productos.create') }}"
@@ -62,26 +62,26 @@
       <?php if (empty($productos)): ?>
       <div class="py-12 text-center text-gray-500">
         <i class="fa-solid fa-burger text-5xl mb-4 block text-[#FFE66D]/30"></i>
-        <p class="text-sm font-bold uppercase text-white">No hay productos en el catálogo</p>
-        <p class="text-xs text-gray-400 mt-1">Agrega tu primer platillo o bebida para comenzar.</p>
+        <p class="text-sm font-bold uppercase admin-text-main">No hay productos en el catálogo</p>
+        <p class="text-xs admin-text-muted mt-1">Agrega tu primer platillo o bebida para comenzar.</p>
         <div class="mt-4">
           <a href="{{ route('admin.productos.create') }}" class="btn-primary text-xs uppercase"><i
               class="fa-solid fa-plus mr-1"></i>Crear Producto</a>
         </div>
       </div>
       <?php else: ?>
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto" style="-webkit-overflow-scrolling: touch;">
         <table class="custom-table w-full text-left">
           <thead>
-            <tr class="text-xs uppercase text-gray-400 border-b border-white/10">
+            <tr class="text-xs uppercase admin-text-muted border-b" style="border-color:var(--color-card-border)">
               <th class="py-3 px-3">Imagen</th>
+              <th class="py-3 px-3 text-center">Disponibilidad</th>
               <th class="py-3 px-3">Platillo / Categoría</th>
               <th class="py-3 px-3">Tipo / Precio</th>
-              <th class="py-3 px-3 text-center">Disponibilidad (Tiempo Real)</th>
               <th class="py-3 px-3 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-white/5 text-sm">
+          <tbody class="divide-y text-sm" style="border-color:var(--color-card-border)">
             <?php  foreach ($productos as $p): ?>
             <?php
     $pId = $p['productoID'];
@@ -89,29 +89,39 @@
     $tieneVariantes = !empty($variantesMap[$pId]);
     $disponible = (int) ($p['disponible'] ?? 1);
     $activo = (int) ($p['activo'] ?? 1);
-                ?>
-            <tr class="align-middle hover:bg-white/[0.02]">
+            ?>
+            <tr class="align-middle hover:bg-white/[0.04]">
               <td class="w-16 py-3 px-3">
                 <?php    if (!empty($p['imagen']) && file_exists(public_path('assets/productos/' . $p['imagen']))): ?>
                 <img src="{{ asset('assets/productos/' . $p['imagen']) }}" alt="IMG"
-                  class="w-12 h-10 object-cover rounded-lg border border-white/10" />
+                  class="w-12 h-10 object-cover rounded-lg border" style="border-color:var(--color-card-border)" />
                 <?php    else: ?>
                 <div
-                  class="w-12 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[9px] font-bold text-gray-500 uppercase">
+                  class="w-12 h-10 rounded-lg admin-subcard flex items-center justify-center text-[9px] font-bold admin-text-muted uppercase">
                   SIN IMG
                 </div>
                 <?php    endif; ?>
               </td>
 
+              <td class="py-3 px-3 text-center">
+                <button type="button" onclick="toggleDisponibleAjax('producto', <?php    echo $pId; ?>, null, this)"
+                  class="btn-toggle-disp inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase transition-all border shadow-sm <?php    echo $disponible ? 'border-green-500/50 bg-green-500/10 text-green-500 hover:bg-green-500/20' : 'border-red-500/50 bg-red-500/10 text-red-500 hover:bg-red-500/20'; ?>">
+                  <i
+                    class="fa-solid <?php    echo $disponible ? 'fa-toggle-on text-green-500' : 'fa-toggle-off text-red-500'; ?> text-base"></i>
+                  <span><?php    echo $disponible ? 'DISPONIBLE' : 'NO DISPONIBLE'; ?></span>
+                </button>
+              </td>
+
               <td class="py-3 px-3">
-                <div class="font-black text-white flex items-center gap-2">
+                <div class="font-black admin-text-main flex items-center gap-2">
                   <?php    echo htmlspecialchars(strtoupper($p['nombre'])); ?>
                   <?php    if (!$activo): ?>
-                  <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-gray-700 text-gray-300">Inactivo en
-                    Catálogo</span>
+                  <span
+                    class="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-gray-500/20 admin-text-muted border"
+                    style="border-color:var(--color-card-border)">Inactivo</span>
                   <?php    endif; ?>
                 </div>
-                <div class="text-[10px] text-gray-400 uppercase font-semibold mt-0.5 flex items-center gap-1">
+                <div class="text-[10px] admin-text-muted uppercase font-semibold mt-0.5 flex items-center gap-1">
                   <i class="fa-solid fa-tag text-[9px] text-[#FFE66D]"></i>
                   <?php    echo htmlspecialchars(strtoupper($p['categoria_nombre'] ?: 'SIN CATEGORÍA')); ?>
                 </div>
@@ -120,29 +130,20 @@
               <td class="py-3 px-3">
                 <?php    if ($tipo === 'variantes' || $tieneVariantes): ?>
                 <span
-                  class="inline-block px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  class="inline-block px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-purple-500/20 text-purple-400 border border-purple-500/30">
                   📦 <?php      echo count($variantesMap[$pId] ?? []); ?> PRESENTACIONES
                 </span>
                 <?php    else: ?>
                 <div class="font-black text-[#FFE66D]">Bs. <?php      echo number_format($p['precio'] ?? 0, 2); ?></div>
                 <?php      if (!empty($p['precio_promo'])): ?>
-                <div class="text-[10px] text-green-400 font-bold mt-0.5 flex items-center gap-1">
+                <div class="text-[10px] text-green-500 font-bold mt-0.5 flex items-center gap-1">
                   <i class="fa-solid fa-fire text-amber-500"></i>
                   Bs. <?php        echo number_format($p['precio_promo'], 2); ?>
                   <span
-                    class="text-gray-400 font-normal uppercase">(<?php        echo htmlspecialchars($p['dia_promo'] ?? ''); ?>)</span>
+                    class="admin-text-muted font-normal uppercase">(<?php        echo htmlspecialchars($p['dia_promo'] ?? ''); ?>)</span>
                 </div>
                 <?php      endif; ?>
                 <?php    endif; ?>
-              </td>
-
-              <td class="py-3 px-3 text-center">
-                <button type="button" onclick="toggleDisponibleAjax('producto', <?php    echo $pId; ?>, null, this)"
-                  class="btn-toggle-disp inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase transition-all border shadow-sm <?php    echo $disponible ? 'border-green-500/50 bg-green-500/10 text-green-300 hover:bg-green-500/20' : 'border-red-500/50 bg-red-500/10 text-red-300 hover:bg-red-500/20'; ?>">
-                  <i
-                    class="fa-solid <?php    echo $disponible ? 'fa-toggle-on text-green-400' : 'fa-toggle-off text-red-400'; ?> text-base"></i>
-                  <span><?php    echo $disponible ? 'DISPONIBLE' : 'NO DISPONIBLE'; ?></span>
-                </button>
               </td>
 
               <td class="py-3 px-3 text-right">

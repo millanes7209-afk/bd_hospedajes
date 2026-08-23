@@ -19,8 +19,8 @@
 
     <div class="max-w-6xl mx-auto px-4 py-6">
         <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-black uppercase"><i class="fa-solid fa-layer-group mr-2 text-[#FFE66D]"></i>GESTIÓN
-                DE CATEGORÍAS</h2>
+            <h2 class="text-2xl font-black uppercase admin-text-main"><i
+                    class="fa-solid fa-layer-group mr-2 text-[#FFE66D]"></i>GESTIÓN DE CATEGORÍAS</h2>
             <button onclick="openModalNueva()"
                 class="bg-[#E23E1A] hover:bg-red-600 text-white font-black text-xs py-3 px-5 rounded-xl uppercase tracking-wider flex items-center gap-2 shadow-lg transition-all">
                 <i class="fa-solid fa-plus text-sm"></i>NUEVA CATEGORÍA
@@ -29,76 +29,80 @@
 
         @if (session('success'))
             <div
-                class="mb-4 p-4 rounded-xl bg-green-500/20 border border-green-500/50 text-green-300 font-bold text-sm uppercase">
+                class="mb-4 p-4 rounded-xl bg-green-500/20 border border-green-500/50 text-green-500 font-bold text-sm uppercase">
                 {{ session('success') }}
             </div>
         @endif
 
         @if (session('error'))
             <div
-                class="mb-4 p-4 rounded-xl bg-red-500/20 border border-red-500/50 text-red-300 font-bold text-sm uppercase">
+                class="mb-4 p-4 rounded-xl bg-red-500/20 border border-red-500/50 text-red-500 font-bold text-sm uppercase">
                 {{ session('error') }}
             </div>
         @endif
 
         <!-- Tabla de Categorías -->
         <div class="glass-card overflow-hidden border border-white/10 rounded-2xl">
-            <table class="w-full text-left text-xs">
-                <thead class="bg-black/40 text-[#FFE66D] font-extrabold uppercase border-b border-white/10">
-                    <tr>
-                        <th class="p-4">ID</th>
-                        <th class="p-4">NOMBRE DE CATEGORÍA</th>
-                        <th class="p-4">PRODUCTOS ASOCIADOS</th>
-                        <th class="p-4">ESTADO</th>
-                        <th class="p-4 text-right">ACCIONES</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-white/5 font-semibold">
-                    @forelse($categorias as $cat)
-                        <tr class="hover:bg-white/5 transition-colors">
-                            <td class="p-4 text-gray-400">#{{ $cat['categoriaID'] }}</td>
-                            <td class="p-4 font-black uppercase text-white tracking-wide">
-                                {{ $cat['nombre'] }}
-                            </td>
-                            <td class="p-4">
-                                <span class="bg-white/10 text-gray-300 px-3 py-1 rounded-full text-[11px] font-bold">
-                                    <i class="fa-solid fa-box mr-1"></i>{{ $cat['total_productos'] }} Productos
-                                </span>
-                            </td>
-                            <td class="p-4">
-                                @if($cat['activo'])
-                                    <span
-                                        class="bg-green-500/20 border border-green-500/40 text-green-300 px-3 py-1 rounded-full text-[10px] font-black uppercase">
-                                        <i class="fa-solid fa-circle text-[7px] mr-1"></i>ACTIVA
-                                    </span>
-                                @else
-                                    <span
-                                        class="bg-red-500/20 border border-red-500/40 text-red-300 px-3 py-1 rounded-full text-[10px] font-black uppercase">
-                                        <i class="fa-solid fa-circle text-[7px] mr-1"></i>INACTIVA
-                                    </span>
-                                @endif
-                            </td>
-                            <td class="p-4 text-right space-x-2">
-                                <button onclick="openModalEditar({{ json_encode($cat) }})"
-                                    class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 font-bold uppercase transition-colors">
-                                    <i class="fa-solid fa-pen-to-square mr-1"></i>EDITAR
-                                </button>
-                                <a href="{{ route('admin.categorias.estado', $cat['categoriaID']) }}"
-                                    class="px-3 py-1.5 rounded-lg {{ $cat['activo'] ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' : 'bg-green-500/20 text-green-300 hover:bg-green-500/30' }} font-bold uppercase transition-colors">
-                                    <i
-                                        class="fa-solid {{ $cat['activo'] ? 'fa-eye-slash' : 'fa-eye' }} mr-1"></i>{{ $cat['activo'] ? 'DESACTIVAR' : 'ACTIVAR' }}
-                                </a>
-                            </td>
+            <div class="overflow-x-auto" style="-webkit-overflow-scrolling: touch;">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="admin-subcard admin-text-muted font-extrabold uppercase border-b"
+                            style="border-color:var(--color-card-border)">
+                            <th class="p-4">NOMBRE DE CATEGORÍA</th>
+                            <th class="p-4">PRODUCTOS ASOCIADOS</th>
+                            <th class="p-4">ESTADO</th>
+                            <th class="p-4 text-right">ACCIONES</th>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="p-8 text-center text-gray-400 font-bold uppercase">
-                                NO HAY CATEGORÍAS REGISTRADAS
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="divide-y font-semibold" style="border-color:var(--color-card-border)">
+                        @forelse($categorias as $cat)
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-4 font-black uppercase admin-text-main tracking-wide">
+                                    {{ $cat['nombre'] }}
+                                </td>
+                                <td class="p-4">
+                                    <span
+                                        class="admin-subcard admin-text-main border px-3 py-1 rounded-full text-[11px] font-bold"
+                                        style="border-color:var(--color-card-border)">
+                                        <i class="fa-solid fa-box mr-1 text-[#FFE66D]"></i>{{ $cat['total_productos'] }}
+                                        Productos
+                                    </span>
+                                </td>
+                                <td class="p-4">
+                                    @if($cat['activo'])
+                                        <span
+                                            class="bg-green-500/20 border border-green-500/40 text-green-500 px-3 py-1 rounded-full text-[10px] font-black uppercase">
+                                            <i class="fa-solid fa-circle text-[7px] mr-1"></i>ACTIVA
+                                        </span>
+                                    @else
+                                        <span
+                                            class="bg-red-500/20 border border-red-500/40 text-red-500 px-3 py-1 rounded-full text-[10px] font-black uppercase">
+                                            <i class="fa-solid fa-circle text-[7px] mr-1"></i>INACTIVA
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="p-4 text-right space-x-2">
+                                    <button onclick="openModalEditar({{ json_encode($cat) }})"
+                                        class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 font-bold uppercase transition-colors">
+                                        <i class="fa-solid fa-pen-to-square mr-1"></i>EDITAR
+                                    </button>
+                                    <a href="{{ route('admin.categorias.estado', $cat['categoriaID']) }}"
+                                        class="px-3 py-1.5 rounded-lg {{ $cat['activo'] ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30' : 'bg-green-500/20 text-green-500 hover:bg-green-500/30' }} font-bold uppercase transition-colors">
+                                        <i
+                                            class="fa-solid {{ $cat['activo'] ? 'fa-eye-slash' : 'fa-eye' }} mr-1"></i>{{ $cat['activo'] ? 'DESACTIVAR' : 'ACTIVAR' }}
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="p-8 text-center admin-text-muted font-bold uppercase">
+                                    NO HAY CATEGORÍAS REGISTRADAS
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -114,9 +118,10 @@
             <form action="{{ route('admin.categorias.store') }}" method="POST" class="space-y-4">
                 @csrf
                 <div>
-                    <label class="block text-xs font-bold uppercase mb-1">NOMBRE DE LA CATEGORÍA *</label>
+                    <label class="block text-xs font-bold uppercase mb-1 admin-text-muted">NOMBRE DE LA CATEGORÍA
+                        *</label>
                     <input type="text" name="nombre" required placeholder="EJ: SALTEÑAS, REFRESCOS, COMBOS..."
-                        class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-3 text-xs font-bold uppercase">
+                        class="admin-input w-full p-3 text-xs font-bold uppercase">
                 </div>
 
                 <div class="pt-2 flex justify-end gap-2">

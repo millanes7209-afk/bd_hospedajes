@@ -74,7 +74,7 @@
                     $msgKey = $esAceptadoQR ? 'aceptado_qr' : ($est);
                     $currWspMsg = urlencode($wspMsgs[$msgKey] ?? $wspMsgs['pendiente']);
                     $wspLink = "https://wa.me/591{$phoneClean}?text={$currWspMsg}";
-                                                                                                                                                                                             ?>
+                                                                                                                                                                                                         ?>
 
                         <div
                             class="glass-card p-5 border <?php        echo $est === 'pendiente' ? 'border-amber-500/50 bg-amber-500/5' : 'border-white/10'; ?>">
@@ -85,14 +85,14 @@
                                         <span class="text-lg font-black text-[#FFE66D]">{{ $pedido['numero_pedido'] }}</span>
                                         <span
                                             class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider
-                                                                                                                                                                                                                                                             @if($est === 'pendiente') bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse
-                                                                                                                                                                                                                                                             @elseif($est === 'aceptado') bg-blue-500/20 text-blue-300 border border-blue-500/40
-                                                                                                                                                                                                                                                             @elseif($est === 'preparando') bg-yellow-500/20 text-yellow-300 border border-yellow-500/40
-                                                                                                                                                                                                                                                             @elseif($est === 'listo') bg-emerald-500/20 text-emerald-300 border border-emerald-500/40
-                                                                                                                                                                                                                                                             @elseif($est === 'en_camino') bg-purple-500/20 text-purple-300 border border-purple-500/40
-                                                                                                                                                                                                                                                             @elseif($est === 'entregado') bg-green-500/20 text-green-300 border border-green-500/40
-                                                                                                                                                                                                                                                             @else bg-red-500/20 text-red-300 border border-red-500/40
-                                                                                                                                                                                                                                                             @endif">
+                                                                                                                                                                                                                                                                         @if($est === 'pendiente') bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse
+                                                                                                                                                                                                                                                                         @elseif($est === 'aceptado') bg-blue-500/20 text-blue-300 border border-blue-500/40
+                                                                                                                                                                                                                                                                         @elseif($est === 'preparando') bg-yellow-500/20 text-yellow-300 border border-yellow-500/40
+                                                                                                                                                                                                                                                                         @elseif($est === 'listo') bg-emerald-500/20 text-emerald-300 border border-emerald-500/40
+                                                                                                                                                                                                                                                                         @elseif($est === 'en_camino') bg-purple-500/20 text-purple-300 border border-purple-500/40
+                                                                                                                                                                                                                                                                         @elseif($est === 'entregado') bg-green-500/20 text-green-300 border border-green-500/40
+                                                                                                                                                                                                                                                                         @else bg-red-500/20 text-red-300 border border-red-500/40
+                                                                                                                                                                                                                                                                         @endif">
                                             {{ strtoupper($pedido['estado']) }}
                                         </span>
                                     </div>
@@ -102,13 +102,6 @@
                                 </div>
 
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <!-- BOTÓN IMPRIMIR COMANDA TÉRMICA -->
-                                    <a href="{{ route('ticket.show', $pedido['pedidoID']) }}" target="_blank"
-                                        class="bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs py-1.5 px-3 rounded-lg flex items-center gap-1.5 shadow-md"
-                                        title="Imprimir comanda térmica 80mm (Rongta / Super Nova)">
-                                        <i class="fa-solid fa-print text-sm"></i> IMPRIMIR TICKET
-                                    </a>
-
                                     <?php        if ($esAceptadoQR): ?>
                                     {{-- Pedido aceptado con QR: solicitar comprobante --}}
                                     <a href="{{ $wspLink }}" target="_blank"
@@ -157,7 +150,7 @@
                                             'cancelado' => null,
                                         ];
                                         $next = $siguienteEstado[$est] ?? null;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ?>
+                                                                    ?>
                                                     @if($next)
                                                         <form action="{{ route('admin.pedidos.estado', $pedido['pedidoID']) }}" method="POST"
                                                             class="inline">
@@ -182,8 +175,9 @@
                                         <i class="fa-solid fa-eye mr-1"></i>VER
                                     </a>
 
+                                    <!-- ÚNICO BOTÓN DE IMPRIMIR COMANDA -->
                                     <a href="{{ route('ticket.show', $pedido['pedidoID']) }}?print=1" target="_blank"
-                                        class="bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 text-blue-300 text-xs font-black py-1.5 px-3 rounded-lg transition-colors flex items-center gap-1">
+                                        class="btn-outline text-xs font-bold py-1.5 px-3 flex items-center gap-1">
                                         <i class="fa-solid fa-print"></i>IMPRIMIR (58mm)
                                     </a>
                                 </div>
@@ -192,27 +186,28 @@
                             <!-- Cliente & Entrega -->
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs mb-4">
                                 <div>
-                                    <span class="block font-bold text-gray-400">CLIENTE</span>
-                                    <span class="font-black text-sm uppercase text-white">{{ $pedido['cliente_nombre'] }}</span>
-                                    <span class="block text-gray-300 mt-0.5"><i
-                                            class="fa-solid fa-phone mr-1 text-green-400"></i>{{ $pedido['cliente_telefono'] }}</span>
+                                    <span class="block font-bold admin-text-muted">CLIENTE</span>
+                                    <span
+                                        class="font-black text-sm uppercase admin-text-main">{{ $pedido['cliente_nombre'] }}</span>
+                                    <span class="block admin-text-muted mt-0.5"><i
+                                            class="fa-solid fa-phone mr-1 text-green-500"></i>{{ $pedido['cliente_telefono'] }}</span>
                                 </div>
                                 <div>
-                                    <span class="block font-bold text-gray-400">DIRECCIÓN / MESA</span>
+                                    <span class="block font-bold admin-text-muted">DIRECCIÓN / MESA</span>
                                     <span
-                                        class="font-bold uppercase text-white">{{ $pedido['direccion_entrega'] ?: ($pedido['numero_mesa'] ? 'MESA ' . $pedido['numero_mesa'] : 'LOCAL') }}</span>
+                                        class="font-bold uppercase admin-text-main">{{ $pedido['direccion_entrega'] ?: ($pedido['numero_mesa'] ? 'MESA ' . $pedido['numero_mesa'] : 'LOCAL') }}</span>
                                     @if(!empty($pedido['latitud']) && !empty($pedido['longitud']))
                                         <a href="https://www.google.com/maps?q={{ $pedido['latitud'] }},{{ $pedido['longitud'] }}"
-                                            target="_blank" class="block text-blue-400 hover:underline mt-0.5">
+                                            target="_blank" class="block text-blue-500 hover:underline mt-0.5">
                                             <i class="fa-solid fa-map-pin mr-1"></i>VER UBICACIÓN GPS
                                         </a>
                                     @endif
                                 </div>
                                 <div>
-                                    <span class="block font-bold text-gray-400">MÉTODO DE PAGO</span>
+                                    <span class="block font-bold admin-text-muted">MÉTODO DE PAGO</span>
                                     <span
                                         class="font-black uppercase text-[#FFE66D]"><?php        echo (!empty($pedido['metodo_pago']) && $pedido['metodo_pago'] !== 'ninguno') ? strtoupper($pedido['metodo_pago']) : 'PENDIENTE DE SELECCIÓN'; ?></span>
-                                    <span class="block font-black text-sm mt-1 text-white">TOTAL:
+                                    <span class="block font-black text-sm mt-1 admin-text-main">TOTAL:
                                         Bs.{{ number_format($pedido['monto_total'], 2) }}</span>
                                 </div>
                             </div>
@@ -220,15 +215,15 @@
                             <!-- Items -->
                             @if(!empty($pedido['items']))
                                 <div class="border-t pt-3" style="border-color:var(--color-card-border)">
-                                    <h4 class="text-[11px] font-bold text-gray-400 uppercase mb-2">PRODUCTOS SOLICITADOS</h4>
+                                    <h4 class="text-[11px] font-bold admin-text-muted uppercase mb-2">PRODUCTOS SOLICITADOS</h4>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                                         @foreach($pedido['items'] as $item)
-                                            <div
-                                                class="bg-black/40 p-2 rounded-lg text-xs flex justify-between items-center border border-white/5">
+                                            <div class="admin-subcard p-2.5 rounded-lg text-xs flex justify-between items-center">
                                                 <div>
                                                     <span
-                                                        class="font-bold uppercase text-gray-200">{{ $item['nombre_variante'] ?: 'PRODUCTO #' . $item['productoID'] }}</span>
-                                                    <span class="text-gray-400 block text-[10px]">Cantidad: {{ $item['cantidad'] }}</span>
+                                                        class="font-bold uppercase admin-text-main">{{ $item['nombre_variante'] ?: 'PRODUCTO #' . $item['productoID'] }}</span>
+                                                    <span class="admin-text-muted block text-[10px]">Cantidad:
+                                                        {{ $item['cantidad'] }}</span>
                                                 </div>
                                                 <span
                                                     class="font-bold text-[#FFE66D]">Bs.{{ number_format($item['precio_total'], 2) }}</span>
