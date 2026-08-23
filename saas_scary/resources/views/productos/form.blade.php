@@ -44,30 +44,8 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
 
 <body style="background-color:var(--color-bg);color:var(--color-text);" class="min-h-screen">
 
-  <!-- Header Navigation -->
-  <header class="glass-card mb-6 p-4 border-b rounded-none" style="border-color:var(--color-card-border);background:var(--color-bg-alt)">
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-8">
-          <img src="{{ asset('assets/logo.svg') }}" alt="LOGO" class="w-full h-full object-contain">
-        </div>
-        <div>
-          <h1 class="text-base font-black text-[#FFE66D] tracking-wider uppercase">RICO POLLO - PANEL ADMIN</h1>
-        </div>
-      </div>
-      <div class="flex items-center gap-2 flex-wrap text-xs">
-        <a href="{{ route('admin.pedidos') }}" class="btn-outline font-bold uppercase !py-2 !px-3 hover:text-[#FFE66D]">
-          <i class="fa-solid fa-clipboard-list mr-1.5"></i>PEDIDOS
-        </a>
-        <a href="{{ route('admin.productos') }}" class="btn-outline font-bold uppercase !py-2 !px-3 hover:text-[#FFE66D]">
-          <i class="fa-solid fa-utensils mr-1.5"></i>PRODUCTOS
-        </a>
-        <a href="{{ route('menu') }}" class="btn-outline font-bold uppercase !py-2 !px-3" target="_blank">
-          <i class="fa-solid fa-store mr-1.5"></i>TIENDA
-        </a>
-      </div>
-    </div>
-  </header>
+  <!-- Navbar Unificada -->
+  @include('layouts.admin_navbar')
 
   <div class="max-w-3xl w-full mx-auto p-4 pb-16">
     <div class="glass-card p-6 md:p-8 rounded-2xl border border-white/10 shadow-2xl">

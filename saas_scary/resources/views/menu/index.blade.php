@@ -944,7 +944,7 @@ if (!function_exists('obtenerPrecioActivo')) {
       }
       localStorage.setItem('rp_theme', theme);
     }
-    applyTheme(localStorage.getItem('rp_theme') || 'dark');
+    applyTheme(localStorage.getItem('rp_theme') || 'light');
     modeBtn.addEventListener('click', () => {
       applyTheme(html.classList.contains('light-mode') ? 'dark' : 'light');
     });

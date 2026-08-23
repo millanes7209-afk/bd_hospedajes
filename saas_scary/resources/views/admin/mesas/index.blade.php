@@ -14,55 +14,8 @@
 
 <body class="min-h-screen" style="background-color:var(--color-bg);color:var(--color-text);">
 
-    <!-- Navbar Base -->
-    <header class="glass-card mb-6 border-b rounded-none px-4 py-3"
-        style="border-color:var(--color-card-border);background:var(--color-bg-alt)">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-8">
-                    <img src="{{ asset('assets/logo.svg') }}" alt="LOGO" class="w-full h-full object-contain">
-                </div>
-                <span class="text-base font-black text-[#FFE66D] tracking-wider uppercase">SALTEÑERÍA MONAKA</span>
-            </div>
-
-            <nav class="hidden md:flex items-center gap-1 text-xs font-bold uppercase tracking-wider">
-                <a href="{{ route('admin.mesas') }}"
-                    class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 bg-[#FFE66D]/15 text-[#FFE66D] font-extrabold">
-                    <i class="fa-solid fa-chair text-sm"></i>Mesas / POS
-                </a>
-
-                <a href="{{ route('admin.pedidos') }}"
-                    class="px-3 py-2 rounded-lg transition-colors text-gray-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
-                    <i class="fa-solid fa-clipboard-list text-sm"></i>Pedidos
-                </a>
-
-                <a href="{{ route('admin.productos') }}"
-                    class="px-3 py-2 rounded-lg transition-colors text-gray-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
-                    <i class="fa-solid fa-utensils text-sm"></i>Productos
-                </a>
-
-                <a href="{{ route('admin.reportes') }}"
-                    class="px-3 py-2 rounded-lg transition-colors text-gray-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-pie text-sm"></i>Reportes
-                </a>
-
-                <a href="{{ route('admin.perfil') }}"
-                    class="px-3 py-2 rounded-lg transition-colors text-gray-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
-                    <i class="fa-solid fa-user-gear text-sm"></i>Mi Perfil
-                </a>
-
-                <div class="h-4 w-px bg-white/10 mx-1"></div>
-
-                <form action="{{ route('logout') }}" method="POST" class="inline">
-                    @csrf
-                    <button type="submit"
-                        class="px-3 py-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors flex items-center gap-1.5 font-bold uppercase">
-                        <i class="fa-solid fa-right-from-bracket text-sm"></i>Salir
-                    </button>
-                </form>
-            </nav>
-        </div>
-    </header>
+    <!-- Navbar Unificada -->
+    @include('layouts.admin_navbar')
 
     <div class="max-w-7xl mx-auto px-4 py-6">
         <div class="flex items-center justify-between mb-6">
@@ -90,7 +43,7 @@
                         <?php
                 $isOcupada = $mesa->estado === 'ocupada';
                 $cuenta = $mesa->cuentaActiva;
-                            ?>
+                                        ?>
                         <div
                             class="glass-card p-6 border rounded-2xl flex flex-col justify-between {{ $isOcupada ? 'border-amber-500/50 bg-amber-500/5' : 'border-emerald-500/40 bg-emerald-500/5' }}">
                             <!-- Header Mesa -->

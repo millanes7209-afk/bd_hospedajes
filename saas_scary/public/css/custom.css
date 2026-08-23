@@ -166,3 +166,54 @@ body {
 .btn-outline:hover {
     background: rgba(128, 128, 128, 0.1);
 }
+
+/* ── REGLAS DE ADAPTABILIDAD MODO CLARO / OSCURO EN PANEL ADMIN ── */
+html.light-mode .admin-box {
+    background-color: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    color: #111827 !important;
+}
+
+html.dark-mode .admin-box {
+    background-color: #15151e !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #f3f4f6 !important;
+}
+
+html.light-mode .admin-input {
+    background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+html.dark-mode .admin-input {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+html.light-mode .admin-subcard {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+html.dark-mode .admin-subcard {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.light-mode .admin-text-main {
+    color: #111827 !important;
+}
+
+html.dark-mode .admin-text-main {
+    color: #ffffff !important;
+}
+
+html.light-mode .admin-text-muted {
+    color: #64748b !important;
+}
+
+html.dark-mode .admin-text-muted {
+    color: #94a3b8 !important;
+}
