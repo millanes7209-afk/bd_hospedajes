@@ -147,15 +147,17 @@
               </td>
 
               <td class="py-3 px-3 text-right">
-                <div class="inline-flex gap-2">
+                <div class="inline-flex gap-1.5">
                   <a href="{{ route('admin.productos.edit', $pId) }}"
-                    class="btn-outline text-xs !py-1.5 !px-3 hover:!border-[#FFE66D] hover:!text-[#FFE66D]">
-                    <i class="fa-solid fa-pen-to-square mr-1"></i>Editar
+                    class="btn-outline text-xs !py-1.5 !px-2.5 hover:!border-[#FFE66D] hover:!text-[#FFE66D]"
+                    title="Editar producto">
+                    <i class="fa-solid fa-pen-to-square"></i><span class="hidden sm:inline ml-1">Editar</span>
                   </a>
                   <a href="{{ route('admin.productos.destroy', $pId) }}"
                     onclick="return confirm('¿ELIMINAR ESTE PRODUCTO Y SUS VARIANTES?');"
-                    class="btn-outline text-xs border-red-500/30 text-red-400 hover:bg-red-950/20 hover:border-red-500 hover:!text-white !py-1.5 !px-3">
-                    <i class="fa-regular fa-trash-can mr-1"></i>Eliminar
+                    class="btn-outline text-xs border-red-500/30 text-red-400 hover:bg-red-950/20 hover:border-red-500 hover:!text-white !py-1.5 !px-2.5"
+                    title="Eliminar producto">
+                    <i class="fa-regular fa-trash-can"></i><span class="hidden sm:inline ml-1">Eliminar</span>
                   </a>
                 </div>
               </td>
@@ -168,29 +170,44 @@
         $vId = $v['varianteID'];
         $vDisp = (int) ($v['disponible'] ?? 1);
         $vAct = (int) ($v['activo'] ?? 1);
-                    ?>
-            <tr class="bg-black/30 border-l-4 border-l-[#FFE66D]/60 text-xs">
-              <td class="w-16 py-2 px-3 text-center text-gray-500">
+            ?>
+            <tr class="admin-subcard border-l-4 border-l-[#FFE66D]/60 text-xs">
+              <!-- Columna Imagen (Nivel) -->
+              <td class="w-16 py-2 px-3 text-center admin-text-muted">
                 <i class="fa-solid fa-level-up-alt fa-rotate-90 text-[#FFE66D]"></i>
               </td>
+
+              <!-- Columna Disponibilidad -->
+              <td class="py-2 px-3 text-center">
+                <button type="button"
+                  onclick="toggleDisponibleAjax('variante', <?php        echo $pId; ?>, <?php        echo $vId; ?>, this)"
+                  class="btn-toggle-disp inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all border <?php        echo $vDisp ? 'border-green-500/40 bg-green-500/10 text-green-500 hover:bg-green-500/20' : 'border-red-500/40 bg-red-500/10 text-red-500 hover:bg-red-500/20'; ?>">
+                  <i
+                    class="fa-solid <?php        echo $vDisp ? 'fa-toggle-on text-green-500' : 'fa-toggle-off text-red-500'; ?>"></i>
+                  <span><?php        echo $vDisp ? 'DISPONIBLE' : 'NO DISPONIBLE'; ?></span>
+                </button>
+              </td>
+
+              <!-- Columna Platillo / Nombre de Variante -->
               <td class="py-2 px-3">
-                <span class="font-bold text-gray-200 uppercase tracking-wide">
+                <span class="font-bold admin-text-main uppercase tracking-wide">
                   <?php        echo htmlspecialchars($v['nombre_variante']); ?>
                 </span>
                 <?php        if (!empty($v['cantidad']) && !empty($v['unidad'])): ?>
-                <span class="text-[10px] text-gray-400 ml-1">
+                <span class="text-[10px] admin-text-muted ml-1">
                   (<?php          echo $v['cantidad']; ?> <?php          echo htmlspecialchars($v['unidad']); ?>)
                 </span>
                 <?php        endif; ?>
                 <?php        if (!$vAct): ?>
-                <span class="ml-2 text-[9px] text-gray-500 font-bold uppercase">(Inactiva)</span>
+                <span class="ml-2 text-[9px] admin-text-muted font-bold uppercase">(Inactiva)</span>
                 <?php        endif; ?>
               </td>
 
+              <!-- Columna Precio -->
               <td class="py-2 px-3">
-                <span class="font-bold text-[#FFE66D]">Bs. <?php        echo number_format($v['precio'], 2); ?></span>
+                <span class="font-bold admin-text-gold">Bs. <?php        echo number_format($v['precio'], 2); ?></span>
                 <?php        if (!empty($v['precio_promo'])): ?>
-                <span class="text-[10px] text-green-400 font-bold ml-2">
+                <span class="text-[10px] text-green-500 font-bold ml-2">
                   <i class="fa-solid fa-fire text-amber-500"></i> Bs.
                   <?php          echo number_format($v['precio_promo'], 2); ?>
                   (<?php          echo htmlspecialchars($v['dia_promo'] ?? ''); ?>)
@@ -198,18 +215,9 @@
                 <?php        endif; ?>
               </td>
 
-              <td class="py-2 px-3 text-center">
-                <button type="button"
-                  onclick="toggleDisponibleAjax('variante', <?php        echo $pId; ?>, <?php        echo $vId; ?>, this)"
-                  class="btn-toggle-disp inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all border <?php        echo $vDisp ? 'border-green-500/40 bg-green-500/10 text-green-300 hover:bg-green-500/20' : 'border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20'; ?>">
-                  <i
-                    class="fa-solid <?php        echo $vDisp ? 'fa-toggle-on text-green-400' : 'fa-toggle-off text-red-400'; ?>"></i>
-                  <span><?php        echo $vDisp ? 'DISPONIBLE' : 'NO DISPONIBLE'; ?></span>
-                </button>
-              </td>
-
+              <!-- Columna Acciones -->
               <td class="py-2 px-3 text-right">
-                <!-- Espacio variante -->
+                <!-- Espacio variante vacio -->
               </td>
             </tr>
             <?php      endforeach; ?>

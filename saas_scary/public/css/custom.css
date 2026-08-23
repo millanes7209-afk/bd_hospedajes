@@ -217,3 +217,11 @@ html.light-mode .admin-text-muted {
 html.dark-mode .admin-text-muted {
     color: #94a3b8 !important;
 }
+
+html.light-mode .admin-text-gold {
+    color: #b45309 !important;
+}
+
+html.dark-mode .admin-text-gold {
+    color: #ffe66d !important;
+}

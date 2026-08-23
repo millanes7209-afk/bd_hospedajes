@@ -64,24 +64,26 @@
                                 <td class="p-4 admin-text-muted">{{ $user->email }}</td>
                                 <td class="p-4">
                                     <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider
-                                                        @if($user->rol === 'ADMINISTRADOR') bg-purple-500/20 text-purple-400 border border-purple-500/40
-                                                        @else bg-blue-500/20 text-blue-400 border border-blue-500/40
-                                                        @endif">
+                                                            @if($user->rol === 'ADMINISTRADOR') bg-purple-500/20 text-purple-400 border border-purple-500/40
+                                                            @else bg-blue-500/20 text-blue-400 border border-blue-500/40
+                                                            @endif">
                                         {{ $user->rol ?: 'ADMINISTRADOR' }}
                                     </span>
                                 </td>
                                 <td class="p-4 admin-text-muted">
                                     {{ $user->created_at ? $user->created_at->format('d/m/Y H:i') : '-' }}
                                 </td>
-                                <td class="p-4 text-center flex items-center justify-center gap-2">
+                                <td class="p-4 text-center flex items-center justify-center gap-1.5">
                                     <a href="{{ route('admin.usuarios.edit', $user->id) }}"
-                                        class="btn-outline text-xs font-bold py-1 px-2.5">
-                                        <i class="fa-solid fa-pen-to-square mr-1"></i>EDITAR
+                                        class="btn-outline text-xs font-bold py-1 px-2.5" title="EDITAR USUARIO">
+                                        <i class="fa-solid fa-pen-to-square"></i><span
+                                            class="hidden sm:inline ml-1">EDITAR</span>
                                     </a>
                                     <a href="{{ route('admin.usuarios.destroy', $user->id) }}"
                                         onclick="return confirm('¿Estás seguro de eliminar este usuario?')"
-                                        class="bg-red-600/80 hover:bg-red-600 text-white font-bold text-xs py-1 px-2.5 rounded-lg">
-                                        <i class="fa-solid fa-trash mr-1"></i>ELIMINAR
+                                        class="bg-red-600/80 hover:bg-red-600 text-white font-bold text-xs py-1 px-2.5 rounded-lg"
+                                        title="ELIMINAR USUARIO">
+                                        <i class="fa-solid fa-trash"></i><span class="hidden sm:inline ml-1">ELIMINAR</span>
                                     </a>
                                 </td>
                             </tr>

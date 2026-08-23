@@ -81,15 +81,18 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td class="p-4 text-right space-x-2">
+                                <td class="p-4 text-right space-x-1.5">
                                     <button onclick="openModalEditar({{ json_encode($cat) }})"
-                                        class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 font-bold uppercase transition-colors">
-                                        <i class="fa-solid fa-pen-to-square mr-1"></i>EDITAR
+                                        class="px-2.5 py-1.5 rounded-lg bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 font-bold uppercase transition-colors"
+                                        title="EDITAR">
+                                        <i class="fa-solid fa-pen-to-square"></i><span
+                                            class="hidden sm:inline ml-1">EDITAR</span>
                                     </button>
                                     <a href="{{ route('admin.categorias.estado', $cat['categoriaID']) }}"
-                                        class="px-3 py-1.5 rounded-lg {{ $cat['activo'] ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30' : 'bg-green-500/20 text-green-500 hover:bg-green-500/30' }} font-bold uppercase transition-colors">
-                                        <i
-                                            class="fa-solid {{ $cat['activo'] ? 'fa-eye-slash' : 'fa-eye' }} mr-1"></i>{{ $cat['activo'] ? 'DESACTIVAR' : 'ACTIVAR' }}
+                                        class="px-2.5 py-1.5 rounded-lg {{ $cat['activo'] ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30' : 'bg-green-500/20 text-green-500 hover:bg-green-500/30' }} font-bold uppercase transition-colors"
+                                        title="{{ $cat['activo'] ? 'DESACTIVAR' : 'ACTIVAR' }}">
+                                        <i class="fa-solid {{ $cat['activo'] ? 'fa-eye-slash' : 'fa-eye' }}"></i><span
+                                            class="hidden sm:inline ml-1">{{ $cat['activo'] ? 'DESACTIVAR' : 'ACTIVAR' }}</span>
                                     </a>
                                 </td>
                             </tr>

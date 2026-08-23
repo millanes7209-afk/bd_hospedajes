@@ -133,17 +133,17 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
           <!-- Tarjetas de Selección Visual -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div id="card-tipo-simple" onclick="selectTipoProducto('simple')"
-              class="type-card cursor-pointer p-5 rounded-2xl border-2 border-white/10 transition-all flex flex-col items-center text-center select-none bg-black/40 hover:border-white/30 <?php echo $tipoActual === 'simple' ? 'selected' : ''; ?>">
+              class="type-card cursor-pointer p-5 rounded-2xl border-2 border-white/10 transition-all flex flex-col items-center text-center select-none admin-subcard hover:border-white/30 <?php echo $tipoActual === 'simple' ? 'selected' : ''; ?>">
               <div class="text-3xl mb-2">🍽️</div>
-              <h4 class="font-extrabold uppercase text-sm text-white">Precio Único</h4>
-              <p class="text-xs text-gray-400 mt-1">Este plato tiene un solo precio de venta<br><span class="text-[10px] text-gray-500">(ej. Ensalada César, Sopa)</span></p>
+              <h4 class="font-extrabold uppercase text-sm admin-text-main">Precio Único</h4>
+              <p class="text-xs admin-text-muted mt-1">Este plato tiene un solo precio de venta<br><span class="text-[10px] admin-text-muted">(ej. Ensalada César, Sopa)</span></p>
             </div>
 
             <div id="card-tipo-variantes" onclick="selectTipoProducto('variantes')"
-              class="type-card cursor-pointer p-5 rounded-2xl border-2 border-white/10 transition-all flex flex-col items-center text-center select-none bg-black/40 hover:border-white/30 <?php echo $tipoActual === 'variantes' ? 'selected' : ''; ?>">
+              class="type-card cursor-pointer p-5 rounded-2xl border-2 border-white/10 transition-all flex flex-col items-center text-center select-none admin-subcard hover:border-white/30 <?php echo $tipoActual === 'variantes' ? 'selected' : ''; ?>">
               <div class="text-3xl mb-2">📦</div>
-              <h4 class="font-extrabold uppercase text-sm text-white">Varias Presentaciones</h4>
-              <p class="text-xs text-gray-400 mt-1">Viene en distintos tamaños o unidades<br><span class="text-[10px] text-gray-500">(ej. Nuggets 3/6/12 und, Gaseosas)</span></p>
+              <h4 class="font-extrabold uppercase text-sm admin-text-main">Varias Presentaciones</h4>
+              <p class="text-xs admin-text-muted mt-1">Viene en distintos tamaños o unidades<br><span class="text-[10px] admin-text-muted">(ej. Nuggets 3/6/12 und, Gaseosas)</span></p>
             </div>
           </div>
 
