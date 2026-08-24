@@ -15,12 +15,10 @@ class CategoriaController extends Controller
     public function index()
     {
         $categorias = DB::table('categorias as c')
-            ->leftJoin('productos as p', 'c.categoriaID', '=', 'p.categoriaID')
             ->select(
                 'c.*',
-                DB::raw('COUNT(p.productoID) as total_productos')
+                DB::raw('(SELECT COUNT(*) FROM productos p WHERE p.categoriaID = c.categoriaID) as total_productos')
             )
-            ->groupBy('c.categoriaID', 'c.nombre', 'c.slug', 'c.activo', 'c.fecha_creacion')
             ->orderBy('c.nombre', 'asc')
             ->get();
 
