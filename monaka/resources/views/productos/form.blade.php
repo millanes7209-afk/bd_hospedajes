@@ -16,7 +16,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
   <meta charset="utf-8">
   <script>(function () { var s = localStorage.getItem('rp_theme') || 'dark'; document.documentElement.className = s === 'light' ? 'light-mode' : 'dark-mode'; })();</script>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title><?php echo $isEdit ? 'EDITAR' : 'CREAR'; ?> PRODUCTO - RICO POLLO</title>
+  <title><?php echo $isEdit ? 'EDITAR' : 'CREAR'; ?> PRODUCTO - MONAKA</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {

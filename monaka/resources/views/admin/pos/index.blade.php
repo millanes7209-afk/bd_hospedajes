@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <script>(function () { var s = localStorage.getItem('rp_theme') || 'dark'; document.documentElement.className = s === 'light' ? 'light-mode' : 'dark-mode'; })();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PUNTO DE VENTA (POS MOSTRADOR) - SALTEÑERÍA MONAKA</title>
+    <title>VENTAS - SALTEÑERÍA MONAKA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { theme: { extend: { colors: { primary: '#FFE66D', accent: '#E23E1A', dark: '#09090c' } } } }</script>
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
@@ -18,7 +18,7 @@
         }
 
         .form-input-pos {
-            background-color: var(--color-bg-alt, rgba(255, 255, 255, 0.08));
+            background-color: var(--color-bg, rgba(0, 0, 0, 0.2));
             color: var(--color-text, #ffffff);
             border: 1px solid var(--color-border, rgba(255, 255, 255, 0.15));
         }
@@ -39,7 +39,7 @@
         <!-- Banner Encabezado -->
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-xl md:text-2xl font-black uppercase flex items-center gap-2">
-                <i class="fa-solid fa-bolt text-amber-500"></i>POS VENTA RÁPIDA (PARA LLEVAR)
+                <i class="fa-solid fa-bolt text-amber-500"></i>VENTAS (PARA LLEVAR)
             </h2>
             <div
                 class="text-xs font-bold uppercase px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/30">
@@ -101,8 +101,8 @@
                                         <i class="fa-solid fa-burger text-3xl opacity-40 text-amber-500"></i>
                                     @endif
                                 </div>
-                                <h4 class="font-extrabold text-xs uppercase leading-tight line-clamp-2">
-                                    {{ strtoupper($p->nombre) }}</h4>
+                                <h4 class="font-extrabold text-xs uppercase leading-tight line-clamp-2"
+                                    style="color:var(--color-text);">{{ strtoupper($p->nombre) }}</h4>
                             </div>
 
                             <div class="mt-3 flex items-center justify-between">

@@ -31,7 +31,7 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
             <a href="{{ route('admin.pos') }}"
                 class="px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 {{ request()->routeIs('admin.pos*') ? 'bg-amber-500/20 font-black text-amber-500' : 'hover:bg-white/10' }}"
                 style="color: {{ request()->routeIs('admin.pos*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
-                <i class="fa-solid fa-bolt text-sm"></i>POS RÁPIDO
+                <i class="fa-solid fa-bolt text-sm"></i>VENTAS
             </a>
 
             <a href="{{ route('admin.pedidos') }}"
@@ -65,11 +65,6 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
                     <i class="fa-solid fa-users text-sm"></i>USUARIOS
                 </a>
             @endif
-
-            <a href="{{ route('menu') }}" target="_blank"
-                class="px-3 py-2 rounded-lg transition-colors hover:bg-white/10 flex items-center gap-1.5 text-amber-500 font-bold">
-                <i class="fa-solid fa-store text-sm"></i>TIENDA
-            </a>
 
             <!-- BOTÓN CAMBIO DE TEMA CLARO / OSCURO -->
             <button onclick="toggleAdminTheme()"
@@ -115,7 +110,7 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
         <a href="{{ route('admin.pos') }}"
             class="px-4 py-2.5 rounded-lg flex items-center gap-2.5 {{ request()->routeIs('admin.pos*') ? 'bg-amber-500/20 font-black text-amber-500' : 'hover:bg-white/10' }}"
             style="color: {{ request()->routeIs('admin.pos*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
-            <i class="fa-solid fa-bolt text-sm w-5 text-center"></i>POS RÁPIDO
+            <i class="fa-solid fa-bolt text-sm w-5 text-center"></i>VENTAS
         </a>
 
         <a href="{{ route('admin.pedidos') }}"
@@ -149,11 +144,6 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
                 <i class="fa-solid fa-users text-sm w-5 text-center"></i>USUARIOS
             </a>
         @endif
-
-        <a href="{{ route('menu') }}" target="_blank"
-            class="px-4 py-2.5 rounded-lg flex items-center gap-2.5 hover:bg-white/10 text-amber-500">
-            <i class="fa-solid fa-store text-sm w-5 text-center"></i>VER TIENDA
-        </a>
 
         <form action="{{ route('logout') }}" method="POST" class="mt-2 pt-2 border-t"
             style="border-color:var(--color-card-border)">

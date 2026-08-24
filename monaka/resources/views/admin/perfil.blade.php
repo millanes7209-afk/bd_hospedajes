@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <script>(function () { var s = localStorage.getItem('rp_theme') || 'dark'; document.documentElement.className = s === 'light' ? 'light-mode' : 'dark-mode'; })();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MI PERFIL - RICO POLLO</title>
+    <title>MI PERFIL - MONAKA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { theme: { extend: { colors: { primary: '#FFE66D', accent: '#E23E1A', dark: '#09090c' } } } }</script>
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">

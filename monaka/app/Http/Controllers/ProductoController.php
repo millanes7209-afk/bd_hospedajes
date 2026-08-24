@@ -37,9 +37,13 @@ class ProductoController extends Controller
             return (array) $p;
         }, $productos->toArray());
 
+        $categorias = DB::table('categorias')->orderBy('categoriaID', 'asc')->get();
+        $categoriasArray = array_map(fn($c) => (array) $c, $categorias->toArray());
+
         return view('productos.index', [
             'productos' => $productosArray,
-            'variantesMap' => $variantesMap
+            'variantesMap' => $variantesMap,
+            'categorias' => $categoriasArray
         ]);
     }
 

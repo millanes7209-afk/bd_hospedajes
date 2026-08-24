@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <script>(function () { var s = localStorage.getItem('rp_theme') || 'dark'; document.documentElement.className = s === 'light' ? 'light-mode' : 'dark-mode'; })();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>GESTIÓN DE USUARIOS - RICO POLLO</title>
+    <title>GESTIÓN DE USUARIOS - MONAKA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { theme: { extend: { colors: { primary: '#FFE66D', accent: '#E23E1A', dark: '#09090c' } } } }</script>
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
@@ -64,9 +64,9 @@
                                 <td class="p-4 admin-text-muted">{{ $user->email }}</td>
                                 <td class="p-4">
                                     <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider
-                                                            @if($user->rol === 'ADMINISTRADOR') bg-purple-500/20 text-purple-400 border border-purple-500/40
-                                                            @else bg-blue-500/20 text-blue-400 border border-blue-500/40
-                                                            @endif">
+                                                                @if($user->rol === 'ADMINISTRADOR') bg-purple-500/20 text-purple-400 border border-purple-500/40
+                                                                @else bg-blue-500/20 text-blue-400 border border-blue-500/40
+                                                                @endif">
                                         {{ $user->rol ?: 'ADMINISTRADOR' }}
                                     </span>
                                 </td>

@@ -27,6 +27,12 @@
             border-color: #FFE66D;
             outline: none;
         }
+
+        /* Contraste adaptativo para texto destacado */
+        .light-mode .text-amber-500 {
+            color: #b45309 !important;
+            /* Ámbar Oscuro para alto contraste en modo claro */
+        }
     </style>
 </head>
 
@@ -42,7 +48,7 @@
             </h2>
             <a href="{{ route('admin.pos') }}"
                 class="btn-primary text-xs font-black uppercase !py-2 !px-4 shadow flex items-center gap-2">
-                <i class="fa-solid fa-bolt"></i>POS VENTA RÁPIDA
+                <i class="fa-solid fa-bolt"></i>VENTAS
             </a>
         </div>
 

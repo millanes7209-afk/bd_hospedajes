@@ -10,7 +10,7 @@
     <meta charset="utf-8">
     <script>(function () { var s = localStorage.getItem('rp_theme') || 'dark'; document.documentElement.className = s === 'light' ? 'light-mode' : 'dark-mode'; })();</script>
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>LOGIN - RICO POLLO</title>
+    <title>LOGIN - MONAKA</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
