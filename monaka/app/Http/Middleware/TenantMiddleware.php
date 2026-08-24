@@ -43,10 +43,22 @@ class TenantMiddleware
             $tenant = null;
         }
 
-        if ($tenant) {
-            // Store active tenant globally in Service Container
-            app()->instance('tenant', $tenant);
+        if (!$tenant) {
+            $tenant = (object) [
+                'id' => 1,
+                'subdominio' => 'monaka',
+                'nombre' => env('APP_NAME', 'Salteñería Monaka'),
+                'eslogan' => 'Las salteñas más deliciosas de la ciudad',
+                'primary_color' => '#FFE66D',
+                'accent_color' => '#E23E1A',
+                'logo' => 'assets/logo.svg',
+            ];
+        }
 
+        // Store active tenant globally in Service Container
+        app()->instance('tenant', $tenant);
+
+        if (isset($tenant->db_host) && !empty($tenant->db_host)) {
             // Dynamically configure tenant DB connection
             config([
                 'database.connections.tenant' => [
@@ -63,8 +75,11 @@ class TenantMiddleware
                 'database.default' => 'tenant'
             ]);
 
-            DB::purge('tenant');
-            DB::reconnect('tenant');
+            try {
+                DB::purge('tenant');
+                DB::reconnect('tenant');
+            } catch (\Throwable $e) {
+            }
         }
 
         return $next($request);
