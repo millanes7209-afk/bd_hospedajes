@@ -59,9 +59,14 @@ Route::middleware([TenantMiddleware::class])->group(function () {
         Route::post('/pedidos/rechazar/{id}', [PedidoController::class, 'rechazarPedido'])->name('admin.pedidos.rechazar');
         Route::post('/pedidos/estado/{id}', [PedidoController::class, 'updateEstado'])->name('admin.pedidos.estado');
 
+        // POS Venta Rápida (Para llevar / Mostrador)
+        Route::get('/pos', [\App\Http\Controllers\PosController::class, 'index'])->name('admin.pos');
+        Route::post('/pos/venta', [\App\Http\Controllers\PosController::class, 'storeVenta'])->name('admin.pos.venta');
+
         // POS Mesas (Cuentas abiertas y cobro dividido)
         Route::get('/mesas', [\App\Http\Controllers\MesaController::class, 'index'])->name('admin.mesas');
         Route::post('/mesas/abrir/{id}', [\App\Http\Controllers\MesaController::class, 'abrirMesa'])->name('admin.mesas.abrir');
+        Route::post('/mesas/liberar/{id}', [\App\Http\Controllers\MesaController::class, 'liberarMesa'])->name('admin.mesas.liberar');
         Route::post('/mesas/item/agregar/{id}', [\App\Http\Controllers\MesaController::class, 'agregarItem'])->name('admin.mesas.item.agregar');
         Route::get('/mesas/item/remover/{id}', [\App\Http\Controllers\MesaController::class, 'removerItem'])->name('admin.mesas.item.remover');
         Route::post('/mesas/pago/{id}', [\App\Http\Controllers\MesaController::class, 'registrarPago'])->name('admin.mesas.pago');
