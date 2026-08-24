@@ -10,7 +10,7 @@ try {
 if (!$navTenant && isset($tenant)) {
     $navTenant = $tenant;
 }
-$nombreEmpresa = $navTenant ? ($navTenant->nombre ?? 'MI EMPRESA') : 'RICO POLLO';
+$nombreEmpresa = $navTenant ? ($navTenant->nombre ?? 'MI EMPRESA') : 'SALTEÑERÍA MONAKA';
 $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_path($navTenant->logo)))
     ? asset($navTenant->logo)
     : asset('assets/logo.svg');
@@ -32,6 +32,12 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
 
         <!-- NAVEGACIÓN ESCRITORIO (DESKTOP) -->
         <nav class="hidden lg:flex items-center gap-1 text-xs font-bold uppercase tracking-wider">
+            <a href="{{ route('admin.mesas') }}"
+                class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.mesas*') ? 'bg-[#FFE66D]/15 font-extrabold' : 'hover:bg-white/10' }}"
+                style="color: {{ request()->routeIs('admin.mesas*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
+                <i class="fa-solid fa-chair text-sm"></i>Mesas / POS
+            </a>
+
             <a href="{{ route('admin.pedidos') }}"
                 class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.pedidos*') ? 'bg-[#FFE66D]/15 font-extrabold' : 'hover:bg-white/10' }}"
                 style="color: {{ request()->routeIs('admin.pedidos*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
@@ -48,6 +54,12 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
                 class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.categorias*') ? 'bg-[#FFE66D]/15 font-extrabold' : 'hover:bg-white/10' }}"
                 style="color: {{ request()->routeIs('admin.categorias*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
                 <i class="fa-solid fa-layer-group text-sm"></i>Categorías
+            </a>
+
+            <a href="{{ route('admin.reportes') }}"
+                class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.reportes*') ? 'bg-[#FFE66D]/15 font-extrabold' : 'hover:bg-white/10' }}"
+                style="color: {{ request()->routeIs('admin.reportes*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
+                <i class="fa-solid fa-chart-pie text-sm"></i>Reportes
             </a>
 
             <a href="{{ route('admin.configuracion') }}"
@@ -110,6 +122,12 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
     <div id="admin-mobile-menu"
         class="hidden lg:hidden mt-3 pt-3 border-t flex flex-col gap-1 text-xs font-bold uppercase tracking-wider"
         style="border-color:var(--color-card-border)">
+        <a href="{{ route('admin.mesas') }}"
+            class="px-4 py-2.5 rounded-lg flex items-center gap-2.5 {{ request()->routeIs('admin.mesas*') ? 'bg-[#FFE66D]/15 font-black' : 'hover:bg-white/10' }}"
+            style="color: {{ request()->routeIs('admin.mesas*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
+            <i class="fa-solid fa-chair text-sm w-5 text-center"></i>Mesas / POS
+        </a>
+
         <a href="{{ route('admin.pedidos') }}"
             class="px-4 py-2.5 rounded-lg flex items-center gap-2.5 {{ request()->routeIs('admin.pedidos*') ? 'bg-[#FFE66D]/15 font-black' : 'hover:bg-white/10' }}"
             style="color: {{ request()->routeIs('admin.pedidos*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
@@ -126,6 +144,12 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
             class="px-4 py-2.5 rounded-lg flex items-center gap-2.5 {{ request()->routeIs('admin.categorias*') ? 'bg-[#FFE66D]/15 font-black' : 'hover:bg-white/10' }}"
             style="color: {{ request()->routeIs('admin.categorias*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
             <i class="fa-solid fa-layer-group text-sm w-5 text-center"></i>Categorías
+        </a>
+
+        <a href="{{ route('admin.reportes') }}"
+            class="px-4 py-2.5 rounded-lg flex items-center gap-2.5 {{ request()->routeIs('admin.reportes*') ? 'bg-[#FFE66D]/15 font-black' : 'hover:bg-white/10' }}"
+            style="color: {{ request()->routeIs('admin.reportes*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
+            <i class="fa-solid fa-chart-pie text-sm w-5 text-center"></i>Reportes
         </a>
 
         <a href="{{ route('admin.configuracion') }}"
