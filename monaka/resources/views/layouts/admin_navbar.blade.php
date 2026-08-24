@@ -1,16 +1,6 @@
 <?php
-$navTenant = null;
-try {
-    if (app()->bound('tenant')) {
-        $navTenant = app('tenant');
-    }
-} catch (\Throwable $e) {
-    $navTenant = null;
-}
-if (!$navTenant && isset($tenant)) {
-    $navTenant = $tenant;
-}
-$nombreEmpresa = $navTenant ? ($navTenant->nombre ?? 'MI EMPRESA') : 'SALTEÑERÍA MONAKA';
+$navTenant = isset($tenant) ? $tenant : null;
+$nombreEmpresa = $navTenant ? ($navTenant->nombre ?? 'SALTEÑERÍA MONAKA') : env('APP_NAME', 'SALTEÑERÍA MONAKA');
 $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_path($navTenant->logo)))
     ? asset($navTenant->logo)
     : asset('assets/logo.svg');
