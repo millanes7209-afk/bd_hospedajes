@@ -29,6 +29,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('pedidos')) {
+                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            }
+        } catch (\Throwable $e) {
+            // Ignorar silenciosamente si no hay conexion DB
+        }
     }
 }
