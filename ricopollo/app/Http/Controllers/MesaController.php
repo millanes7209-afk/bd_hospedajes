@@ -183,26 +183,4 @@ class MesaController extends Controller
 
         return back()->with('success', 'PAGO REGISTRADO CORRECTAMENTE');
     }
-
-    /**
-     * Cancela la apertura y libera una mesa ocupada
-     */
-    public function liberarMesa($mesaID)
-    {
-        $mesa = Mesa::findOrFail($mesaID);
-
-        DB::transaction(function () use ($mesa) {
-            $mesa->update(['estado' => 'libre']);
-
-            $cuenta = Venta::where('mesaID', $mesa->mesaID)->where('estado', 'abierta')->first();
-            if ($cuenta) {
-                $cuenta->update([
-                    'estado' => 'cerrada',
-                    'fecha_cierre' => now()
-                ]);
-            }
-        });
-
-        return back()->with('success', "MESA {$mesa->nombre} LIBERADA CORRECTAMENTE");
-    }
 }
