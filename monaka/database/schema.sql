@@ -125,11 +125,15 @@ CREATE TABLE IF NOT EXISTS `pagos` (
 
 CREATE TABLE IF NOT EXISTS `users` (
   `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL,
+  `userID` bigint(20) UNSIGNED DEFAULT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `nombre` varchar(255) DEFAULT NULL,
   `email` varchar(255) NOT NULL,
   `email_verified_at` timestamp NULL DEFAULT NULL,
   `password` varchar(255) NOT NULL,
-  `rol` varchar(50) NOT NULL DEFAULT 'ADMINISTRADOR',
+  `rol` varchar(50) DEFAULT 'ADMINISTRADOR',
+  `rolID` varchar(50) DEFAULT 'ADMINISTRADOR',
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
   `remember_token` varchar(100) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
