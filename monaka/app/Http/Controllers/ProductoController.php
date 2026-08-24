@@ -22,10 +22,11 @@ class ProductoController extends Controller
             ->orderBy('productos.productoID', 'desc')
             ->get();
 
-        $variantes = DB::table('producto_variantes')
-            ->orderBy('orden_mostrado', 'asc')
-            ->orderBy('varianteID', 'asc')
-            ->get();
+        $queryVars = DB::table('producto_variantes');
+        if (\Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'orden_mostrado')) {
+            $queryVars->orderBy('orden_mostrado', 'asc');
+        }
+        $variantes = $queryVars->orderBy('varianteID', 'asc')->get();
 
         $variantesMap = [];
         foreach ($variantes as $v) {
@@ -132,11 +133,11 @@ class ProductoController extends Controller
             return redirect()->route('admin.productos')->with('error', 'Producto no encontrado');
         }
 
-        $variantes = DB::table('producto_variantes')
-            ->where('productoID', $id)
-            ->orderBy('orden_mostrado', 'asc')
-            ->orderBy('varianteID', 'asc')
-            ->get();
+        $queryVarsEdit = DB::table('producto_variantes')->where('productoID', $id);
+        if (\Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'orden_mostrado')) {
+            $queryVarsEdit->orderBy('orden_mostrado', 'asc');
+        }
+        $variantes = $queryVarsEdit->orderBy('varianteID', 'asc')->get();
 
         $cats = DB::table('categorias')->orderBy('nombre', 'asc')->get();
 
@@ -327,6 +328,7 @@ class ProductoController extends Controller
         $savedVarianteIDs = [];
         $hasDiaPromo = \Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'dia_promo');
         $hasDiasPromo = \Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'dias_promo');
+        $hasOrdenMostrado = \Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'orden_mostrado');
 
         foreach ($variantes as $index => $vData) {
             if (empty($vData['nombre_variante']) && empty($vData['nombre'])) {
@@ -347,8 +349,11 @@ class ProductoController extends Controller
                 'stock' => isset($vData['stock']) && $vData['stock'] !== '' ? intval($vData['stock']) : null,
                 'activo' => isset($vData['activo']) ? 1 : 0,
                 'disponible' => isset($vData['disponible']) ? 1 : 0,
-                'orden_mostrado' => intval($vData['orden_mostrado'] ?? $index),
             ];
+
+            if ($hasOrdenMostrado) {
+                $vRecord['orden_mostrado'] = intval($vData['orden_mostrado'] ?? $index);
+            }
 
             if ($hasDiaPromo) {
                 $vRecord['dia_promo'] = $diaPromoVar;

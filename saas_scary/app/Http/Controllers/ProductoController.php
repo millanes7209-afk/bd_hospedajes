@@ -22,10 +22,11 @@ class ProductoController extends Controller
             ->orderBy('productos.productoID', 'desc')
             ->get();
 
-        $variantes = DB::table('producto_variantes')
-            ->orderBy('orden_mostrado', 'asc')
-            ->orderBy('varianteID', 'asc')
-            ->get();
+        $queryVars = DB::table('producto_variantes');
+        if (\Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'orden_mostrado')) {
+            $queryVars->orderBy('orden_mostrado', 'asc');
+        }
+        $variantes = $queryVars->orderBy('varianteID', 'asc')->get();
 
         $variantesMap = [];
         foreach ($variantes as $v) {

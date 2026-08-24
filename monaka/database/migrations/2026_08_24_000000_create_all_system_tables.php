@@ -41,6 +41,7 @@ return new class extends Migration {
                 $table->unsignedBigInteger('productoID');
                 $table->string('nombre', 100);
                 $table->decimal('precio', 10, 2)->default(0.00);
+                $table->integer('orden_mostrado')->default(0);
                 $table->boolean('disponible')->default(1);
                 $table->timestamp('fecha_creacion')->useCurrent();
             });

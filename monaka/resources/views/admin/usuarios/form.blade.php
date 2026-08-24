@@ -5,11 +5,26 @@
     <meta charset="utf-8">
     <script>(function () { var s = localStorage.getItem('rp_theme') || 'dark'; document.documentElement.className = s === 'light' ? 'light-mode' : 'dark-mode'; })();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ isset($usuario) ? 'EDITAR' : 'CREAR' }} USUARIO - RICO POLLO</title>
+    <title>{{ isset($usuario) && is_object($usuario) ? 'EDITAR' : 'CREAR' }} USUARIO - MONAKA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { theme: { extend: { colors: { primary: '#FFE66D', accent: '#E23E1A', dark: '#09090c' } } } }</script>
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .form-input-theme {
+            background-color: var(--color-bg-alt, rgba(255, 255, 255, 0.05));
+            color: var(--color-text, #ffffff);
+            border: 1px solid var(--color-border, rgba(255, 255, 255, 0.15));
+        }
+        .form-input-theme:focus {
+            border-color: #FFE66D;
+            outline: none;
+        }
+        .form-select-option {
+            background-color: var(--color-bg, #15151e);
+            color: var(--color-text, #ffffff);
+        }
+    </style>
 </head>
 
 <body class="min-h-screen" style="background-color:var(--color-bg);color:var(--color-text);">
@@ -45,45 +60,49 @@
                 @csrf
 
                 <div>
-                    <label class="block text-xs font-bold text-gray-300 uppercase mb-2">NOMBRE COMPLETO / USUARIO
-                        *</label>
+                    <label class="block text-xs font-bold uppercase mb-2" style="color:var(--color-text-muted, #9ca3af);">
+                        NOMBRE COMPLETO / USUARIO *
+                    </label>
                     <input type="text" name="name" value="{{ old('name', (isset($usuario) && is_object($usuario)) ? $usuario->name : '') }}" required
-                        placeholder="Ej: Juan Pérez (Cajero)"
-                        class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#FFE66D] text-white">
+                        placeholder="EJ: JUAN PÉREZ (CAJERO)"
+                        oninput="this.value = this.value.toUpperCase();"
+                        style="text-transform: uppercase;"
+                        class="w-full form-input-theme rounded-xl px-4 py-3 text-sm">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-gray-300 uppercase mb-2">CORREO ELECTRÓNICO *</label>
+                    <label class="block text-xs font-bold uppercase mb-2" style="color:var(--color-text-muted, #9ca3af);">
+                        CORREO ELECTRÓNICO *
+                    </label>
                     <input type="email" name="email" value="{{ old('email', (isset($usuario) && is_object($usuario)) ? $usuario->email : '') }}" required
-                        placeholder="ejemplo@ricopollo.com"
-                        class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#FFE66D] text-white">
+                        placeholder="ejemplo@monaka.com"
+                        class="w-full form-input-theme rounded-xl px-4 py-3 text-sm">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-gray-300 uppercase mb-2">ROL EN EL SISTEMA *</label>
-                    <select name="rol" required
-                        class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#FFE66D] text-white">
-                        <option value="ADMINISTRADOR" {{ old('rol', (isset($usuario) && is_object($usuario)) ? $usuario->rol : '') === 'ADMINISTRADOR' ? 'selected' : '' }}>ADMINISTRADOR (Acceso Total)</option>
-                        <option value="CAJERO" {{ old('rol', (isset($usuario) && is_object($usuario)) ? $usuario->rol : '') === 'CAJERO' ? 'selected' : '' }}>CAJERO
-                            (Atención de Pedidos y Operación)</option>
+                    <label class="block text-xs font-bold uppercase mb-2" style="color:var(--color-text-muted, #9ca3af);">
+                        ROL EN EL SISTEMA *
+                    </label>
+                    <select name="rol" required class="w-full form-input-theme rounded-xl px-4 py-3 text-sm">
+                        <option value="ADMINISTRADOR" class="form-select-option" {{ old('rol', (isset($usuario) && is_object($usuario)) ? $usuario->rol : '') === 'ADMINISTRADOR' ? 'selected' : '' }}>ADMINISTRADOR (Acceso Total)</option>
+                        <option value="CAJERO" class="form-select-option" {{ old('rol', (isset($usuario) && is_object($usuario)) ? $usuario->rol : '') === 'CAJERO' ? 'selected' : '' }}>CAJERO (Atención de Pedidos y Operación)</option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-gray-300 uppercase mb-2">
+                    <label class="block text-xs font-bold uppercase mb-2" style="color:var(--color-text-muted, #9ca3af);">
                         CONTRASEÑA {{ (isset($usuario) && is_object($usuario)) ? '(Dejar en blanco para conservar la actual)' : '*' }}
                     </label>
                     <input type="password" name="password" {{ (isset($usuario) && is_object($usuario)) ? '' : 'required' }}
                         placeholder="Mínimo 6 caracteres"
-                        class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#FFE66D] text-white">
+                        class="w-full form-input-theme rounded-xl px-4 py-3 text-sm">
                 </div>
 
                 <div class="pt-4 border-t border-white/10 flex justify-end gap-3">
                     <a href="{{ route('admin.usuarios') }}"
                         class="btn-outline text-xs font-bold uppercase !py-2.5 !px-5">CANCELAR</a>
                     <button type="submit" class="btn-primary text-xs font-black uppercase !py-2.5 !px-6 shadow-lg">
-                        <i
-                            class="fa-solid fa-floppy-disk mr-1.5"></i>{{ (isset($usuario) && is_object($usuario)) ? 'GUARDAR CAMBIOS' : 'CREAR USUARIO' }}
+                        <i class="fa-solid fa-floppy-disk mr-1.5"></i>{{ (isset($usuario) && is_object($usuario)) ? 'GUARDAR CAMBIOS' : 'CREAR USUARIO' }}
                     </button>
                 </div>
             </form>
