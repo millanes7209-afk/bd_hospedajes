@@ -99,6 +99,11 @@ Route::middleware([TenantMiddleware::class])->group(function () {
         });
     });
 
+    Route::get('/limpiar-cache', function () {
+        \Illuminate\Support\Facades\Artisan::call('view:clear');
+        return 'Caché de vistas eliminada exitosamente. Ya puedes volver a la página web y recargarla con F5.';
+    });
+
     // Fallbacks para enlaces antiguos
     Route::get('/admin.php', function () {
         return redirect()->route('admin.productos');
