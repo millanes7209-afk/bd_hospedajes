@@ -125,8 +125,7 @@ class ProductoController extends Controller
                 'nombre_variante' => '',
                 'precio' => $request->precio ?? 0,
                 'precio_promo' => !empty($request->precio_promo) ? $request->precio_promo : null,
-                'activo' => 1,
-                'disponible' => 1,
+                                'disponible' => 1,
                 'user_id' => \Illuminate\Support\Facades\Session::get('usuario_id') ?? 1,
                 'created_at' => now()
             ]);
@@ -245,8 +244,7 @@ class ProductoController extends Controller
                 'nombre_variante' => '',
                 'precio' => $request->precio ?? 0,
                 'precio_promo' => !empty($request->precio_promo) ? $request->precio_promo : null,
-                'activo' => 1,
-                'disponible' => 1,
+                                'disponible' => 1,
                 'user_id' => \Illuminate\Support\Facades\Session::get('usuario_id') ?? 1,
                 'created_at' => now()
             ]);
@@ -410,3 +408,4 @@ class ProductoController extends Controller
         $oldVars->delete();
     }
 }
+

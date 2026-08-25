@@ -17,7 +17,7 @@ class PosController extends Controller
     {
         try {
             $categorias = Categoria::where('activo', 1)->orderBy('nombre', 'asc')->get();
-            $productos = Producto::where('activo', 1)
+            $productos = Producto::where('disponible', 1)
                 ->where('disponible', 1)
                 ->with([
                     'variantes' => function ($q) {
@@ -47,45 +47,44 @@ class PosController extends Controller
             return back()->with('error', 'DEBES AGREGAR AL MENOS UN PRODUCTO AL CARRITO');
         }
 
-        $usuarioID = Session::get('usuarioID') ?? 1;
+        $usuario_id = Session::get('usuario_id') ?? 1;
 
-        $ventaID = DB::transaction(function () use ($request, $items, $usuarioID) {
+        $venta_id = DB::transaction(function () use ($request, $items, $usuario_id) {
             $venta = Venta::create([
                 'origen' => 'local',
                 'tipo_venta' => 'llevar',
                 'cliente_nombre' => !empty($request->cliente_nombre) ? strtoupper(trim($request->cliente_nombre)) : 'CLIENTE MOSTRADOR',
                 'estado' => 'cerrada',
                 'monto_total' => $request->monto_total,
-                'usuario_apertura_id' => $usuarioID,
-                'usuario_cierre_id' => $usuarioID,
+                'usuario_apertura_id' => $usuario_id,
+                'usuario_cierre_id' => $usuario_id,
                 'fecha_apertura' => now(),
                 'fecha_cierre' => now(),
             ]);
 
             foreach ($items as $item) {
                 VentaItem::create([
-                    'ventaID' => $venta->ventaID,
-                    'productoID' => $item['productoID'] ?? null,
-                    'varianteID' => $item['varianteID'] ?? null,
+                    'venta_id' => $venta->id,
+                    'producto_id' => $item['producto_id'] ?? null,
+                    'variante_id' => $item['variante_id'] ?? null,
                     'nombre_producto' => strtoupper($item['nombre_producto']),
                     'nombre_variante' => !empty($item['nombre_variante']) ? strtoupper($item['nombre_variante']) : null,
                     'cantidad' => intval($item['cantidad']),
                     'precio_unitario' => floatval($item['precio_unitario']),
                     'precio_total' => floatval($item['precio_total']),
-                    'fecha_creacion' => now(),
                 ]);
             }
 
             Pago::create([
-                'ventaID' => $venta->ventaID,
+                'venta_id' => $venta->id,
                 'metodo_pago' => $request->metodo_pago,
                 'monto' => $request->monto_total,
-                'fecha_creacion' => now(),
             ]);
 
-            return $venta->ventaID;
+            return $venta->id;
         });
 
-        return redirect()->route('admin.pos')->with('success', 'VENTA COMPLETADA CON ÉXITO')->with('ticket_venta_id', $ventaID);
+        return redirect()->route('admin.pos')->with('success', 'VENTA COMPLETADA CON ÉXITO')->with('ticket_venta_id', $venta_id);
     }
 }
+
