@@ -52,10 +52,11 @@ class ProductoController extends Controller
      */
     public function create()
     {
-        $cats = DB::table('categorias')->where('activo', 1)->orderBy('nombre', 'asc')->get();
-        if ($cats->isEmpty()) {
-            $cats = DB::table('categorias')->orderBy('nombre', 'asc')->get();
+        $catsQuery = DB::table('categorias');
+        if (\Illuminate\Support\Facades\Schema::hasColumn('categorias', 'activo')) {
+            $catsQuery->where('activo', 1);
         }
+        $cats = $catsQuery->orderBy('nombre', 'asc')->get();
         $categoriasArray = array_map(fn($c) => (array) $c, $cats->toArray());
 
         return view('productos.form', [
@@ -103,12 +104,15 @@ class ProductoController extends Controller
             'descripcion' => $request->descripcion,
             'precio_promo' => ($tipo === 'simple' && !empty($request->precio_promo)) ? $request->precio_promo : null,
             'stock' => ($tipo === 'simple' && isset($request->stock) && $request->stock !== '') ? intval($request->stock) : null,
-            'activo' => $request->has('activo') ? 1 : 0,
             'disponible' => $request->has('disponible') ? 1 : 0,
             'imagen' => $imagenName,
             'user_id' => \Illuminate\Support\Facades\Session::get('usuario_id') ?? 1,
             'created_at' => now()
         ];
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'activo')) {
+            $insertData['activo'] = $request->has('activo') ? 1 : 0;
+        }
 
         if (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'dia_promo')) {
             $insertData['dia_promo'] = ($tipo === 'simple') ? $diaPromo : null;
@@ -125,7 +129,6 @@ class ProductoController extends Controller
                 'nombre_variante' => '',
                 'precio' => $request->precio ?? 0,
                 'precio_promo' => !empty($request->precio_promo) ? $request->precio_promo : null,
-                'activo' => 1,
                 'disponible' => 1,
                 'user_id' => \Illuminate\Support\Facades\Session::get('usuario_id') ?? 1,
                 'created_at' => now()
@@ -223,11 +226,14 @@ class ProductoController extends Controller
             'descripcion' => $request->descripcion,
             'precio_promo' => ($tipo === 'simple' && !empty($request->precio_promo)) ? $request->precio_promo : null,
             'stock' => ($tipo === 'simple' && isset($request->stock) && $request->stock !== '') ? intval($request->stock) : null,
-            'activo' => $request->has('activo') ? 1 : 0,
             'disponible' => $request->has('disponible') ? 1 : 0,
             'imagen' => $imagenName,
             'updated_at' => now()
         ];
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'activo')) {
+            $updateData['activo'] = $request->has('activo') ? 1 : 0;
+        }
 
         if (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'dia_promo')) {
             $updateData['dia_promo'] = ($tipo === 'simple') ? $diaPromo : null;
@@ -245,7 +251,6 @@ class ProductoController extends Controller
                 'nombre_variante' => '',
                 'precio' => $request->precio ?? 0,
                 'precio_promo' => !empty($request->precio_promo) ? $request->precio_promo : null,
-                'activo' => 1,
                 'disponible' => 1,
                 'user_id' => \Illuminate\Support\Facades\Session::get('usuario_id') ?? 1,
                 'created_at' => now()
@@ -410,3 +415,4 @@ class ProductoController extends Controller
         $oldVars->delete();
     }
 }
+

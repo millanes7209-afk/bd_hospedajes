@@ -16,15 +16,30 @@ class PosController extends Controller
     public function index()
     {
         try {
-            $categorias = Categoria::where('activo', 1)->orderBy('nombre', 'asc')->get();
-            $productos = Producto::where('activo', 1)
-                ->where('disponible', 1)
-                ->with([
-                    'variantes' => function ($q) {
-                        $q->where('activo', 1)->where('disponible', 1);
+            $catQuery = Categoria::query();
+            if (\Illuminate\Support\Facades\Schema::hasColumn('categorias', 'activo')) {
+                $catQuery->where('activo', 1);
+            }
+            $categorias = $catQuery->orderBy('nombre', 'asc')->get();
+
+            $prodQuery = Producto::query();
+            if (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'disponible')) {
+                $prodQuery->where('disponible', 1);
+            }
+            if (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'activo')) {
+                $prodQuery->where('activo', 1);
+            }
+
+            $productos = $prodQuery->with([
+                'variantes' => function ($q) {
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'disponible')) {
+                        $q->where('disponible', 1);
                     }
-                ])
-                ->get();
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'activo')) {
+                        $q->where('activo', 1);
+                    }
+                }
+            ])->get();
         } catch (\Throwable $e) {
             $categorias = collect([]);
             $productos = collect([]);
@@ -47,45 +62,44 @@ class PosController extends Controller
             return back()->with('error', 'DEBES AGREGAR AL MENOS UN PRODUCTO AL CARRITO');
         }
 
-        $usuarioID = Session::get('usuarioID') ?? 1;
+        $usuario_id = Session::get('usuario_id') ?? 1;
 
-        $ventaID = DB::transaction(function () use ($request, $items, $usuarioID) {
+        $venta_id = DB::transaction(function () use ($request, $items, $usuario_id) {
             $venta = Venta::create([
                 'origen' => 'local',
                 'tipo_venta' => 'llevar',
                 'cliente_nombre' => !empty($request->cliente_nombre) ? strtoupper(trim($request->cliente_nombre)) : 'CLIENTE MOSTRADOR',
                 'estado' => 'cerrada',
                 'monto_total' => $request->monto_total,
-                'usuario_apertura_id' => $usuarioID,
-                'usuario_cierre_id' => $usuarioID,
+                'usuario_apertura_id' => $usuario_id,
+                'usuario_cierre_id' => $usuario_id,
                 'fecha_apertura' => now(),
                 'fecha_cierre' => now(),
             ]);
 
             foreach ($items as $item) {
                 VentaItem::create([
-                    'ventaID' => $venta->ventaID,
-                    'productoID' => $item['productoID'] ?? null,
-                    'varianteID' => $item['varianteID'] ?? null,
+                    'venta_id' => $venta->id,
+                    'producto_id' => $item['producto_id'] ?? null,
+                    'variante_id' => $item['variante_id'] ?? null,
                     'nombre_producto' => strtoupper($item['nombre_producto']),
                     'nombre_variante' => !empty($item['nombre_variante']) ? strtoupper($item['nombre_variante']) : null,
                     'cantidad' => intval($item['cantidad']),
                     'precio_unitario' => floatval($item['precio_unitario']),
                     'precio_total' => floatval($item['precio_total']),
-                    'fecha_creacion' => now(),
                 ]);
             }
 
             Pago::create([
-                'ventaID' => $venta->ventaID,
+                'venta_id' => $venta->id,
                 'metodo_pago' => $request->metodo_pago,
                 'monto' => $request->monto_total,
-                'fecha_creacion' => now(),
             ]);
 
-            return $venta->ventaID;
+            return $venta->id;
         });
 
-        return redirect()->route('admin.pos')->with('success', 'VENTA COMPLETADA CON ÉXITO')->with('ticket_venta_id', $ventaID);
+        return redirect()->route('admin.pos')->with('success', 'VENTA COMPLETADA CON ÉXITO')->with('ticket_venta_id', $venta_id);
     }
 }
+
