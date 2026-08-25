@@ -17,12 +17,6 @@ class MenuController extends Controller
             ->where(function ($q) {
                 $q->whereNull('p.disponible')->orWhere('p.disponible', 1);
             })
-            ->where(function ($q) {
-                $q->whereNull('p.activo')->orWhere('p.activo', 1);
-            })
-            ->where(function ($query) {
-                $query->whereNull('c.activo')->orWhere('c.activo', 1);
-            })
             ->orderBy('p.id', 'desc')
             ->get();
 
@@ -31,9 +25,6 @@ class MenuController extends Controller
         $queryVar = DB::table('producto_variantes as v')
             ->where(function ($q) {
                 $q->whereNull('v.disponible')->orWhere('v.disponible', 1);
-            })
-            ->where(function ($q) {
-                $q->whereNull('v.activo')->orWhere('v.activo', 1);
             });
 
         if ($hasOrdenVar) {
@@ -169,7 +160,7 @@ class MenuController extends Controller
             ->get();
 
         $variantes = DB::table('producto_variantes')
-            ->select('id as variante_id', 'producto_id', 'nombre_variante', 'disponible', 'activo')
+            ->select('id as variante_id', 'producto_id', 'nombre_variante', 'disponible')
             ->get();
 
         return response()->json([
