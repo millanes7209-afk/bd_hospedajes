@@ -217,9 +217,9 @@
                                     <p class="text-xs font-bold uppercase">MESA DISPONIBLE PARA NUEVOS CLIENTES</p>
                                 </div>
                             @endif
-                        </div>
             @endforeach
         </div>
+        @endif
     </div>
 
     <!-- MODAL REGISTRO DE PAGO DIVIDIDO -->
