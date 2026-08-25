@@ -17,33 +17,29 @@ class ProductoController extends Controller
     public function index()
     {
         $productos = DB::table('productos')
-            ->leftJoin('categorias', 'productos.categoria_id', '=', 'categorias.id')
+            ->leftJoin('categorias', 'productos.categoriaID', '=', 'categorias.categoriaID')
             ->select('productos.*', 'categorias.nombre as categoria_nombre')
-            ->orderBy('productos.id', 'desc')
+            ->orderBy('productos.productoID', 'desc')
             ->get();
 
         $queryVars = DB::table('producto_variantes');
         if (\Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'orden_mostrado')) {
             $queryVars->orderBy('orden_mostrado', 'asc');
         }
-        $variantes = $queryVars->orderBy('id', 'asc')->get();
+        $variantes = $queryVars->orderBy('varianteID', 'asc')->get();
 
         $variantesMap = [];
         foreach ($variantes as $v) {
-            $variantesMap[$v->producto_id][] = (array) $v;
+            $variantesMap[$v->productoID][] = (array) $v;
         }
 
         $productosArray = array_map(function ($p) {
             return (array) $p;
         }, $productos->toArray());
 
-        $categorias = DB::table('categorias')->orderBy('id', 'asc')->get();
-        $categoriasArray = array_map(fn($c) => (array) $c, $categorias->toArray());
-
         return view('productos.index', [
             'productos' => $productosArray,
-            'variantesMap' => $variantesMap,
-            'categorias' => $categoriasArray
+            'variantesMap' => $variantesMap
         ]);
     }
 
@@ -75,7 +71,7 @@ class ProductoController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'categoria_id' => 'required|integer',
+            'categoriaID' => 'required|integer',
             'nombre' => 'required|string|max:150',
             'tipo' => 'required|in:simple,variantes',
         ]);
@@ -97,17 +93,18 @@ class ProductoController extends Controller
         $diaPromo = !empty($request->dia_promo) ? strtolower(trim($request->dia_promo)) : null;
 
         $insertData = [
-            'categoria_id' => $request->categoria_id ?? $request->categoria_id,
+            'categoriaID' => $request->categoriaID,
             'nombre' => strtoupper(trim($request->nombre)),
             'slug' => $slug,
             'descripcion' => $request->descripcion,
+            'tipo' => $tipo,
+            'precio' => ($tipo === 'simple') ? ($request->precio ?? 0) : null,
             'precio_promo' => ($tipo === 'simple' && !empty($request->precio_promo)) ? $request->precio_promo : null,
             'stock' => ($tipo === 'simple' && isset($request->stock) && $request->stock !== '') ? intval($request->stock) : null,
             'activo' => $request->has('activo') ? 1 : 0,
             'disponible' => $request->has('disponible') ? 1 : 0,
             'imagen' => $imagenName,
-            'user_id' => \Illuminate\Support\Facades\Session::get('usuario_id') ?? 1,
-            'created_at' => now()
+            'fecha_creacion' => now()
         ];
 
         if (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'dia_promo')) {
@@ -117,20 +114,10 @@ class ProductoController extends Controller
             $insertData['dias_promo'] = ($tipo === 'simple') ? $diaPromo : null;
         }
 
-        $producto_id = DB::table('productos')->insertGetId($insertData);
+        $productoID = DB::table('productos')->insertGetId($insertData);
 
-        if ($tipo === 'simple') {
-            DB::table('producto_variantes')->insert([
-                'producto_id' => $producto_id,
-                'nombre_variante' => '',
-                'precio' => $request->precio ?? 0,
-                'precio_promo' => !empty($request->precio_promo) ? $request->precio_promo : null,
-                                'disponible' => 1,
-                'user_id' => \Illuminate\Support\Facades\Session::get('usuario_id') ?? 1,
-                'created_at' => now()
-            ]);
-        } else {
-            $this->storeVariantes($request, $producto_id);
+        if ($tipo === 'variantes') {
+            $this->storeVariantes($request, $productoID);
         }
 
         return redirect()->route('admin.productos')->with('success', 'Producto creado exitosamente');
@@ -141,26 +128,18 @@ class ProductoController extends Controller
      */
     public function edit($id)
     {
-        $producto = DB::table('productos')->where('id', $id)->first();
+        $producto = DB::table('productos')->where('productoID', $id)->first();
         if (!$producto) {
             return redirect()->route('admin.productos')->with('error', 'Producto no encontrado');
         }
 
-        $queryVarsEdit = DB::table('producto_variantes')->where('producto_id', $id);
+        $queryVarsEdit = DB::table('producto_variantes')->where('productoID', $id);
         if (\Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'orden_mostrado')) {
             $queryVarsEdit->orderBy('orden_mostrado', 'asc');
         }
-        $variantes = $queryVarsEdit->orderBy('id', 'asc')->get();
+        $variantes = $queryVarsEdit->orderBy('varianteID', 'asc')->get();
 
         $cats = DB::table('categorias')->orderBy('nombre', 'asc')->get();
-
-        // Virtualize 'tipo' and 'precio'
-        if (count($variantes) === 1 && empty($variantes[0]->nombre_variante)) {
-            $producto->tipo = 'simple';
-            $producto->precio = $variantes[0]->precio;
-        } else {
-            $producto->tipo = 'variantes';
-        }
 
         $productoArray = (array) $producto;
         $variantesArray = array_map(fn($v) => (array) $v, $variantes->toArray());
@@ -182,13 +161,13 @@ class ProductoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $producto = DB::table('productos')->where('id', $id)->first();
+        $producto = DB::table('productos')->where('productoID', $id)->first();
         if (!$producto) {
             return redirect()->route('admin.productos')->with('error', 'Producto no encontrado');
         }
 
         $request->validate([
-            'categoria_id' => 'required|integer',
+            'categoriaID' => 'required|integer',
             'nombre' => 'required|string|max:150',
             'tipo' => 'required|in:simple,variantes',
         ]);
@@ -207,7 +186,7 @@ class ProductoController extends Controller
             $baseSlug = Str::slug($request->nombre);
             $slug = $baseSlug;
             $counter = 1;
-            while (DB::table('productos')->where('slug', $slug)->where('id', '!=', $id)->exists()) {
+            while (DB::table('productos')->where('slug', $slug)->where('productoID', '!=', $id)->exists()) {
                 $slug = $baseSlug . '-' . $counter++;
             }
         }
@@ -216,16 +195,18 @@ class ProductoController extends Controller
         $diaPromo = !empty($request->dia_promo) ? strtolower(trim($request->dia_promo)) : null;
 
         $updateData = [
-            'categoria_id' => $request->categoria_id ?? $request->categoria_id,
+            'categoriaID' => $request->categoriaID,
             'nombre' => strtoupper(trim($request->nombre)),
             'slug' => $slug,
             'descripcion' => $request->descripcion,
+            'tipo' => $tipo,
+            'precio' => ($tipo === 'simple') ? ($request->precio ?? 0) : null,
             'precio_promo' => ($tipo === 'simple' && !empty($request->precio_promo)) ? $request->precio_promo : null,
             'stock' => ($tipo === 'simple' && isset($request->stock) && $request->stock !== '') ? intval($request->stock) : null,
             'activo' => $request->has('activo') ? 1 : 0,
             'disponible' => $request->has('disponible') ? 1 : 0,
             'imagen' => $imagenName,
-            'updated_at' => now()
+            'fecha_modificacion' => now()
         ];
 
         if (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'dia_promo')) {
@@ -235,21 +216,18 @@ class ProductoController extends Controller
             $updateData['dias_promo'] = ($tipo === 'simple') ? $diaPromo : null;
         }
 
-        DB::table('productos')->where('id', $id)->update($updateData);
+        DB::table('productos')->where('productoID', $id)->update($updateData);
 
-        if ($tipo === 'simple') {
-            DB::table('producto_variantes')->where('producto_id', $id)->delete();
-            DB::table('producto_variantes')->insert([
-                'producto_id' => $id,
-                'nombre_variante' => '',
-                'precio' => $request->precio ?? 0,
-                'precio_promo' => !empty($request->precio_promo) ? $request->precio_promo : null,
-                                'disponible' => 1,
-                'user_id' => \Illuminate\Support\Facades\Session::get('usuario_id') ?? 1,
-                'created_at' => now()
-            ]);
-        } else {
+        if ($tipo === 'variantes') {
             $this->storeVariantes($request, $id);
+        } else {
+            $variaciones = DB::table('producto_variantes')->where('productoID', $id)->get();
+            foreach ($variaciones as $v) {
+                if (!empty($v->imagen) && file_exists(public_path('assets/productos/' . $v->imagen))) {
+                    @unlink(public_path('assets/productos/' . $v->imagen));
+                }
+            }
+            DB::table('producto_variantes')->where('productoID', $id)->delete();
         }
 
         return redirect()->route('admin.productos')->with('success', 'Producto actualizado correctamente');
@@ -260,15 +238,15 @@ class ProductoController extends Controller
      */
     public function toggleDisponible(Request $request, $id)
     {
-        $producto = DB::table('productos')->where('id', $id)->first();
+        $producto = DB::table('productos')->where('productoID', $id)->first();
         if ($producto) {
             $nuevoEstado = $producto->disponible ? 0 : 1;
-            DB::table('productos')->where('id', $id)->update(['disponible' => $nuevoEstado]);
+            DB::table('productos')->where('productoID', $id)->update(['disponible' => $nuevoEstado]);
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'producto_id' => $id,
+                    'productoID' => $id,
                     'disponible' => $nuevoEstado
                 ]);
             }
@@ -287,21 +265,21 @@ class ProductoController extends Controller
     public function toggleVarianteDisponible(Request $request, $producto_id, $variante_id)
     {
         $variante = DB::table('producto_variantes')
-            ->where('id', $variante_id)
-            ->where('producto_id', $producto_id)
+            ->where('varianteID', $variante_id)
+            ->where('productoID', $producto_id)
             ->first();
 
         if ($variante) {
             $nuevoEstado = $variante->disponible ? 0 : 1;
             DB::table('producto_variantes')
-                ->where('id', $variante_id)
+                ->where('varianteID', $variante_id)
                 ->update(['disponible' => $nuevoEstado]);
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'producto_id' => $producto_id,
-                    'variante_id' => $variante_id,
+                    'productoID' => $producto_id,
+                    'varianteID' => $variante_id,
                     'disponible' => $nuevoEstado
                 ]);
             }
@@ -319,19 +297,19 @@ class ProductoController extends Controller
      */
     public function destroy($id)
     {
-        $producto = DB::table('productos')->where('id', $id)->first();
+        $producto = DB::table('productos')->where('productoID', $id)->first();
         if ($producto) {
             if ($producto->imagen && file_exists(public_path('assets/productos/' . $producto->imagen))) {
                 @unlink(public_path('assets/productos/' . $producto->imagen));
             }
-            $variantes = DB::table('producto_variantes')->where('producto_id', $id)->get();
+            $variantes = DB::table('producto_variantes')->where('productoID', $id)->get();
             foreach ($variantes as $v) {
                 if (!empty($v->imagen) && file_exists(public_path('assets/productos/' . $v->imagen))) {
                     @unlink(public_path('assets/productos/' . $v->imagen));
                 }
             }
-            DB::table('producto_variantes')->where('producto_id', $id)->delete();
-            DB::table('productos')->where('id', $id)->delete();
+            DB::table('producto_variantes')->where('productoID', $id)->delete();
+            DB::table('productos')->where('productoID', $id)->delete();
         }
 
         return redirect()->route('admin.productos')->with('success', 'Producto eliminado');
@@ -340,7 +318,7 @@ class ProductoController extends Controller
     /**
      * Guardado/Actualización privada de variantes (Sin imágenes por requerimiento)
      */
-    private function storeVariantes(Request $request, $producto_id)
+    private function storeVariantes(Request $request, $productoID)
     {
         $variantes = $request->input('variantes');
         if (!$variantes || !is_array($variantes)) {
@@ -350,7 +328,6 @@ class ProductoController extends Controller
         $savedVarianteIDs = [];
         $hasDiaPromo = \Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'dia_promo');
         $hasDiasPromo = \Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'dias_promo');
-        $hasOrdenMostrado = \Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'orden_mostrado');
 
         foreach ($variantes as $index => $vData) {
             if (empty($vData['nombre_variante']) && empty($vData['nombre'])) {
@@ -358,11 +335,11 @@ class ProductoController extends Controller
             }
 
             $nombreVar = strtoupper(trim($vData['nombre_variante'] ?? $vData['nombre']));
-            $vId = $vData['variante_id'] ?? $vData['variante_id'] ?? null;
+            $vId = $vData['varianteID'] ?? null;
             $diaPromoVar = !empty($vData['dia_promo']) ? strtolower(trim($vData['dia_promo'])) : null;
 
             $vRecord = [
-                'producto_id' => $producto_id,
+                'productoID' => $productoID,
                 'nombre_variante' => $nombreVar,
                 'cantidad' => isset($vData['cantidad']) && $vData['cantidad'] !== '' ? floatval($vData['cantidad']) : null,
                 'unidad' => !empty($vData['unidad']) ? trim($vData['unidad']) : null,
@@ -371,12 +348,8 @@ class ProductoController extends Controller
                 'stock' => isset($vData['stock']) && $vData['stock'] !== '' ? intval($vData['stock']) : null,
                 'activo' => isset($vData['activo']) ? 1 : 0,
                 'disponible' => isset($vData['disponible']) ? 1 : 0,
-                'user_id' => \Illuminate\Support\Facades\Session::get('usuario_id') ?? 1,
+                'orden_mostrado' => intval($vData['orden_mostrado'] ?? $index),
             ];
-
-            if ($hasOrdenMostrado) {
-                $vRecord['orden_mostrado'] = intval($vData['orden_mostrado'] ?? $index);
-            }
 
             if ($hasDiaPromo) {
                 $vRecord['dia_promo'] = $diaPromoVar;
@@ -386,17 +359,17 @@ class ProductoController extends Controller
             }
 
             if ($vId) {
-                DB::table('producto_variantes')->where('id', $vId)->update($vRecord);
+                DB::table('producto_variantes')->where('varianteID', $vId)->update($vRecord);
                 $savedVarianteIDs[] = $vId;
             } else {
-                $newId = DB::table('producto_variantes')->insertGetId(array_merge($vRecord, ['created_at' => now()]));
+                $newId = DB::table('producto_variantes')->insertGetId(array_merge($vRecord, ['fecha_creacion' => now()]));
                 $savedVarianteIDs[] = $newId;
             }
         }
 
-        $oldVars = DB::table('producto_variantes')->where('producto_id', $producto_id);
+        $oldVars = DB::table('producto_variantes')->where('productoID', $productoID);
         if (count($savedVarianteIDs) > 0) {
-            $oldVars->whereNotIn('id', $savedVarianteIDs);
+            $oldVars->whereNotIn('varianteID', $savedVarianteIDs);
         }
 
         $oldVarsList = $oldVars->get();
@@ -408,4 +381,3 @@ class ProductoController extends Controller
         $oldVars->delete();
     }
 }
-

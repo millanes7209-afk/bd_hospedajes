@@ -35,7 +35,7 @@ class MesaController extends Controller
 
         try {
             // Cargar catálogo de productos disponibles para agregar a cuentas
-            $productos = Producto::where('disponible', 1)
+            $productos = Producto::where('activo', 1)
                 ->where('disponible', 1)
                 ->with([
                     'variantes' => function ($q) {
@@ -204,4 +204,3 @@ class MesaController extends Controller
         return back()->with('success', "MESA {$mesa->nombre} LIBERADA CORRECTAMENTE");
     }
 }
-

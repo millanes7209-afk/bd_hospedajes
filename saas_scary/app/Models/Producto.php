@@ -37,4 +37,3 @@ class Producto extends Model
         return $this->hasMany(ProductoVariante::class, 'producto_id');
     }
 }
-

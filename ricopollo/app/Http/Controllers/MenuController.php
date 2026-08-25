@@ -13,7 +13,7 @@ class MenuController extends Controller
         // Obtener productos activos y disponibles
         $productosRaw = DB::table('productos as p')
             ->select('p.*', 'c.nombre as categoria_nombre')
-            ->leftJoin('categorias as c', 'p.categoria_id', '=', 'c.id')
+            ->leftJoin('categorias as c', 'p.categoriaID', '=', 'c.categoriaID')
             ->where(function ($q) {
                 $q->whereNull('p.disponible')->orWhere('p.disponible', 1);
             })
@@ -23,7 +23,7 @@ class MenuController extends Controller
             ->where(function ($query) {
                 $query->whereNull('c.activo')->orWhere('c.activo', 1);
             })
-            ->orderBy('p.id', 'desc')
+            ->orderBy('p.productoID', 'desc')
             ->get();
 
         // Obtener variantes activas y disponibles (verificando dinámicamente si existe la columna orden_mostrado)
@@ -40,12 +40,12 @@ class MenuController extends Controller
             $queryVar->orderBy('v.orden_mostrado', 'asc');
         }
 
-        $variantesRaw = $queryVar->orderBy('v.id', 'asc')->get();
+        $variantesRaw = $queryVar->orderBy('v.varianteID', 'asc')->get();
 
         $variantesMap = [];
         foreach ($variantesRaw as $v) {
             $vArray = (array) $v;
-            $variantesMap[$v->producto_id][] = $vArray;
+            $variantesMap[$v->productoID][] = $vArray;
         }
 
         $menuGrouped = [];
@@ -89,19 +89,21 @@ class MenuController extends Controller
 
         foreach ($productosRaw as $pObj) {
             $p = (array) $pObj;
-            // Virtualize 'tipo' and extract price for simple products
-            $activeVariants = $variantesMap[$p['id']] ?? [];
-            if (empty($activeVariants)) {
-                continue; // Cannot sell a product without price/variants
-            }
+            $tieneVariantes = ($p['tipo'] ?? 'simple') === 'variantes' || !empty($variantesMap[$p['productoID']]);
 
-            $tieneVariantes = count($activeVariants) > 1 || (count($activeVariants) === 1 && !empty($activeVariants[0]['nombre_variante']));
+            $activeVariants = [];
+            if ($tieneVariantes) {
+                $activeVariants = $variantesMap[$p['productoID']] ?? [];
+                if (empty($activeVariants)) {
+                    continue; // Saltar si no tiene variantes activas
+                }
+            }
 
             $cat = strtoupper($p['categoria_nombre'] ?: 'MENÚ');
 
             if ($tieneVariantes) {
                 $menuGrouped[$cat][] = [
-                    'producto_id' => $p['id'],
+                    'productoID' => $p['productoID'],
                     'nombre' => $p['nombre'],
                     'descripcion' => $p['descripcion'] ?? '',
                     'imagen' => $p['imagen'] ?? null,
@@ -110,14 +112,9 @@ class MenuController extends Controller
                     'variantes' => $activeVariants,
                 ];
             } else {
-                // It's effectively simple, take price from its single variant
-                $singleVar = $activeVariants[0];
-                array_merge($p, $singleVar); // Inject variant data for fetching active price
-                $p['precio'] = $singleVar['precio'];
-
                 $pPrecioActivo = obtenerPrecioActivo($p);
                 $menuGrouped[$cat][] = [
-                    'producto_id' => $p['id'],
+                    'productoID' => $p['productoID'],
                     'nombre' => $p['nombre'],
                     'descripcion' => $p['descripcion'] ?? '',
                     'precio' => $pPrecioActivo,
@@ -135,8 +132,8 @@ class MenuController extends Controller
                 foreach ($activeVariants as $v) {
                     $vPrecioActivo = obtenerPrecioActivo($v);
                     $variants[] = [
-                        'id' => 'v' . $v['id'],
-                        'variante_id' => $v['id'],
+                        'id' => 'v' . $v['varianteID'],
+                        'varianteID' => $v['varianteID'],
                         'nombre' => strtoupper($v['nombre_variante']),
                         'precio' => $vPrecioActivo,
                         'enPromo' => $vPrecioActivo < $v['precio'],
@@ -146,8 +143,8 @@ class MenuController extends Controller
                 }
             }
 
-            $catalogoJson[$p['id']] = [
-                'id' => $p['id'],
+            $catalogoJson[$p['productoID']] = [
+                'id' => $p['productoID'],
                 'nombre' => strtoupper($p['nombre']),
                 'tieneVariantes' => $tieneVariantes,
                 'imagen' => $p['imagen'] ?? null,
@@ -165,11 +162,11 @@ class MenuController extends Controller
     public function getDisponibilidad()
     {
         $productos = DB::table('productos')
-            ->select('id as producto_id', 'nombre', 'disponible')
+            ->select('productoID', 'nombre', 'disponible', 'activo')
             ->get();
 
         $variantes = DB::table('producto_variantes')
-            ->select('id as variante_id', 'producto_id', 'nombre_variante', 'disponible', 'activo')
+            ->select('varianteID', 'productoID', 'nombre_variante', 'disponible', 'activo')
             ->get();
 
         return response()->json([
@@ -180,4 +177,3 @@ class MenuController extends Controller
         ]);
     }
 }
-

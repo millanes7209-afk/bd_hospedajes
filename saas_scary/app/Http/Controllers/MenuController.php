@@ -165,7 +165,7 @@ class MenuController extends Controller
     public function getDisponibilidad()
     {
         $productos = DB::table('productos')
-            ->select('id as producto_id', 'nombre', 'disponible')
+            ->select('id as producto_id', 'nombre', 'disponible', 'activo')
             ->get();
 
         $variantes = DB::table('producto_variantes')
@@ -180,4 +180,3 @@ class MenuController extends Controller
         ]);
     }
 }
-

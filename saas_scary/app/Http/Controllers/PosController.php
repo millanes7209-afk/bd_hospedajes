@@ -17,7 +17,7 @@ class PosController extends Controller
     {
         try {
             $categorias = Categoria::where('activo', 1)->orderBy('nombre', 'asc')->get();
-            $productos = Producto::where('disponible', 1)
+            $productos = Producto::where('activo', 1)
                 ->where('disponible', 1)
                 ->with([
                     'variantes' => function ($q) {
@@ -87,4 +87,3 @@ class PosController extends Controller
         return redirect()->route('admin.pos')->with('success', 'VENTA COMPLETADA CON ÉXITO')->with('ticket_venta_id', $venta_id);
     }
 }
-
