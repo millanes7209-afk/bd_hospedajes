@@ -50,7 +50,6 @@
                             style="border-color:var(--color-card-border)">
                             <th class="p-4">NOMBRE DE CATEGORÍA</th>
                             <th class="p-4">PRODUCTOS ASOCIADOS</th>
-                            <th class="p-4">ESTADO</th>
                             <th class="p-4 text-right">ACCIONES</th>
                         </tr>
                     </thead>
@@ -68,19 +67,6 @@
                                         Productos
                                     </span>
                                 </td>
-                                <td class="p-4">
-                                    @if($cat['activo'])
-                                        <span
-                                            class="bg-green-500/20 border border-green-500/40 text-green-500 px-3 py-1 rounded-full text-[10px] font-black uppercase">
-                                            <i class="fa-solid fa-circle text-[7px] mr-1"></i>ACTIVA
-                                        </span>
-                                    @else
-                                        <span
-                                            class="bg-red-500/20 border border-red-500/40 text-red-500 px-3 py-1 rounded-full text-[10px] font-black uppercase">
-                                            <i class="fa-solid fa-circle text-[7px] mr-1"></i>INACTIVA
-                                        </span>
-                                    @endif
-                                </td>
                                 <td class="p-4 text-right space-x-1.5">
                                     <button onclick="openModalEditar({{ json_encode($cat) }})"
                                         class="px-2.5 py-1.5 rounded-lg bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 font-bold uppercase transition-colors"
@@ -88,13 +74,6 @@
                                         <i class="fa-solid fa-pen-to-square"></i><span
                                             class="hidden sm:inline ml-1">EDITAR</span>
                                     </button>
-                                    <a href="{{ route('admin.categorias.estado', $cat['id']) }}"
-                                        class="px-2.5 py-1.5 rounded-lg {{ ($cat['activo'] ?? 1) ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30' : 'bg-green-500/20 text-green-500 hover:bg-green-500/30' }} font-bold uppercase transition-colors"
-                                        title="{{ ($cat['activo'] ?? 1) ? 'DESACTIVAR' : 'ACTIVAR' }}">
-                                        <i
-                                            class="fa-solid {{ ($cat['activo'] ?? 1) ? 'fa-eye-slash' : 'fa-eye' }}"></i><span
-                                            class="hidden sm:inline ml-1">{{ ($cat['activo'] ?? 1) ? 'DESACTIVAR' : 'ACTIVAR' }}</span>
-                                    </a>
                                 </td>
                             </tr>
                         @empty

@@ -272,7 +272,6 @@ $categorias = $categorias ?? [];
                   <tr class="uppercase text-gray-400 border-b" style="border-color:var(--color-card-border)">
                     <th class="py-2.5 px-3"># ID</th>
                     <th class="py-2.5 px-3">Nombre Categoría</th>
-                    <th class="py-2.5 px-3 text-center">Estado</th>
                     <th class="py-2.5 px-3 text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -281,12 +280,6 @@ $categorias = $categorias ?? [];
                     <tr class="hover:bg-white/[0.04]">
                       <td class="py-3 px-3 font-mono font-bold text-gray-400">#{{ $cat['id'] }}</td>
                       <td class="py-3 px-3 font-black uppercase text-amber-500">{{ $cat['nombre'] }}</td>
-                      <td class="py-3 px-3 text-center">
-                        <a href="{{ route('admin.categorias.estado', $cat['id']) }}"
-                          class="px-2.5 py-1 rounded-lg font-extrabold uppercase border text-[10px] {{ ($cat['activo'] ?? 1) ? 'border-green-500/50 text-green-400 bg-green-500/10' : 'border-red-500/50 text-red-400 bg-red-500/10' }}">
-                          {{ ($cat['activo'] ?? 1) ? 'ACTIVA' : 'INACTIVA' }}
-                        </a>
-                      </td>
                       <td class="py-3 px-3 text-right">
                         <button type="button" onclick="editarCategoria('{{ $cat['id'] }}', '{{ $cat['nombre'] }}')"
                           class="px-2.5 py-1 rounded-lg border border-amber-500/30 text-amber-500 hover:bg-amber-500/20 font-bold text-[10px] uppercase">
