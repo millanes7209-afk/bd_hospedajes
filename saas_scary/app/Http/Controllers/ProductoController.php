@@ -16,10 +16,14 @@ class ProductoController extends Controller
      */
     public function index()
     {
+        $prodFk = \Illuminate\Support\Facades\Schema::hasColumn('productos', 'categoria_id') ? 'productos.categoria_id' : (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'categoriaID') ? 'productos.categoriaID' : 'productos.categoria_id');
+        $catPk = \Illuminate\Support\Facades\Schema::hasColumn('categorias', 'id') ? 'categorias.id' : (\Illuminate\Support\Facades\Schema::hasColumn('categorias', 'categoriaID') ? 'categorias.categoriaID' : 'categorias.id');
+        $prodPk = \Illuminate\Support\Facades\Schema::hasColumn('productos', 'id') ? 'productos.id' : (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'productoID') ? 'productos.productoID' : 'productos.id');
+
         $productos = DB::table('productos')
-            ->leftJoin('categorias', 'productos.categoria_id', '=', 'categorias.id')
+            ->leftJoin('categorias', $prodFk, '=', $catPk)
             ->select('productos.*', 'categorias.nombre as categoria_nombre')
-            ->orderBy('productos.id', 'desc')
+            ->orderBy($prodPk, 'desc')
             ->get();
 
         $queryVars = DB::table('producto_variantes');
@@ -93,8 +97,10 @@ class ProductoController extends Controller
         $tipo = $request->input('tipo', 'simple');
         $diaPromo = !empty($request->dia_promo) ? strtolower(trim($request->dia_promo)) : null;
 
+        $catFk = \Illuminate\Support\Facades\Schema::hasColumn('productos', 'categoria_id') ? 'categoria_id' : (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'categoriaID') ? 'categoriaID' : 'categoria_id');
+
         $insertData = [
-            'categoria_id' => $request->categoria_id ?? $request->categoria_id,
+            $catFk => $request->categoria_id ?? $request->categoriaID,
             'nombre' => strtoupper(trim($request->nombre)),
             'slug' => $slug,
             'descripcion' => $request->descripcion,
@@ -139,7 +145,8 @@ class ProductoController extends Controller
      */
     public function edit($id)
     {
-        $producto = DB::table('productos')->where('id', $id)->first();
+        $prodPk = \Illuminate\Support\Facades\Schema::hasColumn('productos', 'id') ? 'id' : (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'productoID') ? 'productoID' : 'id');
+        $producto = DB::table('productos')->where($prodPk, $id)->first();
         if (!$producto) {
             return redirect()->route('admin.productos')->with('error', 'Producto no encontrado');
         }
@@ -180,7 +187,8 @@ class ProductoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $producto = DB::table('productos')->where('id', $id)->first();
+        $prodPk = \Illuminate\Support\Facades\Schema::hasColumn('productos', 'id') ? 'id' : (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'productoID') ? 'productoID' : 'id');
+        $producto = DB::table('productos')->where($prodPk, $id)->first();
         if (!$producto) {
             return redirect()->route('admin.productos')->with('error', 'Producto no encontrado');
         }
@@ -205,16 +213,17 @@ class ProductoController extends Controller
             $baseSlug = Str::slug($request->nombre);
             $slug = $baseSlug;
             $counter = 1;
-            while (DB::table('productos')->where('slug', $slug)->where('id', '!=', $id)->exists()) {
+            while (DB::table('productos')->where('slug', $slug)->where($prodPk, '!=', $id)->exists()) {
                 $slug = $baseSlug . '-' . $counter++;
             }
         }
 
         $tipo = $request->input('tipo', 'simple');
         $diaPromo = !empty($request->dia_promo) ? strtolower(trim($request->dia_promo)) : null;
+        $catFk = \Illuminate\Support\Facades\Schema::hasColumn('productos', 'categoria_id') ? 'categoria_id' : (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'categoriaID') ? 'categoriaID' : 'categoria_id');
 
         $updateData = [
-            'categoria_id' => $request->categoria_id ?? $request->categoria_id,
+            $catFk => $request->categoria_id ?? $request->categoriaID,
             'nombre' => strtoupper(trim($request->nombre)),
             'slug' => $slug,
             'descripcion' => $request->descripcion,
@@ -234,7 +243,7 @@ class ProductoController extends Controller
             $updateData['dias_promo'] = ($tipo === 'simple') ? $diaPromo : null;
         }
 
-        DB::table('productos')->where('id', $id)->update($updateData);
+        DB::table('productos')->where($prodPk, $id)->update($updateData);
 
         if ($tipo === 'simple') {
             DB::table('producto_variantes')->where('producto_id', $id)->delete();
@@ -318,7 +327,8 @@ class ProductoController extends Controller
      */
     public function destroy($id)
     {
-        $producto = DB::table('productos')->where('id', $id)->first();
+        $prodPk = \Illuminate\Support\Facades\Schema::hasColumn('productos', 'id') ? 'id' : (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'productoID') ? 'productoID' : 'id');
+        $producto = DB::table('productos')->where($prodPk, $id)->first();
         if ($producto) {
             if ($producto->imagen && file_exists(public_path('assets/productos/' . $producto->imagen))) {
                 @unlink(public_path('assets/productos/' . $producto->imagen));
@@ -330,7 +340,7 @@ class ProductoController extends Controller
                 }
             }
             DB::table('producto_variantes')->where('producto_id', $id)->delete();
-            DB::table('productos')->where('id', $id)->delete();
+            DB::table('productos')->where($prodPk, $id)->delete();
         }
 
         return redirect()->route('admin.productos')->with('success', 'Producto eliminado');
