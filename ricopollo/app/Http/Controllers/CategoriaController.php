@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Exception;
 
@@ -52,17 +51,11 @@ class CategoriaController extends Controller
         }
 
         try {
-            $insertData = [
+            DB::table('categorias')->insert([
                 'nombre' => $nombre,
                 'slug' => $slug,
                 'created_at' => now()
-            ];
-
-            if (Schema::hasColumn('categorias', 'activo')) {
-                $insertData['activo'] = 1;
-            }
-
-            DB::table('categorias')->insert($insertData);
+            ]);
 
             return redirect()->route('admin.productos', ['tab' => 'categorias'])->with('success', 'CATEGORÍA CREADA CORRECTAMENTE.');
         } catch (Exception $e) {
@@ -82,17 +75,12 @@ class CategoriaController extends Controller
         $nombre = strtoupper(trim($request->nombre));
 
         try {
-            $updateData = [
-                'nombre' => $nombre,
-            ];
-
-            if (Schema::hasColumn('categorias', 'activo')) {
-                $updateData['activo'] = $request->has('activo') ? 1 : 0;
-            }
-
             DB::table('categorias')
                 ->where('id', $id)
-                ->update($updateData);
+                ->update([
+                    'nombre' => $nombre,
+                    'updated_at' => now()
+                ]);
 
             return redirect()->route('admin.productos', ['tab' => 'categorias'])->with('success', 'CATEGORÍA ACTUALIZADA CORRECTAMENTE.');
         } catch (Exception $e) {
@@ -105,14 +93,6 @@ class CategoriaController extends Controller
      */
     public function toggleEstado($id)
     {
-        if (Schema::hasColumn('categorias', 'activo')) {
-            $cat = DB::table('categorias')->where('id', $id)->first();
-            if ($cat) {
-                $nuevoEstado = isset($cat->activo) && $cat->activo ? 0 : 1;
-                DB::table('categorias')->where('id', $id)->update(['activo' => $nuevoEstado]);
-            }
-        }
-
-        return redirect()->route('admin.productos', ['tab' => 'categorias'])->with('success', 'ESTADO DE CATEGORÍA ACTUALIZADO.');
+        return redirect()->route('admin.productos', ['tab' => 'categorias']);
     }
 }

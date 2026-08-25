@@ -16,30 +16,14 @@ class PosController extends Controller
     public function index()
     {
         try {
-            $catQuery = Categoria::query();
-            if (\Illuminate\Support\Facades\Schema::hasColumn('categorias', 'activo')) {
-                $catQuery->where('activo', 1);
-            }
-            $categorias = $catQuery->orderBy('nombre', 'asc')->get();
-
-            $prodQuery = Producto::query();
-            if (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'disponible')) {
-                $prodQuery->where('disponible', 1);
-            }
-            if (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'activo')) {
-                $prodQuery->where('activo', 1);
-            }
-
-            $productos = $prodQuery->with([
-                'variantes' => function ($q) {
-                    if (\Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'disponible')) {
+            $categorias = Categoria::orderBy('nombre', 'asc')->get();
+            $productos = Producto::where('disponible', 1)
+                ->with([
+                    'variantes' => function ($q) {
                         $q->where('disponible', 1);
                     }
-                    if (\Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'activo')) {
-                        $q->where('activo', 1);
-                    }
-                }
-            ])->get();
+                ])
+                ->get();
         } catch (\Throwable $e) {
             $categorias = collect([]);
             $productos = collect([]);

@@ -52,11 +52,7 @@ class ProductoController extends Controller
      */
     public function create()
     {
-        $catsQuery = DB::table('categorias');
-        if (\Illuminate\Support\Facades\Schema::hasColumn('categorias', 'activo')) {
-            $catsQuery->where('activo', 1);
-        }
-        $cats = $catsQuery->orderBy('nombre', 'asc')->get();
+        $cats = DB::table('categorias')->orderBy('nombre', 'asc')->get();
         $categoriasArray = array_map(fn($c) => (array) $c, $cats->toArray());
 
         return view('productos.form', [
@@ -110,9 +106,7 @@ class ProductoController extends Controller
             'created_at' => now()
         ];
 
-        if (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'activo')) {
-            $insertData['activo'] = $request->has('activo') ? 1 : 0;
-        }
+
 
         if (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'dia_promo')) {
             $insertData['dia_promo'] = ($tipo === 'simple') ? $diaPromo : null;
@@ -231,9 +225,7 @@ class ProductoController extends Controller
             'updated_at' => now()
         ];
 
-        if (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'activo')) {
-            $updateData['activo'] = $request->has('activo') ? 1 : 0;
-        }
+
 
         if (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'dia_promo')) {
             $updateData['dia_promo'] = ($tipo === 'simple') ? $diaPromo : null;
@@ -376,7 +368,6 @@ class ProductoController extends Controller
                 'precio' => $vData['precio'] ?? 0,
                 'precio_promo' => !empty($vData['precio_promo']) ? $vData['precio_promo'] : null,
                 'stock' => isset($vData['stock']) && $vData['stock'] !== '' ? intval($vData['stock']) : null,
-                'activo' => isset($vData['activo']) ? 1 : 0,
                 'disponible' => isset($vData['disponible']) ? 1 : 0,
                 'user_id' => \Illuminate\Support\Facades\Session::get('usuario_id') ?? 1,
             ];
