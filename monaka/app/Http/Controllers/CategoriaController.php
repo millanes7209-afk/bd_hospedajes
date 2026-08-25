@@ -17,7 +17,7 @@ class CategoriaController extends Controller
         $categorias = DB::table('categorias as c')
             ->select(
                 'c.*',
-                DB::raw('(SELECT COUNT(*) FROM productos p WHERE p.categoriaID = c.categoriaID) as total_productos')
+                DB::raw('(SELECT COUNT(*) FROM productos p WHERE p.categoria_id = c.id) as total_productos')
             )
             ->orderBy('c.nombre', 'asc')
             ->get();
@@ -55,7 +55,7 @@ class CategoriaController extends Controller
                 'nombre' => $nombre,
                 'slug' => $slug,
                 'activo' => 1,
-                'fecha_creacion' => now()
+                'created_at' => now()
             ]);
 
             return redirect()->back()->with('success', 'CATEGORÍA CREADA CORRECTAMENTE.');
@@ -78,7 +78,7 @@ class CategoriaController extends Controller
 
         try {
             DB::table('categorias')
-                ->where('categoriaID', $id)
+                ->where('id', $id)
                 ->update([
                     'nombre' => $nombre,
                     'activo' => $activo
@@ -95,10 +95,10 @@ class CategoriaController extends Controller
      */
     public function toggleEstado($id)
     {
-        $cat = DB::table('categorias')->where('categoriaID', $id)->first();
+        $cat = DB::table('categorias')->where('id', $id)->first();
         if ($cat) {
             $nuevoEstado = $cat->activo ? 0 : 1;
-            DB::table('categorias')->where('categoriaID', $id)->update(['activo' => $nuevoEstado]);
+            DB::table('categorias')->where('id', $id)->update(['activo' => $nuevoEstado]);
         }
 
         return redirect()->back()->with('success', 'ESTADO DE CATEGORÍA ACTUALIZADO.');

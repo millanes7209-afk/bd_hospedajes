@@ -3,22 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Producto extends Model
 {
-    protected $table = 'productos';
-    protected $primaryKey = 'productoID';
+    use SoftDeletes;
 
-    const CREATED_AT = 'fecha_creacion';
-    const UPDATED_AT = 'fecha_modificacion';
+    protected $table = 'productos';
 
     protected $fillable = [
-        'categoriaID',
+        'categoria_id',
         'nombre',
         'slug',
         'descripcion',
-        'tipo',
-        'precio',
         'precio_promo',
         'dia_promo',
         'stock',
@@ -26,6 +23,17 @@ class Producto extends Model
         'disponible',
         'disponible_desde',
         'imagen',
-        'orden_mostrado'
+        'orden_mostrado',
+        'user_id'
     ];
+
+    public function categoria()
+    {
+        return $this->belongsTo(Categoria::class, 'categoria_id');
+    }
+
+    public function variantes()
+    {
+        return $this->hasMany(ProductoVariante::class, 'producto_id');
+    }
 }

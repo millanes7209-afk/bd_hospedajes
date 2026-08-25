@@ -62,7 +62,7 @@
                         }}</p>
                     <span
                         class="inline-block mt-2 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-500/20 text-purple-400 border border-purple-500/40">
-                        ROL: {{ Session::get('rolID', 'USUARIO') }}
+                        ROL: {{ Session::get('rol', 'USUARIO') }}
                     </span>
                 </div>
             </div>

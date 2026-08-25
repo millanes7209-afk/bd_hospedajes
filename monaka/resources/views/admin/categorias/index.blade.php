@@ -88,7 +88,7 @@
                                         <i class="fa-solid fa-pen-to-square"></i><span
                                             class="hidden sm:inline ml-1">EDITAR</span>
                                     </button>
-                                    <a href="{{ route('admin.categorias.estado', $cat['categoriaID']) }}"
+                                    <a href="{{ route('admin.categorias.estado', $cat['categoria_id']) }}"
                                         class="px-2.5 py-1.5 rounded-lg {{ $cat['activo'] ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30' : 'bg-green-500/20 text-green-500 hover:bg-green-500/30' }} font-bold uppercase transition-colors"
                                         title="{{ $cat['activo'] ? 'DESACTIVAR' : 'ACTIVAR' }}">
                                         <i class="fa-solid {{ $cat['activo'] ? 'fa-eye-slash' : 'fa-eye' }}"></i><span
@@ -183,7 +183,7 @@
         function openModalEditar(cat) {
             document.getElementById('edit-nombre').value = cat.nombre;
             document.getElementById('edit-activo').checked = cat.activo == 1;
-            document.getElementById('form-editar-cat').action = '/admin/categorias/update/' + cat.categoriaID;
+            document.getElementById('form-editar-cat').action = '/admin/categorias/update/' + cat.categoria_id;
             document.getElementById('modal-editar').classList.remove('hidden');
         }
         function closeModalEditar() {

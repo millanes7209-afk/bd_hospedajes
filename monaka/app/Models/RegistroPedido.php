@@ -9,8 +9,8 @@ class RegistroPedido extends Model
     protected $table = 'registros_pedidos';
     protected $primaryKey = 'registroPedidoID';
 
-    const CREATED_AT = 'fecha_creacion';
-    public $timestamps = false; // Only has fecha_creacion, no fecha_modificacion
+    const CREATED_AT = 'fecha_creacion'; // (Will be refactored to 'created_at' during execution)
+    const UPDATED_AT = null;
 
-    protected $fillable = ['pedidoID', 'evento', 'detalles'];
+    protected $fillable = ['pedido_id', 'evento', 'detalles'];
 }

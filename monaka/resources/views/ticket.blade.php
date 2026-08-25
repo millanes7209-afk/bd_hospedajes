@@ -721,7 +721,7 @@ $wspUrl = "https://wa.me/591" . preg_replace('/[^0-9]/', '', $pedido['cliente_te
         data.append('monto_pago', val);
       }
 
-      fetch('{{ route("pedidos.confirmarPago", ["id" => $pedido["pedidoID"]]) }}', {
+      fetch('{{ route("pedidos.confirmarPago", ["id" => $pedido["id"]]) }}', {
         method: 'POST',
         headers: {
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -740,7 +740,7 @@ $wspUrl = "https://wa.me/591" . preg_replace('/[^0-9]/', '', $pedido['cliente_te
     // AUTO-POLLING AJAX PARA ACTUALIZAR ESTADO EN TIEMPO REAL
     let currentEstado = '<?php echo strtolower($pedido['estado']); ?>';
     setInterval(() => {
-      fetch('{{ route("api.pedidos.estado", ["id" => $pedido["pedidoID"]]) }}')
+      fetch('{{ route("api.pedidos.estado", ["id" => $pedido["id"]]) }}')
         .then(res => res.json())
         .then(data => {
           if (data && data.estado && data.estado !== currentEstado) {
@@ -752,11 +752,11 @@ $wspUrl = "https://wa.me/591" . preg_replace('/[^0-9]/', '', $pedido['cliente_te
 
     // Auto impresión para Impresora Térmica 58mm (IMP006)
     <?php if (request()->has('print') || request()->has('autoprint')): ?>
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          window.print();
-        }, 500);
-      });
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    });
     <?php endif; ?>
   </script>
 </body>

@@ -49,7 +49,7 @@
                     $est = strtolower($pedido['estado']);
                     $metodoPago = strtolower($pedido['metodo_pago'] ?? 'ninguno');
                     $phoneClean = preg_replace('/[^0-9]/', '', $pedido['cliente_telefono']);
-                    $ticketUrl = route('ticket.show', $pedido['pedidoID']);
+                    $ticketUrl = route('ticket.show', $pedido['pedido_id']);
 
                     // ── Si el pedido fue aceptado y el cliente eligió QR → mostrar botón de comprobante ──
                     $esAceptadoQR = ($est === 'aceptado' && $metodoPago === 'qr');
@@ -122,8 +122,8 @@
                                     <!-- ACCIONES SEGÚN ESTADO -->
                                     @if($est === 'pendiente')
                                         <!-- ACEPTAR O RECHAZAR SOLICITUD -->
-                                        <form action="{{ route('admin.pedidos.aceptar', $pedido['pedidoID']) }}" method="POST"
-                                            onsubmit="window.open('{{ route('ticket.show', $pedido['pedidoID']) }}?print=1', '_blank')"
+                                        <form action="{{ route('admin.pedidos.aceptar', $pedido['pedido_id']) }}" method="POST"
+                                            onsubmit="window.open('{{ route('ticket.show', $pedido['pedido_id']) }}?print=1', '_blank')"
                                             class="inline">
                                             @csrf
                                             <button type="submit"
@@ -134,7 +134,7 @@
 
                                         {{-- Botón que abre el modal personalizado --}}
                                         <button type="button"
-                                            onclick="abrirModalRechazo('{{ route('admin.pedidos.rechazar', $pedido['pedidoID']) }}', '{{ $pedido['numero_pedido'] }}', '{{ addslashes($pedido['cliente_nombre']) }}')"
+                                            onclick="abrirModalRechazo('{{ route('admin.pedidos.rechazar', $pedido['pedido_id']) }}', '{{ $pedido['numero_pedido'] }}', '{{ addslashes($pedido['cliente_nombre']) }}')"
                                             class="bg-red-600 hover:bg-red-500 text-white font-black text-xs py-1.5 px-3 rounded-lg shadow-md uppercase">
                                             <i class="fa-solid fa-circle-xmark mr-1"></i>RECHAZAR
                                         </button>
@@ -152,7 +152,7 @@
                                         $next = $siguienteEstado[$est] ?? null;
                                                                                                                                                                                     ?>
                                                     @if($next)
-                                                        <form action="{{ route('admin.pedidos.estado', $pedido['pedidoID']) }}" method="POST"
+                                                        <form action="{{ route('admin.pedidos.estado', $pedido['pedido_id']) }}" method="POST"
                                                             class="inline">
                                                             @csrf
                                                             <input type="hidden" name="estado" value="{{ $next['estado'] }}">
@@ -170,13 +170,13 @@
                                                     @endif
                                     @endif
 
-                                    <a href="{{ route('ticket.show', $pedido['pedidoID']) }}" target="_blank"
+                                    <a href="{{ route('ticket.show', $pedido['pedido_id']) }}" target="_blank"
                                         class="btn-outline text-xs font-bold py-1.5 px-3">
                                         <i class="fa-solid fa-eye mr-1"></i>VER
                                     </a>
 
                                     <!-- ÚNICO BOTÓN DE IMPRIMIR COMANDA -->
-                                    <a href="{{ route('ticket.show', $pedido['pedidoID']) }}?print=1" target="_blank"
+                                    <a href="{{ route('ticket.show', $pedido['pedido_id']) }}?print=1" target="_blank"
                                         class="btn-outline text-xs font-bold py-1.5 px-3 flex items-center gap-1">
                                         <i class="fa-solid fa-print"></i>IMPRIMIR (58mm)
                                     </a>
@@ -221,7 +221,7 @@
                                             <div class="admin-subcard p-2.5 rounded-lg text-xs flex justify-between items-center">
                                                 <div>
                                                     <span
-                                                        class="font-bold uppercase admin-text-main">{{ $item['nombre_variante'] ?: 'PRODUCTO #' . $item['productoID'] }}</span>
+                                                        class="font-bold uppercase admin-text-main">{{ $item['nombre_variante'] ?: 'PRODUCTO #' . $item['producto_id'] }}</span>
                                                     <span class="admin-text-muted block text-[10px]">Cantidad:
                                                         {{ $item['cantidad'] }}</span>
                                                 </div>

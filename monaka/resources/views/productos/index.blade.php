@@ -1,7 +1,7 @@
 <?php
 // Variables pasadas por el controlador:
 // $productos - array de productos
-// $variantesMap - array de variantes agrupadas por productoID
+// $variantesMap - array de variantes agrupadas por producto_id
 // $categorias - array de categorias
 $categorias = $categorias ?? [];
 ?>
@@ -35,11 +35,13 @@ $categorias = $categorias ?? [];
       color: var(--color-text, #ffffff);
       border: 1px solid var(--color-border, rgba(255, 255, 255, 0.12));
     }
+
     .form-input-prod {
       background-color: var(--color-bg, rgba(0, 0, 0, 0.2));
       color: var(--color-text, #ffffff);
       border: 1px solid var(--color-border, rgba(255, 255, 255, 0.15));
     }
+
     .form-input-prod:focus {
       border-color: #FFE66D;
       outline: none;
@@ -55,13 +57,15 @@ $categorias = $categorias ?? [];
   <div class="max-w-7xl mx-auto px-4 py-6">
 
     @if (session('success'))
-      <div class="mb-6 p-4 rounded-xl bg-green-500/20 border border-green-500/50 text-green-300 font-bold text-sm flex items-center gap-2">
+      <div
+        class="mb-6 p-4 rounded-xl bg-green-500/20 border border-green-500/50 text-green-300 font-bold text-sm flex items-center gap-2">
         <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
       </div>
     @endif
 
     <!-- Encabezado con Pestañas (PRODUCTOS / CATEGORÍAS) -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b pb-4" style="border-color:var(--color-card-border)">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b pb-4"
+      style="border-color:var(--color-card-border)">
       <div>
         <h2 class="text-xl md:text-2xl font-black uppercase flex items-center gap-2">
           <i class="fa-solid fa-utensils text-amber-500"></i> CATÁLOGOS Y MENÚ
@@ -119,7 +123,7 @@ $categorias = $categorias ?? [];
             <tbody class="divide-y text-sm" style="border-color:var(--color-card-border)">
               <?php  foreach ($productos as $p): ?>
               <?php
-    $pId = $p['productoID'];
+    $pId = $p['id'];
     $tipo = $p['tipo'] ?? 'simple';
     $tieneVariantes = !empty($variantesMap[$pId]);
     $disponible = (int) ($p['disponible'] ?? 1);
@@ -128,10 +132,11 @@ $categorias = $categorias ?? [];
               <tr class="align-middle hover:bg-white/[0.04]">
                 <td class="w-16 py-3 px-3">
                   <?php    if (!empty($p['imagen']) && file_exists(public_path($p['imagen']))): ?>
-                  <img src="{{ asset($p['imagen']) }}" alt="IMG"
-                    class="w-12 h-10 object-cover rounded-lg border" style="border-color:var(--color-card-border)" />
+                  <img src="{{ asset($p['imagen']) }}" alt="IMG" class="w-12 h-10 object-cover rounded-lg border"
+                    style="border-color:var(--color-card-border)" />
                   <?php    else: ?>
-                  <div class="w-12 h-10 rounded-lg prod-card-theme flex items-center justify-center text-[9px] font-bold text-gray-400 uppercase">
+                  <div
+                    class="w-12 h-10 rounded-lg prod-card-theme flex items-center justify-center text-[9px] font-bold text-gray-400 uppercase">
                     SIN IMG
                   </div>
                   <?php    endif; ?>
@@ -140,7 +145,8 @@ $categorias = $categorias ?? [];
                 <td class="py-3 px-3 text-center">
                   <button type="button" onclick="toggleDisponibleAjax('producto', <?php    echo $pId; ?>, null, this)"
                     class="btn-toggle-disp inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase transition-all border shadow-sm <?php    echo $disponible ? 'border-green-500/50 bg-green-500/10 text-green-500 hover:bg-green-500/20' : 'border-red-500/50 bg-red-500/10 text-red-500 hover:bg-red-500/20'; ?>">
-                    <i class="fa-solid <?php    echo $disponible ? 'fa-toggle-on text-green-500' : 'fa-toggle-off text-red-500'; ?> text-base"></i>
+                    <i
+                      class="fa-solid <?php    echo $disponible ? 'fa-toggle-on text-green-500' : 'fa-toggle-off text-red-500'; ?> text-base"></i>
                     <span><?php    echo $disponible ? 'DISPONIBLE' : 'NO DISPONIBLE'; ?></span>
                   </button>
                 </td>
@@ -149,7 +155,8 @@ $categorias = $categorias ?? [];
                   <div class="font-black flex items-center gap-2">
                     <?php    echo htmlspecialchars(strtoupper($p['nombre'])); ?>
                     <?php    if (!$activo): ?>
-                    <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-gray-500/20 text-gray-400 border" style="border-color:var(--color-card-border)">Inactivo</span>
+                    <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-gray-500/20 text-gray-400 border"
+                      style="border-color:var(--color-card-border)">Inactivo</span>
                     <?php    endif; ?>
                   </div>
                   <div class="text-[10px] text-gray-400 uppercase font-semibold mt-0.5 flex items-center gap-1">
@@ -160,11 +167,13 @@ $categorias = $categorias ?? [];
 
                 <td class="py-3 px-3">
                   <?php    if ($tipo === 'variantes' || $tieneVariantes): ?>
-                  <span class="inline-block px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                  <span
+                    class="inline-block px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-purple-500/20 text-purple-400 border border-purple-500/30">
                     📦 <?php      echo count($variantesMap[$pId] ?? []); ?> PRESENTACIONES
                   </span>
                   <?php    else: ?>
-                  <div class="font-black text-amber-500">Bs. <?php      echo number_format($p['precio'] ?? 0, 2); ?></div>
+                  <div class="font-black text-amber-500">Bs. <?php      echo number_format($p['precio'] ?? 0, 2); ?>
+                  </div>
                   <?php    endif; ?>
                 </td>
 
@@ -189,7 +198,7 @@ $categorias = $categorias ?? [];
               <?php    if ($tieneVariantes): ?>
               <?php      foreach ($variantesMap[$pId] as $v): ?>
               <?php
-        $vId = $v['varianteID'];
+        $vId = $v['id'];
         $vDisp = (int) ($v['disponible'] ?? 1);
               ?>
               <tr class="prod-card-theme border-l-4 border-l-amber-500/60 text-xs">
@@ -197,9 +206,11 @@ $categorias = $categorias ?? [];
                   <i class="fa-solid fa-level-up-alt fa-rotate-90 text-amber-500"></i>
                 </td>
                 <td class="py-2 px-3 text-center">
-                  <button type="button" onclick="toggleDisponibleAjax('variante', <?php        echo $pId; ?>, <?php        echo $vId; ?>, this)"
+                  <button type="button"
+                    onclick="toggleDisponibleAjax('variante', <?php        echo $pId; ?>, <?php        echo $vId; ?>, this)"
                     class="btn-toggle-disp inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all border <?php        echo $vDisp ? 'border-green-500/40 bg-green-500/10 text-green-500 hover:bg-green-500/20' : 'border-red-500/40 bg-red-500/10 text-red-500 hover:bg-red-500/20'; ?>">
-                    <i class="fa-solid <?php        echo $vDisp ? 'fa-toggle-on text-green-500' : 'fa-toggle-off text-red-500'; ?>"></i>
+                    <i
+                      class="fa-solid <?php        echo $vDisp ? 'fa-toggle-on text-green-500' : 'fa-toggle-off text-red-500'; ?>"></i>
                     <span><?php        echo $vDisp ? 'DISPONIBLE' : 'NO DISPONIBLE'; ?></span>
                   </button>
                 </td>
@@ -237,10 +248,11 @@ $categorias = $categorias ?? [];
               <div>
                 <label class="block text-[11px] font-bold uppercase mb-1 text-gray-400">NOMBRE DE CATEGORÍA *</label>
                 <input type="text" name="nombre" required placeholder="EJ. SALTEÑAS, BEBIDAS"
-                       oninput="this.value = this.value.toUpperCase();"
-                       class="w-full form-input-prod rounded-xl px-3 py-2 text-xs font-bold uppercase">
+                  oninput="this.value = this.value.toUpperCase();"
+                  class="w-full form-input-prod rounded-xl px-3 py-2 text-xs font-bold uppercase">
               </div>
-              <button type="submit" class="w-full py-2.5 px-4 rounded-xl text-xs font-black uppercase bg-amber-500 hover:bg-amber-400 text-black shadow transition-all">
+              <button type="submit"
+                class="w-full py-2.5 px-4 rounded-xl text-xs font-black uppercase bg-amber-500 hover:bg-amber-400 text-black shadow transition-all">
                 CREAR CATEGORÍA
               </button>
             </form>
@@ -267,17 +279,17 @@ $categorias = $categorias ?? [];
                 <tbody class="divide-y" style="border-color:var(--color-card-border)">
                   @foreach($categorias as $cat)
                     <tr class="hover:bg-white/[0.04]">
-                      <td class="py-3 px-3 font-mono font-bold text-gray-400">#{{ $cat['categoriaID'] }}</td>
+                      <td class="py-3 px-3 font-mono font-bold text-gray-400">#{{ $cat['id'] }}</td>
                       <td class="py-3 px-3 font-black uppercase text-amber-500">{{ $cat['nombre'] }}</td>
                       <td class="py-3 px-3 text-center">
-                        <a href="{{ route('admin.categorias.estado', $cat['categoriaID']) }}"
-                           class="px-2.5 py-1 rounded-lg font-extrabold uppercase border text-[10px] {{ $cat['activo'] ? 'border-green-500/50 text-green-400 bg-green-500/10' : 'border-red-500/50 text-red-400 bg-red-500/10' }}">
+                        <a href="{{ route('admin.categorias.estado', $cat['id']) }}"
+                          class="px-2.5 py-1 rounded-lg font-extrabold uppercase border text-[10px] {{ $cat['activo'] ? 'border-green-500/50 text-green-400 bg-green-500/10' : 'border-red-500/50 text-red-400 bg-red-500/10' }}">
                           {{ $cat['activo'] ? 'ACTIVA' : 'INACTIVA' }}
                         </a>
                       </td>
                       <td class="py-3 px-3 text-right">
-                        <button type="button" onclick="editarCategoria('{{ $cat['categoriaID'] }}', '{{ $cat['nombre'] }}')"
-                                class="px-2.5 py-1 rounded-lg border border-amber-500/30 text-amber-500 hover:bg-amber-500/20 font-bold text-[10px] uppercase">
+                        <button type="button" onclick="editarCategoria('{{ $cat['id'] }}', '{{ $cat['nombre'] }}')"
+                          class="px-2.5 py-1 rounded-lg border border-amber-500/30 text-amber-500 hover:bg-amber-500/20 font-bold text-[10px] uppercase">
                           <i class="fa-solid fa-pen mr-1"></i>EDITAR
                         </button>
                       </td>
@@ -318,7 +330,7 @@ $categorias = $categorias ?? [];
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `/admin/categorias/update/${id}`;
-        
+
         const csrf = document.createElement('input');
         csrf.type = 'hidden';
         csrf.name = '_token';

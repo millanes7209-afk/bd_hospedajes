@@ -58,7 +58,7 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
                 <i class="fa-solid fa-sliders text-sm"></i>AJUSTES
             </a>
 
-            @if(Session::get('is_super_admin') || Session::get('rolID') === 'ADMINISTRADOR')
+            @if(Session::get('is_super_admin') || Session::get('rol') === 'ADMINISTRADOR')
                 <a href="{{ route('admin.usuarios') }}"
                     class="px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 {{ request()->routeIs('admin.usuarios*') ? 'bg-amber-500/20 font-black text-amber-500' : 'hover:bg-white/10' }}"
                     style="color: {{ request()->routeIs('admin.usuarios*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
@@ -137,7 +137,7 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
             <i class="fa-solid fa-sliders text-sm w-5 text-center"></i>AJUSTES
         </a>
 
-        @if(Session::get('is_super_admin') || Session::get('rolID') === 'ADMINISTRADOR')
+        @if(Session::get('is_super_admin') || Session::get('rol') === 'ADMINISTRADOR')
             <a href="{{ route('admin.usuarios') }}"
                 class="px-4 py-2.5 rounded-lg flex items-center gap-2.5 {{ request()->routeIs('admin.usuarios*') ? 'bg-amber-500/20 font-black text-amber-500' : 'hover:bg-white/10' }}"
                 style="color: {{ request()->routeIs('admin.usuarios*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">

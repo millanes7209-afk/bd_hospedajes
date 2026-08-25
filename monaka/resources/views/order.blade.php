@@ -113,8 +113,8 @@
     $precio = (float) ($line['precio'] ?? 0);
     $nombre = strtoupper($line['nombre'] ?? '');
     $type = $line['type'] ?? 'producto';
-    $prodID = (int) ($line['productoID'] ?? 0);
-    $varID = (int) ($line['varianteID'] ?? 0);
+    $prodID = (int) ($line['producto_id'] ?? 0);
+    $varID = (int) ($line['variante_id'] ?? 0);
     $lineTotal = $precio * $qty;
               ?>
           <div class="order-item-row" id="row_<?php    echo htmlspecialchars($lineKey); ?>">
@@ -389,8 +389,8 @@
             container.appendChild(inp);
           };
           add('cart_items_final[' + k + '][type]', item.type || 'producto');
-          add('cart_items_final[' + k + '][productoID]', item.productoID || '');
-          if (item.varianteID) add('cart_items_final[' + k + '][varianteID]', item.varianteID);
+          add('cart_items_final[' + k + '][producto_id]', item.producto_id || '');
+          if (item.variante_id) add('cart_items_final[' + k + '][variante_id]', item.variante_id);
           add('cart_items_final[' + k + '][nombre]', item.nombre || '');
           add('cart_items_final[' + k + '][precio]', item.precio || 0);
           add('cart_items_final[' + k + '][qty]', item.qty || 1);

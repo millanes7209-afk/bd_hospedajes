@@ -88,7 +88,7 @@
 
                                 <div class="flex items-center gap-2">
                                     @if(!$isOcupada)
-                                        <form action="{{ route('admin.mesas.abrir', $mesa->mesaID) }}" method="POST">
+                                        <form action="{{ route('admin.mesas.abrir', $mesa->mesa_id) }}" method="POST">
                                             @csrf
                                             <button type="submit"
                                                 class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs py-2 px-4 rounded-xl shadow-md uppercase transition-all flex items-center gap-1.5">
@@ -96,7 +96,7 @@
                                             </button>
                                         </form>
                                     @else
-                                        <form action="{{ route('admin.mesas.liberar', $mesa->mesaID) }}" method="POST"
+                                        <form action="{{ route('admin.mesas.liberar', $mesa->mesa_id) }}" method="POST"
                                             onsubmit="return confirm('¿Deseas liberar y cerrar la cuenta de esta mesa?');">
                                             @csrf
                                             <button type="submit" title="Cerrar y liberar mesa"
@@ -148,24 +148,24 @@
                                     </div>
 
                                     <!-- Formulario para Agregar Productos a la Cuenta -->
-                                    <form action="{{ route('admin.mesas.item.agregar', $mesa->mesaID) }}" method="POST"
+                                    <form action="{{ route('admin.mesas.item.agregar', $mesa->mesa_id) }}" method="POST"
                                         class="grid grid-cols-1 md:grid-cols-4 gap-2 mesa-card-theme p-3 rounded-xl">
                                         @csrf
                                         <div class="md:col-span-2">
-                                            <select name="productoID" id="select-prod-{{ $mesa->mesaID }}"
-                                                onchange="handleProductChange({{ $mesa->mesaID }})"
+                                            <select name="producto_id" id="select-prod-{{ $mesa->mesa_id }}"
+                                                onchange="handleProductChange({{ $mesa->mesa_id }})"
                                                 class="w-full form-input-mesa rounded-lg p-2 text-xs font-bold uppercase" required>
                                                 <option value="">-- SELECCIONAR PRODUCTO --</option>
                                                 @foreach ($productos as $p)
-                                                    <option value="{{ $p->productoID }}" data-tipo="{{ $p->tipo }}"
+                                                    <option value="{{ $p->producto_id }}" data-tipo="{{ $p->tipo }}"
                                                         data-precio="{{ $p->precio }}">
                                                         {{ strtoupper($p->nombre) }}
                                                         {{ $p->tipo === 'simple' ? '(Bs. ' . number_format($p->precio, 2) . ')' : '(CON VARIANTES)' }}
                                                     </option>
                                                 @endforeach
                                             </select>
-                                            <div id="container-variante-{{ $mesa->mesaID }}" class="hidden mt-2">
-                                                <select name="varianteID" id="select-var-{{ $mesa->mesaID }}"
+                                            <div id="container-variante-{{ $mesa->mesa_id }}" class="hidden mt-2">
+                                                <select name="variante_id" id="select-var-{{ $mesa->mesa_id }}"
                                                     class="w-full form-input-mesa text-amber-500 rounded-lg p-2 text-xs font-bold uppercase">
                                                     <option value="">-- SELECCIONAR TAMAÑO / VARIANTE --</option>
                                                 </select>
@@ -200,7 +200,7 @@
                                         </div>
 
                                         <button type="button"
-                                            onclick="abrirModalPago('{{ $cuenta->ventaID }}', '{{ $mesa->nombre }}', '{{ $cuenta->saldoPendiente() }}')"
+                                            onclick="abrirModalPago('{{ $cuenta->venta_id }}', '{{ $mesa->nombre }}', '{{ $cuenta->saldoPendiente() }}')"
                                             class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs py-3 px-5 rounded-xl shadow-lg uppercase flex items-center gap-2">
                                             <i class="fa-solid fa-calculator text-base"></i>COBRAR Y CERRAR
                                         </button>
@@ -281,12 +281,12 @@
                 return;
             }
 
-            const selectedProd = productosData.find(p => p.productoID == prodId);
+            const selectedProd = productosData.find(p => p.producto_id == prodId);
 
             if (selectedProd && selectedProd.tipo === 'variantes' && selectedProd.variantes.length > 0) {
                 selectedProd.variantes.forEach(v => {
                     const opt = document.createElement('option');
-                    opt.value = v.varianteID;
+                    opt.value = v.variante_id;
                     opt.textContent = `${v.nombre_variante.toUpperCase()} - (Bs. ${parseFloat(v.precio).toFixed(2)})`;
                     selectVar.appendChild(opt);
                 });

@@ -77,8 +77,8 @@
                         TODAS
                     </button>
                     @foreach ($categorias as $cat)
-                        <button onclick="filtrarCategoria('cat-{{ $cat->categoriaID }}')"
-                            id="cat-btn-cat-{{ $cat->categoriaID }}"
+                        <button onclick="filtrarCategoria('cat-{{ $cat->categoria_id }}')"
+                            id="cat-btn-cat-{{ $cat->categoria_id }}"
                             class="cat-filter-btn px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all pos-card-theme hover:bg-amber-500/20">
                             {{ strtoupper($cat->nombre) }}
                         </button>
@@ -89,7 +89,7 @@
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 gap-3">
                     @foreach ($productos as $p)
                         <div class="prod-card pos-card-theme p-3 rounded-2xl flex flex-col justify-between hover:border-amber-500/50 transition-all cursor-pointer shadow-sm group"
-                            data-categoria="cat-{{ $p->categoriaID }}"
+                            data-categoria="cat-{{ $p->categoria_id }}"
                             onclick="handleSelectProducto({{ json_encode($p) }})">
                             <div>
                                 <div
@@ -215,7 +215,7 @@
             if (prod.tipo === 'variantes' && prod.variantes && prod.variantes.length > 0) {
                 mostrarModalVariantes(prod);
             } else {
-                agregarAlCarrito(prod.productoID, null, prod.nombre, null, parseFloat(prod.precio));
+                agregarAlCarrito(prod.producto_id, null, prod.nombre, null, parseFloat(prod.precio));
             }
         }
 
@@ -232,7 +232,7 @@
                     <span class="text-amber-500 font-extrabold">Bs. ${parseFloat(v.precio).toFixed(2)}</span>
                 `;
                 btn.onclick = () => {
-                    agregarAlCarrito(prod.productoID, v.varianteID, prod.nombre, v.nombre_variante, parseFloat(v.precio));
+                    agregarAlCarrito(prod.producto_id, v.variante_id, prod.nombre, v.nombre_variante, parseFloat(v.precio));
                     cerrarModalVariantes();
                 };
                 container.appendChild(btn);
@@ -245,8 +245,8 @@
             document.getElementById('modal-variantes').style.display = 'none';
         }
 
-        function agregarAlCarrito(productoID, varianteID, nombreProducto, nombreVariante, precioUnitario) {
-            const key = `${productoID}_${varianteID || 0}`;
+        function agregarAlCarrito(producto_id, variante_id, nombreProducto, nombreVariante, precioUnitario) {
+            const key = `${producto_id}_${variante_id || 0}`;
             const existing = cart.find(item => item.key === key);
 
             if (existing) {
@@ -255,8 +255,8 @@
             } else {
                 cart.push({
                     key: key,
-                    productoID: productoID,
-                    varianteID: varianteID,
+                    producto_id: producto_id,
+                    variante_id: variante_id,
                     nombre_producto: nombreProducto,
                     nombre_variante: nombreVariante,
                     cantidad: 1,

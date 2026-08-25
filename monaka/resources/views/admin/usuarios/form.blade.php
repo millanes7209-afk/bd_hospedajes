@@ -38,7 +38,7 @@
         $uId = isset($usuario) && is_object($usuario) ? ($usuario->id ?? $usuario->userID ?? null) : null;
         $uName = isset($usuario) && is_object($usuario) ? ($usuario->name ?? $usuario->nombre ?? '') : '';
         $uEmail = isset($usuario) && is_object($usuario) ? ($usuario->email ?? '') : '';
-        $uRol = isset($usuario) && is_object($usuario) ? ($usuario->rol ?? $usuario->rolID ?? 'ADMINISTRADOR') : 'ADMINISTRADOR';
+        $uRol = isset($usuario) && is_object($usuario) ? ($usuario->rol ?? $usuario->rol ?? 'ADMINISTRADOR') : 'ADMINISTRADOR';
     @endphp
 
     <div class="max-w-3xl mx-auto px-4 py-6">
