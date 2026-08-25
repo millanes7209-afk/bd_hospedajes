@@ -35,14 +35,19 @@ class MesaController extends Controller
 
         try {
             // Cargar catálogo de productos disponibles para agregar a cuentas
-            $productos = Producto::where('activo', 1)
-                ->where('disponible', 1)
+            $productos = Producto::where('disponible', 1)
                 ->with([
                     'variantes' => function ($q) {
-                        $q->where('activo', 1)->where('disponible', 1);
+                        $q->where('disponible', 1);
                     }
                 ])
                 ->get();
+
+            $productos->transform(function ($p) {
+                $p->tiene_variantes = $p->variantes->count() > 1 || ($p->variantes->count() === 1 && !empty($p->variantes->first()->nombre_variante));
+                $p->precio_virtual = (!$p->tiene_variantes && $p->variantes->isNotEmpty()) ? $p->variantes->first()->precio : 0;
+                return $p;
+            });
         } catch (\Throwable $e) {
             $productos = collect([]);
         }
@@ -53,9 +58,9 @@ class MesaController extends Controller
     /**
      * Abre una cuenta en una mesa libre
      */
-    public function abrirMesa(Request $request, $mesaID)
+    public function abrirMesa(Request $request, $mesa_id)
     {
-        $mesa = Mesa::findOrFail($mesaID);
+        $mesa = Mesa::findOrFail($mesa_id);
 
         if ($mesa->estado === 'ocupada') {
             return back()->with('error', 'LA MESA YA SE ENCUENTRA OCUPADA');
@@ -67,10 +72,10 @@ class MesaController extends Controller
             Venta::create([
                 'origen' => 'local',
                 'tipo_venta' => 'mesa',
-                'mesaID' => $mesa->mesaID,
+                'mesa_id' => $mesa->id,
                 'estado' => 'abierta',
                 'monto_total' => 0.00,
-                'usuario_apertura_id' => Session::get('usuarioID') ?? 1,
+                'usuario_apertura_id' => Session::get('usuario_id') ?? 1,
                 'fecha_apertura' => now(),
             ]);
         });
@@ -81,23 +86,23 @@ class MesaController extends Controller
     /**
      * Agrega un producto/variante a la cuenta abierta de una mesa
      */
-    public function agregarItem(Request $request, $mesaID)
+    public function agregarItem(Request $request, $mesa_id)
     {
         $request->validate([
-            'productoID' => 'required|integer',
-            'varianteID' => 'nullable|integer',
+            'producto_id' => 'required|integer',
+            'variante_id' => 'nullable|integer',
             'cantidad' => 'required|integer|min:1',
         ]);
 
-        $mesa = Mesa::findOrFail($mesaID);
+        $mesa = Mesa::findOrFail($mesa_id);
         $venta = $mesa->cuentaActiva;
 
         if (!$venta) {
             return back()->with('error', 'NO HAY UNA CUENTA ABIERTA EN ESTA MESA');
         }
 
-        $producto = Producto::findOrFail($request->productoID);
-        $variante = $request->varianteID ? ProductoVariante::find($request->varianteID) : null;
+        $producto = Producto::findOrFail($request->producto_id);
+        $variante = $request->variante_id ? ProductoVariante::find($request->variante_id) : null;
 
         $nombreProducto = strtoupper($producto->nombre);
         $nombreVariante = $variante ? strtoupper($variante->nombre_variante) : null;
@@ -108,16 +113,15 @@ class MesaController extends Controller
 
         DB::transaction(function () use ($venta, $producto, $variante, $nombreProducto, $nombreVariante, $cantidad, $precioUnitario, $precioTotal, $request) {
             VentaItem::create([
-                'ventaID' => $venta->ventaID,
-                'productoID' => $producto->productoID,
-                'varianteID' => $variante ? $variante->varianteID : null,
+                'venta_id' => $venta->id,
+                'producto_id' => $producto->id,
+                'variante_id' => $variante ? $variante->id : null,
                 'nombre_producto' => $nombreProducto,
                 'nombre_variante' => $nombreVariante,
                 'cantidad' => $cantidad,
                 'precio_unitario' => $precioUnitario,
                 'precio_total' => $precioTotal,
                 'nota' => $request->nota ? strtoupper($request->nota) : null,
-                'fecha_creacion' => now(),
             ]);
 
             // Recalcular monto total de la venta
@@ -148,21 +152,20 @@ class MesaController extends Controller
     /**
      * Registra un pago (QR o Efectivo) y cierra la mesa si el saldo llega a 0
      */
-    public function registrarPago(Request $request, $ventaID)
+    public function registrarPago(Request $request, $venta_id)
     {
         $request->validate([
             'metodo_pago' => 'required|in:qr,efectivo',
             'monto' => 'required|numeric|min:0.01',
         ]);
 
-        $venta = Venta::findOrFail($ventaID);
+        $venta = Venta::findOrFail($venta_id);
 
         DB::transaction(function () use ($venta, $request) {
             Pago::create([
-                'ventaID' => $venta->ventaID,
+                'venta_id' => $venta->id,
                 'metodo_pago' => $request->metodo_pago,
                 'monto' => $request->monto,
-                'fecha_creacion' => now(),
             ]);
 
             // Verificar si el saldo ha sido cubierto por completo
@@ -171,16 +174,39 @@ class MesaController extends Controller
             if ($totalPagado >= $venta->monto_total) {
                 $venta->update([
                     'estado' => 'cerrada',
-                    'usuario_cierre_id' => Session::get('usuarioID') ?? 1,
+                    'usuario_cierre_id' => Session::get('usuario_id') ?? 1,
                     'fecha_cierre' => now(),
                 ]);
 
-                if ($venta->mesaID) {
-                    Mesa::where('mesaID', $venta->mesaID)->update(['estado' => 'libre']);
+                if ($venta->mesa_id) {
+                    Mesa::where('id', $venta->mesa_id)->update(['estado' => 'libre']);
                 }
             }
         });
 
         return back()->with('success', 'PAGO REGISTRADO CORRECTAMENTE');
     }
+
+    /**
+     * Cancela la apertura y libera una mesa ocupada
+     */
+    public function liberarMesa($mesa_id)
+    {
+        $mesa = Mesa::findOrFail($mesa_id);
+
+        DB::transaction(function () use ($mesa) {
+            $mesa->update(['estado' => 'libre']);
+
+            $cuenta = Venta::where('mesa_id', $mesa->id)->where('estado', 'abierta')->first();
+            if ($cuenta) {
+                $cuenta->update([
+                    'estado' => 'cerrada',
+                    'fecha_cierre' => now()
+                ]);
+            }
+        });
+
+        return back()->with('success', "MESA {$mesa->nombre} LIBERADA CORRECTAMENTE");
+    }
 }
+

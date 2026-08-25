@@ -35,14 +35,19 @@ class MesaController extends Controller
 
         try {
             // Cargar catálogo de productos disponibles para agregar a cuentas
-            $productos = Producto::where('activo', 1)
-                ->where('disponible', 1)
+            $productos = Producto::where('disponible', 1)
                 ->with([
                     'variantes' => function ($q) {
-                        $q->where('activo', 1)->where('disponible', 1);
+                        $q->where('disponible', 1);
                     }
                 ])
                 ->get();
+
+            $productos->transform(function ($p) {
+                $p->tiene_variantes = $p->variantes->count() > 1 || ($p->variantes->count() === 1 && !empty($p->variantes->first()->nombre_variante));
+                $p->precio_virtual = (!$p->tiene_variantes && $p->variantes->isNotEmpty()) ? $p->variantes->first()->precio : 0;
+                return $p;
+            });
         } catch (\Throwable $e) {
             $productos = collect([]);
         }
@@ -204,3 +209,4 @@ class MesaController extends Controller
         return back()->with('success', "MESA {$mesa->nombre} LIBERADA CORRECTAMENTE");
     }
 }
+
