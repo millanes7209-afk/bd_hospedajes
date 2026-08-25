@@ -322,7 +322,19 @@ $categorias = $categorias ?? [];
         contentCat.classList.remove('hidden');
         contentProd.classList.add('hidden');
       }
+
+      const url = new URL(window.location);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState({}, '', url);
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const activeTab = urlParams.get('tab') || '{{ request("tab", "productos") }}';
+      if (activeTab === 'categorias') {
+        switchTab('categorias');
+      }
+    });
 
     function editarCategoria(id, nombre) {
       const nuevoNombre = prompt('EDITAR NOMBRE DE LA CATEGORÍA:', nombre);

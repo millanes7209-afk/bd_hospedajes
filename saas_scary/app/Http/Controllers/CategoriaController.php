@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Exception;
 
@@ -51,16 +52,21 @@ class CategoriaController extends Controller
         }
 
         try {
-            DB::table('categorias')->insert([
+            $insertData = [
                 'nombre' => $nombre,
                 'slug' => $slug,
-                'activo' => 1,
                 'created_at' => now()
-            ]);
+            ];
 
-            return redirect()->back()->with('success', 'CATEGORÍA CREADA CORRECTAMENTE.');
+            if (Schema::hasColumn('categorias', 'activo')) {
+                $insertData['activo'] = 1;
+            }
+
+            DB::table('categorias')->insert($insertData);
+
+            return redirect()->route('admin.productos', ['tab' => 'categorias'])->with('success', 'CATEGORÍA CREADA CORRECTAMENTE.');
         } catch (Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'ERROR AL CREAR CATEGORÍA: ' . $e->getMessage());
+            return redirect()->route('admin.productos', ['tab' => 'categorias'])->withInput()->with('error', 'ERROR AL CREAR CATEGORÍA: ' . $e->getMessage());
         }
     }
 
@@ -74,19 +80,23 @@ class CategoriaController extends Controller
         ]);
 
         $nombre = strtoupper(trim($request->nombre));
-        $activo = $request->has('activo') ? 1 : 0;
 
         try {
+            $updateData = [
+                'nombre' => $nombre,
+            ];
+
+            if (Schema::hasColumn('categorias', 'activo')) {
+                $updateData['activo'] = $request->has('activo') ? 1 : 0;
+            }
+
             DB::table('categorias')
                 ->where('id', $id)
-                ->update([
-                    'nombre' => $nombre,
-                    'activo' => $activo
-                ]);
+                ->update($updateData);
 
-            return redirect()->back()->with('success', 'CATEGORÍA ACTUALIZADA CORRECTAMENTE.');
+            return redirect()->route('admin.productos', ['tab' => 'categorias'])->with('success', 'CATEGORÍA ACTUALIZADA CORRECTAMENTE.');
         } catch (Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'ERROR AL ACTUALIZAR CATEGORÍA: ' . $e->getMessage());
+            return redirect()->route('admin.productos', ['tab' => 'categorias'])->withInput()->with('error', 'ERROR AL ACTUALIZAR CATEGORÍA: ' . $e->getMessage());
         }
     }
 
@@ -95,12 +105,14 @@ class CategoriaController extends Controller
      */
     public function toggleEstado($id)
     {
-        $cat = DB::table('categorias')->where('id', $id)->first();
-        if ($cat) {
-            $nuevoEstado = $cat->activo ? 0 : 1;
-            DB::table('categorias')->where('id', $id)->update(['activo' => $nuevoEstado]);
+        if (Schema::hasColumn('categorias', 'activo')) {
+            $cat = DB::table('categorias')->where('id', $id)->first();
+            if ($cat) {
+                $nuevoEstado = isset($cat->activo) && $cat->activo ? 0 : 1;
+                DB::table('categorias')->where('id', $id)->update(['activo' => $nuevoEstado]);
+            }
         }
 
-        return redirect()->back()->with('success', 'ESTADO DE CATEGORÍA ACTUALIZADO.');
+        return redirect()->route('admin.productos', ['tab' => 'categorias'])->with('success', 'ESTADO DE CATEGORÍA ACTUALIZADO.');
     }
 }
