@@ -27,14 +27,18 @@ class ProductoController extends Controller
             ->orderBy($prodPk, 'desc')
             ->get();
 
+        $varPk = Schema::hasColumn('producto_variantes', 'id') ? 'id' : (Schema::hasColumn('producto_variantes', 'varianteID') ? 'varianteID' : (Schema::hasColumn('producto_variantes', 'variante_id') ? 'variante_id' : null));
+
         $queryVars = DB::table('producto_variantes');
         if (Schema::hasColumn('producto_variantes', 'orden_mostrado')) {
             $queryVars->orderBy('orden_mostrado', 'asc');
         }
-        $varPk = Schema::hasColumn('producto_variantes', 'id') ? 'id' : 'variante_id';
-        $variantes = $queryVars->orderBy($varPk, 'asc')->get();
+        if ($varPk) {
+            $queryVars->orderBy($varPk, 'asc');
+        }
+        $variantes = $queryVars->get();
 
-        $pVarFk = Schema::hasColumn('producto_variantes', 'producto_id') ? 'producto_id' : 'productoID';
+        $pVarFk = Schema::hasColumn('producto_variantes', 'producto_id') ? 'producto_id' : (Schema::hasColumn('producto_variantes', 'productoID') ? 'productoID' : 'producto_id');
         $variantesMap = [];
         foreach ($variantes as $v) {
             $pIdVal = $v->{$pVarFk} ?? ($v->producto_id ?? null);
@@ -185,12 +189,16 @@ class ProductoController extends Controller
         }
 
         $pVarFk = Schema::hasColumn('producto_variantes', 'producto_id') ? 'producto_id' : (Schema::hasColumn('producto_variantes', 'productoID') ? 'productoID' : 'producto_id');
+        $varPk = Schema::hasColumn('producto_variantes', 'id') ? 'id' : (Schema::hasColumn('producto_variantes', 'varianteID') ? 'varianteID' : (Schema::hasColumn('producto_variantes', 'variante_id') ? 'variante_id' : null));
+
         $queryVarsEdit = DB::table('producto_variantes')->where($pVarFk, $id);
         if (Schema::hasColumn('producto_variantes', 'orden_mostrado')) {
             $queryVarsEdit->orderBy('orden_mostrado', 'asc');
         }
-        $varPk = Schema::hasColumn('producto_variantes', 'id') ? 'id' : 'variante_id';
-        $variantes = $queryVarsEdit->orderBy($varPk, 'asc')->get();
+        if ($varPk) {
+            $queryVarsEdit->orderBy($varPk, 'asc');
+        }
+        $variantes = $queryVarsEdit->get();
 
         $cats = DB::table('categorias')->orderBy('nombre', 'asc')->get();
 
@@ -355,7 +363,7 @@ class ProductoController extends Controller
     public function toggleVarianteDisponible(Request $request, $producto_id, $variante_id)
     {
         $pVarFk = Schema::hasColumn('producto_variantes', 'producto_id') ? 'producto_id' : (Schema::hasColumn('producto_variantes', 'productoID') ? 'productoID' : 'producto_id');
-        $vPk = Schema::hasColumn('producto_variantes', 'id') ? 'id' : (Schema::hasColumn('producto_variantes', 'variante_id') ? 'variante_id' : 'id');
+        $vPk = Schema::hasColumn('producto_variantes', 'id') ? 'id' : (Schema::hasColumn('producto_variantes', 'varianteID') ? 'varianteID' : (Schema::hasColumn('producto_variantes', 'variante_id') ? 'variante_id' : 'id'));
 
         $variante = DB::table('producto_variantes')
             ->where($vPk, $variante_id)
@@ -422,7 +430,7 @@ class ProductoController extends Controller
         }
 
         $pVarFk = Schema::hasColumn('producto_variantes', 'producto_id') ? 'producto_id' : (Schema::hasColumn('producto_variantes', 'productoID') ? 'productoID' : 'producto_id');
-        $vPk = Schema::hasColumn('producto_variantes', 'id') ? 'id' : (Schema::hasColumn('producto_variantes', 'variante_id') ? 'variante_id' : 'id');
+        $vPk = Schema::hasColumn('producto_variantes', 'id') ? 'id' : (Schema::hasColumn('producto_variantes', 'varianteID') ? 'varianteID' : (Schema::hasColumn('producto_variantes', 'variante_id') ? 'variante_id' : 'id'));
 
         $savedVarianteIDs = [];
         $hasDiaPromo = Schema::hasColumn('producto_variantes', 'dia_promo');

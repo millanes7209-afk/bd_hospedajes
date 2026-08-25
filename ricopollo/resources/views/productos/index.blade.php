@@ -131,8 +131,16 @@ $categorias = $categorias ?? [];
               ?>
               <tr class="align-middle hover:bg-white/[0.04]">
                 <td class="w-16 py-3 px-3">
-                  <?php    if (!empty($p['imagen']) && file_exists(public_path($p['imagen']))): ?>
-                  <img src="{{ asset($p['imagen']) }}" alt="IMG" class="w-12 h-10 object-cover rounded-lg border"
+                  <?php
+    $imgRaw = $p['imagen'] ?? '';
+    $imgPath = null;
+    if (!empty($imgRaw)) {
+      $imgPath = str_starts_with($imgRaw, 'assets/') ? $imgRaw : 'assets/productos/' . $imgRaw;
+    }
+    $hasImg = !empty($imgPath) && file_exists(public_path($imgPath));
+                  ?>
+                  <?php    if ($hasImg): ?>
+                  <img src="{{ asset($imgPath) }}" alt="IMG" class="w-12 h-10 object-cover rounded-lg border"
                     style="border-color:var(--color-card-border)" />
                   <?php    else: ?>
                   <div

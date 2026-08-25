@@ -477,7 +477,8 @@ if (!function_exists('obtenerPrecioActivo')) {
               <div class="mb-4 overflow-hidden rounded-[28px] h-36">
                 <img src="<?php
       if (!empty($p['imagen'])) {
-        echo asset('assets/productos') . '/' . htmlspecialchars($p['imagen']);
+        $imgFile = str_starts_with($p['imagen'], 'assets/') ? $p['imagen'] : 'assets/productos/' . $p['imagen'];
+        echo asset($imgFile);
       } else {
         echo 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'%3E%3Crect width=\'100\' height=\'100\' fill=\'%23333\'/%3E%3Ctext x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23666\' font-size=\'12\'%3ESIN IMG%3C/text%3E%3C/svg%3E';
       }
@@ -960,12 +961,12 @@ if (!function_exists('obtenerPrecioActivo')) {
 
         const prodMap = {};
         data.productos.forEach(p => {
-          prodMap[p.producto_id] = (p.disponible == 1 && p.activo == 1);
+          prodMap[p.producto_id] = (p.disponible == 1 || p.disponible === null || p.disponible === undefined);
         });
 
         const varMap = {};
         data.variantes.forEach(v => {
-          varMap[v.variante_id] = (v.disponible == 1 && v.activo == 1);
+          varMap[v.variante_id] = (v.disponible == 1 || v.disponible === null || v.disponible === undefined);
         });
 
         latestAvailability = { productos: prodMap, variantes: varMap };

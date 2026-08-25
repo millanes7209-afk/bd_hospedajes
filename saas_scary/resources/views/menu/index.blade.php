@@ -468,7 +468,7 @@ if (!function_exists('obtenerPrecioActivo')) {
       $tieneVariantes = $p['tieneVariantes'] ?? false;
                 ?>
           <div class="glass-card p-5 flex flex-col justify-between relative overflow-hidden group"
-            data-card-product-id="<?php      echo $p['productoID']; ?>">
+            data-card-product-id="<?php      echo $p['producto_id']; ?>">
             <!-- Glow decorativo -->
             <div class="absolute -right-16 -top-16 w-32 h-32 rounded-full blur-2xl pointer-events-none"
               style="background:rgba(226,62,26,0.08)"></div>
@@ -477,7 +477,8 @@ if (!function_exists('obtenerPrecioActivo')) {
               <div class="mb-4 overflow-hidden rounded-[28px] h-36">
                 <img src="<?php
       if (!empty($p['imagen'])) {
-        echo asset('assets/productos') . '/' . htmlspecialchars($p['imagen']);
+        $imgFile = str_starts_with($p['imagen'], 'assets/') ? $p['imagen'] : 'assets/productos/' . $p['imagen'];
+        echo asset($imgFile);
       } else {
         echo 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'%3E%3Crect width=\'100\' height=\'100\' fill=\'%23333\'/%3E%3Ctext x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23666\' font-size=\'12\'%3ESIN IMG%3C/text%3E%3C/svg%3E';
       }
@@ -496,7 +497,7 @@ if (!function_exists('obtenerPrecioActivo')) {
               <?php      if ($tieneVariantes): ?>
               <!-- Chips de variantes -->
               <div class="mb-4">
-                <div class="flex flex-wrap gap-2" id="variant-chips-<?php        echo $p['productoID']; ?>">
+                <div class="flex flex-wrap gap-2" id="variant-chips-<?php        echo $p['producto_id']; ?>">
                   <?php
         $firstVariant = true;
         foreach ($p['variantes'] as $v):
@@ -505,10 +506,10 @@ if (!function_exists('obtenerPrecioActivo')) {
           $vImagen = $v['imagen'] ?? $p['imagen'];
                             ?>
                   <button type="button"
-                    onclick="selectVariant(<?php          echo $p['productoID']; ?>, <?php          echo $v['varianteID']; ?>, <?php          echo $vPrecioActivo; ?>, <?php          echo $v['precio']; ?>, <?php          echo $vEnPromo ? 'true' : 'false'; ?>, '<?php          echo addslashes(strtoupper($p['nombre'] . ' - ' . $v['nombre_variante'])); ?>', '<?php          echo addslashes($vImagen ?? ''); ?>')"
+                    onclick="selectVariant(<?php          echo $p['producto_id']; ?>, <?php          echo $v['variante_id']; ?>, <?php          echo $vPrecioActivo; ?>, <?php          echo $v['precio']; ?>, <?php          echo $vEnPromo ? 'true' : 'false'; ?>, '<?php          echo addslashes(strtoupper($p['nombre'] . ' - ' . $v['nombre_variante'])); ?>', '<?php          echo addslashes($vImagen ?? ''); ?>')"
                     class="variant-chip px-3 py-1.5 text-xs font-bold rounded-full border transition-all <?php          echo $firstVariant ? 'bg-green-500 border-green-500 text-white' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40'; ?>"
-                    data-producto-id="<?php          echo $p['productoID']; ?>"
-                    data-variante-id="<?php          echo $v['varianteID']; ?>"
+                    data-producto-id="<?php          echo $p['producto_id']; ?>"
+                    data-variante-id="<?php          echo $v['variante_id']; ?>"
                     data-precio="<?php          echo $vPrecioActivo; ?>"
                     data-precio-orig="<?php          echo $v['precio']; ?>"
                     data-en-promo="<?php          echo $vEnPromo ? '1' : '0'; ?>"
@@ -524,7 +525,7 @@ if (!function_exists('obtenerPrecioActivo')) {
               <!-- Precio dinámico -->
               <div class="flex items-center justify-between">
                 <div class="price-tag text-xl font-extrabold flex items-center gap-1.5 flex-wrap"
-                  id="precio-display-<?php        echo $p['productoID']; ?>">
+                  id="precio-display-<?php        echo $p['producto_id']; ?>">
                   <?php
         $firstV = $p['variantes'][0];
         $firstPrecioActivo = obtenerPrecioActivo($firstV);
@@ -541,7 +542,7 @@ if (!function_exists('obtenerPrecioActivo')) {
                     class="price-symbol text-xs font-semibold">Bs.</span><?php          echo number_format($firstPrecioActivo, 2); ?>
                   <?php        endif; ?>
                 </div>
-                <button type="button" onclick="addSelectedVariantToCart(<?php        echo $p['productoID']; ?>)"
+                <button type="button" onclick="addSelectedVariantToCart(<?php        echo $p['producto_id']; ?>)"
                   class="btn-primary text-xs !py-1.5 !px-4">
                   <i class="fa-solid fa-plus mr-1"></i><?php        echo strtoupper('AGREGAR'); ?>
                 </button>
@@ -566,8 +567,8 @@ if (!function_exists('obtenerPrecioActivo')) {
                     class="price-symbol text-xs font-semibold">Bs.</span><?php          echo number_format($precioOriginal, 2); ?>
                   <?php        endif; ?>
                 </div>
-                <button type="button" data-product-btn="<?php        echo $p['productoID']; ?>"
-                  onclick="addToCart(<?php        echo $p['productoID']; ?>, <?php        echo $precioActivo; ?>, '<?php        echo addslashes(strtoupper($p['nombre'])); ?>')"
+                <button type="button" data-product-btn="<?php        echo $p['producto_id']; ?>"
+                  onclick="addToCart(<?php        echo $p['producto_id']; ?>, <?php        echo $precioActivo; ?>, '<?php        echo addslashes(strtoupper($p['nombre'])); ?>')"
                   class="btn-primary text-xs !py-1.5 !px-4">
                   <i class="fa-solid fa-plus mr-1"></i><?php        echo strtoupper('AGREGAR'); ?>
                 </button>
@@ -692,18 +693,18 @@ if (!function_exists('obtenerPrecioActivo')) {
     // ── Inicializar variantes seleccionadas con la primera variante de cada producto
     function initializeSelectedVariants() {
       document.querySelectorAll('[data-producto-id]').forEach(chip => {
-        const productoID = parseInt(chip.dataset.productoId);
+        const producto_id = parseInt(chip.dataset.productoId);
         // Solo inicializar si no está ya seleccionado (primera variante)
-        if (!selectedVariants[productoID]) {
+        if (!selectedVariants[producto_id]) {
           const precio = parseFloat(chip.dataset.precio);
           const precioOrig = parseFloat(chip.dataset.precioOrig);
           const enPromo = chip.dataset.enPromo === '1';
           const nombreCompleto = chip.dataset.nombreCompleto;
           const imagen = chip.dataset.imagen;
-          const varianteID = parseInt(chip.dataset.varianteId);
+          const variante_id = parseInt(chip.dataset.varianteId);
 
-          selectedVariants[productoID] = {
-            varianteID,
+          selectedVariants[producto_id] = {
+            variante_id,
             precio,
             precioOrig,
             enPromo,
@@ -715,9 +716,9 @@ if (!function_exists('obtenerPrecioActivo')) {
     }
 
     // ── Seleccionar variante (actualizar UI)
-    function selectVariant(productoID, varianteID, precio, precioOrig, enPromo, nombreCompleto, imagen) {
-      selectedVariants[productoID] = {
-        varianteID,
+    function selectVariant(producto_id, variante_id, precio, precioOrig, enPromo, nombreCompleto, imagen) {
+      selectedVariants[producto_id] = {
+        variante_id,
         precio,
         precioOrig,
         enPromo,
@@ -726,9 +727,9 @@ if (!function_exists('obtenerPrecioActivo')) {
       };
 
       // Actualizar estilo de chips
-      const chips = document.querySelectorAll(`[data-producto-id="${productoID}"]`);
+      const chips = document.querySelectorAll(`[data-producto-id="${producto_id}"]`);
       chips.forEach(chip => {
-        if (parseInt(chip.dataset.varianteId) === varianteID) {
+        if (parseInt(chip.dataset.varianteId) === variante_id) {
           chip.classList.remove('bg-transparent', 'border-white/20', 'text-gray-300');
           chip.classList.add('bg-green-500', 'border-green-500', 'text-white');
         } else {
@@ -738,7 +739,7 @@ if (!function_exists('obtenerPrecioActivo')) {
       });
 
       // Actualizar precio
-      const precioDisplay = document.getElementById(`precio-display-${productoID}`);
+      const precioDisplay = document.getElementById(`precio-display-${producto_id}`);
       if (precioDisplay) {
         if (enPromo) {
           precioDisplay.innerHTML = `
@@ -754,7 +755,7 @@ if (!function_exists('obtenerPrecioActivo')) {
       // Actualizar imagen si la variante tiene una
       if (imagen) {
         const img = document.querySelector(`[alt="${nombreCompleto}"]`) ||
-          document.querySelector(`.glass-card:has(#variant-chips-${productoID}) img`);
+          document.querySelector(`.glass-card:has(#variant-chips-${producto_id}) img`);
         if (img) {
           img.src = `{{ asset('assets/productos') }}/${imagen}`;
         }
@@ -762,12 +763,12 @@ if (!function_exists('obtenerPrecioActivo')) {
     }
 
     // ── Agregar variante seleccionada al carrito
-    function addSelectedVariantToCart(productoID) {
-      const selected = selectedVariants[productoID];
+    function addSelectedVariantToCart(producto_id) {
+      const selected = selectedVariants[producto_id];
       if (!selected) {
         showToast('POR FAVOR SELECCIONA UNA VARIANTE', 'error');
         // Hacer focus en el contenedor de variantes
-        const chipsContainer = document.getElementById(`variant-chips-${productoID}`);
+        const chipsContainer = document.getElementById(`variant-chips-${producto_id}`);
         if (chipsContainer) {
           chipsContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
           chipsContainer.classList.add('animate-pulse');
@@ -776,7 +777,7 @@ if (!function_exists('obtenerPrecioActivo')) {
         return;
       }
 
-      const varianteKey = 'v' + selected.varianteID;
+      const varianteKey = 'v' + selected.variante_id;
       const cart = getCart();
 
       if (cart[varianteKey]) {
@@ -784,8 +785,8 @@ if (!function_exists('obtenerPrecioActivo')) {
       } else {
         cart[varianteKey] = {
           type: 'variante',
-          productoID,
-          varianteID: selected.varianteID,
+          producto_id,
+          variante_id: selected.variante_id,
           nombre: selected.nombreCompleto,
           precio: selected.precio,
           qty: 1
@@ -798,13 +799,13 @@ if (!function_exists('obtenerPrecioActivo')) {
     }
 
     // ── Agregar producto simple (sin variantes)
-    function addToCart(productoID, precio, nombre) {
+    function addToCart(producto_id, precio, nombre) {
       const cart = getCart();
-      const key = 'p' + productoID;
+      const key = 'p' + producto_id;
       if (cart[key]) {
         cart[key].qty += 1;
       } else {
-        cart[key] = { type: 'producto', productoID, nombre, precio: parseFloat(precio), qty: 1 };
+        cart[key] = { type: 'producto', producto_id, nombre, precio: parseFloat(precio), qty: 1 };
       }
       saveCart(cart);
       renderCart();
@@ -903,14 +904,14 @@ if (!function_exists('obtenerPrecioActivo')) {
         };
         if (item.type === 'variante') {
           addInput('cart_items[' + key + '][type]', 'variante');
-          addInput('cart_items[' + key + '][varianteID]', item.varianteID);
-          addInput('cart_items[' + key + '][productoID]', item.productoID);
+          addInput('cart_items[' + key + '][variante_id]', item.variante_id);
+          addInput('cart_items[' + key + '][producto_id]', item.producto_id);
           addInput('cart_items[' + key + '][nombre]', item.nombre);
           addInput('cart_items[' + key + '][precio]', item.precio);
           addInput('cart_items[' + key + '][qty]', item.qty);
         } else {
           addInput('cart_items[' + key + '][type]', 'producto');
-          addInput('cart_items[' + key + '][productoID]', item.productoID);
+          addInput('cart_items[' + key + '][producto_id]', item.producto_id);
           addInput('cart_items[' + key + '][nombre]', item.nombre);
           addInput('cart_items[' + key + '][precio]', item.precio);
           addInput('cart_items[' + key + '][qty]', item.qty);
@@ -960,12 +961,12 @@ if (!function_exists('obtenerPrecioActivo')) {
 
         const prodMap = {};
         data.productos.forEach(p => {
-          prodMap[p.productoID] = (p.disponible == 1 && p.activo == 1);
+          prodMap[p.producto_id] = (p.disponible == 1 || p.disponible === null || p.disponible === undefined);
         });
 
         const varMap = {};
         data.variantes.forEach(v => {
-          varMap[v.varianteID] = (v.disponible == 1 && v.activo == 1);
+          varMap[v.variante_id] = (v.disponible == 1 || v.disponible === null || v.disponible === undefined);
         });
 
         latestAvailability = { productos: prodMap, variantes: varMap };
@@ -1003,7 +1004,7 @@ if (!function_exists('obtenerPrecioActivo')) {
               const visibleChips = Array.from(chips).filter(c => !c.classList.contains('hidden'));
               if (visibleChips.length > 0) {
                 const currentSelected = selectedVariants[pId];
-                if (!currentSelected || varMap[currentSelected.varianteID] === false) {
+                if (!currentSelected || varMap[currentSelected.variante_id] === false) {
                   visibleChips[0].click();
                 }
               }
@@ -1027,9 +1028,9 @@ if (!function_exists('obtenerPrecioActivo')) {
         let updated = false;
         for (const [key, item] of Object.entries(cart)) {
           let itemDisponible = true;
-          if (item.type === 'variante' && varMap[item.varianteID] === false) {
+          if (item.type === 'variante' && varMap[item.variante_id] === false) {
             itemDisponible = false;
-          } else if (item.type === 'producto' && prodMap[item.productoID] === false) {
+          } else if (item.type === 'producto' && prodMap[item.producto_id] === false) {
             itemDisponible = false;
           }
 
@@ -1053,29 +1054,29 @@ if (!function_exists('obtenerPrecioActivo')) {
 
     // Wrap addToCart con verificación previa
     const originalAddToCart = addToCart;
-    addToCart = async function (productoID, precio, nombre) {
+    addToCart = async function (producto_id, precio, nombre) {
       const data = await checkRealtimeAvailability();
-      if (latestAvailability.productos[productoID] === false) {
+      if (latestAvailability.productos[producto_id] === false) {
         showToast('LO SENTIMOS, ESTE PLATILLO YA NO ESTÁ DISPONIBLE EN ESTE MOMENTO', 'error');
         return;
       }
-      originalAddToCart(productoID, precio, nombre);
+      originalAddToCart(producto_id, precio, nombre);
     };
 
     // Wrap addSelectedVariantToCart con verificación previa
     const originalAddSelectedVariantToCart = addSelectedVariantToCart;
-    addSelectedVariantToCart = async function (productoID) {
-      const selected = selectedVariants[productoID];
-      if (selected && latestAvailability.variantes[selected.varianteID] === false) {
+    addSelectedVariantToCart = async function (producto_id) {
+      const selected = selectedVariants[producto_id];
+      if (selected && latestAvailability.variantes[selected.variante_id] === false) {
         showToast('LO SENTIMOS, ESTA PRESENTACIÓN YA NO ESTÁ DISPONIBLE EN ESTE MOMENTO', 'error');
         return;
       }
       await checkRealtimeAvailability();
-      if (selected && latestAvailability.variantes[selected.varianteID] === false) {
+      if (selected && latestAvailability.variantes[selected.variante_id] === false) {
         showToast('LO SENTIMOS, ESTA PRESENTACIÓN YA NO ESTÁ DISPONIBLE EN ESTE MOMENTO', 'error');
         return;
       }
-      originalAddSelectedVariantToCart(productoID);
+      originalAddSelectedVariantToCart(producto_id);
     };
 
     // ── Inicializar carrito y disponibilidad al cargar
