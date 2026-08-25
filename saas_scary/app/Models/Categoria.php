@@ -3,14 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Categoria extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'categorias';
-    protected $primaryKey = 'categoriaID';
 
-    const CREATED_AT = 'fecha_creacion';
-    const UPDATED_AT = 'fecha_modificacion';
-
-    protected $fillable = ['nombre', 'slug', 'descripcion', 'activo'];
+    protected $fillable = ['nombre', 'slug', 'descripcion', 'activo', 'user_id'];
 }

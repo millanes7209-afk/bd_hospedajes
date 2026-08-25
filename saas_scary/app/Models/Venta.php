@@ -4,19 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Venta extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'ventas';
-    protected $primaryKey = 'ventaID';
-    public $timestamps = false;
 
     protected $fillable = [
         'origen',
         'tipo_venta',
-        'mesaID',
+        'mesa_id',
+        'pedido_id',
         'cliente_nombre',
         'cliente_telefono',
         'direccion_entrega',
@@ -31,17 +31,22 @@ class Venta extends Model
 
     public function mesa()
     {
-        return $this->belongsTo(Mesa::class, 'mesaID', 'mesaID');
+        return $this->belongsTo(Mesa::class, 'mesa_id');
+    }
+
+    public function pedido()
+    {
+        return $this->belongsTo(Pedido::class, 'pedido_id');
     }
 
     public function items()
     {
-        return $this->hasMany(VentaItem::class, 'ventaID', 'ventaID');
+        return $this->hasMany(VentaItem::class, 'venta_id');
     }
 
     public function pagos()
     {
-        return $this->hasMany(Pago::class, 'ventaID', 'ventaID');
+        return $this->hasMany(Pago::class, 'venta_id');
     }
 
     public function totalPagado()

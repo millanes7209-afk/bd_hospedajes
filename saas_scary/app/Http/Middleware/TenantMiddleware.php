@@ -46,12 +46,12 @@ class TenantMiddleware
         if (!$tenant) {
             $tenant = (object) [
                 'id' => 1,
-                'subdominio' => 'ricopollo',
-                'nombre' => env('APP_NAME', 'RICO POLLO'),
-                'eslogan' => 'Sabor que cruje, pasión que deleita',
+                'subdominio' => 'monaka',
+                'nombre' => env('APP_NAME', 'Salteñería Monaka'),
+                'eslogan' => 'Las salteñas más deliciosas de la ciudad',
                 'primary_color' => '#FFE66D',
                 'accent_color' => '#E23E1A',
-                'logo' => 'assets/ricopollo.svg',
+                'logo' => 'assets/logo.svg',
             ];
         }
 

@@ -12,8 +12,7 @@ class UserController extends Controller
 {
     public function index()
     {
-        $idCol = Schema::hasColumn('users', 'userID') ? 'userID' : 'id';
-        $usuarios = User::orderBy($idCol, 'desc')->get();
+        $usuarios = User::orderBy('id', 'desc')->get();
         return view('admin.usuarios.index', compact('usuarios'));
     }
 
@@ -49,9 +48,6 @@ class UserController extends Controller
         if (Schema::hasColumn('users', 'rol')) {
             $userData['rol'] = strtoupper($request->rol);
         }
-        if (Schema::hasColumn('users', 'rolID')) {
-            $userData['rolID'] = strtoupper($request->rol);
-        }
 
         if (Schema::hasColumn('users', 'activo')) {
             $userData['activo'] = 1;
@@ -67,15 +63,13 @@ class UserController extends Controller
 
     public function edit($id)
     {
-        $idCol = Schema::hasColumn('users', 'userID') ? 'userID' : 'id';
-        $usuario = User::where($idCol, $id)->firstOrFail();
+        $usuario = User::where('id', $id)->firstOrFail();
         return view('admin.usuarios.form', compact('usuario'));
     }
 
     public function update(Request $request, $id)
     {
-        $idCol = Schema::hasColumn('users', 'userID') ? 'userID' : 'id';
-        $usuario = User::where($idCol, $id)->firstOrFail();
+        $usuario = User::where('id', $id)->firstOrFail();
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -98,9 +92,6 @@ class UserController extends Controller
         if (Schema::hasColumn('users', 'rol')) {
             $usuario->rol = strtoupper($request->input('rol'));
         }
-        if (Schema::hasColumn('users', 'rolID')) {
-            $usuario->rolID = strtoupper($request->input('rol'));
-        }
 
         if ($request->filled('password')) {
             $usuario->password = Hash::make($request->input('password'));
@@ -113,10 +104,9 @@ class UserController extends Controller
 
     public function destroy($id)
     {
-        $idCol = Schema::hasColumn('users', 'userID') ? 'userID' : 'id';
-        $usuario = User::where($idCol, $id)->firstOrFail();
+        $usuario = User::where('id', $id)->firstOrFail();
 
-        if (Session::get('usuarioID') == $id) {
+        if (Session::get('usuario_id') == $id) {
             return redirect()->route('admin.usuarios')->with('error', 'No puedes eliminar tu propio usuario.');
         }
 

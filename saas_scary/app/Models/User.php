@@ -7,23 +7,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     protected $guarded = [];
-
-    public function getKeyName()
-    {
-        try {
-            if (Schema::hasColumn($this->getTable(), 'userID') && !Schema::hasColumn($this->getTable(), 'id')) {
-                return 'userID';
-            }
-        } catch (\Throwable $e) {
-        }
-        return 'id';
-    }
 
     public function getNameAttribute()
     {
@@ -37,7 +27,7 @@ class User extends Authenticatable
 
     public function getRolAttribute()
     {
-        return $this->attributes['rol'] ?? $this->attributes['rolID'] ?? 'ADMINISTRADOR';
+        return $this->attributes['rol'] ?? 'ADMINISTRADOR';
     }
 
     protected $hidden = [

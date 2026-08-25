@@ -14,35 +14,25 @@ class ConfiguracionController extends Controller
      */
     public function index()
     {
-        $tenant = null;
+        $tenant = (object) [
+            'id' => 1,
+            'subdominio' => 'monaka',
+            'nombre' => env('APP_NAME', 'Salteñería Monaka'),
+            'eslogan' => 'Las salteñas más deliciosas de la ciudad',
+            'primary_color' => '#FFE66D',
+            'accent_color' => '#E23E1A',
+            'logo' => 'assets/logo.svg',
+        ];
+
         try {
-            if (app()->bound('tenant')) {
-                $tenant = app('tenant');
+            if (Schema::hasTable('tenants')) {
+                $dbTenant = DB::table('tenants')->where('subdominio', 'monaka')->first();
+                if ($dbTenant) {
+                    $tenant = $dbTenant;
+                }
             }
         } catch (\Throwable $e) {
-            $tenant = null;
-        }
-
-        if (!$tenant) {
-            $tenant = (object) [
-                'id' => 1,
-                'subdominio' => 'ricopollo',
-                'nombre' => env('APP_NAME', 'RICO POLLO'),
-                'eslogan' => 'Sabor que cruje, pasión que deleita',
-                'primary_color' => '#FFE66D',
-                'accent_color' => '#E23E1A',
-                'logo' => 'assets/ricopollo.svg',
-            ];
-
-            try {
-                if (Schema::hasTable('tenants')) {
-                    $dbTenant = DB::table('tenants')->where('subdominio', 'ricopollo')->first();
-                    if ($dbTenant) {
-                        $tenant = $dbTenant;
-                    }
-                }
-            } catch (\Throwable $e) {
-            }
+            // Ignorar
         }
 
         return view('admin.configuracion.index', compact('tenant'));
@@ -61,16 +51,6 @@ class ConfiguracionController extends Controller
             'logo' => 'nullable|image|mimes:png,jpg,jpeg,svg,webp|max:2048',
         ]);
 
-        $tenant = null;
-        try {
-            if (app()->bound('tenant')) {
-                $tenant = app('tenant');
-            }
-        } catch (\Throwable $e) {
-        }
-
-        $subdominio = $tenant ? $tenant->subdominio : 'ricopollo';
-
         $updateData = [
             'nombre' => $request->nombre,
             'eslogan' => $request->eslogan,
@@ -83,7 +63,7 @@ class ConfiguracionController extends Controller
         if ($request->hasFile('logo')) {
             $file = $request->file('logo');
             $extension = $file->getClientOriginalExtension();
-            $filename = 'logo_' . $subdominio . '_' . time() . '.' . $extension;
+            $filename = 'logo_monaka_' . time() . '.' . $extension;
 
             $destinationPath = public_path('uploads/tenants');
             if (!File::exists($destinationPath)) {
@@ -96,9 +76,10 @@ class ConfiguracionController extends Controller
 
         try {
             if (Schema::hasTable('tenants')) {
-                DB::table('tenants')->where('subdominio', $subdominio)->update($updateData);
+                DB::table('tenants')->where('subdominio', 'monaka')->update($updateData);
             }
         } catch (\Throwable $e) {
+            // Ignorar
         }
 
         return back()->with('success', 'CONFIGURACIÓN DE EMPRESA Y LOGO ACTUALIZADOS CORRECTAMENTE');

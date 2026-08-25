@@ -18,7 +18,7 @@ class CheckRole
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         $isSuperAdmin = Session::get('is_super_admin', false);
-        $userRol = Session::get('rolID', '');
+        $userRol = Session::get('rol', '');
 
         // SuperAdmin siempre tiene acceso maestro
         if ($isSuperAdmin) {

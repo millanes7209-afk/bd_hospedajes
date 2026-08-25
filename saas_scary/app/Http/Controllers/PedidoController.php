@@ -16,17 +16,17 @@ class PedidoController extends Controller
     public function index()
     {
         $pedidos = DB::table('pedidos')
-            ->orderBy('fecha_creacion', 'desc')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         $pedidosArray = array_map(function ($p) {
             $items = DB::table('pedido_items')
-                ->leftJoin('productos', 'pedido_items.productoID', '=', 'productos.productoID')
+                ->leftJoin('productos', 'pedido_items.producto_id', '=', 'productos.id')
                 ->select(
                     'pedido_items.*',
                     DB::raw("COALESCE(NULLIF(pedido_items.nombre_variante, ''), productos.nombre, 'PRODUCTO') AS nombre_variante")
                 )
-                ->where('pedido_items.pedidoID', $p->pedidoID)
+                ->where('pedido_items.pedido_id', $p->id)
                 ->get();
 
             $pArr = (array) $p;
@@ -45,25 +45,25 @@ class PedidoController extends Controller
     public function getAdminApiPedidos()
     {
         $pedidos = DB::table('pedidos')
-            ->orderBy('fecha_creacion', 'desc')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         $maxId = 0;
         $hashState = "";
 
         $pedidosArray = array_map(function ($p) use (&$maxId, &$hashState) {
-            if ((int) $p->pedidoID > $maxId) {
-                $maxId = (int) $p->pedidoID;
+            if ((int) $p->id > $maxId) {
+                $maxId = (int) $p->id;
             }
-            $hashState .= $p->pedidoID . '-' . $p->estado . ';';
+            $hashState .= $p->id . '-' . $p->estado . ';';
 
             $items = DB::table('pedido_items')
-                ->leftJoin('productos', 'pedido_items.productoID', '=', 'productos.productoID')
+                ->leftJoin('productos', 'pedido_items.producto_id', '=', 'productos.id')
                 ->select(
                     'pedido_items.*',
                     DB::raw("COALESCE(NULLIF(pedido_items.nombre_variante, ''), productos.nombre, 'PRODUCTO') AS nombre_variante")
                 )
-                ->where('pedido_items.pedidoID', $p->pedidoID)
+                ->where('pedido_items.pedido_id', $p->id)
                 ->get();
 
             $pArr = (array) $p;
@@ -130,18 +130,18 @@ class PedidoController extends Controller
         $pedidoReciente = DB::table('pedidos')
             ->where('cliente_telefono', $cliente_telefono)
             ->where('cliente_nombre', $cliente_nombre)
-            ->where('fecha_creacion', '>=', now()->subSeconds(10))
-            ->orderBy('pedidoID', 'desc')
+            ->where('created_at', '>=', now()->subSeconds(10))
+            ->orderBy('id', 'desc')
             ->first();
 
         if ($pedidoReciente) {
             // Si ya existe un pedido idéntico creado hace menos de 10 segundos, redirigir al ticket existente
-            return redirect()->route('ticket.show', ['id' => $pedidoReciente->pedidoID]);
+            return redirect()->route('ticket.show', ['id' => $pedidoReciente->id]);
         }
 
         DB::beginTransaction();
         try {
-            $pedidoID = DB::table('pedidos')->insertGetId([
+            $pedido_id = DB::table('pedidos')->insertGetId([
                 'numero_pedido' => $numero_pedido,
                 'cliente_nombre' => $cliente_nombre,
                 'cliente_telefono' => $cliente_telefono,
@@ -155,7 +155,7 @@ class PedidoController extends Controller
                 'metodo_pago' => $metodo_pago,
                 'latitud' => $latitud,
                 'longitud' => $longitud,
-                'fecha_creacion' => now()
+                'created_at' => now()
             ]);
 
             $total = 0;
@@ -165,7 +165,7 @@ class PedidoController extends Controller
                     continue;
 
                 $type = $line['type'] ?? 'producto';
-                $productoID = (int) ($line['productoID'] ?? 0);
+                $producto_id = (int) ($line['producto_id'] ?? 0);
                 $nombre = strtoupper($line['nombre'] ?? '');
                 $precio = (float) ($line['precio'] ?? 0);
                 $lineTotal = $precio * $qty;
@@ -173,8 +173,8 @@ class PedidoController extends Controller
                 $nombre_variante = $nombre;
 
                 DB::table('pedido_items')->insert([
-                    'pedidoID' => $pedidoID,
-                    'productoID' => $productoID ?: null,
+                    'pedido_id' => $pedido_id,
+                    'producto_id' => $producto_id ?: null,
                     'nombre_variante' => $nombre_variante,
                     'cantidad' => $qty,
                     'precio_unitario' => $precio,
@@ -188,15 +188,15 @@ class PedidoController extends Controller
                 throw new Exception('DEBES AGREGAR AL MENOS UN PRODUCTO.');
             }
 
-            DB::table('pedidos')->where('pedidoID', $pedidoID)->update(['monto_total' => $total]);
+            DB::table('pedidos')->where('id', $pedido_id)->update(['monto_total' => $total]);
 
             // Registrar en registros_pedidos auditoría
             try {
                 DB::table('registros_pedidos')->insert([
-                    'pedidoID' => $pedidoID,
+                    'pedido_id' => $pedido_id,
                     'evento' => 'SOLICITUD_CREADA',
                     'detalles' => 'SOLICITUD DE PEDIDO ENVIADA POR EL CLIENTE',
-                    'fecha_creacion' => now()
+                    'created_at' => now()
                 ]);
             } catch (Exception $ex) {
                 // Ignore if log table fails
@@ -204,7 +204,7 @@ class PedidoController extends Controller
 
             DB::commit();
 
-            return redirect()->route('ticket.show', ['id' => $pedidoID]);
+            return redirect()->route('ticket.show', ['id' => $pedido_id]);
         } catch (Exception $e) {
             DB::rollBack();
             return redirect()->back()->withInput()->with('error', strtoupper($e->getMessage() ?: 'ERROR AL CREAR PEDIDO'));
@@ -216,13 +216,13 @@ class PedidoController extends Controller
      */
     public function getApiEstado($id)
     {
-        $pedido = DB::table('pedidos')->where('pedidoID', $id)->first();
+        $pedido = DB::table('pedidos')->where('id', $id)->first();
         if (!$pedido) {
             return response()->json(['error' => 'Pedido no encontrado'], 404);
         }
 
         return response()->json([
-            'pedidoID' => $pedido->pedidoID,
+            'id' => $pedido->id,
             'numero_pedido' => $pedido->numero_pedido,
             'estado' => strtolower($pedido->estado),
             'estado_pago' => strtolower($pedido->estado_pago),
@@ -232,7 +232,7 @@ class PedidoController extends Controller
             'cliente_telefono' => $pedido->cliente_telefono,
             'direccion_entrega' => $pedido->direccion_entrega,
             'nota' => $pedido->nota,
-            'fecha_creacion' => $pedido->fecha_creacion
+            'created_at' => $pedido->created_at
         ]);
     }
 
@@ -241,17 +241,17 @@ class PedidoController extends Controller
      */
     public function aceptarPedido($id)
     {
-        DB::table('pedidos')->where('pedidoID', $id)->update([
+        DB::table('pedidos')->where('id', $id)->update([
             'estado' => 'aceptado',
             'aceptado_en' => now()
         ]);
 
         try {
             DB::table('registros_pedidos')->insert([
-                'pedidoID' => $id,
+                'pedido_id' => $id,
                 'evento' => 'SOLICITUD_ACEPTADA',
                 'detalles' => 'SOLICITUD ACEPTADA POR EL CAJERO',
-                'fecha_creacion' => now()
+                'created_at' => now()
             ]);
         } catch (Exception $e) {
         }
@@ -266,17 +266,17 @@ class PedidoController extends Controller
     {
         $motivo = strtoupper(trim($request->input('motivo', 'SIN STOCK DISPONIBLE')));
 
-        DB::table('pedidos')->where('pedidoID', $id)->update([
+        DB::table('pedidos')->where('id', $id)->update([
             'estado' => 'cancelado',
             'nota' => DB::raw("CONCAT(IFNULL(nota, ''), ' [RECHAZADO: {$motivo}]')")
         ]);
 
         try {
             DB::table('registros_pedidos')->insert([
-                'pedidoID' => $id,
+                'pedido_id' => $id,
                 'evento' => 'SOLICITUD_RECHAZADA',
                 'detalles' => 'MOTIVO: ' . $motivo,
-                'fecha_creacion' => now()
+                'created_at' => now()
             ]);
         } catch (Exception $e) {
         }
@@ -300,24 +300,24 @@ class PedidoController extends Controller
             $notaAdd = " [PAGA CON: {$monto_pago} BS]";
         }
 
-        DB::table('pedidos')->where('pedidoID', $id)->update([
+        DB::table('pedidos')->where('id', $id)->update([
             'metodo_pago' => $metodo,
             'estado' => 'preparando',
             'estado_pago' => ($metodo === 'qr') ? 'pagado' : 'pendiente'
         ]);
 
         if (!empty($notaAdd)) {
-            DB::table('pedidos')->where('pedidoID', $id)->update([
+            DB::table('pedidos')->where('id', $id)->update([
                 'nota' => DB::raw("CONCAT(IFNULL(nota, ''), '{$notaAdd}')")
             ]);
         }
 
         try {
             DB::table('registros_pedidos')->insert([
-                'pedidoID' => $id,
+                'pedido_id' => $id,
                 'evento' => 'METODO_PAGO_SELECCIONADO',
                 'detalles' => 'METODO: ' . strtoupper($metodo) . ($notaAdd ? ' - ' . $notaAdd : ''),
-                'fecha_creacion' => now()
+                'created_at' => now()
             ]);
         } catch (Exception $e) {
         }
@@ -330,18 +330,18 @@ class PedidoController extends Controller
      */
     public function showTicket($id)
     {
-        $pedido = DB::table('pedidos')->where('pedidoID', $id)->first();
+        $pedido = DB::table('pedidos')->where('id', $id)->first();
         if (!$pedido) {
             return redirect()->route('menu')->with('error', 'Pedido no encontrado');
         }
 
         $items = DB::table('pedido_items')
-            ->leftJoin('productos', 'pedido_items.productoID', '=', 'productos.productoID')
+            ->leftJoin('productos', 'pedido_items.producto_id', '=', 'productos.id')
             ->select(
                 'pedido_items.*',
                 DB::raw("COALESCE(NULLIF(pedido_items.nombre_variante, ''), productos.nombre, 'PRODUCTO') AS nombre_variante")
             )
-            ->where('pedido_items.pedidoID', $id)
+            ->where('pedido_items.pedido_id', $id)
             ->get();
 
         return view('ticket', [
@@ -356,14 +356,14 @@ class PedidoController extends Controller
     public function updateEstado(Request $request, $id)
     {
         $estado = strtolower(trim($request->input('estado')));
-        DB::table('pedidos')->where('pedidoID', $id)->update(['estado' => $estado]);
+        DB::table('pedidos')->where('id', $id)->update(['estado' => $estado]);
 
         try {
             DB::table('registros_pedidos')->insert([
-                'pedidoID' => $id,
+                'pedido_id' => $id,
                 'evento' => 'CAMBIO_ESTADO',
                 'detalles' => 'NUEVO ESTADO: ' . strtoupper($estado),
-                'fecha_creacion' => now()
+                'created_at' => now()
             ]);
         } catch (Exception $e) {
         }
