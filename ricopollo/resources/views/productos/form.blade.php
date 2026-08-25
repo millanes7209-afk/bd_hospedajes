@@ -8,9 +8,10 @@
 $isEdit = !empty($producto);
 $tipoActual = $producto['tipo'] ?? (!empty($variantes) ? 'variantes' : 'simple');
 $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
+$catsList = $cats ?? ($categorias ?? []);
 ?>
 <!doctype html>
-<html lang="es" class="dark-mode">
+<html lang="es">
 
 <head>
   <meta charset="utf-8">
@@ -34,10 +35,28 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
   <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    .type-card {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 2px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    }
+    .type-card:hover {
+      border-color: rgba(255, 230, 109, 0.4);
+    }
     .type-card.selected {
       border-color: #FFE66D !important;
-      background: rgba(255, 230, 109, 0.08) !important;
-      box-shadow: 0 0 20px rgba(255, 230, 109, 0.15);
+      background: rgba(255, 230, 109, 0.15) !important;
+      box-shadow: 0 0 25px rgba(255, 230, 109, 0.25);
+      transform: translateY(-2px);
+    }
+    html.light-mode .type-card.selected {
+      border-color: #E23E1A !important;
+      background: rgba(226, 62, 26, 0.1) !important;
+      box-shadow: 0 4px 20px rgba(226, 62, 26, 0.25);
+    }
+    /* Adapting options in selects */
+    select option {
+      background-color: var(--color-bg-card, #121218) !important;
+      color: var(--color-text, #ffffff) !important;
     }
   </style>
 </head>
@@ -50,11 +69,11 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
   <div class="max-w-3xl w-full mx-auto p-4 pb-16">
     <div class="glass-card p-6 md:p-8 rounded-2xl border border-white/10 shadow-2xl">
       <div class="flex items-center justify-between pb-4 border-b border-white/10 mb-6">
-        <h2 class="text-xl font-black tracking-wide uppercase text-white flex items-center gap-2">
+        <h2 class="text-xl font-black tracking-wide uppercase admin-text-main flex items-center gap-2">
           <i class="fa-solid fa-utensils text-[#FFE66D]"></i>
           <?php echo $isEdit ? 'EDITAR PRODUCTO' : 'CREAR NUEVO PRODUCTO'; ?>
         </h2>
-        <a href="{{ route('admin.productos') }}" class="text-xs text-gray-400 hover:text-white uppercase font-bold">
+        <a href="{{ route('admin.productos') }}" class="text-xs admin-text-muted hover:admin-text-main uppercase font-bold">
           <i class="fa-solid fa-arrow-left mr-1"></i>VOLVER
         </a>
       </div>
@@ -79,15 +98,18 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Categoría -->
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1.5">Categoría *</label>
-              <select name="categoria_id" required class="form-input focus:bg-gray-900">
+              <label class="block text-xs font-bold uppercase tracking-wider admin-text-muted mb-1.5">Categoría *</label>
+              <select name="categoria_id" required class="form-input font-bold uppercase">
                 <option value="" disabled <?php echo (!isset($producto) || empty($producto['categoria_id'])) ? 'selected' : ''; ?>>
                   -- SELECCIONE CATEGORÍA --
                 </option>
-                <?php foreach ($cats as $c): ?>
-                  <option value="<?php echo $c['id']; ?>"
-                    <?php echo (isset($producto) && $producto['categoria_id'] == $c['id']) ? 'selected' : ''; ?>>
-                    <?php echo htmlspecialchars(strtoupper($c['nombre'])); ?>
+                <?php foreach ($catsList as $c): 
+                  $cId = $c['id'] ?? ($c['categoriaID'] ?? null);
+                  $cNom = $c['nombre'] ?? '';
+                  $sel = (isset($producto) && ($producto['categoria_id'] ?? ($producto['categoriaID'] ?? null)) == $cId) ? 'selected' : '';
+                ?>
+                  <option value="<?php echo $cId; ?>" <?php echo $sel; ?>>
+                    <?php echo htmlspecialchars(strtoupper($cNom)); ?>
                   </option>
                 <?php endforeach; ?>
               </select>
@@ -95,7 +117,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
 
             <!-- Nombre -->
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1.5">Nombre del Producto *</label>
+              <label class="block text-xs font-bold uppercase tracking-wider admin-text-muted mb-1.5">Nombre del Producto *</label>
               <input type="text" name="nombre" required value="<?php echo htmlspecialchars($producto['nombre'] ?? ''); ?>"
                 placeholder="Ej. NUGGETS DE POLLO" class="form-input uppercase font-bold" />
             </div>
@@ -103,19 +125,19 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
 
           <!-- Descripción -->
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1.5">Descripción (Opcional)</label>
+            <label class="block text-xs font-bold uppercase tracking-wider admin-text-muted mb-1.5">Descripción (Opcional)</label>
             <textarea name="descripcion" rows="2" placeholder="Breve detalle de los ingredientes o preparación..."
               class="form-input text-xs"><?php echo htmlspecialchars($producto['descripcion'] ?? ''); ?></textarea>
           </div>
 
           <!-- Imagen Principal -->
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1.5">Imagen Principal (Opcional)</label>
+            <label class="block text-xs font-bold uppercase tracking-wider admin-text-muted mb-1.5">Imagen Principal (Opcional)</label>
             <input type="file" name="imagen" accept="image/*" class="form-input text-xs" />
             <?php if (!empty($imagenActual) && file_exists(public_path('assets/productos/' . $imagenActual))): ?>
               <div class="mt-2 flex items-center gap-3">
                 <img src="{{ asset('assets/productos/' . $imagenActual) }}" alt="IMG" class="w-16 h-12 object-cover rounded-lg border border-white/10" />
-                <span class="text-[10px] uppercase text-gray-400 font-bold">Imagen actual cargada</span>
+                <span class="text-[10px] uppercase admin-text-muted font-bold">Imagen actual cargada</span>
               </div>
             <?php endif; ?>
           </div>
@@ -133,17 +155,23 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
           <!-- Tarjetas de Selección Visual -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div id="card-tipo-simple" onclick="selectTipoProducto('simple')"
-              class="type-card cursor-pointer p-5 rounded-2xl border-2 border-white/10 transition-all flex flex-col items-center text-center select-none admin-subcard hover:border-white/30 <?php echo $tipoActual === 'simple' ? 'selected' : ''; ?>">
+              class="type-card cursor-pointer p-5 rounded-2xl transition-all flex flex-col items-center text-center select-none admin-subcard <?php echo $tipoActual === 'simple' ? 'selected' : ''; ?>">
               <div class="text-3xl mb-2">🍽️</div>
               <h4 class="font-extrabold uppercase text-sm admin-text-main">Precio Único</h4>
               <p class="text-xs admin-text-muted mt-1">Este plato tiene un solo precio de venta<br><span class="text-[10px] admin-text-muted">(ej. Ensalada César, Sopa)</span></p>
+              <span id="badge-simple" class="mt-3 px-3 py-1 rounded-full bg-amber-400 text-black text-[10px] font-black uppercase tracking-wider border border-amber-300 shadow-md transition-all <?php echo $tipoActual === 'simple' ? '' : 'hidden'; ?>">
+                <i class="fa-solid fa-circle-check mr-1"></i>SELECCIONADO
+              </span>
             </div>
 
             <div id="card-tipo-variantes" onclick="selectTipoProducto('variantes')"
-              class="type-card cursor-pointer p-5 rounded-2xl border-2 border-white/10 transition-all flex flex-col items-center text-center select-none admin-subcard hover:border-white/30 <?php echo $tipoActual === 'variantes' ? 'selected' : ''; ?>">
+              class="type-card cursor-pointer p-5 rounded-2xl transition-all flex flex-col items-center text-center select-none admin-subcard <?php echo $tipoActual === 'variantes' ? 'selected' : ''; ?>">
               <div class="text-3xl mb-2">📦</div>
               <h4 class="font-extrabold uppercase text-sm admin-text-main">Varias Presentaciones</h4>
               <p class="text-xs admin-text-muted mt-1">Viene en distintos tamaños o unidades<br><span class="text-[10px] admin-text-muted">(ej. Nuggets 3/6/12 und, Gaseosas)</span></p>
+              <span id="badge-variantes" class="mt-3 px-3 py-1 rounded-full bg-amber-400 text-black text-[10px] font-black uppercase tracking-wider border border-amber-300 shadow-md transition-all <?php echo $tipoActual === 'variantes' ? '' : 'hidden'; ?>">
+                <i class="fa-solid fa-circle-check mr-1"></i>SELECCIONADO
+              </span>
             </div>
           </div>
 
@@ -151,7 +179,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
           <div id="section-simple" class="space-y-4 pt-3 border-t border-white/5 <?php echo $tipoActual === 'variantes' ? 'hidden' : ''; ?>">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1.5">Precio Normal (Bs.) *</label>
+                <label class="block text-xs font-bold uppercase tracking-wider admin-text-muted mb-1.5">Precio Normal (Bs.) *</label>
                 <div class="relative">
                   <span class="absolute left-3.5 top-3.5 text-[#FFE66D] font-bold text-sm">Bs.</span>
                   <input type="number" step="0.01" name="precio" id="precio_simple"
@@ -161,14 +189,14 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
               </div>
 
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1.5">Stock Disponible (Opcional)</label>
+                <label class="block text-xs font-bold uppercase tracking-wider admin-text-muted mb-1.5">Stock Disponible (Opcional)</label>
                 <input type="number" name="stock" value="<?php echo htmlspecialchars($producto['stock'] ?? ''); ?>"
                   placeholder="Ilimitado si está vacío" class="form-input text-sm" />
               </div>
             </div>
 
             <!-- Descuento por día (opcional) -->
-            <div class="bg-black/30 p-4 rounded-xl border border-white/5 space-y-3">
+            <div class="admin-subcard p-4 rounded-xl border border-white/5 space-y-3">
               <label class="inline-flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" id="toggle_promo_simple" onchange="togglePromoSimpleView()"
                   class="rounded bg-black/60 border-white/20 text-green-400 focus:ring-0 w-4 h-4"
@@ -180,7 +208,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
 
               <div id="box_promo_simple" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 <?php echo empty($producto['precio_promo']) ? 'hidden' : ''; ?>">
                 <div>
-                  <label class="block text-[11px] font-bold uppercase text-gray-400 mb-1">Día de Promoción</label>
+                  <label class="block text-[11px] font-bold uppercase admin-text-muted mb-1">Día de Promoción</label>
                   <select name="dia_promo" class="form-input text-xs">
                     <option value="">-- Seleccionar Día --</option>
                     <option value="lunes" <?php echo $diaPromoActual === 'lunes' ? 'selected' : ''; ?>>LUNES</option>
@@ -191,9 +219,9 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
                   </select>
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold uppercase text-gray-400 mb-1">Precio Promocional (Bs.)</label>
+                  <label class="block text-[11px] font-bold uppercase admin-text-muted mb-1">Precio Promocional (Bs.)</label>
                   <input type="number" step="0.01" name="precio_promo" value="<?php echo htmlspecialchars($producto['precio_promo'] ?? ''); ?>"
-                    placeholder="Ej. 25.00" class="form-input text-xs text-green-300 font-bold" />
+                    placeholder="Ej. 25.00" class="form-input text-xs text-green-400 font-bold" />
                 </div>
               </div>
             </div>
@@ -202,7 +230,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
           <!-- ── BLOQUE SI ES VARIANTES ── -->
           <div id="section-variantes" class="space-y-4 pt-3 border-t border-white/5 <?php echo $tipoActual === 'simple' ? 'hidden' : ''; ?>">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold uppercase tracking-wider text-gray-300">PRESENTACIONES CONFIGURADAS</span>
+              <span class="text-xs font-bold uppercase tracking-wider admin-text-muted">PRESENTACIONES CONFIGURADAS</span>
               <button type="button" onclick="addVarianteRow()" class="btn-primary text-xs font-black uppercase !py-1.5 !px-3 shadow-md">
                 <i class="fa-solid fa-plus mr-1"></i>+ AGREGAR PRESENTACIÓN
               </button>
@@ -212,35 +240,34 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
               <?php
               if (!empty($variantes)):
                 foreach ($variantes as $idx => $v):
-                  $vId = $v['id'];
-                  $vNombre = htmlspecialchars($v['nombre_variante']);
+                  $vId = $v['id'] ?? ($v['variante_id'] ?? '');
+                  $vNombre = htmlspecialchars($v['nombre_variante'] ?? $v['nombre'] ?? '');
                   $vCant = htmlspecialchars($v['cantidad'] ?? '');
                   $vUni = htmlspecialchars($v['unidad'] ?? 'und');
-                  $vPrecio = htmlspecialchars($v['precio']);
+                  $vPrecio = htmlspecialchars($v['precio'] ?? '0');
                   $vStock = htmlspecialchars($v['stock'] ?? '');
                   $vPromoPrice = htmlspecialchars($v['precio_promo'] ?? '');
                   $vDiaPromo = strtolower($v['dia_promo'] ?? '');
                   $vDisp = (int) ($v['disponible'] ?? 1);
-                  $vAct = (int) ($v['activo'] ?? 1);
               ?>
-                <div class="variante-row bg-black/40 p-4 rounded-xl border border-white/10 space-y-3 relative">
+                <div class="variante-row admin-subcard p-4 rounded-xl border border-white/10 space-y-3 relative">
                   <input type="hidden" name="variantes[<?php echo $idx; ?>][variante_id]" value="<?php echo $vId; ?>">
                   <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
                     <!-- Nombre presentación -->
                     <div class="sm:col-span-4">
-                      <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Nombre Presentación *</label>
+                      <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Nombre Presentación *</label>
                       <input type="text" name="variantes[<?php echo $idx; ?>][nombre_variante]" value="<?php echo $vNombre; ?>"
                         placeholder="Ej. 6 Unidades" class="form-input text-xs font-bold" required />
                     </div>
                     <!-- Cantidad num -->
                     <div class="sm:col-span-2">
-                      <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Cantidad</label>
+                      <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Cantidad</label>
                       <input type="number" step="0.01" name="variantes[<?php echo $idx; ?>][cantidad]" value="<?php echo $vCant; ?>"
                         placeholder="Ej. 6" class="form-input text-xs" />
                     </div>
                     <!-- Unidad -->
                     <div class="sm:col-span-2">
-                      <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Unidad</label>
+                      <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Unidad</label>
                       <select name="variantes[<?php echo $idx; ?>][unidad]" class="form-input text-xs">
                         <option value="und" <?php echo $vUni === 'und' ? 'selected' : ''; ?>>und</option>
                         <option value="ml" <?php echo $vUni === 'ml' ? 'selected' : ''; ?>>ml</option>
@@ -252,7 +279,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
                     </div>
                     <!-- Precio -->
                     <div class="sm:col-span-3">
-                      <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Precio (Bs.) *</label>
+                      <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Precio (Bs.) *</label>
                       <input type="number" step="0.01" name="variantes[<?php echo $idx; ?>][precio]" value="<?php echo $vPrecio; ?>"
                         placeholder="0.00" class="form-input text-xs font-bold text-[#FFE66D]" required />
                     </div>
@@ -267,7 +294,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
                   <!-- Fila secundaria: Stock + Promo por día + Disponibilidad -->
                   <div class="pt-2 border-t border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs">
                     <div class="flex items-center gap-3 flex-wrap">
-                      <span class="text-[10px] font-bold uppercase text-gray-500">Stock:</span>
+                      <span class="text-[10px] font-bold uppercase admin-text-muted">Stock:</span>
                       <input type="number" name="variantes[<?php echo $idx; ?>][stock]" value="<?php echo $vStock; ?>" placeholder="Ilimitado" class="form-input !py-1 !px-2 w-24 text-xs" />
 
                       <!-- Promo variante -->
@@ -281,22 +308,15 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
                       <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
                         <input type="checkbox" name="variantes[<?php echo $idx; ?>][disponible]" value="1" <?php echo $vDisp ? 'checked' : ''; ?>
                           class="rounded bg-black/60 border-white/20 text-green-500 focus:ring-0 w-3.5 h-3.5">
-                        <span class="text-[10px] font-bold uppercase text-gray-300">Disponible ahora</span>
-                      </label>
-
-                      <!-- Toggle Activo -->
-                      <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
-                        <input type="checkbox" name="variantes[<?php echo $idx; ?>][activo]" value="1" <?php echo $vAct ? 'checked' : ''; ?>
-                          class="rounded bg-black/60 border-white/20 text-blue-400 focus:ring-0 w-3.5 h-3.5">
-                        <span class="text-[10px] font-bold uppercase text-gray-400">Activo</span>
+                        <span class="text-[10px] font-bold uppercase admin-text-main">Disponible ahora</span>
                       </label>
                     </div>
                   </div>
 
                   <!-- Bloque Oculto de Promo Variante -->
-                  <div class="var-promo-box pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-black/20 p-3 rounded-lg border border-white/5 <?php echo empty($vPromoPrice) ? 'hidden' : ''; ?>">
+                  <div class="var-promo-box pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 admin-subcard p-3 rounded-lg border border-white/5 <?php echo empty($vPromoPrice) ? 'hidden' : ''; ?>">
                     <div>
-                      <label class="block text-[9px] font-bold uppercase text-gray-400 mb-1">Día Promoción</label>
+                      <label class="block text-[9px] font-bold uppercase admin-text-muted mb-1">Día Promoción</label>
                       <select name="variantes[<?php echo $idx; ?>][dia_promo]" class="form-input !py-1 text-xs">
                         <option value="">-- Sin Día --</option>
                         <option value="lunes" <?php echo $vDiaPromo === 'lunes' ? 'selected' : ''; ?>>LUNES</option>
@@ -307,9 +327,9 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
                       </select>
                     </div>
                     <div>
-                      <label class="block text-[9px] font-bold uppercase text-gray-400 mb-1">Precio Promocional (Bs.)</label>
+                      <label class="block text-[9px] font-bold uppercase admin-text-muted mb-1">Precio Promocional (Bs.)</label>
                       <input type="number" step="0.01" name="variantes[<?php echo $idx; ?>][precio_promo]" value="<?php echo $vPromoPrice; ?>"
-                        placeholder="Ej. 28.00" class="form-input !py-1 text-xs text-green-300 font-bold" />
+                        placeholder="Ej. 28.00" class="form-input !py-1 text-xs text-green-400 font-bold" />
                     </div>
                   </div>
                 </div>
@@ -318,34 +338,21 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
           </div>
         </div>
 
-        <!-- ════════════════ PASO 3: SWITCHES DE ESTADO GENERAL ════════════════ -->
+        <!-- ════════════════ PASO 3: SWITCH DE DISPONIBILIDAD ════════════════ -->
         <div class="pt-4 border-t border-white/10 space-y-4">
           <h3 class="text-xs font-black uppercase text-[#FFE66D] tracking-wider">ESTADO DEL PRODUCTO</h3>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 gap-4">
             <!-- Switch DISPONIBLE -->
-            <div class="glass-card p-4 rounded-xl border border-white/10 flex items-center justify-between">
+            <div class="admin-subcard p-4 rounded-xl border border-white/10 flex items-center justify-between">
               <div>
-                <span class="block text-xs font-black uppercase text-white">✅ DISPONIBLE AHORA</span>
-                <span class="text-[10px] text-gray-400">Control operativo diario (Cajero/Cocina)</span>
+                <span class="block text-xs font-black uppercase admin-text-main">✅ DISPONIBLE AHORA</span>
+                <span class="text-[10px] admin-text-muted">Control operativo diario (Cajero/Cocina)</span>
               </div>
               <label class="inline-flex items-center cursor-pointer select-none">
                 <input type="checkbox" name="disponible" value="1" class="sr-only peer"
                   <?php echo (!isset($producto) || ($producto['disponible'] ?? 1) == 1) ? 'checked' : ''; ?>>
                 <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500 relative"></div>
-              </label>
-            </div>
-
-            <!-- Switch ACTIVO -->
-            <div class="glass-card p-4 rounded-xl border border-white/10 flex items-center justify-between">
-              <div>
-                <span class="block text-xs font-black uppercase text-white">📁 ACTIVO EN CATÁLOGO</span>
-                <span class="text-[10px] text-gray-400">Control administrativo (Visibilidad general)</span>
-              </div>
-              <label class="inline-flex items-center cursor-pointer select-none">
-                <input type="checkbox" name="activo" value="1" class="sr-only peer"
-                  <?php echo (!isset($producto) || ($producto['activo'] ?? 1) == 1) ? 'checked' : ''; ?>>
-                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 relative"></div>
               </label>
             </div>
           </div>
@@ -372,6 +379,8 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
       
       const cardSimple = document.getElementById('card-tipo-simple');
       const cardVariantes = document.getElementById('card-tipo-variantes');
+      const badgeSimple = document.getElementById('badge-simple');
+      const badgeVariantes = document.getElementById('badge-variantes');
       const sectionSimple = document.getElementById('section-simple');
       const sectionVariantes = document.getElementById('section-variantes');
       const inputPrecioSimple = document.getElementById('precio_simple');
@@ -379,17 +388,22 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
       if (tipo === 'simple') {
         cardSimple.classList.add('selected');
         cardVariantes.classList.remove('selected');
+        if (badgeSimple) badgeSimple.classList.remove('hidden');
+        if (badgeVariantes) badgeVariantes.classList.add('hidden');
+
         sectionSimple.classList.remove('hidden');
         sectionVariantes.classList.add('hidden');
         if (inputPrecioSimple) inputPrecioSimple.setAttribute('required', 'required');
       } else {
         cardVariantes.classList.add('selected');
         cardSimple.classList.remove('selected');
+        if (badgeVariantes) badgeVariantes.classList.remove('hidden');
+        if (badgeSimple) badgeSimple.classList.add('hidden');
+
         sectionVariantes.classList.remove('hidden');
         sectionSimple.classList.add('hidden');
         if (inputPrecioSimple) inputPrecioSimple.removeAttribute('required');
 
-        // Si no hay filas de variantes, agregar una automáticamente
         if (document.querySelectorAll('.variante-row').length === 0) {
           addVarianteRow();
         }
@@ -419,19 +433,19 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
       const idx = varianteIdxCounter++;
 
       const html = `
-        <div class="variante-row bg-black/40 p-4 rounded-xl border border-white/10 space-y-3 relative">
+        <div class="variante-row admin-subcard p-4 rounded-xl border border-white/10 space-y-3 relative">
           <input type="hidden" name="variantes[${idx}][variante_id]" value="">
           <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div class="sm:col-span-4">
-              <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Nombre Presentación *</label>
+              <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Nombre Presentación *</label>
               <input type="text" name="variantes[${idx}][nombre_variante]" placeholder="Ej. 6 Unidades" class="form-input text-xs font-bold" required />
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Cantidad</label>
+              <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Cantidad</label>
               <input type="number" step="0.01" name="variantes[${idx}][cantidad]" placeholder="Ej. 6" class="form-input text-xs" />
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Unidad</label>
+              <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Unidad</label>
               <select name="variantes[${idx}][unidad]" class="form-input text-xs">
                 <option value="und">und</option>
                 <option value="ml">ml</option>
@@ -442,7 +456,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
               </select>
             </div>
             <div class="sm:col-span-3">
-              <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Precio (Bs.) *</label>
+              <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Precio (Bs.) *</label>
               <input type="number" step="0.01" name="variantes[${idx}][precio]" placeholder="0.00" class="form-input text-xs font-bold text-[#FFE66D]" required />
             </div>
             <div class="sm:col-span-1 flex justify-end">
@@ -454,7 +468,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
 
           <div class="pt-2 border-t border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div class="flex items-center gap-3 flex-wrap">
-              <span class="text-[10px] font-bold uppercase text-gray-500">Stock:</span>
+              <span class="text-[10px] font-bold uppercase admin-text-muted">Stock:</span>
               <input type="number" name="variantes[${idx}][stock]" placeholder="Ilimitado" class="form-input !py-1 !px-2 w-24 text-xs" />
               <button type="button" onclick="toggleVarPromoBox(this)" class="text-[10px] font-bold uppercase text-green-400 hover:underline flex items-center gap-1">
                 <i class="fa-solid fa-tag"></i> Descuento por día
@@ -464,19 +478,14 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
               <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
                 <input type="checkbox" name="variantes[${idx}][disponible]" value="1" checked
                   class="rounded bg-black/60 border-white/20 text-green-500 focus:ring-0 w-3.5 h-3.5">
-                <span class="text-[10px] font-bold uppercase text-gray-300">Disponible ahora</span>
-              </label>
-              <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
-                <input type="checkbox" name="variantes[${idx}][activo]" value="1" checked
-                  class="rounded bg-black/60 border-white/20 text-blue-400 focus:ring-0 w-3.5 h-3.5">
-                <span class="text-[10px] font-bold uppercase text-gray-400">Activo</span>
+                <span class="text-[10px] font-bold uppercase admin-text-main">Disponible ahora</span>
               </label>
             </div>
           </div>
 
-          <div class="var-promo-box hidden pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-black/20 p-3 rounded-lg border border-white/5">
+          <div class="var-promo-box hidden pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 admin-subcard p-3 rounded-lg border border-white/5">
             <div>
-              <label class="block text-[9px] font-bold uppercase text-gray-400 mb-1">Día Promoción</label>
+              <label class="block text-[9px] font-bold uppercase admin-text-muted mb-1">Día Promoción</label>
               <select name="variantes[${idx}][dia_promo]" class="form-input !py-1 text-xs">
                 <option value="">-- Sin Día --</option>
                 <option value="lunes">LUNES</option>
@@ -487,8 +496,8 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
               </select>
             </div>
             <div>
-              <label class="block text-[9px] font-bold uppercase text-gray-400 mb-1">Precio Promocional (Bs.)</label>
-              <input type="number" step="0.01" name="variantes[${idx}][precio_promo]" placeholder="Ej. 28.00" class="form-input !py-1 text-xs text-green-300 font-bold" />
+              <label class="block text-[9px] font-bold uppercase admin-text-muted mb-1">Precio Promocional (Bs.)</label>
+              <input type="number" step="0.01" name="variantes[${idx}][precio_promo]" placeholder="Ej. 28.00" class="form-input !py-1 text-xs text-green-400 font-bold" />
             </div>
           </div>
         </div>
@@ -501,6 +510,10 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
       const row = btn.closest('.variante-row');
       row.remove();
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      selectTipoProducto('<?php echo $tipoActual; ?>');
+    });
   </script>
 </body>
 
