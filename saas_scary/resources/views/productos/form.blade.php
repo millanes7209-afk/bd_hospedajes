@@ -16,7 +16,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
   <meta charset="utf-8">
   <script>(function () { var s = localStorage.getItem('rp_theme') || 'dark'; document.documentElement.className = s === 'light' ? 'light-mode' : 'dark-mode'; })();</script>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title><?php echo $isEdit ? 'EDITAR' : 'CREAR'; ?> PRODUCTO - RICO POLLO</title>
+  <title><?php echo $isEdit ? 'EDITAR' : 'CREAR'; ?> PRODUCTO - MONAKA</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -80,13 +80,13 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
             <!-- Categoría -->
             <div>
               <label class="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1.5">Categoría *</label>
-              <select name="categoriaID" required class="form-input focus:bg-gray-900">
-                <option value="" disabled <?php echo (!isset($producto) || empty($producto['categoriaID'])) ? 'selected' : ''; ?>>
+              <select name="categoria_id" required class="form-input focus:bg-gray-900">
+                <option value="" disabled <?php echo (!isset($producto) || empty($producto['categoria_id'])) ? 'selected' : ''; ?>>
                   -- SELECCIONE CATEGORÍA --
                 </option>
                 <?php foreach ($cats as $c): ?>
-                  <option value="<?php echo $c['categoriaID']; ?>"
-                    <?php echo (isset($producto) && $producto['categoriaID'] == $c['categoriaID']) ? 'selected' : ''; ?>>
+                  <option value="<?php echo $c['id']; ?>"
+                    <?php echo (isset($producto) && $producto['categoria_id'] == $c['id']) ? 'selected' : ''; ?>>
                     <?php echo htmlspecialchars(strtoupper($c['nombre'])); ?>
                   </option>
                 <?php endforeach; ?>
@@ -174,7 +174,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
                   class="rounded bg-black/60 border-white/20 text-green-400 focus:ring-0 w-4 h-4"
                   <?php echo (!empty($producto['precio_promo'])) ? 'checked' : ''; ?>>
                 <span class="text-xs font-bold uppercase text-green-400 flex items-center gap-1.5">
-                  <i class="fa-solid fa-tag"></i> ¿Tener precio de descuento en un día especial?
+                  <i class="fa-solid fa-tag"></i> PRECIO DÍA ESPECIAL
                 </span>
               </label>
 
@@ -212,7 +212,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
               <?php
               if (!empty($variantes)):
                 foreach ($variantes as $idx => $v):
-                  $vId = $v['varianteID'];
+                  $vId = $v['id'];
                   $vNombre = htmlspecialchars($v['nombre_variante']);
                   $vCant = htmlspecialchars($v['cantidad'] ?? '');
                   $vUni = htmlspecialchars($v['unidad'] ?? 'und');
@@ -224,7 +224,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
                   $vAct = (int) ($v['activo'] ?? 1);
               ?>
                 <div class="variante-row bg-black/40 p-4 rounded-xl border border-white/10 space-y-3 relative">
-                  <input type="hidden" name="variantes[<?php echo $idx; ?>][varianteID]" value="<?php echo $vId; ?>">
+                  <input type="hidden" name="variantes[<?php echo $idx; ?>][variante_id]" value="<?php echo $vId; ?>">
                   <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
                     <!-- Nombre presentación -->
                     <div class="sm:col-span-4">
@@ -420,7 +420,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
 
       const html = `
         <div class="variante-row bg-black/40 p-4 rounded-xl border border-white/10 space-y-3 relative">
-          <input type="hidden" name="variantes[${idx}][varianteID]" value="">
+          <input type="hidden" name="variantes[${idx}][variante_id]" value="">
           <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div class="sm:col-span-4">
               <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Nombre Presentación *</label>

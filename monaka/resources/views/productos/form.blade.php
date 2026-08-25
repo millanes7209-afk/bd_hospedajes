@@ -174,7 +174,7 @@ $diaPromoActual = strtolower($producto['dia_promo'] ?? '');
                   class="rounded bg-black/60 border-white/20 text-green-400 focus:ring-0 w-4 h-4"
                   <?php echo (!empty($producto['precio_promo'])) ? 'checked' : ''; ?>>
                 <span class="text-xs font-bold uppercase text-green-400 flex items-center gap-1.5">
-                  <i class="fa-solid fa-tag"></i> ¿Tener precio de descuento en un día especial?
+                  <i class="fa-solid fa-tag"></i> PRECIO DÍA ESPECIAL
                 </span>
               </label>
 
