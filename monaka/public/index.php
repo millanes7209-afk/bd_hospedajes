@@ -10,15 +10,11 @@ if (file_exists($maintenance = __DIR__ . '/../storage/framework/maintenance.php'
     require $maintenance;
 }
 
-// Register the Composer autoloader (busqueda inteligente de vendor)...
+// Register the Composer autoloader
 if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
     require __DIR__ . '/../vendor/autoload.php';
-} elseif (file_exists(__DIR__ . '/../../vendor/autoload.php')) {
-    require __DIR__ . '/../../vendor/autoload.php';
-} elseif (file_exists(__DIR__ . '/../../saas_scary/vendor/autoload.php')) {
-    require __DIR__ . '/../../saas_scary/vendor/autoload.php';
 } else {
-    require __DIR__ . '/../vendor/autoload.php';
+    die("Falta la carpeta 'vendor'. Por favor ejecuta 'composer install' en la raiz del proyecto Monaka para descargar sus dependencias independientes.");
 }
 
 // Bootstrap Laravel and handle the request...
