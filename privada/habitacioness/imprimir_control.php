@@ -192,6 +192,7 @@ foreach ($habitaciones as $hab) {
             display: flex;
             justify-content: space-between;
             gap: 20px;
+            margin-top: 25px;
             margin-bottom: 10px;
             page-break-inside: avoid;
         }
@@ -202,7 +203,7 @@ foreach ($habitaciones as $hab) {
         }
 
         .control-box-title {
-            font-size: 11px;
+            font-size: 13px;
             font-weight: bold;
             text-transform: uppercase;
             margin-bottom: 4px;
@@ -214,7 +215,7 @@ foreach ($habitaciones as $hab) {
         .table-compact {
             width: 100%;
             border-collapse: collapse;
-            font-size: 9.5px;
+            font-size: 11.5px;
         }
 
         .table-compact th,
@@ -438,7 +439,7 @@ $saldo_qr = 0.00;
 
 if ($empresaID) {
     // 1. Productos y su stock actual
-    $sql_productos = "SELECT productoID, nombre, medida, stock FROM productos WHERE empresaID = ? AND _estado = 'A' ORDER BY nombre";
+    $sql_productos = "SELECT productoID, nombre, medida, stock FROM productos WHERE empresaID = ? AND _estado = 'A' AND stock != 0 ORDER BY nombre";
     $productos = $db->obtenerTodo($sql_productos, [$empresaID]);
     if (!is_array($productos))
         $productos = [];
