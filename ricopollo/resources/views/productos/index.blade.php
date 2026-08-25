@@ -283,8 +283,8 @@ $categorias = $categorias ?? [];
                       <td class="py-3 px-3 font-black uppercase text-amber-500">{{ $cat['nombre'] }}</td>
                       <td class="py-3 px-3 text-center">
                         <a href="{{ route('admin.categorias.estado', $cat['id']) }}"
-                          class="px-2.5 py-1 rounded-lg font-extrabold uppercase border text-[10px] {{ $cat['activo'] ? 'border-green-500/50 text-green-400 bg-green-500/10' : 'border-red-500/50 text-red-400 bg-red-500/10' }}">
-                          {{ $cat['activo'] ? 'ACTIVA' : 'INACTIVA' }}
+                          class="px-2.5 py-1 rounded-lg font-extrabold uppercase border text-[10px] {{ ($cat['activo'] ?? 1) ? 'border-green-500/50 text-green-400 bg-green-500/10' : 'border-red-500/50 text-red-400 bg-red-500/10' }}">
+                          {{ ($cat['activo'] ?? 1) ? 'ACTIVA' : 'INACTIVA' }}
                         </a>
                       </td>
                       <td class="py-3 px-3 text-right">
