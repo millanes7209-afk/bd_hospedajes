@@ -103,7 +103,7 @@ class MenuController extends Controller
             } else {
                 // It's effectively simple, take price from its single variant
                 $singleVar = $activeVariants[0];
-                array_merge($p, $singleVar); // Inject variant data for fetching active price
+                $p = array_merge($p, $singleVar); // Inject variant data for fetching active price
                 $p['precio'] = $singleVar['precio'];
 
                 $pPrecioActivo = obtenerPrecioActivo($p);

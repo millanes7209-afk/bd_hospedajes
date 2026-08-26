@@ -257,7 +257,7 @@ $catsList = $cats ?? ($categorias ?? []);
                     <div class="sm:col-span-4">
                       <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Nombre Presentación *</label>
                       <input type="text" name="variantes[<?php echo $idx; ?>][nombre_variante]" value="<?php echo $vNombre; ?>"
-                        placeholder="Ej. 6 Unidades" class="form-input text-xs font-bold" required />
+                        placeholder="Ej. 6 Unidades" class="form-input text-xs font-bold variante-nombre-input" />
                     </div>
                     <!-- Cantidad num -->
                     <div class="sm:col-span-2">
@@ -281,7 +281,7 @@ $catsList = $cats ?? ($categorias ?? []);
                     <div class="sm:col-span-3">
                       <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Precio (Bs.) *</label>
                       <input type="number" step="0.01" name="variantes[<?php echo $idx; ?>][precio]" value="<?php echo $vPrecio; ?>"
-                        placeholder="0.00" class="form-input text-xs font-bold text-[#FFE66D]" required />
+                        placeholder="0.00" class="form-input text-xs font-bold text-[#FFE66D] variante-precio-input" />
                     </div>
                     <!-- Eliminar -->
                     <div class="sm:col-span-1 flex justify-end">
@@ -394,6 +394,11 @@ $catsList = $cats ?? ($categorias ?? []);
         sectionSimple.classList.remove('hidden');
         sectionVariantes.classList.add('hidden');
         if (inputPrecioSimple) inputPrecioSimple.setAttribute('required', 'required');
+
+        // Remove required attribute from hidden variant inputs to prevent form submission blocking
+        document.querySelectorAll('#section-variantes input[required], #section-variantes select[required]').forEach(el => {
+          el.removeAttribute('required');
+        });
       } else {
         cardVariantes.classList.add('selected');
         cardSimple.classList.remove('selected');
@@ -403,6 +408,11 @@ $catsList = $cats ?? ($categorias ?? []);
         sectionVariantes.classList.remove('hidden');
         sectionSimple.classList.add('hidden');
         if (inputPrecioSimple) inputPrecioSimple.removeAttribute('required');
+
+        // Restore required attribute on visible variant inputs
+        document.querySelectorAll('#section-variantes .variante-nombre-input, #section-variantes .variante-precio-input').forEach(el => {
+          el.setAttribute('required', 'required');
+        });
 
         if (document.querySelectorAll('.variante-row').length === 0) {
           addVarianteRow();
@@ -438,7 +448,7 @@ $catsList = $cats ?? ($categorias ?? []);
           <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div class="sm:col-span-4">
               <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Nombre Presentación *</label>
-              <input type="text" name="variantes[${idx}][nombre_variante]" placeholder="Ej. 6 Unidades" class="form-input text-xs font-bold" required />
+              <input type="text" name="variantes[${idx}][nombre_variante]" placeholder="Ej. 6 Unidades" class="form-input text-xs font-bold variante-nombre-input" required />
             </div>
             <div class="sm:col-span-2">
               <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Cantidad</label>
@@ -457,7 +467,7 @@ $catsList = $cats ?? ($categorias ?? []);
             </div>
             <div class="sm:col-span-3">
               <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Precio (Bs.) *</label>
-              <input type="number" step="0.01" name="variantes[${idx}][precio]" placeholder="0.00" class="form-input text-xs font-bold text-[#FFE66D]" required />
+              <input type="number" step="0.01" name="variantes[${idx}][precio]" placeholder="0.00" class="form-input text-xs font-bold text-[#FFE66D] variante-precio-input" required />
             </div>
             <div class="sm:col-span-1 flex justify-end">
               <button type="button" onclick="removeVarianteRow(this)" class="text-red-400 hover:text-red-300 text-sm p-2">
