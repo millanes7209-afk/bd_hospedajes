@@ -150,9 +150,11 @@ class MenuController extends Controller
             if ($tieneVariantes) {
                 foreach ($activeVariants as $v) {
                     $vPrecioActivo = obtenerPrecioActivo($v);
+                    $vVarId = $v['varianteID'] ?? ($v['id'] ?? ($v['variante_id'] ?? null));
                     $variants[] = [
-                        'id' => 'v' . $v['varianteID'],
-                        'variante_id' => $v['varianteID'],
+                        'id' => 'v' . $vVarId,
+                        'variante_id' => $vVarId,
+                        'varianteID' => $vVarId,
                         'nombre' => strtoupper($v['nombre_variante']),
                         'precio' => $vPrecioActivo,
                         'enPromo' => $vPrecioActivo < $v['precio'],
