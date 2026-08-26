@@ -116,11 +116,55 @@ class UserController extends Controller
         $idCol = Schema::hasColumn('users', 'userID') ? 'userID' : 'id';
         $usuario = User::where($idCol, $id)->firstOrFail();
 
-        if (Session::get('usuarioID') == $id) {
+        if (Session::get('usuarioID') == $id || Session::get('usuario_id') == $id) {
             return redirect()->route('admin.usuarios')->with('error', 'No puedes eliminar tu propio usuario.');
         }
 
         $usuario->delete();
         return redirect()->route('admin.usuarios')->with('success', 'Usuario eliminado correctamente.');
+    }
+
+    /**
+     * Mostrar perfil de usuario / superadmin
+     */
+    public function profile()
+    {
+        $isSuperAdmin = Session::get('is_superadmin', false);
+        $userId = Session::get('usuario_id') ?? Session::get('usuarioID') ?? Session::get('user_id');
+
+        $user = null;
+        if ($userId) {
+            $idCol = Schema::hasColumn('users', 'userID') ? 'userID' : 'id';
+            $user = User::where($idCol, $userId)->first();
+        }
+
+        return view('admin.perfil', [
+            'user' => $user,
+            'isSuperAdmin' => $isSuperAdmin
+        ]);
+    }
+
+    /**
+     * Actualizar contraseña de perfil
+     */
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'new_password' => 'required|string|min:6'
+        ]);
+
+        $userId = Session::get('usuario_id') ?? Session::get('usuarioID') ?? Session::get('user_id');
+
+        if ($userId) {
+            $idCol = Schema::hasColumn('users', 'userID') ? 'userID' : 'id';
+            $user = User::where($idCol, $userId)->first();
+            if ($user) {
+                $user->password = Hash::make($request->new_password);
+                $user->save();
+                return redirect()->route('admin.perfil')->with('success', 'Contraseña actualizada correctamente.');
+            }
+        }
+
+        return redirect()->route('admin.perfil')->with('error', 'No se pudo actualizar la contraseña.');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Exception;
 
@@ -14,10 +15,13 @@ class CategoriaController extends Controller
      */
     public function index()
     {
+        $prodFk = Schema::hasColumn('productos', 'categoria_id') ? 'categoria_id' : (Schema::hasColumn('productos', 'categoriaID') ? 'categoriaID' : 'categoria_id');
+        $catPk = Schema::hasColumn('categorias', 'id') ? 'id' : (Schema::hasColumn('categorias', 'categoriaID') ? 'categoriaID' : 'id');
+
         $categorias = DB::table('categorias as c')
             ->select(
                 'c.*',
-                DB::raw('(SELECT COUNT(*) FROM productos p WHERE p.categoria_id = c.id) as total_productos')
+                DB::raw("(SELECT COUNT(*) FROM productos p WHERE p.{$prodFk} = c.{$catPk}) as total_productos")
             )
             ->orderBy('c.nombre', 'asc')
             ->get();
@@ -75,8 +79,10 @@ class CategoriaController extends Controller
         $nombre = strtoupper(trim($request->nombre));
 
         try {
+            $catPk = Schema::hasColumn('categorias', 'id') ? 'id' : (Schema::hasColumn('categorias', 'categoriaID') ? 'categoriaID' : 'id');
+
             DB::table('categorias')
-                ->where('id', $id)
+                ->where($catPk, $id)
                 ->update([
                     'nombre' => $nombre,
                     'updated_at' => now()
