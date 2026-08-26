@@ -44,7 +44,7 @@ class TenantMiddleware
         }
 
         if (!$tenant) {
-            $tenant = (object) [
+            $defaultTenant = [
                 'id' => 1,
                 'subdominio' => 'monaka',
                 'nombre' => env('APP_NAME', 'Salteñería Monaka'),
@@ -53,6 +53,20 @@ class TenantMiddleware
                 'accent_color' => '#E23E1A',
                 'logo' => 'assets/logo.svg',
             ];
+
+            $jsonPath = storage_path('app/tenant_config.json');
+            if (\Illuminate\Support\Facades\File::exists($jsonPath)) {
+                $fileConfig = json_decode(\Illuminate\Support\Facades\File::get($jsonPath), true);
+                if (is_array($fileConfig)) {
+                    foreach ($fileConfig as $k => $v) {
+                        if ($v !== null && $v !== '') {
+                            $defaultTenant[$k] = $v;
+                        }
+                    }
+                }
+            }
+
+            $tenant = (object) $defaultTenant;
         }
 
         // Store active tenant globally in Service Container

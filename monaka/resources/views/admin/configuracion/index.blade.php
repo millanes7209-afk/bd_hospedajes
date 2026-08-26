@@ -25,14 +25,15 @@
 
         @if (session('success'))
             <div
-                class="mb-4 p-4 rounded-xl bg-green-500/20 border border-green-500/50 text-green-600 dark:text-green-300 font-bold text-sm uppercase">
-                {{ session('success') }}
+                class="mb-4 p-4 rounded-xl bg-emerald-700 text-white border border-emerald-800 font-extrabold text-sm uppercase shadow-md flex items-center gap-2">
+                <i class="fa-solid fa-circle-check text-lg"></i>
+                <span>{{ session('success') }}</span>
             </div>
         @endif
 
         @if ($errors->any())
             <div
-                class="mb-4 p-4 rounded-xl bg-red-500/20 border border-red-500/50 text-red-600 dark:text-red-300 font-bold text-sm uppercase space-y-1">
+                class="mb-4 p-4 rounded-xl bg-red-700 text-white border border-red-800 font-extrabold text-sm uppercase space-y-1 shadow-md">
                 @foreach ($errors->all() as $error)
                     <p><i class="fa-solid fa-circle-exclamation mr-1"></i>{{ $error }}</p>
                 @endforeach

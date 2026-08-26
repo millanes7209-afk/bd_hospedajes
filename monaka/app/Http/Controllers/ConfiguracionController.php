@@ -10,11 +10,11 @@ use Illuminate\Support\Facades\Schema;
 class ConfiguracionController extends Controller
 {
     /**
-     * Muestra la vista de configuración del perfil de la empresa (logo, nombre, colores, eslogan)
+     * Obteine la configuración actual del tenant combinando valores por defecto, archivo de persistencia local y BD.
      */
-    public function index()
+    private function getTenantConfig()
     {
-        $tenant = (object) [
+        $defaultConfig = [
             'id' => 1,
             'subdominio' => 'monaka',
             'nombre' => env('APP_NAME', 'Salteñería Monaka'),
@@ -24,17 +24,44 @@ class ConfiguracionController extends Controller
             'logo' => 'assets/logo.svg',
         ];
 
+        // 1. Cargar archivo local de persistencia si existe
+        $jsonPath = storage_path('app/tenant_config.json');
+        if (File::exists($jsonPath)) {
+            $fileConfig = json_decode(File::get($jsonPath), true);
+            if (is_array($fileConfig)) {
+                foreach ($fileConfig as $k => $v) {
+                    if ($v !== null && $v !== '') {
+                        $defaultConfig[$k] = $v;
+                    }
+                }
+            }
+        }
+
+        // 2. Intentar consultar base de datos si la tabla 'tenants' existe
         try {
             if (Schema::hasTable('tenants')) {
                 $dbTenant = DB::table('tenants')->where('subdominio', 'monaka')->first();
                 if ($dbTenant) {
-                    $tenant = $dbTenant;
+                    foreach ((array) $dbTenant as $k => $v) {
+                        if ($v !== null && $v !== '') {
+                            $defaultConfig[$k] = $v;
+                        }
+                    }
                 }
             }
         } catch (\Throwable $e) {
-            // Ignorar
+            // Ignorar error de conexión a BD y usar fallback
         }
 
+        return (object) $defaultConfig;
+    }
+
+    /**
+     * Muestra la vista de configuración del perfil de la empresa (logo, nombre, colores, eslogan)
+     */
+    public function index()
+    {
+        $tenant = $this->getTenantConfig();
         return view('admin.configuracion.index', compact('tenant'));
     }
 
@@ -71,15 +98,35 @@ class ConfiguracionController extends Controller
             }
 
             $file->move($destinationPath, $filename);
-            $updateData['logo'] = 'uploads/tenants/' . $filename;
+            $newLogoPath = 'uploads/tenants/' . $filename;
+            $updateData['logo'] = $newLogoPath;
+
+            // También guardar una copia en un nombre fijo para respaldo estático
+            @copy(public_path($newLogoPath), public_path('uploads/tenants/logo_monaka_current.' . $extension));
         }
 
+        // 1. Guardar siempre en archivo local JSON para persistencia garantizada
+        try {
+            $jsonPath = storage_path('app/tenant_config.json');
+            $existingConfig = [];
+            if (File::exists($jsonPath)) {
+                $existingConfig = json_decode(File::get($jsonPath), true) ?: [];
+            }
+            $merged = array_merge($existingConfig, array_filter($updateData, function ($val) {
+                return $val !== null;
+            }));
+            File::put($jsonPath, json_encode($merged, JSON_PRETTY_PRINT));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Error guardando tenant_config.json: ' . $e->getMessage());
+        }
+
+        // 2. Guardar en BD usando updateOrInsert para que si la fila no existe se cree automáticamente
         try {
             if (Schema::hasTable('tenants')) {
-                DB::table('tenants')->where('subdominio', 'monaka')->update($updateData);
+                DB::table('tenants')->updateOrInsert(['subdominio' => 'monaka'], $updateData);
             }
         } catch (\Throwable $e) {
-            // Ignorar
+            \Illuminate\Support\Facades\Log::warning('No se pudo actualizar la tabla tenants: ' . $e->getMessage());
         }
 
         return back()->with('success', 'CONFIGURACIÓN DE EMPRESA Y LOGO ACTUALIZADOS CORRECTAMENTE');
