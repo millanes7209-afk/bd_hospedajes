@@ -123,7 +123,7 @@ $categorias = $categorias ?? [];
             <tbody class="divide-y text-sm" style="border-color:var(--color-card-border)">
               <?php  foreach ($productos as $p): ?>
               <?php
-    $pId = $p['id'];
+    $pId = $p['id'] ?? ($p['productoID'] ?? null);
     $tipo = $p['tipo'] ?? 'simple';
     $tieneVariantes = !empty($variantesMap[$pId]);
     $disponible = (int) ($p['disponible'] ?? 1);
@@ -206,7 +206,7 @@ $categorias = $categorias ?? [];
               <?php    if ($tieneVariantes): ?>
               <?php      foreach ($variantesMap[$pId] as $v): ?>
               <?php
-        $vId = $v['id'];
+        $vId = $v['id'] ?? ($v['varianteID'] ?? ($v['variante_id'] ?? null));
         $vDisp = (int) ($v['disponible'] ?? 1);
               ?>
               <tr class="prod-card-theme border-l-4 border-l-amber-500/60 text-xs">
@@ -285,11 +285,12 @@ $categorias = $categorias ?? [];
                 </thead>
                 <tbody class="divide-y" style="border-color:var(--color-card-border)">
                   @foreach($categorias as $cat)
+                      <?php  $cId = $cat['id'] ?? ($cat['categoriaID'] ?? ''); ?>
                     <tr class="hover:bg-white/[0.04]">
-                      <td class="py-3 px-3 font-mono font-bold text-gray-400">#{{ $cat['id'] }}</td>
+                      <td class="py-3 px-3 font-mono font-bold text-gray-400">#{{ $cId }}</td>
                       <td class="py-3 px-3 font-black uppercase text-amber-500">{{ $cat['nombre'] }}</td>
                       <td class="py-3 px-3 text-right">
-                        <button type="button" onclick="editarCategoria('{{ $cat['id'] }}', '{{ $cat['nombre'] }}')"
+                        <button type="button" onclick="editarCategoria('{{ $cId }}', '{{ $cat['nombre'] }}')"
                           class="px-2.5 py-1 rounded-lg border border-amber-500/30 text-amber-500 hover:bg-amber-500/20 font-bold text-[10px] uppercase">
                           <i class="fa-solid fa-pen mr-1"></i>EDITAR
                         </button>
