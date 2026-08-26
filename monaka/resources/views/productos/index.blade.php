@@ -192,12 +192,12 @@ $categorias = $categorias ?? [];
                       title="Editar producto">
                       <i class="fa-solid fa-pen-to-square"></i><span class="hidden sm:inline ml-1">Editar</span>
                     </a>
-                    <a href="{{ route('admin.productos.destroy', $pId) }}"
-                      onclick="return confirm('¿ELIMINAR ESTE PRODUCTO Y SUS VARIANTES?');"
+                    <button type="button"
+                      onclick="confirmarEliminarProducto('{{ route('admin.productos.destroy', $pId) }}', '{{ addslashes(strtoupper($p['nombre'])) }}')"
                       class="btn-outline text-xs border-red-500/30 text-red-400 hover:bg-red-950/20 hover:border-red-500 hover:!text-white !py-1.5 !px-2.5"
                       title="Eliminar producto">
                       <i class="fa-regular fa-trash-can"></i><span class="hidden sm:inline ml-1">Eliminar</span>
-                    </a>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -406,7 +406,43 @@ $categorias = $categorias ?? [];
         btn.style.opacity = '1';
       }
     }
+
+    function confirmarEliminarProducto(url, nombre) {
+      document.getElementById('eliminar-producto-nombre').innerText = nombre;
+      document.getElementById('btn-confirmar-eliminar-link').href = url;
+      document.getElementById('modal-eliminar').classList.remove('hidden');
+    }
+
+    function cerrarModalEliminar() {
+      document.getElementById('modal-eliminar').classList.add('hidden');
+    }
   </script>
+
+  <!-- Modal Confirmar Eliminación Estilizado -->
+  <div id="modal-eliminar" class="fixed inset-0 z-50 flex items-center justify-center hidden" style="background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);">
+    <div class="prod-card-theme p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl border border-red-500/30 space-y-4">
+      <div class="flex items-center gap-3 text-red-500">
+        <div class="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-xl font-bold border border-red-500/20">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <h3 class="font-black text-base uppercase text-white">¿ELIMINAR PRODUCTO?</h3>
+          <p class="text-xs text-amber-500 font-bold uppercase mt-0.5" id="eliminar-producto-nombre"></p>
+        </div>
+      </div>
+      <p class="text-xs text-gray-300 leading-relaxed">
+        Esta acción eliminará permanentemente el producto y todas sus variantes asociadas. ¿Deseas continuar?
+      </p>
+      <div class="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+        <button type="button" onclick="cerrarModalEliminar()" class="px-4 py-2 rounded-xl text-xs font-bold uppercase border border-white/20 text-gray-300 hover:bg-white/10 transition-all">
+          CANCELAR
+        </button>
+        <a id="btn-confirmar-eliminar-link" href="#" class="px-4 py-2 rounded-xl text-xs font-black uppercase bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30 transition-all">
+          SÍ, ELIMINAR
+        </a>
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>

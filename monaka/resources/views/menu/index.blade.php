@@ -197,6 +197,38 @@ if (!function_exists('obtenerPrecioActivo')) {
       color: #9ca3af;
     }
 
+    /* ── CHIPS DE VARIANTES ADAPTABLES ── */
+    html.light-mode .variant-chip-unselected {
+      background-color: rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.20);
+      color: #1f2937;
+    }
+
+    html.light-mode .variant-chip-unselected:hover {
+      background-color: rgba(0, 0, 0, 0.12);
+      border-color: rgba(0, 0, 0, 0.40);
+      color: #000000;
+    }
+
+    html.dark-mode .variant-chip-unselected {
+      background-color: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      color: #e5e7eb;
+    }
+
+    html.dark-mode .variant-chip-unselected:hover {
+      background-color: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.40);
+      color: #ffffff;
+    }
+
+    .variant-chip-selected {
+      background-color: #22c55e !important;
+      border-color: #22c55e !important;
+      color: #ffffff !important;
+      box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+    }
+
     .btn-session {
       border: 1.5px solid var(--color-input-border);
       background: var(--color-card);
@@ -508,7 +540,7 @@ if (!function_exists('obtenerPrecioActivo')) {
                             ?>
                   <button type="button"
                     onclick="selectVariant(<?php          echo $p['producto_id']; ?>, <?php          echo $vVarId; ?>, <?php          echo $vPrecioActivo; ?>, <?php          echo $v['precio']; ?>, <?php          echo $vEnPromo ? 'true' : 'false'; ?>, '<?php          echo addslashes(strtoupper($p['nombre'] . ' - ' . $v['nombre_variante'])); ?>', '<?php          echo addslashes($vImagen ?? ''); ?>')"
-                    class="variant-chip px-3 py-1.5 text-xs font-bold rounded-full border transition-all <?php          echo $firstVariant ? 'bg-green-500 border-green-500 text-white' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40'; ?>"
+                    class="variant-chip px-3 py-1.5 text-xs font-bold rounded-full border transition-all <?php          echo $firstVariant ? 'variant-chip-selected' : 'variant-chip-unselected'; ?>"
                     data-producto-id="<?php          echo $p['producto_id']; ?>"
                     data-variante-id="<?php          echo $vVarId; ?>"
                     data-precio="<?php          echo $vPrecioActivo; ?>"
@@ -731,11 +763,11 @@ if (!function_exists('obtenerPrecioActivo')) {
       const chips = document.querySelectorAll(`[data-producto-id="${producto_id}"]`);
       chips.forEach(chip => {
         if (parseInt(chip.dataset.varianteId) === variante_id) {
-          chip.classList.remove('bg-transparent', 'border-white/20', 'text-gray-300');
-          chip.classList.add('bg-green-500', 'border-green-500', 'text-white');
+          chip.classList.remove('variant-chip-unselected');
+          chip.classList.add('variant-chip-selected');
         } else {
-          chip.classList.remove('bg-green-500', 'border-green-500', 'text-white');
-          chip.classList.add('bg-transparent', 'border-white/20', 'text-gray-300');
+          chip.classList.remove('variant-chip-selected');
+          chip.classList.add('variant-chip-unselected');
         }
       });
 
