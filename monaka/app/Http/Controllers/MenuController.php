@@ -10,18 +10,26 @@ class MenuController extends Controller
 {
     public function index()
     {
+        // Detectar columnas de la base de datos de forma dinámica
+        $prodFk = \Illuminate\Support\Facades\Schema::hasColumn('productos', 'categoria_id') ? 'p.categoria_id' : (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'categoriaID') ? 'p.categoriaID' : 'p.categoria_id');
+        $catPk = \Illuminate\Support\Facades\Schema::hasColumn('categorias', 'id') ? 'c.id' : (\Illuminate\Support\Facades\Schema::hasColumn('categorias', 'categoriaID') ? 'c.categoriaID' : 'c.id');
+        $prodPkCol = \Illuminate\Support\Facades\Schema::hasColumn('productos', 'id') ? 'id' : (\Illuminate\Support\Facades\Schema::hasColumn('productos', 'productoID') ? 'productoID' : 'id');
+
         // Obtener productos activos y disponibles
         $productosRaw = DB::table('productos as p')
             ->select('p.*', 'c.nombre as categoria_nombre')
-            ->leftJoin('categorias as c', 'p.categoria_id', '=', 'c.id')
+            ->leftJoin('categorias as c', $prodFk, '=', $catPk)
             ->where(function ($q) {
                 $q->whereNull('p.disponible')->orWhere('p.disponible', 1);
             })
-            ->orderBy('p.id', 'desc')
+            ->orderBy('p.' . $prodPkCol, 'desc')
             ->get();
 
         // Obtener variantes activas y disponibles (verificando dinámicamente si existe la columna orden_mostrado)
+        $pVarFk = \Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'producto_id') ? 'producto_id' : (\Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'productoID') ? 'productoID' : 'producto_id');
+        $varPkCol = \Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'id') ? 'id' : (\Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'varianteID') ? 'varianteID' : 'id');
         $hasOrdenVar = \Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'orden_mostrado');
+
         $queryVar = DB::table('producto_variantes as v')
             ->where(function ($q) {
                 $q->whereNull('v.disponible')->orWhere('v.disponible', 1);
@@ -31,12 +39,15 @@ class MenuController extends Controller
             $queryVar->orderBy('v.orden_mostrado', 'asc');
         }
 
-        $variantesRaw = $queryVar->orderBy('v.id', 'asc')->get();
+        $variantesRaw = $queryVar->orderBy('v.' . $varPkCol, 'asc')->get();
 
         $variantesMap = [];
         foreach ($variantesRaw as $v) {
             $vArray = (array) $v;
-            $variantesMap[$v->producto_id][] = $vArray;
+            $pId = $v->{$pVarFk} ?? ($v->producto_id ?? ($v->productoID ?? null));
+            if ($pId) {
+                $variantesMap[$pId][] = $vArray;
+            }
         }
 
         $menuGrouped = [];
@@ -80,10 +91,11 @@ class MenuController extends Controller
 
         foreach ($productosRaw as $pObj) {
             $p = (array) $pObj;
-            // Virtualize 'tipo' and extract price for simple products
-            $activeVariants = $variantesMap[$p['id']] ?? [];
+            $pId = $p[$prodPkCol] ?? ($p['id'] ?? ($p['productoID'] ?? null));
+
+            $activeVariants = $variantesMap[$pId] ?? [];
             if (empty($activeVariants)) {
-                continue; // Cannot sell a product without price/variants
+                continue; // Imposible vender producto sin variantes/precio
             }
 
             $tieneVariantes = count($activeVariants) > 1 || (count($activeVariants) === 1 && !empty($activeVariants[0]['nombre_variante']));
@@ -92,7 +104,7 @@ class MenuController extends Controller
 
             if ($tieneVariantes) {
                 $menuGrouped[$cat][] = [
-                    'producto_id' => $p['id'],
+                    'producto_id' => $pId,
                     'nombre' => $p['nombre'],
                     'descripcion' => $p['descripcion'] ?? '',
                     'imagen' => $p['imagen'] ?? null,
@@ -101,20 +113,20 @@ class MenuController extends Controller
                     'variantes' => $activeVariants,
                 ];
             } else {
-                // It's effectively simple, take price from its single variant
+                // Producto simple: se extrae precio de su variante única
                 $singleVar = $activeVariants[0];
-                $p = array_merge($p, $singleVar); // Inject variant data for fetching active price
-                $p['precio'] = $singleVar['precio'];
+                $pMerged = array_merge($p, $singleVar);
+                $pMerged['precio'] = $singleVar['precio'];
 
-                $pPrecioActivo = obtenerPrecioActivo($p);
+                $pPrecioActivo = obtenerPrecioActivo($pMerged);
                 $menuGrouped[$cat][] = [
-                    'producto_id' => $p['id'],
+                    'producto_id' => $pId,
                     'nombre' => $p['nombre'],
                     'descripcion' => $p['descripcion'] ?? '',
                     'precio' => $pPrecioActivo,
-                    'precio_orig' => $p['precio'] ?? 0,
-                    'precio_promo' => $p['precio_promo'] ?? null,
-                    'dia_promo' => $p['dia_promo'] ?? null,
+                    'precio_orig' => $singleVar['precio'] ?? ($p['precio'] ?? 0),
+                    'precio_promo' => $singleVar['precio_promo'] ?? ($p['precio_promo'] ?? null),
+                    'dia_promo' => $singleVar['dia_promo'] ?? ($p['dia_promo'] ?? null),
                     'imagen' => $p['imagen'] ?? null,
                     'categoria_nombre' => $p['categoria_nombre'] ?? '',
                     'tieneVariantes' => false,
@@ -125,9 +137,10 @@ class MenuController extends Controller
             if ($tieneVariantes) {
                 foreach ($activeVariants as $v) {
                     $vPrecioActivo = obtenerPrecioActivo($v);
+                    $vIdVal = $v[$varPkCol] ?? ($v['id'] ?? ($v['variante_id'] ?? ($v['varianteID'] ?? null)));
                     $variants[] = [
-                        'id' => 'v' . $v['id'],
-                        'variante_id' => $v['id'],
+                        'id' => 'v' . $vIdVal,
+                        'variante_id' => $vIdVal,
                         'nombre' => strtoupper($v['nombre_variante']),
                         'precio' => $vPrecioActivo,
                         'enPromo' => $vPrecioActivo < $v['precio'],
@@ -137,8 +150,8 @@ class MenuController extends Controller
                 }
             }
 
-            $catalogoJson[$p['id']] = [
-                'id' => $p['id'],
+            $catalogoJson[$pId] = [
+                'id' => $pId,
                 'nombre' => strtoupper($p['nombre']),
                 'tieneVariantes' => $tieneVariantes,
                 'imagen' => $p['imagen'] ?? null,
