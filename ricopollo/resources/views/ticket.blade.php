@@ -63,6 +63,12 @@
       border: 1px solid #ffb300;
     }
 
+    html.light-mode .badge-pendiente {
+      background: #f59e0b;
+      color: #0f172a;
+      border: 1px solid #d97706;
+    }
+
     .badge-aceptado {
       background: rgba(59, 130, 246, 0.15);
       color: #60a5fa;
@@ -752,11 +758,11 @@ $wspUrl = "https://wa.me/591" . preg_replace('/[^0-9]/', '', $pedido['cliente_te
 
     // Auto impresión para Impresora Térmica 58mm (IMP006)
     <?php if (request()->has('print') || request()->has('autoprint')): ?>
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          window.print();
-        }, 500);
-      });
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    });
     <?php endif; ?>
   </script>
 </body>
