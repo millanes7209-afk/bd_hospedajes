@@ -134,6 +134,9 @@ class ProductoController extends Controller
         if (Schema::hasColumn('productos', 'imagen')) {
             $insertData['imagen'] = $imagenName;
         }
+        if (Schema::hasColumn('productos', 'disponible')) {
+            $insertData['disponible'] = $request->has('disponible') ? ($request->disponible ? 1 : 0) : 1;
+        }
         if (Schema::hasColumn('productos', 'user_id')) {
             $insertData['user_id'] = \Illuminate\Support\Facades\Session::get('usuario_id') ?? 1;
         }
@@ -288,7 +291,7 @@ class ProductoController extends Controller
         ];
 
         if (Schema::hasColumn('productos', 'disponible')) {
-            $updateData['disponible'] = $request->has('disponible') ? 1 : 0;
+            $updateData['disponible'] = $request->has('disponible') ? ($request->disponible ? 1 : 0) : ($producto->disponible ?? 1);
         }
         if (Schema::hasColumn('productos', 'slug')) {
             $updateData['slug'] = $slug;

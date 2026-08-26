@@ -4,10 +4,11 @@ $catsList = $categorias ?? ($cats ?? []);
 $tipoActual = $producto['tipo'] ?? 'simple';
 ?>
 <!DOCTYPE html>
-<html lang="es" class="<?php echo session('dark_mode', true) ? 'dark-mode' : 'light-mode'; ?>">
+<html lang="es" class="dark-mode">
 
 <head>
   <meta charset="UTF-8">
+  <script>(function () { var s = localStorage.getItem('rp_theme') || 'dark'; document.documentElement.className = s === 'light' ? 'light-mode' : 'dark-mode'; })();</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?php echo $isEdit ? 'EDITAR' : 'CREAR'; ?> PRODUCTO - MONAKA</title>
   <script src="https://cdn.tailwindcss.com"></script>
