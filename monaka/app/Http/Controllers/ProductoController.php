@@ -123,7 +123,7 @@ class ProductoController extends Controller
             $insertData['slug'] = $slug;
         }
         if (Schema::hasColumn('productos', 'descripcion')) {
-            $insertData['descripcion'] = $request->descripcion;
+            $insertData['descripcion'] = !empty($request->descripcion) ? strtoupper(trim($request->descripcion)) : null;
         }
         if (Schema::hasColumn('productos', 'precio_promo')) {
             $insertData['precio_promo'] = ($tipo === 'simple' && !empty($request->precio_promo)) ? $request->precio_promo : null;
@@ -278,7 +278,7 @@ class ProductoController extends Controller
             $updateData['slug'] = $slug;
         }
         if (Schema::hasColumn('productos', 'descripcion')) {
-            $updateData['descripcion'] = $request->descripcion;
+            $updateData['descripcion'] = !empty($request->descripcion) ? strtoupper(trim($request->descripcion)) : null;
         }
         if (Schema::hasColumn('productos', 'precio_promo')) {
             $updateData['precio_promo'] = ($tipo === 'simple' && !empty($request->precio_promo)) ? $request->precio_promo : null;

@@ -258,8 +258,9 @@ $catsList = $cats ?? ($categorias ?? []);
                     <!-- Nombre presentación -->
                     <div class="sm:col-span-4">
                       <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Nombre Presentación *</label>
-                      <input type="text" name="variantes[<?php echo $idx; ?>][nombre_variante]" value="<?php echo $vNombre; ?>"
-                        placeholder="Ej. 6 Unidades" class="form-input text-xs font-bold variante-nombre-input" />
+                      <input type="text" name="variantes[<?php echo $idx; ?>][nombre_variante]" value="<?php echo htmlspecialchars(strtoupper($vNombre)); ?>"
+                        oninput="this.value = this.value.toUpperCase();"
+                        placeholder="Ej. 6 UNIDADES" class="form-input text-xs font-bold uppercase variante-nombre-input" />
                     </div>
                     <!-- Cantidad num -->
                     <div class="sm:col-span-2">
@@ -450,7 +451,7 @@ $catsList = $cats ?? ($categorias ?? []);
           <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div class="sm:col-span-4">
               <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Nombre Presentación *</label>
-              <input type="text" name="variantes[${idx}][nombre_variante]" placeholder="Ej. 6 Unidades" class="form-input text-xs font-bold variante-nombre-input" required />
+              <input type="text" name="variantes[${idx}][nombre_variante]" oninput="this.value = this.value.toUpperCase();" placeholder="Ej. 6 UNIDADES" class="form-input text-xs font-bold uppercase variante-nombre-input" required />
             </div>
             <div class="sm:col-span-2">
               <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Cantidad</label>

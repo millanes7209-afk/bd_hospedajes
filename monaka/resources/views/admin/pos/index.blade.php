@@ -88,33 +88,40 @@
                 <!-- Grid de Productos -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 gap-3">
                     @foreach ($productos as $p)
-                        <div class="prod-card pos-card-theme p-3 rounded-2xl flex flex-col justify-between hover:border-amber-500/50 transition-all cursor-pointer shadow-sm group"
-                            data-categoria="cat-{{ $p->categoria_id }}"
-                            onclick="handleSelectProducto({{ json_encode($p) }})">
-                            <div>
-                                <div
-                                    class="w-full h-24 rounded-xl mb-2 flex items-center justify-center overflow-hidden bg-black/10">
-                                    @if($p->imagen && file_exists(public_path($p->imagen)))
-                                        <img src="{{ asset($p->imagen) }}" alt="{{ $p->nombre }}"
-                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                                    @else
-                                        <i class="fa-solid fa-burger text-3xl opacity-40 text-amber-500"></i>
-                                    @endif
-                                </div>
-                                <h4 class="font-extrabold text-xs uppercase leading-tight line-clamp-2"
-                                    style="color:var(--color-text);">{{ strtoupper($p->nombre) }}</h4>
-                            </div>
+                                        <div class="prod-card pos-card-theme p-3 rounded-2xl flex flex-col justify-between hover:border-amber-500/50 transition-all cursor-pointer shadow-sm group"
+                                            data-categoria="cat-{{ $p->categoria_id }}"
+                                            onclick="handleSelectProducto({{ json_encode($p) }})">
+                                            <div>
+                                                <div
+                                                    class="w-full h-24 rounded-xl mb-2 flex items-center justify-center overflow-hidden bg-black/10 relative">
+                                                    <?php
+                        $imgPath = null;
+                        if (!empty($p->imagen)) {
+                            $imgPath = str_starts_with($p->imagen, 'assets/') ? $p->imagen : 'assets/productos/' . $p->imagen;
+                        }
+                        $hasImg = !empty($imgPath) && file_exists(public_path($imgPath));
+                                                        ?>
+                                                    @if($hasImg)
+                                                        <img src="{{ asset($imgPath) }}" alt="{{ $p->nombre }}"
+                                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                                    @else
+                                                        <i class="fa-solid fa-burger text-3xl opacity-40 text-amber-500"></i>
+                                                    @endif
+                                                </div>
+                                                <h4 class="font-extrabold text-xs uppercase leading-tight line-clamp-2"
+                                                    style="color:var(--color-text);">{{ strtoupper($p->nombre) }}</h4>
+                                            </div>
 
-                            <div class="mt-3 flex items-center justify-between">
-                                <span class="text-xs font-black text-amber-500">
-                                    {{ $p->tipo === 'simple' ? 'Bs. ' . number_format($p->precio, 2) : 'VARIAS OPCIONES' }}
-                                </span>
-                                <span
-                                    class="w-7 h-7 rounded-lg bg-amber-500 text-black flex items-center justify-center text-xs font-black shadow-sm group-hover:scale-110 transition-transform">
-                                    <i class="fa-solid fa-plus"></i>
-                                </span>
-                            </div>
-                        </div>
+                                            <div class="mt-3 flex items-center justify-between">
+                                                <span class="text-xs font-black text-amber-500">
+                                                    {{ $p->tipo === 'simple' ? 'Bs. ' . number_format($p->precio, 2) : 'VARIAS OPCIONES' }}
+                                                </span>
+                                                <span
+                                                    class="w-7 h-7 rounded-lg bg-amber-500 text-black flex items-center justify-center text-xs font-black shadow-sm group-hover:scale-110 transition-transform">
+                                                    <i class="fa-solid fa-plus"></i>
+                                                </span>
+                                            </div>
+                                        </div>
                     @endforeach
                 </div>
             </div>

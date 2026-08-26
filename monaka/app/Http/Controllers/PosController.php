@@ -24,6 +24,20 @@ class PosController extends Controller
                     }
                 ])
                 ->get();
+
+            foreach ($productos as $p) {
+                $vars = $p->variantes;
+                if (count($vars) > 1 || (count($vars) === 1 && !empty($vars[0]->nombre_variante))) {
+                    $p->tipo = 'variantes';
+                    $p->precio = 0;
+                } else if (count($vars) === 1) {
+                    $p->tipo = 'simple';
+                    $p->precio = $vars[0]->precio;
+                } else {
+                    $p->tipo = 'simple';
+                    $p->precio = $p->precio ?? 0;
+                }
+            }
         } catch (\Throwable $e) {
             $categorias = collect([]);
             $productos = collect([]);
