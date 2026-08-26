@@ -14,10 +14,21 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
             <div class="w-10 h-8 flex items-center justify-center">
                 <img src="{{ $logoEmpresa }}" alt="LOGO" class="max-w-full max-h-full object-contain">
             </div>
-            <span class="text-sm md:text-base font-black tracking-wider uppercase"
-                style="color:var(--color-primary, #FFE66D)">
-                {{ strtoupper($nombreEmpresa) }}
-            </span>
+            <div class="flex flex-col justify-center">
+                <span class="text-sm md:text-base font-black tracking-wider uppercase leading-tight"
+                    style="color:var(--color-primary, #FFE66D)">
+                    {{ strtoupper($nombreEmpresa) }}
+                </span>
+                <?php
+$userEmail = Session::get('email') ?? Session::get('usuario_email') ?? (Auth::check() ? (Auth::user()->email ?? Auth::user()->correo_electronico) : null);
+if ($userEmail):
+                ?>
+                <span class="text-[10px] md:text-xs font-bold tracking-normal normal-case leading-tight opacity-80"
+                    style="color:var(--color-text-muted)">
+                    {{ strtolower($userEmail) }}
+                </span>
+                <?php endif; ?>
+            </div>
         </div>
 
         <!-- NAVEGACIÓN ESCRITORIO (DESKTOP) -->

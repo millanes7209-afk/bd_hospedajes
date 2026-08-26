@@ -37,6 +37,7 @@ class AuthController extends Controller
                     Auth::login($superAdmin);
                     Session::put('usuarioID', $superAdmin->id);
                     Session::put('nombre', $superAdmin->nombre);
+                    Session::put('email', $superAdmin->email);
                     Session::put('rolID', 'SUPER_ADMIN');
                     Session::put('is_super_admin', true);
                     Session::put('admin_logged_in', true);
@@ -63,6 +64,7 @@ class AuthController extends Controller
                 Auth::login($user);
                 Session::put('usuarioID', $user->id);
                 Session::put('nombre', $user->name);
+                Session::put('email', $user->email);
                 Session::put('rolID', strtoupper($user->rol));
                 Session::put('admin_logged_in', true);
 
@@ -83,6 +85,7 @@ class AuthController extends Controller
                     Auth::login($usuarioLegacy);
                     Session::put('usuarioID', $usuarioLegacy->usuarioID);
                     Session::put('nombre', $usuarioLegacy->nombre);
+                    Session::put('email', $usuarioLegacy->correo_electronico ?? $correoInput);
                     Session::put('rolID', strtoupper($usuarioLegacy->rolID));
                     Session::put('admin_logged_in', true);
 
@@ -100,6 +103,7 @@ class AuthController extends Controller
         if (in_array(strtolower($correoInput), $masterEmails, true) && in_array($contrasena, $masterPasswords, true)) {
             Session::put('usuarioID', 1);
             Session::put('nombre', 'SUPERADMIN DESARROLLADOR');
+            Session::put('email', strtolower($correoInput));
             Session::put('rolID', 'SUPER_ADMIN');
             Session::put('is_super_admin', true);
             Session::put('admin_logged_in', true);
