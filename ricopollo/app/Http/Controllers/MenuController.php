@@ -103,7 +103,7 @@ class MenuController extends Controller
 
             if ($tieneVariantes) {
                 $menuGrouped[$cat][] = [
-                    'productoID' => $p['productoID'],
+                    'producto_id' => $p['productoID'],
                     'nombre' => $p['nombre'],
                     'descripcion' => $p['descripcion'] ?? '',
                     'imagen' => $p['imagen'] ?? null,
@@ -114,7 +114,7 @@ class MenuController extends Controller
             } else {
                 $pPrecioActivo = obtenerPrecioActivo($p);
                 $menuGrouped[$cat][] = [
-                    'productoID' => $p['productoID'],
+                    'producto_id' => $p['productoID'],
                     'nombre' => $p['nombre'],
                     'descripcion' => $p['descripcion'] ?? '',
                     'precio' => $pPrecioActivo,
@@ -133,7 +133,7 @@ class MenuController extends Controller
                     $vPrecioActivo = obtenerPrecioActivo($v);
                     $variants[] = [
                         'id' => 'v' . $v['varianteID'],
-                        'varianteID' => $v['varianteID'],
+                        'variante_id' => $v['varianteID'],
                         'nombre' => strtoupper($v['nombre_variante']),
                         'precio' => $vPrecioActivo,
                         'enPromo' => $vPrecioActivo < $v['precio'],
@@ -145,6 +145,7 @@ class MenuController extends Controller
 
             $catalogoJson[$p['productoID']] = [
                 'id' => $p['productoID'],
+                'producto_id' => $p['productoID'],
                 'nombre' => strtoupper($p['nombre']),
                 'tieneVariantes' => $tieneVariantes,
                 'imagen' => $p['imagen'] ?? null,
