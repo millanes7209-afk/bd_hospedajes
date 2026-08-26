@@ -49,9 +49,9 @@ $catsList = $cats ?? ($categorias ?? []);
       transform: translateY(-2px);
     }
     html.light-mode .type-card.selected {
-      border-color: #E23E1A !important;
-      background: rgba(226, 62, 26, 0.1) !important;
-      box-shadow: 0 4px 20px rgba(226, 62, 26, 0.25);
+      border-color: #EAB308 !important;
+      background: rgba(234, 179, 8, 0.15) !important;
+      box-shadow: 0 4px 20px rgba(234, 179, 8, 0.25);
     }
     /* Adapting options in selects */
     select option {
@@ -118,7 +118,8 @@ $catsList = $cats ?? ($categorias ?? []);
             <!-- Nombre -->
             <div>
               <label class="block text-xs font-bold uppercase tracking-wider admin-text-muted mb-1.5">Nombre del Producto *</label>
-              <input type="text" name="nombre" required value="<?php echo htmlspecialchars($producto['nombre'] ?? ''); ?>"
+              <input type="text" name="nombre" required value="<?php echo htmlspecialchars(strtoupper($producto['nombre'] ?? '')); ?>"
+                oninput="this.value = this.value.toUpperCase();"
                 placeholder="Ej. NUGGETS DE POLLO" class="form-input uppercase font-bold" />
             </div>
           </div>
@@ -127,7 +128,8 @@ $catsList = $cats ?? ($categorias ?? []);
           <div>
             <label class="block text-xs font-bold uppercase tracking-wider admin-text-muted mb-1.5">Descripción (Opcional)</label>
             <textarea name="descripcion" rows="2" placeholder="Breve detalle de los ingredientes o preparación..."
-              class="form-input text-xs"><?php echo htmlspecialchars($producto['descripcion'] ?? ''); ?></textarea>
+              oninput="this.value = this.value.toUpperCase();"
+              class="form-input text-xs uppercase font-bold"><?php echo htmlspecialchars(strtoupper($producto['descripcion'] ?? '')); ?></textarea>
           </div>
 
           <!-- Imagen Principal -->
