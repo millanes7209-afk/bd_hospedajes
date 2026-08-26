@@ -31,13 +31,7 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
             <a href="{{ route('admin.productos') }}"
                 class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.productos*') ? 'bg-[#FFE66D]/15 font-extrabold' : 'hover:bg-white/10' }}"
                 style="color: {{ request()->routeIs('admin.productos*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
-                <i class="fa-solid fa-utensils text-sm"></i>Productos
-            </a>
-
-            <a href="{{ route('admin.categorias') }}"
-                class="px-3 py-2 rounded-lg transition-colors flex items-center gap-2 {{ request()->routeIs('admin.categorias*') ? 'bg-[#FFE66D]/15 font-extrabold' : 'hover:bg-white/10' }}"
-                style="color: {{ request()->routeIs('admin.categorias*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
-                <i class="fa-solid fa-layer-group text-sm"></i>Categorías
+                <i class="fa-solid fa-utensils text-sm"></i>Productos & Categorías
             </a>
 
             <a href="{{ route('admin.configuracion') }}"
@@ -109,13 +103,7 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
         <a href="{{ route('admin.productos') }}"
             class="px-4 py-2.5 rounded-lg flex items-center gap-2.5 {{ request()->routeIs('admin.productos*') ? 'bg-[#FFE66D]/15 font-black' : 'hover:bg-white/10' }}"
             style="color: {{ request()->routeIs('admin.productos*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
-            <i class="fa-solid fa-utensils text-sm w-5 text-center"></i>Productos
-        </a>
-
-        <a href="{{ route('admin.categorias') }}"
-            class="px-4 py-2.5 rounded-lg flex items-center gap-2.5 {{ request()->routeIs('admin.categorias*') ? 'bg-[#FFE66D]/15 font-black' : 'hover:bg-white/10' }}"
-            style="color: {{ request()->routeIs('admin.categorias*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
-            <i class="fa-solid fa-layer-group text-sm w-5 text-center"></i>Categorías
+            <i class="fa-solid fa-utensils text-sm w-5 text-center"></i>Productos & Categorías
         </a>
 
         <a href="{{ route('admin.configuracion') }}"

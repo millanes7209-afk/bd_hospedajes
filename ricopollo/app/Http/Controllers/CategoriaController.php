@@ -15,25 +15,7 @@ class CategoriaController extends Controller
      */
     public function index()
     {
-        $prodFk = Schema::hasColumn('productos', 'categoria_id') ? 'categoria_id' : (Schema::hasColumn('productos', 'categoriaID') ? 'categoriaID' : 'categoria_id');
-        $catPk = Schema::hasColumn('categorias', 'id') ? 'id' : (Schema::hasColumn('categorias', 'categoriaID') ? 'categoriaID' : 'id');
-
-        $categorias = DB::table('categorias as c')
-            ->select(
-                'c.*',
-                DB::raw("(SELECT COUNT(*) FROM productos p WHERE p.{$prodFk} = c.{$catPk}) as total_productos")
-            )
-            ->orderBy('c.nombre', 'asc')
-            ->get();
-
-        $categoriasArray = array_map(fn($c) => (array) $c, $categorias->toArray());
-
-        $tenant = app()->bound('tenant') ? app('tenant') : null;
-
-        return view('admin.categorias.index', [
-            'categorias' => $categoriasArray,
-            'tenant' => $tenant
-        ]);
+        return redirect()->route('admin.productos', ['tab' => 'categorias']);
     }
 
     /**
