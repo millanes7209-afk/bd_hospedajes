@@ -44,7 +44,7 @@ $hasPromo = !empty($pPromoPrice) || !empty($pDiaPromo);
             <input type="checkbox" name="solo_local" value="1" <?php echo $pSoloLocal ? 'checked' : ''; ?>
                 class="rounded bg-black/60 border-amber-500/50 text-amber-500 focus:ring-0 w-4 h-4">
             <span class="text-xs font-bold uppercase text-amber-500 flex items-center gap-1.5">
-                <i class="fa-solid fa-store"></i> ¿Vender solo en el local? (Ocultar del menú QR)
+                <i class="fa-solid fa-store"></i> Solo en el local
             </span>
         </label>
     </div>

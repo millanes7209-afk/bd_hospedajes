@@ -93,7 +93,7 @@
                     <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
                         <input type="checkbox" name="variantes[<?php        echo $idx; ?>][solo_local]" value="1" <?php        echo $vSoloLocal ? 'checked' : ''; ?>
                             class="rounded bg-black/60 border-amber-500/50 text-amber-500 focus:ring-0 w-3.5 h-3.5">
-                        <span class="text-[10px] font-bold uppercase text-amber-500">Solo Local (Ocultar en QR)</span>
+                        <span class="text-[10px] font-bold uppercase text-amber-500">Solo en el local</span>
                     </label>
 
                     <!-- Toggle Disponible -->
