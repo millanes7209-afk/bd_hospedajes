@@ -63,6 +63,13 @@ class PosController extends Controller
         $usuario_id = Session::get('usuario_id') ?? 1;
 
         $venta_id = DB::transaction(function () use ($request, $items, $usuario_id) {
+            try {
+                DB::statement("ALTER TABLE `ventas` MODIFY COLUMN `estado` VARCHAR(50) NOT NULL DEFAULT 'abierta'");
+                DB::statement("ALTER TABLE `ventas` MODIFY COLUMN `origen` VARCHAR(50) NOT NULL DEFAULT 'local'");
+                DB::statement("ALTER TABLE `ventas` MODIFY COLUMN `tipo_venta` VARCHAR(50) NOT NULL DEFAULT 'llevar'");
+            } catch (\Throwable $e) {
+            }
+
             $venta = Venta::create([
                 'origen' => 'local',
                 'tipo_venta' => 'llevar',
