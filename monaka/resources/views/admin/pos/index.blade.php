@@ -185,11 +185,9 @@
             <h2 class="text-xl md:text-2xl font-black uppercase flex items-center gap-2">
                 <i class="fa-solid fa-bolt text-amber-500"></i>VENTAS
             </h2>
-            <div class="flex items-center gap-3">
-                <button type="button" onclick="openCart()"
-                    class="text-xs font-bold uppercase px-3 py-1.5 rounded-lg bg-amber-500 text-black flex items-center gap-1.5 shadow-sm hover:scale-105 transition-transform">
-                    <i class="fa-solid fa-cart-shopping"></i>VER PEDIDO (<span id="nav-cart-count">0</span>)
-                </button>
+            <div
+                class="text-xs font-bold uppercase px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                <i class="fa-solid fa-store mr-1"></i>MOSTRADOR / VENTAS DIRECTAS
             </div>
         </div>
 
@@ -231,91 +229,92 @@
         <!-- Grid de Productos Pequeños y Adaptables -->
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
             @foreach ($productos as $p)
-                <?php
-                    $prodId = $p->id ?? $p->producto_id;
-                    $vars = $p->variantes ?? collect([]);
-                    $tieneVariantes = count($vars) > 1 || (count($vars) === 1 && !empty($vars[0]->nombre_variante));
-                ?>
-                <div class="prod-card pos-card-theme p-3 rounded-xl flex flex-col justify-between relative overflow-hidden group border border-white/10"
-                    data-categoria="cat-{{ $p->categoria_id }}" data-card-product-id="{{ $prodId }}">
-
-                    <div>
-                        <div class="mb-2 overflow-hidden rounded-lg h-24 bg-black/20 flex items-center justify-center relative">
-                            <?php
-                                $imgPath = null;
-                                if (!empty($p->imagen)) {
-                                    $imgPath = str_starts_with($p->imagen, 'assets/') ? $p->imagen : 'assets/productos/' . $p->imagen;
-                                }
-                                $hasImg = !empty($imgPath) && file_exists(public_path($imgPath));
+                        <?php
+                $prodId = $p->id ?? $p->producto_id;
+                $vars = $p->variantes ?? collect([]);
+                $tieneVariantes = count($vars) > 1 || (count($vars) === 1 && !empty($vars[0]->nombre_variante));
                             ?>
-                            @if($hasImg)
-                                <img src="{{ asset($imgPath) }}" alt="{{ strtoupper($p->nombre) }}"
-                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                            @else
-                                <i class="fa-solid fa-burger text-3xl opacity-30 text-amber-500"></i>
-                            @endif
-                        </div>
+                        <div class="prod-card pos-card-theme p-3 rounded-xl flex flex-col justify-between relative overflow-hidden group border border-white/10"
+                            data-categoria="cat-{{ $p->categoria_id }}" data-card-product-id="{{ $prodId }}">
 
-                        <h3 class="font-extrabold text-xs uppercase leading-tight mb-1 truncate" style="color:var(--color-text);">
-                            {{ strtoupper($p->nombre) }}
-                        </h3>
-                        <p class="text-[10px] opacity-70 mb-2 leading-tight line-clamp-1">
-                            {{ strtoupper($p->descripcion ?: 'SIN DESCRIPCIÓN') }}
-                        </p>
-                    </div>
-
-                    <div class="pt-2 border-t border-white/10">
-                        @if($tieneVariantes)
-                            <!-- Chips de Variantes -->
-                            <div class="mb-2">
-                                <div class="flex flex-wrap gap-1" id="variant-chips-{{ $prodId }}">
-                                    <?php $firstVariant = true; ?>
-                                    @foreach($vars as $v)
-                                        <?php
-                                            $vVarId = $v->id ?? ($v->variante_id ?? $v->varianteID);
-                                            $vPrecio = (float) $v->precio;
-                                            $vNombreVal = strtoupper($v->nombre_variante);
-                                            $vNombreCompleto = strtoupper($p->nombre . ' - ' . $v->nombre_variante);
+                            <div>
+                                <div
+                                    class="mb-2 overflow-hidden rounded-lg h-24 bg-black/20 flex items-center justify-center relative">
+                                    <?php
+                $imgPath = null;
+                if (!empty($p->imagen)) {
+                    $imgPath = str_starts_with($p->imagen, 'assets/') ? $p->imagen : 'assets/productos/' . $p->imagen;
+                }
+                $hasImg = !empty($imgPath) && file_exists(public_path($imgPath));
                                         ?>
-                                        <button type="button"
-                                            onclick="selectVariant({{ $prodId }}, {{ $vVarId }}, {{ $vPrecio }}, '{{ addslashes($vNombreCompleto) }}')"
-                                            class="variant-chip px-2 py-0.5 text-[10px] font-bold rounded-full border transition-all {{ $firstVariant ? 'bg-green-500 border-green-500 text-white' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40' }}"
-                                            data-producto-id="{{ $prodId }}"
-                                            data-variante-id="{{ $vVarId }}"
-                                            data-precio="{{ $vPrecio }}"
-                                            data-nombre-completo="{{ addslashes($vNombreCompleto) }}">
-                                            {{ $vNombreVal }}
-                                        </button>
-                                        <?php $firstVariant = false; ?>
-                                    @endforeach
+                                    @if($hasImg)
+                                        <img src="{{ asset($imgPath) }}" alt="{{ strtoupper($p->nombre) }}"
+                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    @else
+                                        <i class="fa-solid fa-burger text-3xl opacity-30 text-amber-500"></i>
+                                    @endif
                                 </div>
+
+                                <h3 class="font-extrabold text-xs uppercase leading-tight mb-1 truncate"
+                                    style="color:var(--color-text);">
+                                    {{ strtoupper($p->nombre) }}
+                                </h3>
+                                <p class="text-[10px] opacity-70 mb-2 leading-tight line-clamp-1">
+                                    {{ strtoupper($p->descripcion ?: 'SIN DESCRIPCIÓN') }}
+                                </p>
                             </div>
 
-                            <!-- Precio dinámico + Botón AGREGAR -->
-                            <div class="flex items-center justify-between">
-                                <div class="price-tag text-xs font-black text-amber-500" id="precio-display-{{ $prodId }}">
-                                    Bs. {{ number_format($vars[0]->precio, 2) }}
-                                </div>
-                                <button type="button" onclick="addSelectedVariantToCart({{ $prodId }})"
-                                    class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-black uppercase transition-all shadow-sm flex items-center gap-1">
-                                    <i class="fa-solid fa-plus text-[9px]"></i>AGREGAR
-                                </button>
+                            <div class="pt-2 border-t border-white/10">
+                                @if($tieneVariantes)
+                                    <!-- Chips de Variantes -->
+                                    <div class="mb-2">
+                                        <div class="flex flex-wrap gap-1" id="variant-chips-{{ $prodId }}">
+                                            <?php        $firstVariant = true; ?>
+                                            @foreach($vars as $v)
+                                                                <?php
+                                                $vVarId = $v->id ?? ($v->variante_id ?? $v->varianteID);
+                                                $vPrecio = (float) $v->precio;
+                                                $vNombreVal = strtoupper($v->nombre_variante);
+                                                $vNombreCompleto = strtoupper($p->nombre . ' - ' . $v->nombre_variante);
+                                                                            ?>
+                                                                <button type="button"
+                                                                    onclick="selectVariant({{ $prodId }}, {{ $vVarId }}, {{ $vPrecio }}, '{{ addslashes($vNombreCompleto) }}')"
+                                                                    class="variant-chip px-2 py-0.5 text-[10px] font-bold rounded-full border transition-all {{ $firstVariant ? 'bg-green-500 border-green-500 text-white' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40' }}"
+                                                                    data-producto-id="{{ $prodId }}" data-variante-id="{{ $vVarId }}"
+                                                                    data-precio="{{ $vPrecio }}" data-nombre-completo="{{ addslashes($vNombreCompleto) }}">
+                                                                    {{ $vNombreVal }}
+                                                                </button>
+                                                                <?php            $firstVariant = false; ?>
+                                            @endforeach
+                                        </div>
+                                    </div>
+
+                                    <!-- Precio dinámico + Botón AGREGAR -->
+                                    <div class="flex items-center justify-between">
+                                        <div class="price-tag text-xs font-black text-amber-600 dark:text-amber-400"
+                                            id="precio-display-{{ $prodId }}">
+                                            Bs. {{ number_format($vars[0]->precio, 2) }}
+                                        </div>
+                                        <button type="button" onclick="addSelectedVariantToCart({{ $prodId }})"
+                                            class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-black uppercase transition-all shadow-sm flex items-center gap-1">
+                                            <i class="fa-solid fa-plus text-[9px]"></i>AGREGAR
+                                        </button>
+                                    </div>
+                                @else
+                                    <!-- Producto Simple sin Variantes -->
+                                    <div class="flex items-center justify-between">
+                                        <div class="price-tag text-xs font-black text-amber-600 dark:text-amber-400">
+                                            Bs. {{ number_format($p->precio, 2) }}
+                                        </div>
+                                        <button type="button"
+                                            onclick="addToCart({{ $prodId }}, {{ (float) $p->precio }}, '{{ addslashes(strtoupper($p->nombre)) }}')"
+                                            class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-black uppercase transition-all shadow-sm flex items-center gap-1">
+                                            <i class="fa-solid fa-plus text-[9px]"></i>AGREGAR
+                                        </button>
+                                    </div>
+                                @endif
                             </div>
-                        @else
-                            <!-- Producto Simple sin Variantes -->
-                            <div class="flex items-center justify-between">
-                                <div class="price-tag text-xs font-black text-amber-500">
-                                    Bs. {{ number_format($p->precio, 2) }}
-                                </div>
-                                <button type="button"
-                                    onclick="addToCart({{ $prodId }}, {{ (float)$p->precio }}, '{{ addslashes(strtoupper($p->nombre)) }}')"
-                                    class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-black uppercase transition-all shadow-sm flex items-center gap-1">
-                                    <i class="fa-solid fa-plus text-[9px]"></i>AGREGAR
-                                </button>
-                            </div>
-                        @endif
-                    </div>
-                </div>
+                        </div>
             @endforeach
         </div>
     </div>
@@ -324,7 +323,7 @@
     <div id="cart-fab" class="hidden-fab">
         <button id="cart-fab-btn" onclick="openCart()">
             <i class="fa-solid fa-cart-shopping"></i>
-            <span>VER PEDIDO</span>
+            <span>VER CARRITO</span>
             <div id="cart-fab-badge">0</div>
         </button>
     </div>
@@ -340,9 +339,11 @@
     <!-- ══════════════════════════════ CART PANEL SIDEBAR ═══════════════════════════ -->
     <div id="cart-panel">
         <!-- Header -->
-        <div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
-            <h2 class="text-sm font-black uppercase tracking-wider text-amber-500 flex items-center gap-2">
-                <i class="fa-solid fa-receipt text-lg"></i>TICKET DE VENTA
+        <div class="flex items-center justify-between px-5 py-4 border-b"
+            style="border-color: var(--color-border, rgba(255,255,255,0.12));">
+            <h2 class="text-sm font-black uppercase tracking-wider flex items-center gap-2"
+                style="color: var(--color-text);">
+                <i class="fa-solid fa-receipt text-lg text-amber-500"></i>TICKET DE VENTA
             </h2>
             <button onclick="closeCart()" class="qty-btn text-lg">✕</button>
         </div>
@@ -352,13 +353,15 @@
 
         <!-- Empty state -->
         <div id="cart-empty" class="flex-1 flex flex-col items-center justify-center text-center px-6 py-10">
-            <i class="fa-solid fa-basket-shopping text-5xl mb-4 text-amber-500/30"></i>
-            <p class="text-sm font-bold uppercase text-gray-400">EL CARRITO ESTÁ VACÍO</p>
-            <p class="text-xs text-gray-500 mt-1">SELECCIONA PRODUCTOS DEL CATÁLOGO</p>
+            <i class="fa-solid fa-basket-shopping text-5xl mb-4 text-amber-500/40"></i>
+            <p class="text-sm font-bold uppercase" style="color: var(--color-text);">EL CARRITO ESTÁ VACÍO</p>
+            <p class="text-xs mt-1" style="color: var(--color-text-muted, #9ca3af);">SELECCIONA PRODUCTOS DEL CATÁLOGO
+            </p>
         </div>
 
         <!-- Footer Total + Checkout Form -->
-        <div class="px-5 pb-5 pt-3 border-t border-white/10 space-y-4">
+        <div class="px-5 pb-5 pt-3 border-t space-y-4"
+            style="border-color: var(--color-border, rgba(255,255,255,0.12));">
             <form action="{{ route('admin.pos.venta') }}" method="POST" id="form-pos-venta"
                 onsubmit="return validarVenta();">
                 @csrf
@@ -368,7 +371,8 @@
                 <div class="space-y-3">
                     <!-- Método de Pago -->
                     <div>
-                        <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">MÉTODO DE PAGO *</label>
+                        <label class="block text-[10px] font-bold uppercase mb-1"
+                            style="color: var(--color-text-muted, #9ca3af);">MÉTODO DE PAGO *</label>
                         <select name="metodo_pago" required
                             class="w-full form-input-pos rounded-xl px-3 py-2 text-xs font-bold uppercase">
                             <option value="efectivo">💵 EFECTIVO</option>
@@ -376,16 +380,19 @@
                         </select>
                     </div>
 
-                    <!-- Display Total -->
-                    <div class="flex justify-between items-center py-2 px-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                        <span class="text-xs font-black uppercase text-gray-300">TOTAL A COBRAR</span>
-                        <span class="text-2xl font-black text-amber-500">Bs. <span id="cart-total-display">0.00</span></span>
+                    <!-- Display Total Adaptable -->
+                    <div class="flex justify-between items-center py-3 px-4 rounded-xl border"
+                        style="background-color: var(--color-bg-alt, rgba(255,230,109,0.08)); border-color: var(--color-border, rgba(255,230,109,0.3));">
+                        <span class="text-xs font-black uppercase" style="color: var(--color-text);">TOTAL A
+                            COBRAR</span>
+                        <span class="text-2xl font-black text-amber-600 dark:text-amber-400">Bs. <span
+                                id="cart-total-display">0.00</span></span>
                     </div>
 
                     <!-- Botones de Acción -->
                     <div class="flex gap-2 pt-1">
                         <button type="button" onclick="clearCart()"
-                            class="px-3 py-2.5 rounded-xl border border-red-500/40 text-red-400 hover:bg-red-500/20 text-xs font-bold uppercase flex items-center justify-center gap-1">
+                            class="px-3 py-2.5 rounded-xl border border-red-500/40 text-red-500 hover:bg-red-500/20 text-xs font-bold uppercase flex items-center justify-center gap-1">
                             <i class="fa-solid fa-trash-can"></i>VACIAR
                         </button>
                         <button type="submit" id="checkout-btn" disabled
