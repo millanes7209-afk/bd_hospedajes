@@ -178,9 +178,14 @@ class MenuController extends Controller
             ->select('id as producto_id', 'nombre', 'disponible')
             ->get();
 
-        $variantes = DB::table('producto_variantes')
-            ->select('id as variante_id', 'producto_id', 'nombre_variante', 'disponible')
-            ->get();
+        $hasSoloLocal = \Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'solo_local');
+        $queryVar = DB::table('producto_variantes');
+        if ($hasSoloLocal) {
+            $queryVar->select('id as variante_id', 'producto_id', 'nombre_variante', 'disponible', 'solo_local');
+        } else {
+            $queryVar->select('id as variante_id', 'producto_id', 'nombre_variante', 'disponible');
+        }
+        $variantes = $queryVar->get();
 
         return response()->json([
             'success' => true,

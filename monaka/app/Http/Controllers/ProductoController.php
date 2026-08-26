@@ -440,6 +440,56 @@ class ProductoController extends Controller
     }
 
     /**
+     * Alternar marca solo_local de variante (AJAX / HTTP)
+     */
+    public function toggleSoloLocal(Request $request, $producto_id, $variante_id = null)
+    {
+        try {
+            if (!Schema::hasColumn('producto_variantes', 'solo_local')) {
+                try {
+                    DB::statement("ALTER TABLE producto_variantes ADD COLUMN solo_local TINYINT(1) DEFAULT 0");
+                } catch (\Throwable $e) {
+                }
+            }
+
+            $pVarFk = Schema::hasColumn('producto_variantes', 'producto_id') ? 'producto_id' : (Schema::hasColumn('producto_variantes', 'productoID') ? 'productoID' : 'producto_id');
+            $vPk = Schema::hasColumn('producto_variantes', 'id') ? 'id' : (Schema::hasColumn('producto_variantes', 'varianteID') ? 'varianteID' : (Schema::hasColumn('producto_variantes', 'variante_id') ? 'variante_id' : 'id'));
+
+            if (!$variante_id) {
+                $variante = DB::table('producto_variantes')->where($pVarFk, $producto_id)->first();
+                if ($variante) {
+                    $variante_id = $variante->{$vPk};
+                }
+            } else {
+                $variante = DB::table('producto_variantes')->where($vPk, $variante_id)->first();
+            }
+
+            if ($variante) {
+                $currentVal = isset($variante->solo_local) ? intval($variante->solo_local) : 0;
+                $nuevoEstado = $currentVal ? 0 : 1;
+
+                $updateData = ['solo_local' => $nuevoEstado];
+                if (Schema::hasColumn('producto_variantes', 'updated_at')) {
+                    $updateData['updated_at'] = now();
+                }
+
+                DB::table('producto_variantes')->where($vPk, $variante_id)->update($updateData);
+
+                return response()->json([
+                    'success' => true,
+                    'producto_id' => $producto_id,
+                    'variante_id' => $variante_id,
+                    'solo_local' => $nuevoEstado
+                ]);
+            }
+
+            return response()->json(['success' => false, 'message' => 'Variante no encontrada'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Eliminar producto
      */
     public function destroy($id)

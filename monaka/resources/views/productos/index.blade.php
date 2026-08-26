@@ -115,6 +115,7 @@ $categorias = $categorias ?? [];
               <tr class="text-xs uppercase admin-text-muted border-b" style="border-color:var(--color-card-border)">
                 <th class="py-3 px-3">Imagen</th>
                 <th class="py-3 px-3 text-center">Disponibilidad</th>
+                <th class="py-3 px-3 text-center">Solo en Local</th>
                 <th class="py-3 px-3">Platillo / Categoría</th>
                 <th class="py-3 px-3">Tipo / Precio</th>
                 <th class="py-3 px-3 text-right">Acciones</th>
@@ -128,6 +129,10 @@ $categorias = $categorias ?? [];
     $tieneVariantes = !empty($variantesMap[$pId]);
     $disponible = (int) ($p['disponible'] ?? 1);
     $activo = (int) ($p['activo'] ?? 1);
+    $pSoloLocal = 0;
+    if (!$tieneVariantes && !empty($variantesMap[$pId][0])) {
+      $pSoloLocal = (int) ($variantesMap[$pId][0]['solo_local'] ?? 0);
+    }
               ?>
               <tr class="align-middle hover:bg-white/[0.04]">
                 <td class="w-16 py-3 px-3">
@@ -157,6 +162,19 @@ $categorias = $categorias ?? [];
                       class="fa-solid <?php    echo $disponible ? 'fa-toggle-on text-green-500' : 'fa-toggle-off text-red-500'; ?> text-base"></i>
                     <span><?php    echo $disponible ? 'DISPONIBLE' : 'NO DISPONIBLE'; ?></span>
                   </button>
+                </td>
+
+                <td class="py-3 px-3 text-center">
+                  <?php    if (!$tieneVariantes): ?>
+                  <button type="button" onclick="toggleSoloLocalAjax(<?php      echo $pId; ?>, null, this)"
+                    class="btn-toggle-local inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all border shadow-sm <?php      echo $pSoloLocal ? 'border-amber-500/50 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20' : 'border-gray-500/30 bg-gray-500/10 text-gray-400 hover:bg-gray-500/20'; ?>">
+                    <i
+                      class="fa-solid <?php      echo $pSoloLocal ? 'fa-store text-amber-500' : 'fa-globe text-gray-400'; ?> text-base"></i>
+                    <span><?php      echo $pSoloLocal ? 'SÍ (LOCAL)' : 'NO (PÚBLICO)'; ?></span>
+                  </button>
+                  <?php    else: ?>
+                  <span class="text-[10px] text-gray-500 font-bold uppercase">Ver opciones</span>
+                  <?php    endif; ?>
                 </td>
 
                 <td class="py-3 px-3">
@@ -208,6 +226,7 @@ $categorias = $categorias ?? [];
               <?php
         $vId = $v['id'];
         $vDisp = (int) ($v['disponible'] ?? 1);
+        $vSoloLocal = (int) ($v['solo_local'] ?? 0);
               ?>
               <tr class="prod-card-theme border-l-4 border-l-amber-500/60 text-xs">
                 <td class="w-16 py-2 px-3 text-center text-gray-400">
@@ -220,6 +239,15 @@ $categorias = $categorias ?? [];
                     <i
                       class="fa-solid <?php        echo $vDisp ? 'fa-toggle-on text-green-500' : 'fa-toggle-off text-red-500'; ?>"></i>
                     <span><?php        echo $vDisp ? 'DISPONIBLE' : 'NO DISPONIBLE'; ?></span>
+                  </button>
+                </td>
+                <td class="py-2 px-3 text-center">
+                  <button type="button"
+                    onclick="toggleSoloLocalAjax(<?php        echo $pId; ?>, <?php        echo $vId; ?>, this)"
+                    class="btn-toggle-local inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all border <?php        echo $vSoloLocal ? 'border-amber-500/40 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20' : 'border-gray-500/30 bg-gray-500/10 text-gray-400 hover:bg-gray-500/20'; ?>">
+                    <i
+                      class="fa-solid <?php        echo $vSoloLocal ? 'fa-store text-amber-500' : 'fa-globe text-gray-400'; ?>"></i>
+                    <span><?php        echo $vSoloLocal ? 'SÍ (LOCAL)' : 'NO (PÚBLICO)'; ?></span>
                   </button>
                 </td>
                 <td class="py-2 px-3 font-bold uppercase">
@@ -407,6 +435,54 @@ $categorias = $categorias ?? [];
       }
     }
 
+    async function toggleSoloLocalAjax(productoId, varianteId, btn) {
+      if (!btn) return;
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+
+      let url = `/admin/productos/solo-local/toggle/${productoId}`;
+      if (varianteId) {
+        url += `/${varianteId}`;
+      }
+
+      try {
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          const isSoloLocal = !!data.solo_local;
+          if (isSoloLocal) {
+            btn.className = !varianteId
+              ? 'btn-toggle-local inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all border shadow-sm border-amber-500/50 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20'
+              : 'btn-toggle-local inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all border border-amber-500/40 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20';
+            btn.innerHTML = !varianteId
+              ? '<i class="fa-solid fa-store text-amber-500 text-base"></i><span>SÍ (LOCAL)</span>'
+              : '<i class="fa-solid fa-store text-amber-500"></i><span>SÍ (LOCAL)</span>';
+          } else {
+            btn.className = !varianteId
+              ? 'btn-toggle-local inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all border shadow-sm border-gray-500/30 bg-gray-500/10 text-gray-400 hover:bg-gray-500/20'
+              : 'btn-toggle-local inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all border border-gray-500/30 bg-gray-500/10 text-gray-400 hover:bg-gray-500/20';
+            btn.innerHTML = !varianteId
+              ? '<i class="fa-solid fa-globe text-gray-400 text-base"></i><span>NO (PÚBLICO)</span>'
+              : '<i class="fa-solid fa-globe text-gray-400"></i><span>NO (PÚBLICO)</span>';
+          }
+        }
+      } catch (err) {
+        console.error("Error al conmutar solo_local:", err);
+        btn.innerHTML = originalHtml;
+      } finally {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    }
+
     function confirmarEliminarProducto(url, nombre) {
       document.getElementById('eliminar-producto-nombre').innerText = nombre;
       document.getElementById('btn-confirmar-eliminar-link').href = url;
@@ -419,10 +495,12 @@ $categorias = $categorias ?? [];
   </script>
 
   <!-- Modal Confirmar Eliminación Estilizado -->
-  <div id="modal-eliminar" class="fixed inset-0 z-50 flex items-center justify-center hidden" style="background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);">
+  <div id="modal-eliminar" class="fixed inset-0 z-50 flex items-center justify-center hidden"
+    style="background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);">
     <div class="prod-card-theme p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl border border-red-500/30 space-y-4">
       <div class="flex items-center gap-3 text-red-500">
-        <div class="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-xl font-bold border border-red-500/20">
+        <div
+          class="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-xl font-bold border border-red-500/20">
           <i class="fa-solid fa-triangle-exclamation"></i>
         </div>
         <div>
@@ -434,10 +512,12 @@ $categorias = $categorias ?? [];
         Esta acción eliminará permanentemente el producto y todas sus variantes asociadas. ¿Deseas continuar?
       </p>
       <div class="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
-        <button type="button" onclick="cerrarModalEliminar()" class="px-4 py-2 rounded-xl text-xs font-bold uppercase border border-white/20 text-gray-300 hover:bg-white/10 transition-all">
+        <button type="button" onclick="cerrarModalEliminar()"
+          class="px-4 py-2 rounded-xl text-xs font-bold uppercase border border-white/20 text-gray-300 hover:bg-white/10 transition-all">
           CANCELAR
         </button>
-        <a id="btn-confirmar-eliminar-link" href="#" class="px-4 py-2 rounded-xl text-xs font-black uppercase bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30 transition-all">
+        <a id="btn-confirmar-eliminar-link" href="#"
+          class="px-4 py-2 rounded-xl text-xs font-black uppercase bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30 transition-all">
           SÍ, ELIMINAR
         </a>
       </div>

@@ -999,7 +999,9 @@ if (!function_exists('obtenerPrecioActivo')) {
 
         const varMap = {};
         data.variantes.forEach(v => {
-          varMap[v.variante_id] = (v.disponible == 1 || v.disponible === null || v.disponible === undefined);
+          const isDisp = (v.disponible == 1 || v.disponible === null || v.disponible === undefined);
+          const isSoloLocal = (v.solo_local == 1);
+          varMap[v.variante_id] = isDisp && !isSoloLocal;
         });
 
         latestAvailability = { productos: prodMap, variantes: varMap };

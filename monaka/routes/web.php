@@ -52,6 +52,7 @@ Route::middleware([TenantMiddleware::class])->group(function () {
         Route::post('/productos/editar/{id}', [ProductoController::class, 'update'])->name('admin.productos.update');
         Route::get('/productos/toggle/{id}', [ProductoController::class, 'toggleDisponible'])->name('admin.productos.toggle');
         Route::get('/productos/variantes/toggle/{producto_id}/{variante_id}', [ProductoController::class, 'toggleVarianteDisponible'])->name('admin.productos.variantes.toggle');
+        Route::get('/productos/solo-local/toggle/{producto_id}/{variante_id?}', [ProductoController::class, 'toggleSoloLocal'])->name('admin.productos.solo_local.toggle');
         Route::get('/productos/eliminar/{id}', [ProductoController::class, 'destroy'])->name('admin.productos.destroy');
         Route::get('/pedidos', [PedidoController::class, 'index'])->name('admin.pedidos');
         Route::get('/api/pedidos', [PedidoController::class, 'getAdminApiPedidos'])->name('api.admin.pedidos');
