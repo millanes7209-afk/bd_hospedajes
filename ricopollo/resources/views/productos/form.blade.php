@@ -281,7 +281,7 @@ $catsList = $cats ?? ($categorias ?? []);
                     <div class="sm:col-span-4">
                       <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Nombre Presentación *</label>
                       <input type="text" name="variantes[<?php echo $idx; ?>][nombre_variante]" value="<?php echo $vNombre; ?>"
-                        placeholder="Ej. 6 Unidades" class="form-input text-xs font-bold variante-nombre-input" />
+                        oninput="this.value = this.value.toUpperCase();" placeholder="Ej. 6 UNIDADES" class="form-input text-xs font-bold uppercase variante-nombre-input" />
                     </div>
                     <!-- Cantidad num -->
                     <div class="sm:col-span-2">
