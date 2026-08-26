@@ -45,7 +45,26 @@ class MenuController extends Controller
         $variantesMap = [];
         foreach ($variantesRaw as $v) {
             $vArray = (array) $v;
-            $variantesMap[$v->productoID][] = $vArray;
+            // Transformar claves de camelCase a snake_case para consistencia con la vista
+            $vTransformed = [];
+            foreach ($vArray as $key => $value) {
+                // Mapeo específico de claves conocidas
+                $keyMap = [
+                    'varianteID' => 'variante_id',
+                    'nombre_variante' => 'nombre_variante',
+                    'precio' => 'precio',
+                    'precio_promo' => 'precio_promo',
+                    'dia_promo' => 'dia_promo',
+                    'stock' => 'stock',
+                    'imagen' => 'imagen',
+                    'activo' => 'activo',
+                    'disponible' => 'disponible',
+                    'orden_mostrado' => 'orden_mostrado',
+                ];
+                $newKey = $keyMap[$key] ?? $key;
+                $vTransformed[$newKey] = $value;
+            }
+            $variantesMap[$v->productoID][] = $vTransformed;
         }
 
         $menuGrouped = [];

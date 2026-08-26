@@ -278,16 +278,14 @@ $categorias = $categorias ?? [];
               <table class="w-full text-left text-xs">
                 <thead>
                   <tr class="uppercase text-gray-400 border-b" style="border-color:var(--color-card-border)">
-                    <th class="py-2.5 px-3"># ID</th>
                     <th class="py-2.5 px-3">Nombre Categoría</th>
                     <th class="py-2.5 px-3 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y" style="border-color:var(--color-card-border)">
                   @foreach($categorias as $cat)
-                      <?php  $cId = $cat['id'] ?? ($cat['categoriaID'] ?? ''); ?>
+                    <?php  $cId = $cat['id'] ?? ($cat['categoriaID'] ?? ''); ?>
                     <tr class="hover:bg-white/[0.04]">
-                      <td class="py-3 px-3 font-mono font-bold text-gray-400">#{{ $cId }}</td>
                       <td class="py-3 px-3 font-black uppercase text-amber-500">{{ $cat['nombre'] }}</td>
                       <td class="py-3 px-3 text-right">
                         <button type="button" onclick="editarCategoria('{{ $cId }}', '{{ $cat['nombre'] }}')"
