@@ -35,6 +35,12 @@ class MenuController extends Controller
                 $q->whereNull('v.disponible')->orWhere('v.disponible', 1);
             });
 
+        if (\Illuminate\Support\Facades\Schema::hasColumn('producto_variantes', 'solo_local')) {
+            $queryVar->where(function ($q) {
+                $q->whereNull('v.solo_local')->orWhere('v.solo_local', 0);
+            });
+        }
+
         if ($hasOrdenVar) {
             $queryVar->orderBy('v.orden_mostrado', 'asc');
         }

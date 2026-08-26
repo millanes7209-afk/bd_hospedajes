@@ -1,84 +1,84 @@
 let varianteIdxCounter = 0;
 
 function setVarianteCounter(initialValue) {
-    varianteIdxCounter = initialValue;
+  varianteIdxCounter = initialValue;
 }
 
 function selectTipoProducto(tipo) {
-    const inputTipo = document.getElementById('input_tipo');
-    if (inputTipo) inputTipo.value = tipo;
+  const inputTipo = document.getElementById('input_tipo');
+  if (inputTipo) inputTipo.value = tipo;
 
-    const cardSimple = document.getElementById('card-tipo-simple');
-    const cardVariantes = document.getElementById('card-tipo-variantes');
-    const badgeSimple = document.getElementById('badge-simple');
-    const badgeVariantes = document.getElementById('badge-variantes');
-    const sectionSimple = document.getElementById('section-simple');
-    const sectionVariantes = document.getElementById('section-variantes');
-    const inputPrecioSimple = document.getElementById('precio_simple');
+  const cardSimple = document.getElementById('card-tipo-simple');
+  const cardVariantes = document.getElementById('card-tipo-variantes');
+  const badgeSimple = document.getElementById('badge-simple');
+  const badgeVariantes = document.getElementById('badge-variantes');
+  const sectionSimple = document.getElementById('section-simple');
+  const sectionVariantes = document.getElementById('section-variantes');
+  const inputPrecioSimple = document.getElementById('precio_simple');
 
-    if (tipo === 'simple') {
-        if (cardSimple) cardSimple.classList.add('selected');
-        if (cardVariantes) cardVariantes.classList.remove('selected');
-        if (badgeSimple) badgeSimple.classList.remove('hidden');
-        if (badgeVariantes) badgeVariantes.classList.add('hidden');
+  if (tipo === 'simple') {
+    if (cardSimple) cardSimple.classList.add('selected');
+    if (cardVariantes) cardVariantes.classList.remove('selected');
+    if (badgeSimple) badgeSimple.classList.remove('hidden');
+    if (badgeVariantes) badgeVariantes.classList.add('hidden');
 
-        if (sectionSimple) sectionSimple.classList.remove('hidden');
-        if (sectionVariantes) sectionVariantes.classList.add('hidden');
-        if (inputPrecioSimple) inputPrecioSimple.setAttribute('required', 'required');
+    if (sectionSimple) sectionSimple.classList.remove('hidden');
+    if (sectionVariantes) sectionVariantes.classList.add('hidden');
+    if (inputPrecioSimple) inputPrecioSimple.setAttribute('required', 'required');
 
-        document.querySelectorAll('#section-variantes input, #section-variantes select').forEach(el => {
-            el.removeAttribute('required');
-        });
-    } else {
-        if (cardVariantes) cardVariantes.classList.add('selected');
-        if (cardSimple) cardSimple.classList.remove('selected');
-        if (badgeVariantes) badgeVariantes.classList.remove('hidden');
-        if (badgeSimple) badgeSimple.classList.add('hidden');
+    document.querySelectorAll('#section-variantes input, #section-variantes select').forEach(el => {
+      el.removeAttribute('required');
+    });
+  } else {
+    if (cardVariantes) cardVariantes.classList.add('selected');
+    if (cardSimple) cardSimple.classList.remove('selected');
+    if (badgeVariantes) badgeVariantes.classList.remove('hidden');
+    if (badgeSimple) badgeSimple.classList.add('hidden');
 
-        if (sectionVariantes) sectionVariantes.classList.remove('hidden');
-        if (sectionSimple) sectionSimple.classList.add('hidden');
-        if (inputPrecioSimple) inputPrecioSimple.removeAttribute('required');
+    if (sectionVariantes) sectionVariantes.classList.remove('hidden');
+    if (sectionSimple) sectionSimple.classList.add('hidden');
+    if (inputPrecioSimple) inputPrecioSimple.removeAttribute('required');
 
-        document.querySelectorAll('#section-variantes .variante-nombre-input, #section-variantes .variante-precio-input').forEach(el => {
-            el.setAttribute('required', 'required');
-        });
+    document.querySelectorAll('#section-variantes .variante-nombre-input, #section-variantes .variante-precio-input').forEach(el => {
+      el.setAttribute('required', 'required');
+    });
 
-        if (document.querySelectorAll('.variante-row').length === 0) {
-            addVarianteRow();
-        }
+    if (document.querySelectorAll('.variante-row').length === 0) {
+      addVarianteRow();
     }
+  }
 }
 
 function togglePromoSimpleView() {
-    const toggle = document.getElementById('toggle_promo_simple');
-    const box = document.getElementById('box_promo_simple');
-    if (toggle && box) {
-        if (toggle.checked) {
-            box.classList.remove('hidden');
-        } else {
-            box.classList.add('hidden');
-        }
+  const toggle = document.getElementById('toggle_promo_simple');
+  const box = document.getElementById('box_promo_simple');
+  if (toggle && box) {
+    if (toggle.checked) {
+      box.classList.remove('hidden');
+    } else {
+      box.classList.add('hidden');
     }
+  }
 }
 
 function toggleVarPromoBox(btn) {
-    const row = btn.closest('.variante-row');
-    if (row) {
-        const box = row.querySelector('.var-promo-box');
-        if (box) {
-            box.classList.toggle('hidden');
-        }
+  const row = btn.closest('.variante-row');
+  if (row) {
+    const box = row.querySelector('.var-promo-box');
+    if (box) {
+      box.classList.toggle('hidden');
     }
+  }
 }
 
 function addVarianteRow() {
-    const container = document.getElementById('variantes-container');
-    if (!container) return;
+  const container = document.getElementById('variantes-container');
+  if (!container) return;
 
-    const idx = varianteIdxCounter++;
-    const currentTipo = document.getElementById('input_tipo')?.value || 'variantes';
+  const idx = varianteIdxCounter++;
+  const currentTipo = document.getElementById('input_tipo')?.value || 'variantes';
 
-    const html = `
+  const html = `
     <div class="variante-row admin-subcard p-4 rounded-xl border border-white/10 space-y-3 relative">
       <input type="hidden" name="variantes[${idx}][variante_id]" value="">
       <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
@@ -122,6 +122,11 @@ function addVarianteRow() {
         </div>
         <div class="flex items-center gap-4">
           <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+            <input type="checkbox" name="variantes[${idx}][solo_local]" value="1"
+              class="rounded bg-black/60 border-amber-500/50 text-amber-500 focus:ring-0 w-3.5 h-3.5">
+            <span class="text-[10px] font-bold uppercase text-amber-500">Solo Local (Ocultar en QR)</span>
+          </label>
+          <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
             <input type="checkbox" name="variantes[${idx}][disponible]" value="1" checked
               class="rounded bg-black/60 border-white/20 text-green-500 focus:ring-0 w-3.5 h-3.5">
             <span class="text-[10px] font-bold uppercase admin-text-main">Disponible ahora</span>
@@ -149,25 +154,25 @@ function addVarianteRow() {
     </div>
   `;
 
-    container.insertAdjacentHTML('beforeend', html);
+  container.insertAdjacentHTML('beforeend', html);
 }
 
 function removeVarianteRow(btn) {
-    const row = btn.closest('.variante-row');
-    if (row) row.remove();
+  const row = btn.closest('.variante-row');
+  if (row) row.remove();
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    const form = document.querySelector('form');
-    if (form) {
-        form.addEventListener('submit', function () {
-            const tipo = document.getElementById('input_tipo')?.value;
-            if (tipo === 'simple') {
-                document.querySelectorAll('#section-variantes [required]').forEach(el => el.removeAttribute('required'));
-            } else {
-                const inputPrecioSimple = document.getElementById('precio_simple');
-                if (inputPrecioSimple) inputPrecioSimple.removeAttribute('required');
-            }
-        });
-    }
+  const form = document.querySelector('form');
+  if (form) {
+    form.addEventListener('submit', function () {
+      const tipo = document.getElementById('input_tipo')?.value;
+      if (tipo === 'simple') {
+        document.querySelectorAll('#section-variantes [required]').forEach(el => el.removeAttribute('required'));
+      } else {
+        const inputPrecioSimple = document.getElementById('precio_simple');
+        if (inputPrecioSimple) inputPrecioSimple.removeAttribute('required');
+      }
+    });
+  }
 });

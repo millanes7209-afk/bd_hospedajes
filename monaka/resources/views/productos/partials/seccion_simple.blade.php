@@ -30,12 +30,21 @@ $hasPromo = !empty($pPromoPrice) || !empty($pDiaPromo);
     </div>
 
     <!-- Toggle Descuento Especial -->
-    <div class="pt-2">
+    <div class="pt-2 flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
         <label class="inline-flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" id="toggle_promo_simple" onchange="togglePromoSimpleView()" <?php echo $hasPromo ? 'checked' : ''; ?> class="rounded bg-black/60 border-white/20 text-[#FFE66D] focus:ring-0 w-4 h-4">
             <span class="text-xs font-bold uppercase admin-text-main flex items-center gap-1.5">
-                <i class="fa-solid fa-tag text-green-400"></i> ¿Este producto tiene descuento especial un día de la
-                semana?
+                <i class="fa-solid fa-tag text-green-400"></i> ¿Descuento especial por día?
+            </span>
+        </label>
+
+        <!-- Toggle Solo Local -->
+        <?php $pSoloLocal = (int) ($variantes[0]['solo_local'] ?? ($producto['solo_local'] ?? 0)); ?>
+        <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" name="solo_local" value="1" <?php echo $pSoloLocal ? 'checked' : ''; ?>
+                class="rounded bg-black/60 border-amber-500/50 text-amber-500 focus:ring-0 w-4 h-4">
+            <span class="text-xs font-bold uppercase text-amber-500 flex items-center gap-1.5">
+                <i class="fa-solid fa-store"></i> ¿Vender solo en el local? (Ocultar del menú QR)
             </span>
         </label>
     </div>

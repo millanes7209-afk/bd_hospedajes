@@ -151,6 +151,13 @@ class ProductoController extends Controller
 
         $pVarFk = Schema::hasColumn('producto_variantes', 'producto_id') ? 'producto_id' : (Schema::hasColumn('producto_variantes', 'productoID') ? 'productoID' : 'producto_id');
 
+        if (!Schema::hasColumn('producto_variantes', 'solo_local')) {
+            try {
+                DB::statement("ALTER TABLE producto_variantes ADD COLUMN solo_local TINYINT(1) DEFAULT 0");
+            } catch (\Throwable $e) {
+            }
+        }
+
         if ($tipo === 'simple') {
             $simpleVarData = [
                 $pVarFk => $producto_id,
@@ -162,6 +169,9 @@ class ProductoController extends Controller
             }
             if (Schema::hasColumn('producto_variantes', 'unidad')) {
                 $simpleVarData['unidad'] = 'und';
+            }
+            if (Schema::hasColumn('producto_variantes', 'solo_local')) {
+                $simpleVarData['solo_local'] = isset($request->solo_local) ? 1 : 0;
             }
             if (Schema::hasColumn('producto_variantes', 'disponible')) {
                 $simpleVarData['disponible'] = 1;
@@ -321,6 +331,9 @@ class ProductoController extends Controller
             }
             if (Schema::hasColumn('producto_variantes', 'unidad')) {
                 $simpleVarData['unidad'] = 'und';
+            }
+            if (Schema::hasColumn('producto_variantes', 'solo_local')) {
+                $simpleVarData['solo_local'] = isset($request->solo_local) ? 1 : 0;
             }
             if (Schema::hasColumn('producto_variantes', 'disponible')) {
                 $simpleVarData['disponible'] = 1;
@@ -496,6 +509,9 @@ class ProductoController extends Controller
             }
             if (Schema::hasColumn('producto_variantes', 'disponible')) {
                 $vRecord['disponible'] = isset($vData['disponible']) ? 1 : 0;
+            }
+            if (Schema::hasColumn('producto_variantes', 'solo_local')) {
+                $vRecord['solo_local'] = isset($vData['solo_local']) && $vData['solo_local'] ? 1 : 0;
             }
             if (Schema::hasColumn('producto_variantes', 'user_id')) {
                 $vRecord['user_id'] = \Illuminate\Support\Facades\Session::get('usuario_id') ?? 1;

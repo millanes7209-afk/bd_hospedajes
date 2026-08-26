@@ -24,9 +24,11 @@
         $vPromoPrice = htmlspecialchars($v['precio_promo'] ?? '');
         $vDiaPromo = strtolower($v['dia_promo'] ?? '');
         $vDisp = (int) ($v['disponible'] ?? 1);
+        $vSoloLocal = (int) ($v['solo_local'] ?? 0);
     ?>
         <div class="variante-row admin-subcard p-4 rounded-xl border border-white/10 space-y-3 relative">
-            <input type="hidden" name="variantes[<?php        echo $idx; ?>][variante_id]" value="<?php        echo $vId; ?>">
+            <input type="hidden" name="variantes[<?php        echo $idx; ?>][variante_id]"
+                value="<?php        echo $vId; ?>">
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
                 <!-- Nombre presentación -->
                 <div class="sm:col-span-4">
@@ -75,8 +77,9 @@
             <div class="pt-2 border-t border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs">
                 <div class="flex items-center gap-3 flex-wrap">
                     <span class="text-[10px] font-bold uppercase admin-text-muted">Stock:</span>
-                    <input type="number" name="variantes[<?php        echo $idx; ?>][stock]" value="<?php        echo $vStock; ?>"
-                        placeholder="Ilimitado" class="form-input !py-1 !px-2 w-24 text-xs" />
+                    <input type="number" name="variantes[<?php        echo $idx; ?>][stock]"
+                        value="<?php        echo $vStock; ?>" placeholder="Ilimitado"
+                        class="form-input !py-1 !px-2 w-24 text-xs" />
 
                     <!-- Promo variante -->
                     <button type="button" onclick="toggleVarPromoBox(this)"
@@ -86,6 +89,13 @@
                 </div>
 
                 <div class="flex items-center gap-4">
+                    <!-- Toggle Solo Local -->
+                    <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                        <input type="checkbox" name="variantes[<?php        echo $idx; ?>][solo_local]" value="1" <?php        echo $vSoloLocal ? 'checked' : ''; ?>
+                            class="rounded bg-black/60 border-amber-500/50 text-amber-500 focus:ring-0 w-3.5 h-3.5">
+                        <span class="text-[10px] font-bold uppercase text-amber-500">Solo Local (Ocultar en QR)</span>
+                    </label>
+
                     <!-- Toggle Disponible -->
                     <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
                         <input type="checkbox" name="variantes[<?php        echo $idx; ?>][disponible]" value="1" <?php        echo $vDisp ? 'checked' : ''; ?>
