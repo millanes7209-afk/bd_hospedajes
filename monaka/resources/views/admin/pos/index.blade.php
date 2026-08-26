@@ -185,10 +185,6 @@
             <h2 class="text-xl md:text-2xl font-black uppercase flex items-center gap-2">
                 <i class="fa-solid fa-bolt text-amber-500"></i>VENTAS
             </h2>
-            <div
-                class="text-xs font-bold uppercase px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                <i class="fa-solid fa-store mr-1"></i>MOSTRADOR / VENTAS DIRECTAS
-            </div>
         </div>
 
         @if (session('success'))
@@ -233,7 +229,7 @@
                 $prodId = $p->id ?? $p->producto_id;
                 $vars = $p->variantes ?? collect([]);
                 $tieneVariantes = count($vars) > 1 || (count($vars) === 1 && !empty($vars[0]->nombre_variante));
-                            ?>
+                                        ?>
                         <div class="prod-card pos-card-theme p-3 rounded-xl flex flex-col justify-between relative overflow-hidden group border border-white/10"
                             data-categoria="cat-{{ $p->categoria_id }}" data-card-product-id="{{ $prodId }}">
 
@@ -246,7 +242,7 @@
                     $imgPath = str_starts_with($p->imagen, 'assets/') ? $p->imagen : 'assets/productos/' . $p->imagen;
                 }
                 $hasImg = !empty($imgPath) && file_exists(public_path($imgPath));
-                                        ?>
+                                                    ?>
                                     @if($hasImg)
                                         <img src="{{ asset($imgPath) }}" alt="{{ strtoupper($p->nombre) }}"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
@@ -276,7 +272,7 @@
                                                 $vPrecio = (float) $v->precio;
                                                 $vNombreVal = strtoupper($v->nombre_variante);
                                                 $vNombreCompleto = strtoupper($p->nombre . ' - ' . $v->nombre_variante);
-                                                                            ?>
+                                                                                                                ?>
                                                                 <button type="button"
                                                                     onclick="selectVariant({{ $prodId }}, {{ $vVarId }}, {{ $vPrecio }}, '{{ addslashes($vNombreCompleto) }}')"
                                                                     class="variant-chip px-2 py-0.5 text-[10px] font-bold rounded-full border transition-all {{ $firstVariant ? 'bg-green-500 border-green-500 text-white' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40' }}"
@@ -511,10 +507,10 @@
                 listEl.classList.add('hidden');
                 emptyEl.classList.remove('hidden');
                 fab.classList.add('hidden-fab');
-                badge.textContent = '0';
-                navBadge.textContent = '0';
-                totalDisplay.textContent = '0.00';
-                btnSubmit.disabled = true;
+                if (badge) badge.textContent = '0';
+                if (navBadge) navBadge.textContent = '0';
+                if (totalDisplay) totalDisplay.textContent = '0.00';
+                if (btnSubmit) btnSubmit.disabled = true;
                 document.getElementById('input-cart-items').value = '';
                 document.getElementById('input-cart-total').value = '0';
                 return;
@@ -556,10 +552,10 @@
             }
 
             listEl.innerHTML = html;
-            badge.textContent = totalQty;
-            navBadge.textContent = totalQty;
-            totalDisplay.textContent = total.toFixed(2);
-            btnSubmit.disabled = false;
+            if (badge) badge.textContent = totalQty;
+            if (navBadge) navBadge.textContent = totalQty;
+            if (totalDisplay) totalDisplay.textContent = total.toFixed(2);
+            if (btnSubmit) btnSubmit.disabled = false;
 
             document.getElementById('input-cart-items').value = JSON.stringify(itemsForPos);
             document.getElementById('input-cart-total').value = total.toFixed(2);
