@@ -58,6 +58,30 @@ $catsList = $cats ?? ($categorias ?? []);
       background-color: var(--color-bg-card, #121218) !important;
       color: var(--color-text, #ffffff) !important;
     }
+
+    /* ── MODO CLARO ADAPTATIVO DE ALTO CONTRASTE ── */
+    html.light-mode .admin-text-main {
+      color: #111827 !important;
+    }
+    html.light-mode .admin-text-muted {
+      color: #4b5563 !important;
+    }
+    html.light-mode .text-\[\#FFE66D\],
+    html.light-mode [class*="text-[#FFE66D]"] {
+      color: #d97706 !important;
+    }
+    html.light-mode .form-input {
+      background-color: #ffffff !important;
+      color: #111827 !important;
+      border-color: #d1d5db !important;
+    }
+    html.light-mode .form-input::placeholder {
+      color: #9ca3af !important;
+    }
+    html.light-mode .admin-subcard {
+      background-color: #f9fafb !important;
+      border-color: #e5e7eb !important;
+    }
   </style>
 </head>
 
@@ -398,8 +422,8 @@ $catsList = $cats ?? ($categorias ?? []);
         sectionVariantes.classList.add('hidden');
         if (inputPrecioSimple) inputPrecioSimple.setAttribute('required', 'required');
 
-        // Remove required attribute from hidden variant inputs to prevent form submission blocking
-        document.querySelectorAll('#section-variantes input[required], #section-variantes select[required]').forEach(el => {
+        // Remove required attribute from ALL inputs/selects inside section-variantes when hidden
+        document.querySelectorAll('#section-variantes input, #section-variantes select').forEach(el => {
           el.removeAttribute('required');
         });
       } else {
@@ -444,6 +468,7 @@ $catsList = $cats ?? ($categorias ?? []);
     function addVarianteRow() {
       const container = document.getElementById('variantes-container');
       const idx = varianteIdxCounter++;
+      const currentTipo = document.getElementById('input_tipo')?.value || 'variantes';
 
       const html = `
         <div class="variante-row admin-subcard p-4 rounded-xl border border-white/10 space-y-3 relative">
@@ -451,7 +476,7 @@ $catsList = $cats ?? ($categorias ?? []);
           <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div class="sm:col-span-4">
               <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Nombre Presentación *</label>
-              <input type="text" name="variantes[${idx}][nombre_variante]" oninput="this.value = this.value.toUpperCase();" placeholder="Ej. 6 UNIDADES" class="form-input text-xs font-bold uppercase variante-nombre-input" required />
+              <input type="text" name="variantes[${idx}][nombre_variante]" oninput="this.value = this.value.toUpperCase();" placeholder="Ej. 6 UNIDADES" class="form-input text-xs font-bold uppercase variante-nombre-input" ${currentTipo === 'variantes' ? 'required' : ''} />
             </div>
             <div class="sm:col-span-2">
               <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Cantidad</label>
@@ -470,7 +495,7 @@ $catsList = $cats ?? ($categorias ?? []);
             </div>
             <div class="sm:col-span-3">
               <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Precio (Bs.) *</label>
-              <input type="number" step="0.01" name="variantes[${idx}][precio]" placeholder="0.00" class="form-input text-xs font-bold text-[#FFE66D] variante-precio-input" required />
+              <input type="number" step="0.01" name="variantes[${idx}][precio]" placeholder="0.00" class="form-input text-xs font-bold text-[#FFE66D] variante-precio-input" ${currentTipo === 'variantes' ? 'required' : ''} />
             </div>
             <div class="sm:col-span-1 flex justify-end">
               <button type="button" onclick="removeVarianteRow(this)" class="text-red-400 hover:text-red-300 text-sm p-2">
@@ -526,6 +551,19 @@ $catsList = $cats ?? ($categorias ?? []);
 
     document.addEventListener('DOMContentLoaded', function() {
       selectTipoProducto('<?php echo $tipoActual; ?>');
+
+      const form = document.querySelector('form');
+      if (form) {
+        form.addEventListener('submit', function() {
+          const tipo = document.getElementById('input_tipo').value;
+          if (tipo === 'simple') {
+            document.querySelectorAll('#section-variantes [required]').forEach(el => el.removeAttribute('required'));
+          } else {
+            const inputPrecioSimple = document.getElementById('precio_simple');
+            if (inputPrecioSimple) inputPrecioSimple.removeAttribute('required');
+          }
+        });
+      }
     });
   </script>
 </body>
