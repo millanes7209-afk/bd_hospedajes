@@ -157,6 +157,12 @@ class ProductoController extends Controller
                 'nombre_variante' => '',
                 'precio' => $request->precio ?? 0,
             ];
+            if (Schema::hasColumn('producto_variantes', 'cantidad')) {
+                $simpleVarData['cantidad'] = 1;
+            }
+            if (Schema::hasColumn('producto_variantes', 'unidad')) {
+                $simpleVarData['unidad'] = 'und';
+            }
             if (Schema::hasColumn('producto_variantes', 'disponible')) {
                 $simpleVarData['disponible'] = 1;
             }
@@ -310,6 +316,12 @@ class ProductoController extends Controller
                 'nombre_variante' => '',
                 'precio' => $request->precio ?? 0,
             ];
+            if (Schema::hasColumn('producto_variantes', 'cantidad')) {
+                $simpleVarData['cantidad'] = 1;
+            }
+            if (Schema::hasColumn('producto_variantes', 'unidad')) {
+                $simpleVarData['unidad'] = 'und';
+            }
             if (Schema::hasColumn('producto_variantes', 'disponible')) {
                 $simpleVarData['disponible'] = 1;
             }
