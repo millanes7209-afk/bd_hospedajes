@@ -171,6 +171,38 @@
             font-size: 0.82rem;
             color: var(--color-text, #ffffff);
         }
+
+        /* ── CHIPS DE VARIANTES ADAPTABLES POS ── */
+        html.light-mode .variant-chip-unselected {
+            background-color: rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.22);
+            color: #111827;
+        }
+
+        html.light-mode .variant-chip-unselected:hover {
+            background-color: rgba(0, 0, 0, 0.12);
+            border-color: rgba(0, 0, 0, 0.40);
+            color: #000000;
+        }
+
+        html.dark-mode .variant-chip-unselected {
+            background-color: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.20);
+            color: #e5e7eb;
+        }
+
+        html.dark-mode .variant-chip-unselected:hover {
+            background-color: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.40);
+            color: #ffffff;
+        }
+
+        .variant-chip-selected {
+            background-color: #22c55e !important;
+            border-color: #22c55e !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+        }
     </style>
 </head>
 
@@ -229,7 +261,7 @@
                 $prodId = $p->id ?? $p->producto_id;
                 $vars = $p->variantes ?? collect([]);
                 $tieneVariantes = count($vars) > 1 || (count($vars) === 1 && !empty($vars[0]->nombre_variante));
-                                        ?>
+                                                                ?>
                         <div class="prod-card pos-card-theme p-3 rounded-xl flex flex-col justify-between relative overflow-hidden group border border-white/10"
                             data-categoria="cat-{{ $p->categoria_id }}" data-card-product-id="{{ $prodId }}">
 
@@ -242,7 +274,7 @@
                     $imgPath = str_starts_with($p->imagen, 'assets/') ? $p->imagen : 'assets/productos/' . $p->imagen;
                 }
                 $hasImg = !empty($imgPath) && file_exists(public_path($imgPath));
-                                                    ?>
+                                                                            ?>
                                     @if($hasImg)
                                         <img src="{{ asset($imgPath) }}" alt="{{ strtoupper($p->nombre) }}"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
@@ -272,10 +304,10 @@
                                                 $vPrecio = (float) $v->precio;
                                                 $vNombreVal = strtoupper($v->nombre_variante);
                                                 $vNombreCompleto = strtoupper($p->nombre . ' - ' . $v->nombre_variante);
-                                                                                                                ?>
+                                                                                                                                                                                        ?>
                                                                 <button type="button"
                                                                     onclick="selectVariant({{ $prodId }}, {{ $vVarId }}, {{ $vPrecio }}, '{{ addslashes($vNombreCompleto) }}')"
-                                                                    class="variant-chip px-2 py-0.5 text-[10px] font-bold rounded-full border transition-all {{ $firstVariant ? 'bg-green-500 border-green-500 text-white' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40' }}"
+                                                                    class="variant-chip px-2 py-0.5 text-[10px] font-bold rounded-full border transition-all {{ $firstVariant ? 'variant-chip-selected' : 'variant-chip-unselected' }}"
                                                                     data-producto-id="{{ $prodId }}" data-variante-id="{{ $vVarId }}"
                                                                     data-precio="{{ $vPrecio }}" data-nombre-completo="{{ addslashes($vNombreCompleto) }}">
                                                                     {{ $vNombreVal }}
@@ -428,9 +460,11 @@
             const chips = document.querySelectorAll(`#variant-chips-${producto_id} .variant-chip`);
             chips.forEach(c => {
                 if (c.dataset.varianteId == variante_id) {
-                    c.className = 'variant-chip px-2.5 py-1 text-[11px] font-bold rounded-full border transition-all bg-green-500 border-green-500 text-white';
+                    c.classList.remove('variant-chip-unselected');
+                    c.classList.add('variant-chip-selected');
                 } else {
-                    c.className = 'variant-chip px-2.5 py-1 text-[11px] font-bold rounded-full border transition-all bg-transparent border-white/20 text-gray-300 hover:border-white/40';
+                    c.classList.remove('variant-chip-selected');
+                    c.classList.add('variant-chip-unselected');
                 }
             });
 

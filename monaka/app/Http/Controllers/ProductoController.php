@@ -335,26 +335,31 @@ class ProductoController extends Controller
      */
     public function toggleDisponible(Request $request, $id)
     {
-        $prodPk = Schema::hasColumn('productos', 'id') ? 'id' : (Schema::hasColumn('productos', 'productoID') ? 'productoID' : 'id');
-        $producto = DB::table('productos')->where($prodPk, $id)->first();
-        if ($producto) {
-            $nuevoEstado = $producto->disponible ? 0 : 1;
-            DB::table('productos')->where($prodPk, $id)->update(['disponible' => $nuevoEstado]);
+        try {
+            $prodPk = Schema::hasColumn('productos', 'id') ? 'id' : (Schema::hasColumn('productos', 'productoID') ? 'productoID' : 'id');
+            $producto = DB::table('productos')->where($prodPk, $id)->first();
+            if ($producto) {
+                $currentVal = isset($producto->disponible) ? intval($producto->disponible) : 1;
+                $nuevoEstado = $currentVal ? 0 : 1;
 
-            if ($request->wantsJson() || $request->ajax()) {
+                $updateData = ['disponible' => $nuevoEstado];
+                if (Schema::hasColumn('productos', 'updated_at')) {
+                    $updateData['updated_at'] = now();
+                }
+
+                DB::table('productos')->where($prodPk, $id)->update($updateData);
+
                 return response()->json([
                     'success' => true,
                     'producto_id' => $id,
                     'disponible' => $nuevoEstado
                 ]);
             }
-        }
 
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json(['success' => false], 404);
+            return response()->json(['success' => false, 'message' => 'Producto no encontrado'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
-
-        return redirect()->route('admin.productos');
     }
 
     /**
@@ -362,21 +367,28 @@ class ProductoController extends Controller
      */
     public function toggleVarianteDisponible(Request $request, $producto_id, $variante_id)
     {
-        $pVarFk = Schema::hasColumn('producto_variantes', 'producto_id') ? 'producto_id' : (Schema::hasColumn('producto_variantes', 'productoID') ? 'productoID' : 'producto_id');
-        $vPk = Schema::hasColumn('producto_variantes', 'id') ? 'id' : (Schema::hasColumn('producto_variantes', 'varianteID') ? 'varianteID' : (Schema::hasColumn('producto_variantes', 'variante_id') ? 'variante_id' : 'id'));
+        try {
+            $pVarFk = Schema::hasColumn('producto_variantes', 'producto_id') ? 'producto_id' : (Schema::hasColumn('producto_variantes', 'productoID') ? 'productoID' : 'producto_id');
+            $vPk = Schema::hasColumn('producto_variantes', 'id') ? 'id' : (Schema::hasColumn('producto_variantes', 'varianteID') ? 'varianteID' : (Schema::hasColumn('producto_variantes', 'variante_id') ? 'variante_id' : 'id'));
 
-        $variante = DB::table('producto_variantes')
-            ->where($vPk, $variante_id)
-            ->where($pVarFk, $producto_id)
-            ->first();
-
-        if ($variante) {
-            $nuevoEstado = $variante->disponible ? 0 : 1;
-            DB::table('producto_variantes')
+            $variante = DB::table('producto_variantes')
                 ->where($vPk, $variante_id)
-                ->update(['disponible' => $nuevoEstado]);
+                ->where($pVarFk, $producto_id)
+                ->first();
 
-            if ($request->wantsJson() || $request->ajax()) {
+            if ($variante) {
+                $currentVal = isset($variante->disponible) ? intval($variante->disponible) : 1;
+                $nuevoEstado = $currentVal ? 0 : 1;
+
+                $updateData = ['disponible' => $nuevoEstado];
+                if (Schema::hasColumn('producto_variantes', 'updated_at')) {
+                    $updateData['updated_at'] = now();
+                }
+
+                DB::table('producto_variantes')
+                    ->where($vPk, $variante_id)
+                    ->update($updateData);
+
                 return response()->json([
                     'success' => true,
                     'producto_id' => $producto_id,
@@ -384,13 +396,11 @@ class ProductoController extends Controller
                     'disponible' => $nuevoEstado
                 ]);
             }
-        }
 
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json(['success' => false], 404);
+            return response()->json(['success' => false, 'message' => 'Variante no encontrada'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
-
-        return redirect()->route('admin.productos');
     }
 
     /**
