@@ -60,13 +60,28 @@ class MesaController extends Controller
      */
     public function abrirMesa(Request $request, $mesa_id)
     {
+        $usuario_id = Session::get('usuario_id');
+        if (!$usuario_id) {
+            return back()->with('error', 'SESIÓN EXPIRADA. POR FAVOR, INICIA SESIÓN NUEVAMENTE PARA ABRIR LA MESA.');
+        }
+
         $mesa = Mesa::findOrFail($mesa_id);
+
+        // Verificar si la mesa ya tiene una venta activa abierta para reutilizarla
+        $cuentaExistente = Venta::where('mesa_id', $mesa->id)->where('estado', 'abierta')->first();
+
+        if ($cuentaExistente) {
+            if ($mesa->estado !== 'ocupada') {
+                $mesa->update(['estado' => 'ocupada']);
+            }
+            return back()->with('success', "CUENTA EXISTENTE REUTILIZADA EN {$mesa->nombre}");
+        }
 
         if ($mesa->estado === 'ocupada') {
             return back()->with('error', 'LA MESA YA SE ENCUENTRA OCUPADA');
         }
 
-        DB::transaction(function () use ($mesa) {
+        DB::transaction(function () use ($mesa, $usuario_id) {
             $mesa->update(['estado' => 'ocupada']);
 
             Venta::create([
@@ -75,7 +90,7 @@ class MesaController extends Controller
                 'mesa_id' => $mesa->id,
                 'estado' => 'abierta',
                 'monto_total' => 0.00,
-                'usuario_apertura_id' => Session::get('usuario_id') ?? 1,
+                'usuario_apertura_id' => $usuario_id,
                 'fecha_apertura' => now(),
             ]);
         });
@@ -154,6 +169,11 @@ class MesaController extends Controller
      */
     public function registrarPago(Request $request, $venta_id)
     {
+        $usuario_id = Session::get('usuario_id');
+        if (!$usuario_id) {
+            return back()->with('error', 'SESIÓN EXPIRADA. POR FAVOR, INICIA SESIÓN NUEVAMENTE PARA REGISTRAR EL PAGO.');
+        }
+
         $request->validate([
             'metodo_pago' => 'required|in:qr,efectivo',
             'monto' => 'required|numeric|min:0.01',
@@ -161,7 +181,7 @@ class MesaController extends Controller
 
         $venta = Venta::findOrFail($venta_id);
 
-        DB::transaction(function () use ($venta, $request) {
+        DB::transaction(function () use ($venta, $request, $usuario_id) {
             Pago::create([
                 'venta_id' => $venta->id,
                 'metodo_pago' => $request->metodo_pago,
@@ -174,7 +194,7 @@ class MesaController extends Controller
             if ($totalPagado >= $venta->monto_total) {
                 $venta->update([
                     'estado' => 'cerrada',
-                    'usuario_cierre_id' => Session::get('usuario_id') ?? 1,
+                    'usuario_cierre_id' => $usuario_id,
                     'fecha_cierre' => now(),
                 ]);
 

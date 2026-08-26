@@ -239,24 +239,73 @@ class PedidoController extends Controller
     /**
      * Cajero acepta la solicitud de pedido
      */
+    /**
+     * Cajero acepta la solicitud de pedido
+     */
     public function aceptarPedido($id)
     {
-        DB::table('pedidos')->where('id', $id)->update([
-            'estado' => 'aceptado',
-            'aceptado_en' => now()
-        ]);
-
-        try {
-            DB::table('registros_pedidos')->insert([
-                'pedido_id' => $id,
-                'evento' => 'SOLICITUD_ACEPTADA',
-                'detalles' => 'SOLICITUD ACEPTADA POR EL CAJERO',
-                'created_at' => now()
-            ]);
-        } catch (Exception $e) {
+        $usuario_id = \Illuminate\Support\Facades\Session::get('usuario_id');
+        if (!$usuario_id) {
+            return back()->with('error', 'SESIÓN EXPIRADA. POR FAVOR, INICIA SESIÓN NUEVAMENTE PARA ACEPTAR EL PEDIDO.');
         }
 
-        return redirect()->back()->with('success', 'SOLICITUD ACEPTADA.');
+        $pedido = DB::table('pedidos')->where('id', $id)->first();
+        if (!$pedido) {
+            return back()->with('error', 'PEDIDO NO ENCONTRADO.');
+        }
+
+        DB::transaction(function () use ($pedido, $usuario_id) {
+            DB::table('pedidos')->where('id', $pedido->id)->update([
+                'estado' => 'aceptado',
+                'aceptado_en' => now()
+            ]);
+
+            try {
+                DB::table('registros_pedidos')->insert([
+                    'pedido_id' => $pedido->id,
+                    'evento' => 'SOLICITUD_ACEPTADA',
+                    'detalles' => 'SOLICITUD ACEPTADA POR EL CAJERO',
+                    'created_at' => now()
+                ]);
+            } catch (Exception $e) {
+            }
+
+            // Crear la Venta correspondiente atómicamente al aceptar
+            $venta_id = DB::table('ventas')->insertGetId([
+                'origen' => 'whatsapp',
+                'tipo_venta' => ($pedido->tipo_pedido === 'domicilio' ? 'delivery' : 'llevar'),
+                'pedido_id' => $pedido->id,
+                'mesa_id' => null,
+                'estado' => 'abierta',
+                'cliente_nombre' => $pedido->cliente_nombre,
+                'cliente_telefono' => $pedido->cliente_telefono,
+                'direccion_entrega' => $pedido->direccion_entrega,
+                'nota' => $pedido->nota,
+                'monto_total' => $pedido->monto_total,
+                'usuario_apertura_id' => $usuario_id,
+                'fecha_apertura' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $pedidoItems = DB::table('pedido_items')->where('pedido_id', $pedido->id)->get();
+            foreach ($pedidoItems as $pi) {
+                DB::table('venta_items')->insert([
+                    'venta_id' => $venta_id,
+                    'producto_id' => $pi->producto_id,
+                    'variante_id' => null,
+                    'nombre_producto' => strtoupper($pi->nombre_variante ?? 'PRODUCTO'),
+                    'nombre_variante' => null,
+                    'cantidad' => $pi->cantidad,
+                    'precio_unitario' => $pi->precio_unitario,
+                    'precio_total' => $pi->precio_total,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        });
+
+        return redirect()->back()->with('success', 'SOLICITUD ACEPTADA Y VENTA REGISTRADA.');
     }
 
     /**
@@ -264,6 +313,11 @@ class PedidoController extends Controller
      */
     public function rechazarPedido(Request $request, $id)
     {
+        $usuario_id = \Illuminate\Support\Facades\Session::get('usuario_id');
+        if (!$usuario_id) {
+            return back()->with('error', 'SESIÓN EXPIRADA. POR FAVOR, INICIA SESIÓN NUEVAMENTE PARA RECHAZAR EL PEDIDO.');
+        }
+
         $motivo = strtoupper(trim($request->input('motivo', 'SIN STOCK DISPONIBLE')));
 
         DB::table('pedidos')->where('id', $id)->update([
@@ -355,18 +409,56 @@ class PedidoController extends Controller
      */
     public function updateEstado(Request $request, $id)
     {
-        $estado = strtolower(trim($request->input('estado')));
-        DB::table('pedidos')->where('id', $id)->update(['estado' => $estado]);
-
-        try {
-            DB::table('registros_pedidos')->insert([
-                'pedido_id' => $id,
-                'evento' => 'CAMBIO_ESTADO',
-                'detalles' => 'NUEVO ESTADO: ' . strtoupper($estado),
-                'created_at' => now()
-            ]);
-        } catch (Exception $e) {
+        $usuario_id = \Illuminate\Support\Facades\Session::get('usuario_id');
+        if (!$usuario_id) {
+            return back()->with('error', 'SESIÓN EXPIRADA. POR FAVOR, INICIA SESIÓN NUEVAMENTE.');
         }
+
+        $estado = strtolower(trim($request->input('estado')));
+
+        DB::transaction(function () use ($id, $estado, $usuario_id) {
+            DB::table('pedidos')->where('id', $id)->update(['estado' => $estado]);
+
+            $pedido = DB::table('pedidos')->where('id', $id)->first();
+
+            // Si el pedido pasa a entregado, cerrar la Venta asociada y registrar pago
+            if ($estado === 'entregado' && $pedido) {
+                DB::table('pedidos')->where('id', $id)->update(['estado_pago' => 'pagado']);
+
+                $venta = DB::table('ventas')->where('pedido_id', $id)->first();
+                if ($venta) {
+                    // Verificar si ya tiene pago registrado
+                    $pagoExistente = DB::table('pagos')->where('venta_id', $venta->id)->exists();
+                    if (!$pagoExistente) {
+                        $metodoPago = in_array(strtolower($pedido->metodo_pago), ['efectivo', 'qr']) ? strtolower($pedido->metodo_pago) : 'efectivo';
+                        DB::table('pagos')->insert([
+                            'venta_id' => $venta->id,
+                            'metodo_pago' => $metodoPago,
+                            'monto' => $venta->monto_total,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+
+                    DB::table('ventas')->where('id', $venta->id)->update([
+                        'estado' => 'cerrada',
+                        'usuario_cierre_id' => $usuario_id,
+                        'fecha_cierre' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+
+            try {
+                DB::table('registros_pedidos')->insert([
+                    'pedido_id' => $id,
+                    'evento' => 'CAMBIO_ESTADO',
+                    'detalles' => 'NUEVO ESTADO: ' . strtoupper($estado),
+                    'created_at' => now()
+                ]);
+            } catch (Exception $e) {
+            }
+        });
 
         return redirect()->back();
     }

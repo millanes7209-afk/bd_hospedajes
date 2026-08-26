@@ -137,8 +137,13 @@ class ProductoController extends Controller
         if (Schema::hasColumn('productos', 'disponible')) {
             $insertData['disponible'] = $request->has('disponible') ? ($request->disponible ? 1 : 0) : 1;
         }
+        $usuario_id = \Illuminate\Support\Facades\Session::get('usuario_id');
+        if (!$usuario_id) {
+            return back()->with('error', 'SESIÓN EXPIRADA. POR FAVOR, INICIA SESIÓN NUEVAMENTE.');
+        }
+
         if (Schema::hasColumn('productos', 'user_id')) {
-            $insertData['user_id'] = \Illuminate\Support\Facades\Session::get('usuario_id') ?? 1;
+            $insertData['user_id'] = $usuario_id;
         }
         if (Schema::hasColumn('productos', 'created_at')) {
             $insertData['created_at'] = now();
@@ -445,13 +450,6 @@ class ProductoController extends Controller
     public function toggleSoloLocal(Request $request, $producto_id, $variante_id = null)
     {
         try {
-            if (!Schema::hasColumn('producto_variantes', 'solo_local')) {
-                try {
-                    DB::statement("ALTER TABLE producto_variantes ADD COLUMN solo_local TINYINT(1) DEFAULT 0");
-                } catch (\Throwable $e) {
-                }
-            }
-
             $pVarFk = Schema::hasColumn('producto_variantes', 'producto_id') ? 'producto_id' : (Schema::hasColumn('producto_variantes', 'productoID') ? 'productoID' : 'producto_id');
             $vPk = Schema::hasColumn('producto_variantes', 'id') ? 'id' : (Schema::hasColumn('producto_variantes', 'varianteID') ? 'varianteID' : (Schema::hasColumn('producto_variantes', 'variante_id') ? 'variante_id' : 'id'));
 

@@ -60,20 +60,17 @@ class PosController extends Controller
             return back()->with('error', 'DEBES AGREGAR AL MENOS UN PRODUCTO AL CARRITO');
         }
 
-        $usuario_id = Session::get('usuario_id') ?? 1;
+        $usuario_id = Session::get('usuario_id');
+        if (!$usuario_id) {
+            return back()->with('error', 'SESIÓN EXPIRADA. POR FAVOR, INICIA SESIÓN NUEVAMENTE PARA PROCESAR LA VENTA.');
+        }
 
         $venta_id = DB::transaction(function () use ($request, $items, $usuario_id) {
-            try {
-                DB::statement("ALTER TABLE `ventas` MODIFY COLUMN `estado` VARCHAR(50) NOT NULL DEFAULT 'abierta'");
-                DB::statement("ALTER TABLE `ventas` MODIFY COLUMN `origen` VARCHAR(50) NOT NULL DEFAULT 'local'");
-                DB::statement("ALTER TABLE `ventas` MODIFY COLUMN `tipo_venta` VARCHAR(50) NOT NULL DEFAULT 'llevar'");
-            } catch (\Throwable $e) {
-            }
-
             $venta = Venta::create([
                 'origen' => 'local',
                 'tipo_venta' => 'llevar',
-                'cliente_nombre' => !empty($request->cliente_nombre) ? strtoupper(trim($request->cliente_nombre)) : 'CLIENTE MOSTRADOR',
+                'cliente_nombre' => !empty($request->cliente_nombre) ? strtoupper(trim($request->cliente_nombre)) : null,
+                'cliente_telefono' => !empty($request->cliente_telefono) ? strtoupper(trim($request->cliente_telefono)) : null,
                 'estado' => 'cerrada',
                 'monto_total' => $request->monto_total,
                 'usuario_apertura_id' => $usuario_id,

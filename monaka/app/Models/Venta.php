@@ -29,18 +29,6 @@ class Venta extends Model
         'fecha_cierre'
     ];
 
-    protected static function booted()
-    {
-        static::creating(function ($venta) {
-            try {
-                \Illuminate\Support\Facades\DB::statement("ALTER TABLE `ventas` MODIFY COLUMN `estado` VARCHAR(50) NOT NULL DEFAULT 'abierta'");
-                \Illuminate\Support\Facades\DB::statement("ALTER TABLE `ventas` MODIFY COLUMN `origen` VARCHAR(50) NOT NULL DEFAULT 'local'");
-                \Illuminate\Support\Facades\DB::statement("ALTER TABLE `ventas` MODIFY COLUMN `tipo_venta` VARCHAR(50) NOT NULL DEFAULT 'llevar'");
-            } catch (\Throwable $e) {
-            }
-        });
-    }
-
     public function mesa()
     {
         return $this->belongsTo(Mesa::class, 'mesa_id');

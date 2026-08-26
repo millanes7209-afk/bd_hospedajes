@@ -12,4 +12,14 @@ class Pedido extends Model
     protected $table = 'pedidos';
 
     protected $fillable = ['numero_pedido', 'cliente_nombre', 'cliente_telefono', 'tipo_pedido', 'numero_mesa', 'direccion_entrega', 'nota', 'estado', 'estado_pago', 'metodo_pago', 'monto_total', 'aceptado_en', 'impreso_en'];
+
+    public function items()
+    {
+        return $this->hasMany(PedidoItem::class, 'pedido_id');
+    }
+
+    public function registros()
+    {
+        return $this->hasMany(RegistroPedido::class, 'pedido_id');
+    }
 }
