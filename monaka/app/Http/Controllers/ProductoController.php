@@ -404,6 +404,14 @@ class ProductoController extends Controller
     }
 
     /**
+     * Alias para alternar disponibilidad de variante (AJAX / HTTP)
+     */
+    public function toggleVariante(Request $request, $producto_id, $variante_id)
+    {
+        return $this->toggleVarianteDisponible($request, $producto_id, $variante_id);
+    }
+
+    /**
      * Eliminar producto
      */
     public function destroy($id)
