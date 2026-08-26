@@ -257,7 +257,7 @@ $catsList = $cats ?? ($categorias ?? []);
                     <div class="sm:col-span-4">
                       <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Nombre Presentación *</label>
                       <input type="text" name="variantes[<?php echo $idx; ?>][nombre_variante]" value="<?php echo $vNombre; ?>"
-                        placeholder="Ej. 6 Unidades" class="form-input text-xs font-bold" required />
+                        placeholder="Ej. 6 Unidades" class="form-input text-xs font-bold variante-nombre-input" />
                     </div>
                     <!-- Cantidad num -->
                     <div class="sm:col-span-2">
@@ -281,7 +281,7 @@ $catsList = $cats ?? ($categorias ?? []);
                     <div class="sm:col-span-3">
                       <label class="block text-[10px] font-bold uppercase admin-text-muted mb-1">Precio (Bs.) *</label>
                       <input type="number" step="0.01" name="variantes[<?php echo $idx; ?>][precio]" value="<?php echo $vPrecio; ?>"
-                        placeholder="0.00" class="form-input text-xs font-bold text-[#FFE66D]" required />
+                        placeholder="0.00" class="form-input text-xs font-bold text-[#FFE66D] variante-precio-input" />
                     </div>
                     <!-- Eliminar -->
                     <div class="sm:col-span-1 flex justify-end">
