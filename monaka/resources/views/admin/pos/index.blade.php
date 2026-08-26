@@ -28,7 +28,95 @@
             outline: none;
         }
 
-        /* EXACT CLIENT MENU CART STYLING */
+        /* ── FLOATING CART (EXACTLY LIKE CLIENT MENU) ── */
+        #cart-fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 999;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        #cart-fab.hidden-fab {
+            transform: scale(0.7);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #cart-fab-btn {
+            background: #E23E1A;
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            padding: 14px 22px;
+            font-size: 0.85rem;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            box-shadow: 0 8px 30px rgba(226, 62, 26, 0.55);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        #cart-fab-btn:hover {
+            transform: scale(1.04);
+            box-shadow: 0 10px 38px rgba(226, 62, 26, 0.7);
+        }
+
+        #cart-fab-badge {
+            background: #FFE66D;
+            color: #09090c;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 0.7rem;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ── CART PANEL SIDEBAR ── */
+        #cart-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 400px;
+            max-width: 95vw;
+            z-index: 1000;
+            background: var(--color-bg, #09090c);
+            border-left: 1px solid var(--color-border, rgba(255, 255, 255, 0.12));
+            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6);
+            transform: translateX(100%);
+            transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #cart-panel.open {
+            transform: translateX(0);
+        }
+
+        #cart-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            background: rgba(0, 0, 0, 0.65);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        #cart-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* EXACT CLIENT MENU CART ROW STYLING */
         .cart-item-row {
             display: flex;
             align-items: flex-start;
@@ -93,9 +181,11 @@
             <h2 class="text-xl md:text-2xl font-black uppercase flex items-center gap-2">
                 <i class="fa-solid fa-bolt text-amber-500"></i>VENTAS
             </h2>
-            <div
-                class="text-xs font-bold uppercase px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/30">
-                <i class="fa-solid fa-store mr-1"></i>MOSTRADOR / VENTAS DIRECTAS
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="openCart()"
+                    class="text-xs font-bold uppercase px-3 py-1.5 rounded-lg bg-amber-500 text-black flex items-center gap-1.5 shadow-sm hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-cart-shopping"></i>VER PEDIDO (<span id="nav-cart-count">0</span>)
+                </button>
             </div>
         </div>
 
@@ -119,194 +209,266 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <!-- COLUMNA IZQUIERDA: CATÁLOGO DE PRODUCTOS (8 cols) -->
-            <div class="lg:col-span-7 xl:col-span-8 space-y-4">
-                <!-- Filtro por Categorías -->
-                <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-                    <button onclick="filtrarCategoria('todas')" id="cat-btn-todas"
-                        class="cat-filter-btn px-4 py-2 rounded-xl text-xs font-black uppercase transition-all bg-amber-500 text-black">
-                        TODAS
-                    </button>
-                    @foreach ($categorias as $cat)
-                        <button onclick="filtrarCategoria('cat-{{ $cat->categoria_id }}')"
-                            id="cat-btn-cat-{{ $cat->categoria_id }}"
-                            class="cat-filter-btn px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all pos-card-theme hover:bg-amber-500/20">
-                            {{ strtoupper($cat->nombre) }}
-                        </button>
-                    @endforeach
-                </div>
+        <!-- Filtro por Categorías -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-4 scrollbar-none">
+            <button onclick="filtrarCategoria('todas')" id="cat-btn-todas"
+                class="cat-filter-btn px-4 py-2 rounded-xl text-xs font-black uppercase transition-all bg-amber-500 text-black">
+                TODAS
+            </button>
+            @foreach ($categorias as $cat)
+                <button onclick="filtrarCategoria('cat-{{ $cat->id ?? $cat->categoria_id }}')"
+                    id="cat-btn-cat-{{ $cat->id ?? $cat->categoria_id }}"
+                    class="cat-filter-btn px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all pos-card-theme hover:bg-amber-500/20">
+                    {{ strtoupper($cat->nombre) }}
+                </button>
+            @endforeach
+        </div>
 
-                <!-- Grid de Productos -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 gap-3">
-                    @foreach ($productos as $p)
-                                        <div class="prod-card pos-card-theme p-3 rounded-2xl flex flex-col justify-between hover:border-amber-500/50 transition-all cursor-pointer shadow-sm group"
-                                            data-categoria="cat-{{ $p->categoria_id }}"
-                                            onclick="handleSelectProducto({{ json_encode($p) }})">
-                                            <div>
-                                                <div
-                                                    class="w-full h-24 rounded-xl mb-2 flex items-center justify-center overflow-hidden bg-black/10 relative">
-                                                    <?php
-                        $imgPath = null;
-                        if (!empty($p->imagen)) {
-                            $imgPath = str_starts_with($p->imagen, 'assets/') ? $p->imagen : 'assets/productos/' . $p->imagen;
-                        }
-                        $hasImg = !empty($imgPath) && file_exists(public_path($imgPath));
-                                                        ?>
-                                                    @if($hasImg)
-                                                        <img src="{{ asset($imgPath) }}" alt="{{ $p->nombre }}"
-                                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                                                    @else
-                                                        <i class="fa-solid fa-burger text-3xl opacity-40 text-amber-500"></i>
-                                                    @endif
-                                                </div>
-                                                <h4 class="font-extrabold text-xs uppercase leading-tight line-clamp-2"
-                                                    style="color:var(--color-text);">{{ strtoupper($p->nombre) }}</h4>
-                                            </div>
+        <!-- Grid de Productos (Estilo Tarjetas del Menú Cliente) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            @foreach ($productos as $p)
+                <?php
+                    $prodId = $p->id ?? $p->producto_id;
+                    $vars = $p->variantes ?? collect([]);
+                    $tieneVariantes = count($vars) > 1 || (count($vars) === 1 && !empty($vars[0]->nombre_variante));
+                ?>
+                <div class="prod-card pos-card-theme p-4 rounded-2xl flex flex-col justify-between relative overflow-hidden group border border-white/10"
+                    data-categoria="cat-{{ $p->categoria_id }}" data-card-product-id="{{ $prodId }}">
 
-                                            <div class="mt-3 flex items-center justify-between">
-                                                <span class="text-xs font-black text-amber-500">
-                                                    {{ $p->tipo === 'simple' ? 'Bs. ' . number_format($p->precio, 2) : 'VARIAS OPCIONES' }}
-                                                </span>
-                                                <span
-                                                    class="w-7 h-7 rounded-lg bg-amber-500 text-black flex items-center justify-center text-xs font-black shadow-sm group-hover:scale-110 transition-transform">
-                                                    <i class="fa-solid fa-plus"></i>
-                                                </span>
-                                            </div>
-                                        </div>
-                    @endforeach
-                </div>
-            </div>
-
-            <!-- COLUMNA DERECHA: CARRITO DE VENTA (4 cols) -->
-            <div class="lg:col-span-5 xl:col-span-4">
-                <div class="pos-card-theme p-5 rounded-2xl sticky top-20 shadow-xl space-y-4">
-                    <div class="flex items-center justify-between border-b pb-3"
-                        style="border-color:var(--color-border, rgba(255,255,255,0.1))">
-                        <h3 class="font-black text-sm uppercase flex items-center gap-2">
-                            <i class="fa-solid fa-receipt text-amber-500"></i>TICKET MOSTRADOR
-                        </h3>
-                        <button onclick="vaciarCarrito()"
-                            class="text-[11px] text-red-400 hover:text-red-300 font-bold uppercase">
-                            <i class="fa-solid fa-trash mr-1"></i>VACIAR
-                        </button>
-                    </div>
-
-                    <!-- Lista de Ítems en Carrito -->
-                    <div id="pos-cart-container" class="space-y-2 max-h-72 overflow-y-auto pr-1">
-                        <div id="cart-empty-msg" class="py-8 text-center text-gray-400">
-                            <i class="fa-solid fa-basket-shopping text-3xl mb-2 opacity-30"></i>
-                            <p class="text-xs font-bold uppercase">CARRITO VACÍO</p>
-                            <p class="text-[10px] text-gray-500">Haz clic en un producto para agregarlo</p>
+                    <div>
+                        <div class="mb-3 overflow-hidden rounded-xl h-36 bg-black/20 flex items-center justify-center relative">
+                            <?php
+                                $imgPath = null;
+                                if (!empty($p->imagen)) {
+                                    $imgPath = str_starts_with($p->imagen, 'assets/') ? $p->imagen : 'assets/productos/' . $p->imagen;
+                                }
+                                $hasImg = !empty($imgPath) && file_exists(public_path($imgPath));
+                            ?>
+                            @if($hasImg)
+                                <img src="{{ asset($imgPath) }}" alt="{{ strtoupper($p->nombre) }}"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            @else
+                                <i class="fa-solid fa-burger text-4xl opacity-30 text-amber-500"></i>
+                            @endif
                         </div>
+
+                        <h3 class="font-extrabold text-sm uppercase leading-tight mb-1 text-white pr-2">
+                            {{ strtoupper($p->nombre) }}
+                        </h3>
+                        <p class="text-[11px] opacity-70 mb-3 leading-relaxed line-clamp-2">
+                            {{ strtoupper($p->descripcion ?: 'SIN DESCRIPCIÓN DISPONIBLE') }}
+                        </p>
                     </div>
 
-                    <!-- Resumen y Formulario de Cobro -->
-                    <form action="{{ route('admin.pos.venta') }}" method="POST" id="form-pos-venta"
-                        onsubmit="return validarVenta();">
-                        @csrf
-                        <input type="hidden" name="items" id="input-cart-items">
-                        <input type="hidden" name="monto_total" id="input-cart-total">
-
-                        <div class="space-y-3 pt-3 border-t"
-                            style="border-color:var(--color-border, rgba(255,255,255,0.1))">
-                            <!-- Nombre de Cliente (Opcional) -->
-                            <div>
-                                <label class="block text-[11px] font-bold uppercase mb-1"
-                                    style="color:var(--color-text-muted, #9ca3af);">CLIENTE (OPCIONAL)</label>
-                                <input type="text" name="cliente_nombre" placeholder="CLIENTE MOSTRADOR"
-                                    oninput="this.value = this.value.toUpperCase();" style="text-transform: uppercase;"
-                                    class="w-full form-input-pos rounded-xl px-3 py-2 text-xs font-bold">
-                            </div>
-
-                            <!-- Método de Pago -->
-                            <div>
-                                <label class="block text-[11px] font-bold uppercase mb-1"
-                                    style="color:var(--color-text-muted, #9ca3af);">MÉTODO DE PAGO *</label>
-                                <select name="metodo_pago" required
-                                    class="w-full form-input-pos rounded-xl px-3 py-2 text-xs font-bold uppercase">
-                                    <option value="efectivo">💵 EFECTIVO</option>
-                                    <option value="qr">📱 PAGO QR</option>
-                                </select>
-                            </div>
-
-                            <!-- Total del Ticket -->
-                            <div
-                                class="p-4 rounded-xl flex items-center justify-between bg-amber-500/10 border border-amber-500/30">
-                                <div>
-                                    <span class="text-[10px] font-extrabold uppercase block"
-                                        style="color:var(--color-text-muted, #9ca3af);">TOTAL A COBRAR</span>
-                                    <span class="text-2xl font-black text-amber-500" id="cart-total-text">Bs.
-                                        0.00</span>
+                    <div class="pt-3 border-t border-white/10">
+                        @if($tieneVariantes)
+                            <!-- Chips de Variantes (Exclusivos por Tarjeta) -->
+                            <div class="mb-3">
+                                <div class="flex flex-wrap gap-1.5" id="variant-chips-{{ $prodId }}">
+                                    <?php $firstVariant = true; ?>
+                                    @foreach($vars as $v)
+                                        <?php
+                                            $vVarId = $v->id ?? ($v->variante_id ?? $v->varianteID);
+                                            $vPrecio = (float) $v->precio;
+                                            $vNombreVal = strtoupper($v->nombre_variante);
+                                            $vNombreCompleto = strtoupper($p->nombre . ' - ' . $v->nombre_variante);
+                                        ?>
+                                        <button type="button"
+                                            onclick="selectVariant({{ $prodId }}, {{ $vVarId }}, {{ $vPrecio }}, '{{ addslashes($vNombreCompleto) }}')"
+                                            class="variant-chip px-2.5 py-1 text-[11px] font-bold rounded-full border transition-all {{ $firstVariant ? 'bg-green-500 border-green-500 text-white' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40' }}"
+                                            data-producto-id="{{ $prodId }}"
+                                            data-variante-id="{{ $vVarId }}"
+                                            data-precio="{{ $vPrecio }}"
+                                            data-nombre-completo="{{ addslashes($vNombreCompleto) }}">
+                                            {{ $vNombreVal }}
+                                        </button>
+                                        <?php $firstVariant = false; ?>
+                                    @endforeach
                                 </div>
                             </div>
 
-                            <button type="submit" id="btn-completar-venta" disabled
-                                class="w-full py-3 px-4 rounded-xl text-xs font-black uppercase bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white shadow-lg transition-all flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-circle-check text-sm"></i>COMPLETAR VENTA
-                            </button>
-                        </div>
-                    </form>
+                            <!-- Precio dinámico + Botón AGREGAR -->
+                            <div class="flex items-center justify-between">
+                                <div class="price-tag text-base font-black text-amber-500" id="precio-display-{{ $prodId }}">
+                                    Bs. {{ number_format($vars[0]->precio, 2) }}
+                                </div>
+                                <button type="button" onclick="addSelectedVariantToCart({{ $prodId }})"
+                                    class="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-black uppercase transition-all shadow-sm flex items-center gap-1">
+                                    <i class="fa-solid fa-plus"></i>AGREGAR
+                                </button>
+                            </div>
+                        @else
+                            <!-- Producto Simple sin Variantes -->
+                            <div class="flex items-center justify-between">
+                                <div class="price-tag text-base font-black text-amber-500">
+                                    Bs. {{ number_format($p->precio, 2) }}
+                                </div>
+                                <button type="button"
+                                    onclick="addToCart({{ $prodId }}, {{ (float)$p->precio }}, '{{ addslashes(strtoupper($p->nombre)) }}')"
+                                    class="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-black uppercase transition-all shadow-sm flex items-center gap-1">
+                                    <i class="fa-solid fa-plus"></i>AGREGAR
+                                </button>
+                            </div>
+                        @endif
+                    </div>
                 </div>
-            </div>
+            @endforeach
         </div>
     </div>
 
-    <!-- MODAL SELECCIÓN DE VARIANTE -->
-    <div id="modal-variantes"
-        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-        <div class="pos-card-theme rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-4">
-            <div class="flex items-center justify-between border-b pb-2" style="border-color:var(--color-border)">
-                <h3 class="text-sm font-black uppercase text-amber-500" id="modal-prod-title">SELECCIONAR TAMAÑO /
-                    OPCIÓN</h3>
-                <button type="button" onclick="cerrarModalVariantes()" class="text-gray-400 hover:text-white">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            <div id="modal-variantes-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+    <!-- ══════════════════════════════ FLOATING CART FAB ════════════════════════════ -->
+    <div id="cart-fab" class="hidden-fab">
+        <button id="cart-fab-btn" onclick="openCart()">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <span>VER PEDIDO</span>
+            <div id="cart-fab-badge">0</div>
+        </button>
+    </div>
+
+    <!-- ═════════════════════════════ CART OVERLAY ══════════════════════════ -->
+    <div id="cart-overlay" onclick="closeCart()"></div>
+
+    <!-- ═════════════════════════════ TOAST NOTIFICATION ══════════════════════════ -->
+    <div id="toast-container"
+        class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[2000] flex flex-col items-center gap-2 pointer-events-none w-full max-w-sm px-4">
+    </div>
+
+    <!-- ══════════════════════════════ CART PANEL SIDEBAR ═══════════════════════════ -->
+    <div id="cart-panel">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
+            <h2 class="text-sm font-black uppercase tracking-wider text-amber-500 flex items-center gap-2">
+                <i class="fa-solid fa-receipt text-lg"></i>TICKET / PEDIDO DE VENTA
+            </h2>
+            <button onclick="closeCart()" class="qty-btn text-lg">✕</button>
+        </div>
+
+        <!-- Items list -->
+        <div id="cart-items-list" class="flex-1 overflow-y-auto px-5 py-2"></div>
+
+        <!-- Empty state -->
+        <div id="cart-empty" class="flex-1 flex flex-col items-center justify-center text-center px-6 py-10">
+            <i class="fa-solid fa-basket-shopping text-5xl mb-4 text-amber-500/30"></i>
+            <p class="text-sm font-bold uppercase text-gray-400">EL CARRITO ESTÁ VACÍO</p>
+            <p class="text-xs text-gray-500 mt-1">SELECCIONA PRODUCTOS DEL CATÁLOGO</p>
+        </div>
+
+        <!-- Footer Total + Checkout Form -->
+        <div class="px-5 pb-5 pt-3 border-t border-white/10 space-y-4">
+            <form action="{{ route('admin.pos.venta') }}" method="POST" id="form-pos-venta"
+                onsubmit="return validarVenta();">
+                @csrf
+                <input type="hidden" name="items" id="input-cart-items">
+                <input type="hidden" name="monto_total" id="input-cart-total">
+
+                <div class="space-y-3">
+                    <!-- Cliente Nombre -->
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">CLIENTE (OPCIONAL)</label>
+                        <input type="text" name="cliente_nombre" placeholder="CLIENTE MOSTRADOR"
+                            oninput="this.value = this.value.toUpperCase();" style="text-transform: uppercase;"
+                            class="w-full form-input-pos rounded-xl px-3 py-2 text-xs font-bold">
+                    </div>
+
+                    <!-- Método de Pago -->
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">MÉTODO DE PAGO *</label>
+                        <select name="metodo_pago" required
+                            class="w-full form-input-pos rounded-xl px-3 py-2 text-xs font-bold uppercase">
+                            <option value="efectivo">💵 EFECTIVO</option>
+                            <option value="qr">📱 PAGO QR</option>
+                        </select>
+                    </div>
+
+                    <!-- Display Total -->
+                    <div class="flex justify-between items-center py-2 px-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                        <span class="text-xs font-black uppercase text-gray-300">TOTAL A COBRAR</span>
+                        <span class="text-2xl font-black text-amber-500">Bs. <span id="cart-total-display">0.00</span></span>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="flex gap-2 pt-1">
+                        <button type="button" onclick="clearCart()"
+                            class="px-3 py-2.5 rounded-xl border border-red-500/40 text-red-400 hover:bg-red-500/20 text-xs font-bold uppercase flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-trash-can"></i>VACIAR
+                        </button>
+                        <button type="submit" id="checkout-btn" disabled
+                            class="flex-1 py-2.5 px-4 rounded-xl text-xs font-black uppercase bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white shadow-lg transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-circle-check"></i>COMPLETAR VENTA
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
+    <!-- ═════════════════════════════ SCRIPTS ════════════════════════════════ -->
     <script>
-        // Exact Client Menu Cart Data & Functionality
-        let cart = {};
+        const cart = {};
+        const selectedVariants = {};
 
-        function handleSelectProducto(prod) {
-            if (prod.tipo === 'variantes' && prod.variantes && prod.variantes.length > 0) {
-                mostrarModalVariantes(prod);
-            } else {
-                addToCart(prod.producto_id, parseFloat(prod.precio), prod.nombre);
+        // Inicializar variantes seleccionadas por defecto en las tarjetas
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.variant-chip').forEach(chip => {
+                const pId = chip.dataset.productoId;
+                if (!selectedVariants[pId] && chip.classList.contains('bg-green-500')) {
+                    selectedVariants[pId] = {
+                        variante_id: chip.dataset.varianteId,
+                        precio: parseFloat(chip.dataset.precio),
+                        nombreCompleto: chip.dataset.nombreCompleto
+                    };
+                }
+            });
+        });
+
+        // ── Selección de chip de variante (No abre nada, solo actualiza la tarjeta)
+        function selectVariant(producto_id, variante_id, precio, nombreCompleto) {
+            selectedVariants[producto_id] = { variante_id, precio: parseFloat(precio), nombreCompleto };
+
+            // Actualizar botones de chips
+            const chips = document.querySelectorAll(`#variant-chips-${producto_id} .variant-chip`);
+            chips.forEach(c => {
+                if (c.dataset.varianteId == variante_id) {
+                    c.className = 'variant-chip px-2.5 py-1 text-[11px] font-bold rounded-full border transition-all bg-green-500 border-green-500 text-white';
+                } else {
+                    c.className = 'variant-chip px-2.5 py-1 text-[11px] font-bold rounded-full border transition-all bg-transparent border-white/20 text-gray-300 hover:border-white/40';
+                }
+            });
+
+            // Actualizar display de precio
+            const priceEl = document.getElementById(`precio-display-${producto_id}`);
+            if (priceEl) {
+                priceEl.textContent = `Bs. ${parseFloat(precio).toFixed(2)}`;
             }
         }
 
-        function mostrarModalVariantes(prod) {
-            const container = document.getElementById('modal-variantes-list');
-            document.getElementById('modal-prod-title').textContent = prod.nombre.toUpperCase();
-            container.innerHTML = '';
+        // ── Agregar variante seleccionada al carrito
+        function addSelectedVariantToCart(producto_id) {
+            const selected = selectedVariants[producto_id];
+            if (!selected) {
+                showToast('POR FAVOR SELECCIONA UNA VARIANTE', 'error');
+                return;
+            }
 
-            prod.variantes.forEach(v => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'w-full pos-card-theme hover:border-amber-500 p-3 rounded-xl flex items-center justify-between text-xs font-bold uppercase transition-all';
-                btn.innerHTML = `
-                    <span>${v.nombre_variante.toUpperCase()}</span>
-                    <span class="text-amber-500 font-extrabold">Bs. ${parseFloat(v.precio).toFixed(2)}</span>
-                `;
-                btn.onclick = () => {
-                    const nombreCompleto = `${prod.nombre} - ${v.nombre_variante}`;
-                    addVariantToCart(prod.producto_id, v.variante_id, nombreCompleto, parseFloat(v.precio), v.nombre_variante);
-                    cerrarModalVariantes();
+            const key = 'v' + selected.variante_id;
+            if (cart[key]) {
+                cart[key].qty += 1;
+            } else {
+                cart[key] = {
+                    type: 'variante',
+                    producto_id: producto_id,
+                    variante_id: selected.variante_id,
+                    nombre: selected.nombreCompleto.toUpperCase(),
+                    precio: selected.precio,
+                    qty: 1
                 };
-                container.appendChild(btn);
-            });
+            }
 
-            document.getElementById('modal-variantes').style.display = 'flex';
+            renderCart();
+            showToast('PRODUCTO AGREGADO AL CARRITO', 'success');
         }
 
-        function cerrarModalVariantes() {
-            document.getElementById('modal-variantes').style.display = 'none';
-        }
-
+        // ── Agregar producto simple al carrito
         function addToCart(producto_id, precio, nombre) {
             const key = 'p' + producto_id;
             if (cart[key]) {
@@ -317,80 +479,59 @@
                     producto_id: producto_id,
                     variante_id: null,
                     nombre: nombre.toUpperCase(),
-                    nombre_variante: null,
                     precio: parseFloat(precio),
                     qty: 1
                 };
             }
+
             renderCart();
+            showToast('PRODUCTO AGREGADO AL CARRITO', 'success');
         }
 
-        function addVariantToCart(producto_id, variante_id, nombreCompleto, precio, nombreVariante) {
-            const key = 'v' + variante_id;
-            if (cart[key]) {
-                cart[key].qty += 1;
-            } else {
-                cart[key] = {
-                    type: 'variante',
-                    producto_id: producto_id,
-                    variante_id: variante_id,
-                    nombre: nombreCompleto.toUpperCase(),
-                    nombre_variante: nombreVariante ? nombreVariante.toUpperCase() : null,
-                    precio: parseFloat(precio),
-                    qty: 1
-                };
-            }
-            renderCart();
-        }
-
-        function changeQty(key, delta) {
-            if (!cart[key]) return;
-            cart[key].qty += delta;
-            if (cart[key].qty <= 0) {
-                delete cart[key];
-            }
-            renderCart();
-        }
-
-        function vaciarCarrito() {
-            cart = {};
-            renderCart();
-        }
-
+        // ── Render del carrito lateral
         function renderCart() {
-            const container = document.getElementById('pos-cart-container');
-            const emptyMsg = document.getElementById('cart-empty-msg');
-            const totalText = document.getElementById('cart-total-text');
-            const btnSubmit = document.getElementById('btn-completar-venta');
-
             const keys = Object.keys(cart);
+            const listEl = document.getElementById('cart-items-list');
+            const emptyEl = document.getElementById('cart-empty');
+            const fab = document.getElementById('cart-fab');
+            const badge = document.getElementById('cart-fab-badge');
+            const navBadge = document.getElementById('nav-cart-count');
+            const totalDisplay = document.getElementById('cart-total-display');
+            const btnSubmit = document.getElementById('checkout-btn');
+
             let total = 0;
+            let totalQty = 0;
+            let itemsForPos = [];
 
             if (keys.length === 0) {
-                container.innerHTML = '';
-                container.appendChild(emptyMsg);
-                emptyMsg.classList.remove('hidden');
-                totalText.textContent = 'Bs. 0.00';
+                listEl.innerHTML = '';
+                listEl.classList.add('hidden');
+                emptyEl.classList.remove('hidden');
+                fab.classList.add('hidden-fab');
+                badge.textContent = '0';
+                navBadge.textContent = '0';
+                totalDisplay.textContent = '0.00';
                 btnSubmit.disabled = true;
                 document.getElementById('input-cart-items').value = '';
                 document.getElementById('input-cart-total').value = '0';
                 return;
             }
 
-            container.innerHTML = '';
-            let html = '';
-            let itemsForPos = [];
+            listEl.classList.remove('hidden');
+            emptyEl.classList.add('hidden');
+            fab.classList.remove('hidden-fab');
 
+            let html = '';
             for (const key of keys) {
                 const item = cart[key];
                 const lineTotal = item.precio * item.qty;
                 total += lineTotal;
+                totalQty += item.qty;
 
                 itemsForPos.push({
                     producto_id: item.producto_id,
-                    variante_id: item.variante_id,
+                    variante_id: item.variante_id || null,
                     nombre_producto: item.nombre,
-                    nombre_variante: item.nombre_variante,
                     cantidad: item.qty,
                     precio_unitario: item.precio,
                     precio_total: lineTotal
@@ -399,7 +540,7 @@
                 html += `
                     <div class="cart-item-row">
                         <div class="cart-item-info">
-                            <div class="uppercase font-bold">${item.nombre}</div>
+                            <div class="uppercase">${item.nombre}</div>
                             <div style="color:var(--color-text-muted, #9ca3af);font-weight:500;font-size:0.7rem">Bs.${item.precio.toFixed(2)} c/u</div>
                         </div>
                         <div class="flex items-center gap-1.5 mt-0.5">
@@ -411,12 +552,57 @@
                     </div>`;
             }
 
-            container.innerHTML = html;
-            totalText.textContent = `Bs. ${total.toFixed(2)}`;
+            listEl.innerHTML = html;
+            badge.textContent = totalQty;
+            navBadge.textContent = totalQty;
+            totalDisplay.textContent = total.toFixed(2);
             btnSubmit.disabled = false;
 
             document.getElementById('input-cart-items').value = JSON.stringify(itemsForPos);
             document.getElementById('input-cart-total').value = total.toFixed(2);
+        }
+
+        function changeQty(key, delta) {
+            if (!cart[key]) return;
+            cart[key].qty += delta;
+            if (cart[key].qty <= 0) {
+                delete cart[key];
+            }
+            renderCart();
+        }
+
+        function clearCart() {
+            for (const k in cart) delete cart[k];
+            renderCart();
+        }
+
+        function openCart() {
+            document.getElementById('cart-panel').classList.add('open');
+            document.getElementById('cart-overlay').classList.add('open');
+        }
+
+        function closeCart() {
+            document.getElementById('cart-panel').classList.remove('open');
+            document.getElementById('cart-overlay').classList.remove('open');
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const bgClass = type === 'error' ? 'bg-red-600 text-white' : 'bg-green-500 text-black';
+            toast.className = `${bgClass} font-black text-xs px-4 py-2.5 rounded-full shadow-2xl uppercase flex items-center gap-2 pointer-events-auto transition-all duration-300 transform translate-y-4 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-circle-xmark' : 'fa-circle-check'}"></i> ${msg}`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-4', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
         }
 
         function filtrarCategoria(catClass) {
