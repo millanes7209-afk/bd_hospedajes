@@ -58,15 +58,10 @@
     }
 
     .badge-pendiente {
-      background: rgba(255, 179, 0, 0.15);
-      color: #ffb300;
-      border: 1px solid #ffb300;
-    }
-
-    html.light-mode .badge-pendiente {
-      background: #f59e0b;
-      color: #0f172a;
-      border: 1px solid #d97706;
+      background: #ea580c;
+      color: #ffffff;
+      border: 1px solid #c2410c;
+      font-weight: 800;
     }
 
     .badge-aceptado {
