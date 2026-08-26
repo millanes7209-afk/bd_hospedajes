@@ -116,12 +116,12 @@
             pointer-events: auto;
         }
 
-        /* EXACT CLIENT MENU CART ROW STYLING */
+        /* EXACT CLIENT MENU CART ROW STYLING WITH LIGHT/DARK MODE SUPPORT */
         .cart-item-row {
             display: flex;
             align-items: flex-start;
             gap: 10px;
-            padding: 12px 0;
+            padding: 10px 0;
             border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
         }
 
@@ -135,9 +135,13 @@
 
         .cart-item-price {
             font-size: 0.78rem;
-            color: #FFE66D;
+            color: #d97706;
             font-weight: 900;
             white-space: nowrap;
+        }
+
+        .dark-mode .cart-item-price {
+            color: #FFE66D;
         }
 
         .qty-btn {
@@ -224,19 +228,19 @@
             @endforeach
         </div>
 
-        <!-- Grid de Productos (Estilo Tarjetas del Menú Cliente) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <!-- Grid de Productos Pequeños y Adaptables -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
             @foreach ($productos as $p)
                 <?php
                     $prodId = $p->id ?? $p->producto_id;
                     $vars = $p->variantes ?? collect([]);
                     $tieneVariantes = count($vars) > 1 || (count($vars) === 1 && !empty($vars[0]->nombre_variante));
                 ?>
-                <div class="prod-card pos-card-theme p-4 rounded-2xl flex flex-col justify-between relative overflow-hidden group border border-white/10"
+                <div class="prod-card pos-card-theme p-3 rounded-xl flex flex-col justify-between relative overflow-hidden group border border-white/10"
                     data-categoria="cat-{{ $p->categoria_id }}" data-card-product-id="{{ $prodId }}">
 
                     <div>
-                        <div class="mb-3 overflow-hidden rounded-xl h-36 bg-black/20 flex items-center justify-center relative">
+                        <div class="mb-2 overflow-hidden rounded-lg h-24 bg-black/20 flex items-center justify-center relative">
                             <?php
                                 $imgPath = null;
                                 if (!empty($p->imagen)) {
@@ -248,23 +252,23 @@
                                 <img src="{{ asset($imgPath) }}" alt="{{ strtoupper($p->nombre) }}"
                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                             @else
-                                <i class="fa-solid fa-burger text-4xl opacity-30 text-amber-500"></i>
+                                <i class="fa-solid fa-burger text-3xl opacity-30 text-amber-500"></i>
                             @endif
                         </div>
 
-                        <h3 class="font-extrabold text-sm uppercase leading-tight mb-1 text-white pr-2">
+                        <h3 class="font-extrabold text-xs uppercase leading-tight mb-1 truncate" style="color:var(--color-text);">
                             {{ strtoupper($p->nombre) }}
                         </h3>
-                        <p class="text-[11px] opacity-70 mb-3 leading-relaxed line-clamp-2">
-                            {{ strtoupper($p->descripcion ?: 'SIN DESCRIPCIÓN DISPONIBLE') }}
+                        <p class="text-[10px] opacity-70 mb-2 leading-tight line-clamp-1">
+                            {{ strtoupper($p->descripcion ?: 'SIN DESCRIPCIÓN') }}
                         </p>
                     </div>
 
-                    <div class="pt-3 border-t border-white/10">
+                    <div class="pt-2 border-t border-white/10">
                         @if($tieneVariantes)
-                            <!-- Chips de Variantes (Exclusivos por Tarjeta) -->
-                            <div class="mb-3">
-                                <div class="flex flex-wrap gap-1.5" id="variant-chips-{{ $prodId }}">
+                            <!-- Chips de Variantes -->
+                            <div class="mb-2">
+                                <div class="flex flex-wrap gap-1" id="variant-chips-{{ $prodId }}">
                                     <?php $firstVariant = true; ?>
                                     @foreach($vars as $v)
                                         <?php
@@ -275,7 +279,7 @@
                                         ?>
                                         <button type="button"
                                             onclick="selectVariant({{ $prodId }}, {{ $vVarId }}, {{ $vPrecio }}, '{{ addslashes($vNombreCompleto) }}')"
-                                            class="variant-chip px-2.5 py-1 text-[11px] font-bold rounded-full border transition-all {{ $firstVariant ? 'bg-green-500 border-green-500 text-white' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40' }}"
+                                            class="variant-chip px-2 py-0.5 text-[10px] font-bold rounded-full border transition-all {{ $firstVariant ? 'bg-green-500 border-green-500 text-white' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40' }}"
                                             data-producto-id="{{ $prodId }}"
                                             data-variante-id="{{ $vVarId }}"
                                             data-precio="{{ $vPrecio }}"
@@ -289,24 +293,24 @@
 
                             <!-- Precio dinámico + Botón AGREGAR -->
                             <div class="flex items-center justify-between">
-                                <div class="price-tag text-base font-black text-amber-500" id="precio-display-{{ $prodId }}">
+                                <div class="price-tag text-xs font-black text-amber-500" id="precio-display-{{ $prodId }}">
                                     Bs. {{ number_format($vars[0]->precio, 2) }}
                                 </div>
                                 <button type="button" onclick="addSelectedVariantToCart({{ $prodId }})"
-                                    class="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-black uppercase transition-all shadow-sm flex items-center gap-1">
-                                    <i class="fa-solid fa-plus"></i>AGREGAR
+                                    class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-black uppercase transition-all shadow-sm flex items-center gap-1">
+                                    <i class="fa-solid fa-plus text-[9px]"></i>AGREGAR
                                 </button>
                             </div>
                         @else
                             <!-- Producto Simple sin Variantes -->
                             <div class="flex items-center justify-between">
-                                <div class="price-tag text-base font-black text-amber-500">
+                                <div class="price-tag text-xs font-black text-amber-500">
                                     Bs. {{ number_format($p->precio, 2) }}
                                 </div>
                                 <button type="button"
                                     onclick="addToCart({{ $prodId }}, {{ (float)$p->precio }}, '{{ addslashes(strtoupper($p->nombre)) }}')"
-                                    class="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-black uppercase transition-all shadow-sm flex items-center gap-1">
-                                    <i class="fa-solid fa-plus"></i>AGREGAR
+                                    class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-black uppercase transition-all shadow-sm flex items-center gap-1">
+                                    <i class="fa-solid fa-plus text-[9px]"></i>AGREGAR
                                 </button>
                             </div>
                         @endif
@@ -338,7 +342,7 @@
         <!-- Header -->
         <div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
             <h2 class="text-sm font-black uppercase tracking-wider text-amber-500 flex items-center gap-2">
-                <i class="fa-solid fa-receipt text-lg"></i>TICKET / PEDIDO DE VENTA
+                <i class="fa-solid fa-receipt text-lg"></i>TICKET DE VENTA
             </h2>
             <button onclick="closeCart()" class="qty-btn text-lg">✕</button>
         </div>
@@ -362,14 +366,6 @@
                 <input type="hidden" name="monto_total" id="input-cart-total">
 
                 <div class="space-y-3">
-                    <!-- Cliente Nombre -->
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">CLIENTE (OPCIONAL)</label>
-                        <input type="text" name="cliente_nombre" placeholder="CLIENTE MOSTRADOR"
-                            oninput="this.value = this.value.toUpperCase();" style="text-transform: uppercase;"
-                            class="w-full form-input-pos rounded-xl px-3 py-2 text-xs font-bold">
-                    </div>
-
                     <!-- Método de Pago -->
                     <div>
                         <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">MÉTODO DE PAGO *</label>
