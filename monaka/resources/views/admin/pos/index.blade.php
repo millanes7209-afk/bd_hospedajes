@@ -27,6 +27,58 @@
             border-color: #FFE66D;
             outline: none;
         }
+
+        /* EXACT CLIENT MENU CART STYLING */
+        .cart-item-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+        }
+
+        .cart-item-info {
+            flex: 1;
+            font-size: 0.78rem;
+            color: var(--color-text, #ffffff);
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .cart-item-price {
+            font-size: 0.78rem;
+            color: #FFE66D;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .qty-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            border: 1px solid var(--color-border, rgba(255, 255, 255, 0.15));
+            background: var(--color-bg-alt, rgba(0, 0, 0, 0.2));
+            color: var(--color-text, #ffffff);
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+        }
+
+        .qty-btn:hover {
+            background: rgba(255, 230, 109, 0.15);
+            color: #FFE66D;
+        }
+
+        .qty-display {
+            width: 28px;
+            text-align: center;
+            font-weight: 900;
+            font-size: 0.82rem;
+            color: var(--color-text, #ffffff);
+        }
     </style>
 </head>
 
@@ -39,7 +91,7 @@
         <!-- Banner Encabezado -->
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-xl md:text-2xl font-black uppercase flex items-center gap-2">
-                <i class="fa-solid fa-bolt text-amber-500"></i>VENTAS (PARA LLEVAR)
+                <i class="fa-solid fa-bolt text-amber-500"></i>VENTAS
             </h2>
             <div
                 class="text-xs font-bold uppercase px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/30">
@@ -216,13 +268,14 @@
     </div>
 
     <script>
-        let cart = [];
+        // Exact Client Menu Cart Data & Functionality
+        let cart = {};
 
         function handleSelectProducto(prod) {
             if (prod.tipo === 'variantes' && prod.variantes && prod.variantes.length > 0) {
                 mostrarModalVariantes(prod);
             } else {
-                agregarAlCarrito(prod.producto_id, null, prod.nombre, null, parseFloat(prod.precio));
+                addToCart(prod.producto_id, parseFloat(prod.precio), prod.nombre);
             }
         }
 
@@ -233,13 +286,15 @@
 
             prod.variantes.forEach(v => {
                 const btn = document.createElement('button');
+                btn.type = 'button';
                 btn.className = 'w-full pos-card-theme hover:border-amber-500 p-3 rounded-xl flex items-center justify-between text-xs font-bold uppercase transition-all';
                 btn.innerHTML = `
                     <span>${v.nombre_variante.toUpperCase()}</span>
                     <span class="text-amber-500 font-extrabold">Bs. ${parseFloat(v.precio).toFixed(2)}</span>
                 `;
                 btn.onclick = () => {
-                    agregarAlCarrito(prod.producto_id, v.variante_id, prod.nombre, v.nombre_variante, parseFloat(v.precio));
+                    const nombreCompleto = `${prod.nombre} - ${v.nombre_variante}`;
+                    addVariantToCart(prod.producto_id, v.variante_id, nombreCompleto, parseFloat(v.precio), v.nombre_variante);
                     cerrarModalVariantes();
                 };
                 container.appendChild(btn);
@@ -252,92 +307,116 @@
             document.getElementById('modal-variantes').style.display = 'none';
         }
 
-        function agregarAlCarrito(producto_id, variante_id, nombreProducto, nombreVariante, precioUnitario) {
-            const key = `${producto_id}_${variante_id || 0}`;
-            const existing = cart.find(item => item.key === key);
-
-            if (existing) {
-                existing.cantidad++;
-                existing.precio_total = existing.cantidad * existing.precio_unitario;
+        function addToCart(producto_id, precio, nombre) {
+            const key = 'p' + producto_id;
+            if (cart[key]) {
+                cart[key].qty += 1;
             } else {
-                cart.push({
-                    key: key,
+                cart[key] = {
+                    type: 'producto',
                     producto_id: producto_id,
-                    variante_id: variante_id,
-                    nombre_producto: nombreProducto,
-                    nombre_variante: nombreVariante,
-                    cantidad: 1,
-                    precio_unitario: precioUnitario,
-                    precio_total: precioUnitario
-                });
+                    variante_id: null,
+                    nombre: nombre.toUpperCase(),
+                    nombre_variante: null,
+                    precio: parseFloat(precio),
+                    qty: 1
+                };
             }
-            renderCarrito();
+            renderCart();
         }
 
-        function cambiarCantidad(key, delta) {
-            const item = cart.find(i => i.key === key);
-            if (!item) return;
-
-            item.cantidad += delta;
-            if (item.cantidad <= 0) {
-                cart = cart.filter(i => i.key !== key);
+        function addVariantToCart(producto_id, variante_id, nombreCompleto, precio, nombreVariante) {
+            const key = 'v' + variante_id;
+            if (cart[key]) {
+                cart[key].qty += 1;
             } else {
-                item.precio_total = item.cantidad * item.precio_unitario;
+                cart[key] = {
+                    type: 'variante',
+                    producto_id: producto_id,
+                    variante_id: variante_id,
+                    nombre: nombreCompleto.toUpperCase(),
+                    nombre_variante: nombreVariante ? nombreVariante.toUpperCase() : null,
+                    precio: parseFloat(precio),
+                    qty: 1
+                };
             }
-            renderCarrito();
+            renderCart();
+        }
+
+        function changeQty(key, delta) {
+            if (!cart[key]) return;
+            cart[key].qty += delta;
+            if (cart[key].qty <= 0) {
+                delete cart[key];
+            }
+            renderCart();
         }
 
         function vaciarCarrito() {
-            cart = [];
-            renderCarrito();
+            cart = {};
+            renderCart();
         }
 
-        function renderCarrito() {
+        function renderCart() {
             const container = document.getElementById('pos-cart-container');
             const emptyMsg = document.getElementById('cart-empty-msg');
             const totalText = document.getElementById('cart-total-text');
             const btnSubmit = document.getElementById('btn-completar-venta');
 
-            let totalSum = 0;
+            const keys = Object.keys(cart);
+            let total = 0;
 
-            if (cart.length === 0) {
+            if (keys.length === 0) {
                 container.innerHTML = '';
                 container.appendChild(emptyMsg);
+                emptyMsg.classList.remove('hidden');
                 totalText.textContent = 'Bs. 0.00';
                 btnSubmit.disabled = true;
                 document.getElementById('input-cart-items').value = '';
-                document.getElementById('input-cart-total').value = 0;
+                document.getElementById('input-cart-total').value = '0';
                 return;
             }
 
             container.innerHTML = '';
-            cart.forEach(item => {
-                totalSum += item.precio_total;
-                const div = document.createElement('div');
-                div.className = 'pos-card-theme p-2.5 rounded-xl flex items-center justify-between text-xs';
-                div.innerHTML = `
-                    <div class="flex-1 pr-2">
-                        <div class="font-extrabold uppercase leading-tight">${item.nombre_producto}</div>
-                        ${item.nombre_variante ? `<div class="text-[10px] text-amber-500 font-bold">${item.nombre_variante}</div>` : ''}
-                        <div class="text-[10px] opacity-70">Bs. ${item.precio_unitario.toFixed(2)} c/u</div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="flex items-center gap-1 rounded-lg p-1 bg-black/10">
-                            <button type="button" onclick="cambiarCantidad('${item.key}', -1)" class="w-5 h-5 rounded flex items-center justify-center font-black hover:bg-amber-500 hover:text-black">-</button>
-                            <span class="px-1.5 font-bold">${item.cantidad}</span>
-                            <button type="button" onclick="cambiarCantidad('${item.key}', 1)" class="w-5 h-5 rounded flex items-center justify-center font-black hover:bg-amber-500 hover:text-black">+</button>
-                        </div>
-                        <span class="font-black text-amber-500 w-16 text-right">Bs. ${item.precio_total.toFixed(2)}</span>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
+            let html = '';
+            let itemsForPos = [];
 
-            totalText.textContent = `Bs. ${totalSum.toFixed(2)}`;
+            for (const key of keys) {
+                const item = cart[key];
+                const lineTotal = item.precio * item.qty;
+                total += lineTotal;
+
+                itemsForPos.push({
+                    producto_id: item.producto_id,
+                    variante_id: item.variante_id,
+                    nombre_producto: item.nombre,
+                    nombre_variante: item.nombre_variante,
+                    cantidad: item.qty,
+                    precio_unitario: item.precio,
+                    precio_total: lineTotal
+                });
+
+                html += `
+                    <div class="cart-item-row">
+                        <div class="cart-item-info">
+                            <div class="uppercase font-bold">${item.nombre}</div>
+                            <div style="color:var(--color-text-muted, #9ca3af);font-weight:500;font-size:0.7rem">Bs.${item.precio.toFixed(2)} c/u</div>
+                        </div>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <button type="button" class="qty-btn" onclick="changeQty('${key}', -1)"><i class="fa-solid fa-minus text-[10px]"></i></button>
+                            <span class="qty-display">${item.qty}</span>
+                            <button type="button" class="qty-btn" onclick="changeQty('${key}', 1)"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                        </div>
+                        <div class="cart-item-price ml-2">Bs.${lineTotal.toFixed(2)}</div>
+                    </div>`;
+            }
+
+            container.innerHTML = html;
+            totalText.textContent = `Bs. ${total.toFixed(2)}`;
             btnSubmit.disabled = false;
 
-            document.getElementById('input-cart-items').value = JSON.stringify(cart);
-            document.getElementById('input-cart-total').value = totalSum.toFixed(2);
+            document.getElementById('input-cart-items').value = JSON.stringify(itemsForPos);
+            document.getElementById('input-cart-total').value = total.toFixed(2);
         }
 
         function filtrarCategoria(catClass) {
@@ -360,8 +439,8 @@
         }
 
         function validarVenta() {
-            if (cart.length === 0) {
-                alert('Debes agregar al menos un producto al carrito');
+            if (Object.keys(cart).length === 0) {
+                alert('DEBES AGREGAR AL MENOS UN PRODUCTO AL CARRITO');
                 return false;
             }
             return true;
