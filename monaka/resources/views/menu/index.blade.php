@@ -504,12 +504,13 @@ if (!function_exists('obtenerPrecioActivo')) {
           $vPrecioActivo = obtenerPrecioActivo($v);
           $vEnPromo = $vPrecioActivo < $v['precio'];
           $vImagen = $v['imagen'] ?? $p['imagen'];
+          $vVarId = $v['variante_id'] ?? ($v['id'] ?? ($v['varianteID'] ?? null));
                             ?>
                   <button type="button"
-                    onclick="selectVariant(<?php          echo $p['producto_id']; ?>, <?php          echo $v['variante_id']; ?>, <?php          echo $vPrecioActivo; ?>, <?php          echo $v['precio']; ?>, <?php          echo $vEnPromo ? 'true' : 'false'; ?>, '<?php          echo addslashes(strtoupper($p['nombre'] . ' - ' . $v['nombre_variante'])); ?>', '<?php          echo addslashes($vImagen ?? ''); ?>')"
+                    onclick="selectVariant(<?php          echo $p['producto_id']; ?>, <?php          echo $vVarId; ?>, <?php          echo $vPrecioActivo; ?>, <?php          echo $v['precio']; ?>, <?php          echo $vEnPromo ? 'true' : 'false'; ?>, '<?php          echo addslashes(strtoupper($p['nombre'] . ' - ' . $v['nombre_variante'])); ?>', '<?php          echo addslashes($vImagen ?? ''); ?>')"
                     class="variant-chip px-3 py-1.5 text-xs font-bold rounded-full border transition-all <?php          echo $firstVariant ? 'bg-green-500 border-green-500 text-white' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40'; ?>"
                     data-producto-id="<?php          echo $p['producto_id']; ?>"
-                    data-variante-id="<?php          echo $v['variante_id']; ?>"
+                    data-variante-id="<?php          echo $vVarId; ?>"
                     data-precio="<?php          echo $vPrecioActivo; ?>"
                     data-precio-orig="<?php          echo $v['precio']; ?>"
                     data-en-promo="<?php          echo $vEnPromo ? '1' : '0'; ?>"
