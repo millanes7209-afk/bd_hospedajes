@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <script>(function () { var s = localStorage.getItem('rp_theme') || 'dark'; document.documentElement.className = s === 'light' ? 'light-mode' : 'dark-mode'; })();</script>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>CONFIRMAR PEDIDO - RICO POLLO</title>
+  <title>CONFIRMAR PEDIDO - MONAKA</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { theme: { extend: { colors: { primary: '#FFE66D', accent: '#E23E1A', dark: '#09090c' } } } }</script>
   <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
@@ -55,6 +55,16 @@
       border-radius: 8px;
       margin-top: 12px;
     }
+
+    html.light-mode .order-price-accent,
+    html.light-mode .cart-accent-icon {
+      color: #E23E1A;
+    }
+
+    html.dark-mode .order-price-accent,
+    html.dark-mode .cart-accent-icon {
+      color: #FFE66D;
+    }
   </style>
 </head>
 
@@ -73,11 +83,44 @@
       <i class="fa-solid fa-arrow-left"></i>VOLVER AL MENÚ
     </a>
 
-    <h1 class="text-2xl font-extrabold uppercase mb-1" style="color:var(--color-text)">
-      <i class="fa-solid fa-receipt mr-2 text-[#FFE66D]"></i>CONFIRMAR PEDIDO
+    <h1 class="text-2xl font-extrabold uppercase mb-1 flex items-center gap-2" style="color:var(--color-text)">
+      <i class="fa-solid fa-receipt cart-accent-icon"></i>CONFIRMAR PEDIDO
     </h1>
-    <p class="text-xs uppercase font-semibold mb-8" style="color:var(--color-text-muted)">REVISA TU SELECCIÓN ANTES DE
-      ENVIAR</p>
+    <p class="text-xs uppercase font-semibold mb-6" style="color:var(--color-text-muted)">REVISA TU SELECCIÓN Y COMPLETA TUS DATOS DE ENTREGA</p>
+
+    <!-- ── INDICADOR DE PASOS ── -->
+    <div class="glass-card p-4 mb-6">
+      <div class="flex items-center justify-between gap-2 text-center text-[11px] sm:text-xs font-black uppercase">
+        <div class="flex-1 flex flex-col items-center gap-1.5">
+          <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white bg-[#E23E1A] shadow-md font-extrabold">1</div>
+          <span style="color:var(--color-text)">1. Tu Selección</span>
+        </div>
+        <div class="w-6 sm:w-10 h-0.5 bg-gray-400/30"></div>
+        <div class="flex-1 flex flex-col items-center gap-1.5">
+          <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white bg-[#E23E1A] shadow-md font-extrabold">2</div>
+          <span style="color:var(--color-text)">2. Datos Entrega</span>
+        </div>
+        <div class="w-6 sm:w-10 h-0.5 bg-gray-400/30"></div>
+        <div class="flex-1 flex flex-col items-center gap-1.5">
+          <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border-2 border-green-500 text-green-500 font-extrabold">3</div>
+          <span style="color:var(--color-text-muted)">3. Confirmación</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BANNER INFORMATIVO / GUÍA ── -->
+    <div class="p-4 rounded-2xl mb-6 flex items-start gap-3 border"
+      style="background:rgba(226,62,26,0.06);border-color:rgba(226,62,26,0.25);">
+      <i class="fa-solid fa-circle-info text-lg mt-0.5 cart-accent-icon shrink-0"></i>
+      <div>
+        <h3 class="font-black text-xs sm:text-sm uppercase mb-1" style="color:var(--color-text)">
+          ¡Casi listo! Revisa tu pedido y completa tus datos
+        </h3>
+        <p class="text-xs leading-relaxed" style="color:var(--color-text-muted)">
+          Verifica las cantidades abajo, ingresa tu <strong>Nombre</strong>, <strong>Teléfono</strong> y <strong>Dirección de Entrega</strong>. Al hacer clic en <strong>"CONFIRMAR Y ENVIAR PEDIDO"</strong>, registrarás tu pedido para que el restaurante comience a prepararlo.
+        </p>
+      </div>
+    </div>
 
     <?php if ($error): ?>
     <div class="mb-6 p-4 rounded-xl text-sm font-semibold flex items-center gap-3"
@@ -89,7 +132,7 @@
     <!-- Si el carrito está vacío -->
     <?php if (empty($cartItemsDisplay)): ?>
     <div class="glass-card p-14 text-center">
-      <i class="fa-solid fa-cart-shopping text-5xl mb-4 block" style="color:rgba(255,230,109,0.3)"></i>
+      <i class="fa-solid fa-cart-shopping text-5xl mb-4 block cart-accent-icon opacity-40"></i>
       <h2 class="text-lg font-bold uppercase mb-3" style="color:var(--color-text)">CARRITO VACÍO</h2>
       <a href="{{ route('menu') }}" class="btn-accent text-sm">
         <i class="fa-solid fa-arrow-left mr-2"></i>IR AL MENÚ
@@ -102,9 +145,10 @@
       @csrf
       <!-- ── RESUMEN DE PRODUCTOS ── -->
       <div class="glass-card p-5 mb-5">
-        <h2 class="text-xs font-extrabold uppercase tracking-wider mb-4 pb-2 border-b"
+        <h2 class="text-xs font-extrabold uppercase tracking-wider mb-4 pb-2 border-b flex items-center justify-between"
           style="border-color:var(--color-card-border);color:var(--color-text-muted)">
-          <i class="fa-solid fa-list-ul mr-1.5 text-[#FFE66D]"></i>PRODUCTOS SELECCIONADOS
+          <span><i class="fa-solid fa-list-ul mr-1.5 cart-accent-icon"></i>PASO 1: PRODUCTOS SELECCIONADOS</span>
+          <a href="{{ route('menu') }}" class="text-[10px] font-bold text-amber-500 hover:underline"><i class="fa-solid fa-plus mr-1"></i>AGREGAR MÁS</a>
         </h2>
 
         <div id="order-items-list">
@@ -113,8 +157,8 @@
     $precio = (float) ($line['precio'] ?? 0);
     $nombre = strtoupper($line['nombre'] ?? '');
     $type = $line['type'] ?? 'producto';
-    $prodID = (int) ($line['productoID'] ?? 0);
-    $varID = (int) ($line['varianteID'] ?? 0);
+    $prodID = (int) ($line['producto_id'] ?? 0);
+    $varID = (int) ($line['variante_id'] ?? 0);
     $lineTotal = $precio * $qty;
               ?>
           <div class="order-item-row" id="row_<?php    echo htmlspecialchars($lineKey); ?>">
@@ -137,7 +181,7 @@
                 <i class="fa-solid fa-plus text-[10px]"></i>
               </button>
             </div>
-            <div class="text-sm font-extrabold text-[#FFE66D] ml-1 min-w-[72px] text-right"
+            <div class="text-sm font-extrabold order-price-accent ml-1 min-w-[72px] text-right"
               id="linetotal_<?php    echo htmlspecialchars($lineKey); ?>">
               Bs.<?php    echo number_format($lineTotal, 2); ?>
             </div>
@@ -147,8 +191,8 @@
 
         <!-- Total -->
         <div class="flex justify-between items-center pt-4 mt-2 border-t" style="border-color:var(--color-card-border)">
-          <span class="text-sm font-extrabold uppercase" style="color:var(--color-text-muted)">TOTAL</span>
-          <span class="text-2xl font-black text-[#FFE66D]">Bs. <span
+          <span class="text-sm font-extrabold uppercase" style="color:var(--color-text-muted)">TOTAL GENERAL</span>
+          <span class="text-2xl font-black order-price-accent">Bs. <span
               id="grand-total"><?php  echo number_format($displayTotal, 2); ?></span></span>
         </div>
       </div>
@@ -157,13 +201,13 @@
       <div class="glass-card p-5 mb-5 space-y-4">
         <h2 class="text-xs font-extrabold uppercase tracking-wider pb-2 border-b"
           style="border-color:var(--color-card-border);color:var(--color-text-muted)">
-          <i class="fa-solid fa-user mr-1.5 text-[#FFE66D]"></i>TUS DATOS
+          <i class="fa-solid fa-user mr-1.5 cart-accent-icon"></i>PASO 2: TUS DATOS DE ENTREGA
         </h2>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider mb-1.5"
-              style="color:var(--color-text-muted)">NOMBRE *</label>
+            <label class="block text-xs font-bold uppercase tracking-wider mb-1"
+              style="color:var(--color-text-muted)">TU NOMBRE *</label>
             <div class="relative">
               <span class="absolute left-3.5 top-3.5" style="color:var(--color-text-subtle)"><i
                   class="fa-solid fa-user text-xs"></i></span>
@@ -171,10 +215,11 @@
                 class="form-input pl-9" placeholder="EJ: JUAN PÉREZ"
                 value="<?php  echo htmlspecialchars($_POST['cliente_nombre'] ?? ''); ?>" />
             </div>
+            <p class="text-[10px] mt-1" style="color:var(--color-text-subtle)">Para dirigirte a ti al momento de entregar tu pedido.</p>
           </div>
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider mb-1.5"
-              style="color:var(--color-text-muted)">TELÉFONO *</label>
+            <label class="block text-xs font-bold uppercase tracking-wider mb-1"
+              style="color:var(--color-text-muted)">NÚMERO DE TELÉFONO *</label>
             <div class="relative">
               <span class="absolute left-3.5 top-3.5" style="color:var(--color-text-subtle)"><i
                   class="fa-solid fa-phone text-xs"></i></span>
@@ -182,25 +227,27 @@
                 class="form-input pl-9" placeholder="EJ: 70012345"
                 value="<?php  echo htmlspecialchars($_POST['cliente_telefono'] ?? ''); ?>" />
             </div>
+            <p class="text-[10px] mt-1" style="color:var(--color-text-subtle)">Te contactaremos a este número para confirmar tu pedido.</p>
           </div>
         </div>
 
-        <!-- Domicilio (Siempre visible, ya que todo pedido de la App es Domicilio) -->
+        <!-- Domicilio -->
         <div id="wrapper_direccion">
-          <label class="block text-xs font-bold uppercase tracking-wider mb-1.5"
+          <label class="block text-xs font-bold uppercase tracking-wider mb-1"
             style="color:var(--color-text-muted)">DIRECCIÓN DE ENTREGA *</label>
           <div class="relative">
             <span class="absolute left-3.5 top-3.5 pt-0.5" style="color:var(--color-text-subtle)"><i
                 class="fa-solid fa-location-dot text-xs"></i></span>
             <input id="direccion_entrega" name="direccion_entrega" oninput="this.value=this.value.toUpperCase()"
-              required class="form-input pl-9" placeholder="EJ: AV. PRINCIPAL 123, EDIFICIO ABC"
+              required class="form-input pl-9" placeholder="EJ: AV. PRINCIPAL #123, ENTRE C. BOLÍVAR Y C. SUCRE"
               value="<?php  echo htmlspecialchars($_POST['direccion_entrega'] ?? ''); ?>" />
           </div>
+          <p class="text-[10px] mt-1" style="color:var(--color-text-subtle)">Escribe tu calle, número de casa/departamento y referencias de llegada.</p>
 
           <!-- Botón GPS -->
           <button type="button" onclick="getLocation()"
-            class="mt-2 text-xs font-bold uppercase btn-outline py-2 px-4 flex items-center gap-2">
-            <i class="fa-solid fa-location-crosshairs"></i>USAR MI UBICACIÓN ACTUAL 📍
+            class="mt-2.5 text-xs font-bold uppercase btn-outline py-2 px-4 flex items-center gap-2">
+            <i class="fa-solid fa-location-crosshairs"></i>USAR MI UBICACIÓN ACTUAL (GPS) 📍
           </button>
 
           <!-- Contenedor del mapa -->
@@ -218,24 +265,23 @@
             value="<?php  echo htmlspecialchars($_POST['longitud'] ?? ''); ?>" />
         </div>
 
-        <!-- Información de Método de Pago diferido a la confirmación de stock -->
+        <!-- Información de Método de Pago diferido -->
         <div class="p-3.5 rounded-xl border border-white/10 bg-black/20 text-xs">
           <div class="flex items-center gap-2 font-bold uppercase mb-1" style="color:var(--color-text)">
-            <i class="fa-solid fa-circle-info text-[#FFE66D]"></i>MÉTODO DE PAGO
+            <i class="fa-solid fa-circle-info cart-accent-icon"></i>MÉTODO DE PAGO
           </div>
           <p style="color:var(--color-text-muted)" class="text-[11px] uppercase">
-            EL MÉTODO DE PAGO (EFECTIVO O QR) SE ELEGIRÁ UNA VEZ QUE EL RESTAURANTE CONFIRME LA DISPONIBILIDAD DE TU
-            PEDIDO.
+            Elegirás pagar en EFECTIVO o por QR una vez que el restaurante confirme la recepción de tu pedido.
           </p>
           <input type="hidden" name="metodo_pago" value="ninguno">
         </div>
 
         <!-- Nota -->
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wider mb-1.5"
-            style="color:var(--color-text-muted)">NOTAS / INSTRUCCIONES (OPCIONAL)</label>
+          <label class="block text-xs font-bold uppercase tracking-wider mb-1"
+            style="color:var(--color-text-muted)">NOTAS / INSTRUCCIONES ADICIONALES (OPCIONAL)</label>
           <textarea name="nota" rows="2" oninput="this.value=this.value.toUpperCase()" class="form-input uppercase"
-            placeholder="EJ: SIN CEBOLLA, SALSA EXTRA..."><?php  echo htmlspecialchars($_POST['nota'] ?? ''); ?></textarea>
+            placeholder="EJ: SIN CEBOLLA, ENTREGAR EN PORTÓN NEGRO..."><?php  echo htmlspecialchars($_POST['nota'] ?? ''); ?></textarea>
         </div>
       </div>
 
@@ -389,8 +435,8 @@
             container.appendChild(inp);
           };
           add('cart_items_final[' + k + '][type]', item.type || 'producto');
-          add('cart_items_final[' + k + '][productoID]', item.productoID || '');
-          if (item.varianteID) add('cart_items_final[' + k + '][varianteID]', item.varianteID);
+          add('cart_items_final[' + k + '][producto_id]', item.producto_id || '');
+          if (item.variante_id) add('cart_items_final[' + k + '][variante_id]', item.variante_id);
           add('cart_items_final[' + k + '][nombre]', item.nombre || '');
           add('cart_items_final[' + k + '][precio]', item.precio || 0);
           add('cart_items_final[' + k + '][qty]', item.qty || 1);

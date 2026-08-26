@@ -355,9 +355,20 @@ if (!function_exists('obtenerPrecioActivo')) {
       line-height: 1.4;
     }
 
+    html.light-mode .cart-item-price,
+    html.light-mode .cart-total-price,
+    html.light-mode .cart-accent-icon {
+      color: #E23E1A;
+    }
+
+    html.dark-mode .cart-item-price,
+    html.dark-mode .cart-total-price,
+    html.dark-mode .cart-accent-icon {
+      color: #FFE66D;
+    }
+
     .cart-item-price {
       font-size: 0.78rem;
-      color: #FFE66D;
       font-weight: 900;
       white-space: nowrap;
     }
@@ -536,12 +547,13 @@ if (!function_exists('obtenerPrecioActivo')) {
           $vPrecioActivo = obtenerPrecioActivo($v);
           $vEnPromo = $vPrecioActivo < $v['precio'];
           $vImagen = $v['imagen'] ?? $p['imagen'];
+          $vVarId = $v['variante_id'] ?? ($v['id'] ?? ($v['varianteID'] ?? null));
                             ?>
                   <button type="button"
-                    onclick="selectVariant(<?php          echo $p['producto_id']; ?>, <?php          echo $v['variante_id']; ?>, <?php          echo $vPrecioActivo; ?>, <?php          echo $v['precio']; ?>, <?php          echo $vEnPromo ? 'true' : 'false'; ?>, '<?php          echo addslashes(strtoupper($p['nombre'] . ' - ' . $v['nombre_variante'])); ?>', '<?php          echo addslashes($vImagen ?? ''); ?>')"
+                    onclick="selectVariant(<?php          echo $p['producto_id']; ?>, <?php          echo $vVarId; ?>, <?php          echo $vPrecioActivo; ?>, <?php          echo $v['precio']; ?>, <?php          echo $vEnPromo ? 'true' : 'false'; ?>, '<?php          echo addslashes(strtoupper($p['nombre'] . ' - ' . $v['nombre_variante'])); ?>', '<?php          echo addslashes($vImagen ?? ''); ?>')"
                     class="variant-chip px-3 py-1.5 text-xs font-bold rounded-full border transition-all <?php          echo $firstVariant ? 'variant-chip-selected' : 'variant-chip-unselected'; ?>"
                     data-producto-id="<?php          echo $p['producto_id']; ?>"
-                    data-variante-id="<?php          echo $v['variante_id']; ?>"
+                    data-variante-id="<?php          echo $vVarId; ?>"
                     data-precio="<?php          echo $vPrecioActivo; ?>"
                     data-precio-orig="<?php          echo $v['precio']; ?>"
                     data-en-promo="<?php          echo $vEnPromo ? '1' : '0'; ?>"
@@ -645,7 +657,7 @@ if (!function_exists('obtenerPrecioActivo')) {
     <!-- Header -->
     <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--color-card-border)">
       <h2 class="text-sm font-black uppercase tracking-wider" style="color:var(--color-text)">
-        <i class="fa-solid fa-cart-shopping mr-2 text-[#FFE66D]"></i>TU PEDIDO
+        <i class="fa-solid fa-cart-shopping mr-2 cart-accent-icon"></i>TU PEDIDO
       </h2>
       <button onclick="closeCart()" class="qty-btn text-lg">✕</button>
     </div>
@@ -655,7 +667,7 @@ if (!function_exists('obtenerPrecioActivo')) {
 
     <!-- Empty state -->
     <div id="cart-empty" class="flex-1 flex flex-col items-center justify-center text-center px-6 py-10">
-      <i class="fa-solid fa-cart-shopping text-4xl mb-4" style="color:rgba(255,230,109,0.3)"></i>
+      <i class="fa-solid fa-cart-shopping text-4xl mb-4 cart-accent-icon opacity-50"></i>
       <p class="text-sm font-bold uppercase" style="color:var(--color-text-muted)">TU CARRITO ESTÁ VACÍO</p>
       <p class="text-xs mt-1" style="color:var(--color-text-subtle)">AGREGA PLATOS O BEBIDAS DEL MENÚ</p>
     </div>
@@ -664,7 +676,7 @@ if (!function_exists('obtenerPrecioActivo')) {
     <div class="px-5 pb-5 pt-3 border-t" style="border-color:var(--color-card-border)">
       <div class="flex justify-between items-center mb-4">
         <span class="text-xs font-bold uppercase" style="color:var(--color-text-muted)">TOTAL</span>
-        <span class="text-2xl font-black text-[#FFE66D]">Bs. <span id="cart-total-display">0.00</span></span>
+        <span class="text-2xl font-black cart-total-price">Bs. <span id="cart-total-display">0.00</span></span>
       </div>
       <div class="flex gap-3">
         <button onclick="clearCart()"
@@ -998,7 +1010,9 @@ if (!function_exists('obtenerPrecioActivo')) {
 
         const varMap = {};
         data.variantes.forEach(v => {
-          varMap[v.variante_id] = (v.disponible == 1 || v.disponible === null || v.disponible === undefined);
+          const isDisp = (v.disponible == 1 || v.disponible === null || v.disponible === undefined);
+          const isSoloLocal = (v.solo_local == 1);
+          varMap[v.variante_id] = isDisp && !isSoloLocal;
         });
 
         latestAvailability = { productos: prodMap, variantes: varMap };
