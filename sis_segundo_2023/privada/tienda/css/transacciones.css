@@ -1,0 +1,22 @@
+/* ESTILOS DE TRANSACCIONES - ESTILO MINIMALISTA HOSPEDAJES */
+thead {
+    color: black;
+    background: #b5b5b5;
+}
+
+tr {
+    color: black;
+}
+
+.table-responsive {
+    font-size: 0.9rem;
+}
+
+.card {
+    border-radius: 6px;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+}
