@@ -261,7 +261,7 @@
                 $prodId = $p->id ?? $p->producto_id;
                 $vars = $p->variantes ?? collect([]);
                 $tieneVariantes = count($vars) > 1 || (count($vars) === 1 && !empty($vars[0]->nombre_variante));
-                                                                ?>
+                                                                            ?>
                         <div class="prod-card pos-card-theme p-3 rounded-xl flex flex-col justify-between relative overflow-hidden group border border-white/10"
                             data-categoria="cat-{{ $p->categoria_id }}" data-card-product-id="{{ $prodId }}">
 
@@ -274,7 +274,7 @@
                     $imgPath = str_starts_with($p->imagen, 'assets/') ? $p->imagen : 'assets/productos/' . $p->imagen;
                 }
                 $hasImg = !empty($imgPath) && file_exists(public_path($imgPath));
-                                                                            ?>
+                                                                                        ?>
                                     @if($hasImg)
                                         <img src="{{ asset($imgPath) }}" alt="{{ strtoupper($p->nombre) }}"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
@@ -304,7 +304,7 @@
                                                 $vPrecio = (float) $v->precio;
                                                 $vNombreVal = strtoupper($v->nombre_variante);
                                                 $vNombreCompleto = strtoupper($p->nombre . ' - ' . $v->nombre_variante);
-                                                                                                                                                                                        ?>
+                                                                                                                                                                                                                            ?>
                                                                 <button type="button"
                                                                     onclick="selectVariant({{ $prodId }}, {{ $vVarId }}, {{ $vPrecio }}, '{{ addslashes($vNombreCompleto) }}')"
                                                                     class="variant-chip px-2 py-0.5 text-[10px] font-bold rounded-full border transition-all {{ $firstVariant ? 'variant-chip-selected' : 'variant-chip-unselected' }}"
@@ -408,13 +408,25 @@
                         </select>
                     </div>
 
-                    <!-- Display Total Adaptable -->
+                    <!-- Display Total Editable (Descuentos/Ajustes) -->
                     <div class="flex justify-between items-center py-3 px-4 rounded-xl border"
                         style="background-color: var(--color-bg-alt, rgba(255,230,109,0.08)); border-color: var(--color-border, rgba(255,230,109,0.3));">
-                        <span class="text-xs font-black uppercase" style="color: var(--color-text);">TOTAL A
-                            COBRAR</span>
-                        <span class="text-2xl font-black text-amber-600 dark:text-amber-400">Bs. <span
-                                id="cart-total-display">0.00</span></span>
+                        <div>
+                            <span class="text-xs font-black uppercase block" style="color: var(--color-text);">TOTAL A
+                                COBRAR</span>
+                            <span id="calculated-total-subtext" class="text-[10px] opacity-60 hidden">Original: Bs.
+                                <span id="cart-subtotal-display">0.00</span></span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="text-xl font-black text-amber-600 dark:text-amber-400">Bs.</span>
+                            <input type="number" step="0.01" min="0" id="input-cart-total-edit"
+                                class="w-28 text-right bg-transparent text-2xl font-black text-amber-600 dark:text-amber-400 border-b border-dashed border-amber-500/60 focus:border-amber-400 focus:outline-none"
+                                value="0.00" oninput="onManualTotalChange(this.value)">
+                            <button type="button" onclick="resetTotalToCalculated()" title="Restablecer total calculado"
+                                id="btn-reset-total" class="hidden text-xs text-amber-500 hover:text-amber-400 ml-1">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Botones de Acción -->
@@ -437,6 +449,38 @@
     <script>
         const cart = {};
         const selectedVariants = {};
+        let calculatedTotal = 0;
+        let isManualTotal = false;
+
+        // ── Edición Manual del Total (Descuentos / Ajustes)
+        function onManualTotalChange(val) {
+            const parsed = parseFloat(val);
+            const hiddenTotalInput = document.getElementById('input-cart-total');
+            const resetBtn = document.getElementById('btn-reset-total');
+            const subtext = document.getElementById('calculated-total-subtext');
+
+            if (!isNaN(parsed) && parsed >= 0) {
+                hiddenTotalInput.value = parsed.toFixed(2);
+            }
+
+            isManualTotal = true;
+            if (resetBtn) resetBtn.classList.remove('hidden');
+            if (subtext) subtext.classList.remove('hidden');
+        }
+
+        function resetTotalToCalculated() {
+            isManualTotal = false;
+            const totalEdit = document.getElementById('input-cart-total-edit');
+            const hiddenTotalInput = document.getElementById('input-cart-total');
+            const resetBtn = document.getElementById('btn-reset-total');
+            const subtext = document.getElementById('calculated-total-subtext');
+
+            if (totalEdit) totalEdit.value = calculatedTotal.toFixed(2);
+            if (hiddenTotalInput) hiddenTotalInput.value = calculatedTotal.toFixed(2);
+
+            if (resetBtn) resetBtn.classList.add('hidden');
+            if (subtext) subtext.classList.add('hidden');
+        }
 
         // Inicializar variantes seleccionadas por defecto en las tarjetas
         document.addEventListener('DOMContentLoaded', () => {
@@ -529,7 +573,8 @@
             const fab = document.getElementById('cart-fab');
             const badge = document.getElementById('cart-fab-badge');
             const navBadge = document.getElementById('nav-cart-count');
-            const totalDisplay = document.getElementById('cart-total-display');
+            const totalEdit = document.getElementById('input-cart-total-edit');
+            const subtotalDisplay = document.getElementById('cart-subtotal-display');
             const btnSubmit = document.getElementById('checkout-btn');
 
             let total = 0;
@@ -543,8 +588,9 @@
                 fab.classList.add('hidden-fab');
                 if (badge) badge.textContent = '0';
                 if (navBadge) navBadge.textContent = '0';
-                if (totalDisplay) totalDisplay.textContent = '0.00';
                 if (btnSubmit) btnSubmit.disabled = true;
+                calculatedTotal = 0;
+                resetTotalToCalculated();
                 document.getElementById('input-cart-items').value = '';
                 document.getElementById('input-cart-total').value = '0';
                 return;
@@ -588,11 +634,20 @@
             listEl.innerHTML = html;
             if (badge) badge.textContent = totalQty;
             if (navBadge) navBadge.textContent = totalQty;
-            if (totalDisplay) totalDisplay.textContent = total.toFixed(2);
             if (btnSubmit) btnSubmit.disabled = false;
 
+            calculatedTotal = total;
+            if (subtotalDisplay) subtotalDisplay.textContent = calculatedTotal.toFixed(2);
+
+            if (!isManualTotal) {
+                if (totalEdit) totalEdit.value = calculatedTotal.toFixed(2);
+                document.getElementById('input-cart-total').value = calculatedTotal.toFixed(2);
+            } else {
+                const manualVal = parseFloat(totalEdit ? totalEdit.value : 0) || 0;
+                document.getElementById('input-cart-total').value = manualVal.toFixed(2);
+            }
+
             document.getElementById('input-cart-items').value = JSON.stringify(itemsForPos);
-            document.getElementById('input-cart-total').value = total.toFixed(2);
         }
 
         function changeQty(key, delta) {
@@ -606,6 +661,9 @@
 
         function clearCart() {
             for (const k in cart) delete cart[k];
+            isManualTotal = false;
+            calculatedTotal = 0;
+            resetTotalToCalculated();
             renderCart();
         }
 
