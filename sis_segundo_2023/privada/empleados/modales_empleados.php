@@ -95,34 +95,33 @@
 <!-- MODAL CREAR USUARIO -->
 <div class="modal" id="modalCrearUsuario">
     <div class="modal-dialog">
-        <div class="modal-content border-success">
-            <div class="modal-header bg-success text-white">
-                <h5 class="mb-0 fw-bold"><i class="fas fa-user-plus me-2"></i>CREAR USUARIO</h5>
-                <button type="button" class="btn-close btn-close-white" onclick="hideCrearUsuarioModal()"></button>
+        <div class="modal-content shadow-sm border-0">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-user-plus me-2 text-secondary"></i>Crear Usuario
+                </h6>
+                <button type="button" class="btn-close" onclick="hideCrearUsuarioModal()"></button>
             </div>
-            <div class="modal-body py-4">
+            <div class="modal-body py-3">
                 <div id="crearUsuarioStatus"></div>
                 <div id="crearUsuarioBody">
-                    <p class="mb-3">Empleado: <b id="crearUsuarioEmpleadoNombre"></b></p>
+                    <p class="text-muted small mb-3">Empleado: <strong class="text-dark"
+                            id="crearUsuarioEmpleadoNombre"></strong></p>
                     <form id="formCrearUsuario">
                         <input type="hidden" name="empleadoID" id="crearUsuarioEmpleadoID">
                         <div class="mb-3">
-                            <label class="form-label fw-bold">(*) Usuario:</label>
-                            <input type="text" name="usuario" id="crearUsuarioNombre" class="form-control border-dark"
-                                required autocomplete="off"
-                                onkeyup="this.value=this.value.toLowerCase().replace(/\s/g,'')">
+                            <label class="form-label small fw-bold text-secondary mb-1">(*) Usuario</label>
+                            <input type="text" name="usuario" id="crearUsuarioNombre" class="form-control" required
+                                autocomplete="off" onkeyup="this.value=this.value.toLowerCase().replace(/\s/g,'')">
                         </div>
-                        <div class="alert alert-info py-2 mb-0 small">
-                            <i class="fas fa-info-circle me-1"></i> <b>Nota:</b> La contraseña por defecto será
-                            <b>123456</b>
-                        </div>
+                        <p class="text-muted small mb-0"><i class="fas fa-info-circle me-1"></i>Nota: La contraseña por
+                            defecto será <b>123456</b></p>
                     </form>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button id="cancelCrearUsuarioBtn" class="btn btn-secondary btn-sm"
-                    onclick="hideCrearUsuarioModal()">CANCELAR</button>
-                <button id="btnGuardarNuevoUsuario" class="btn btn-success btn-sm fw-bold">CREAR USUARIO</button>
+            <div class="modal-footer border-top-0 pt-0">
+                <button id="cancelCrearUsuarioBtn" class="btn btn-light btn-sm text-secondary border px-3"
+                    onclick="hideCrearUsuarioModal()">Cancelar</button>
+                <button id="btnGuardarNuevoUsuario" class="btn btn-dark btn-sm px-3 fw-semibold">Crear Usuario</button>
             </div>
         </div>
     </div>
