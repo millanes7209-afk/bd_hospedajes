@@ -223,14 +223,11 @@ $rs = $db->obtenerTodo($sql, array($empresaID));
                                             <?php endif; ?>
 
                                         <?php else: ?>
-                                            <div class="d-flex align-items-center justify-content-between">
-                                                <span class="badge bg-secondary me-1">Sin usuario</span>
-                                                <button class="btn btn-success btn-sm fw-bold btn-crear-usuario"
-                                                    title="Crear Usuario del Sistema" data-id="<?php echo $fila['empleadoID']; ?>"
-                                                    data-nombre="<?php echo htmlspecialchars($fila['empleado']); ?>">
-                                                    <i class="fas fa-plus-circle me-1"></i> + Crear Usuario
-                                                </button>
-                                            </div>
+                                            <button class="btn btn-success btn-sm fw-bold btn-crear-usuario"
+                                                title="Crear Usuario del Sistema" data-id="<?php echo $fila['empleadoID']; ?>"
+                                                data-nombre="<?php echo htmlspecialchars($fila['empleado']); ?>">
+                                                <i class="fas fa-user-plus me-1"></i> Crear Usuario
+                                            </button>
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center">
