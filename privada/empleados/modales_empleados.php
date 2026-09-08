@@ -97,24 +97,24 @@
     <div class="modal-dialog">
         <div class="modal-content border-success">
             <div class="modal-header bg-success text-white">
-                <h5 class="mb-0 fw-bold"><i class="fas fa-user-plus me-2"></i>CREAR USUARIO DEL SISTEMA</h5>
+                <h5 class="mb-0 fw-bold"><i class="fas fa-user-plus me-2"></i>CREAR USUARIO</h5>
                 <button type="button" class="btn-close btn-close-white" onclick="hideCrearUsuarioModal()"></button>
             </div>
             <div class="modal-body py-4">
                 <div id="crearUsuarioStatus"></div>
                 <div id="crearUsuarioBody">
-                    <p class="mb-2">Empleado: <b id="crearUsuarioEmpleadoNombre"></b></p>
-                    <div class="alert alert-info py-2 mb-3 small">
-                        <i class="fas fa-info-circle me-1"></i> <b>Nota Informativa:</b>
-                        La contraseña por defecto asignada al usuario será: <b class="text-success">123456</b>
-                    </div>
+                    <p class="mb-3">Empleado: <b id="crearUsuarioEmpleadoNombre"></b></p>
                     <form id="formCrearUsuario">
                         <input type="hidden" name="empleadoID" id="crearUsuarioEmpleadoID">
                         <div class="mb-3">
-                            <label class="form-label fw-bold">(*) Nombre de Usuario:</label>
+                            <label class="form-label fw-bold">(*) Usuario:</label>
                             <input type="text" name="usuario" id="crearUsuarioNombre" class="form-control border-dark"
-                                placeholder="ej: jperez" required autocomplete="off"
+                                required autocomplete="off"
                                 onkeyup="this.value=this.value.toLowerCase().replace(/\s/g,'')">
+                        </div>
+                        <div class="alert alert-info py-2 mb-0 small">
+                            <i class="fas fa-info-circle me-1"></i> <b>Nota:</b> La contraseña por defecto será
+                            <b>123456</b>
                         </div>
                     </form>
                 </div>
