@@ -5,10 +5,10 @@ require_once("../../conexion.php");
 
 $empleadoID = $_POST['empleadoID'] ?? '';
 $usuario = trim($_POST['usuario'] ?? '');
-$clave = $_POST['clave'] ?? '';
+$clave = !empty($_POST['clave']) ? $_POST['clave'] : '123456';
 
 // Validación básica
-if (empty($empleadoID) || empty($usuario) || empty($clave)) {
+if (empty($empleadoID) || empty($usuario)) {
     echo json_encode(['status' => 'ERROR', 'message' => 'Faltan datos requeridos']);
     exit;
 }

@@ -155,7 +155,8 @@ $rs = $db->obtenerTodo($sql, array($empresaID));
         <div class="card-body">
             <div id="mensaje"></div>
             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                <a href="empleado_nuevo.php?auth=empleados.php" class="btn btn-success mb-3" role="button">🔍 Agregar Empleado</a>
+                <a href="empleado_nuevo.php?auth=empleados.php" class="btn btn-success mb-3" role="button">🔍 Agregar
+                    Empleado</a>
             </div>
             <div class="table-responsive">
                 <table class="table table-striped align-middle">
@@ -181,7 +182,8 @@ $rs = $db->obtenerTodo($sql, array($empresaID));
                                     <td><?php echo $b++; ?></td>
                                     <td><?php echo $fila['ci']; ?></td>
                                     <td><?php echo $fila['empleado']; ?></td>
-                                    <td><?php echo !empty($fila['telefono']) ? $fila['telefono'] : '<span class="text-muted small">-</span>'; ?></td>
+                                    <td><?php echo !empty($fila['telefono']) ? $fila['telefono'] : '<span class="text-muted small">-</span>'; ?>
+                                    </td>
                                     <td><span><?php echo htmlspecialchars($fila['cargo']); ?></span></td>
                                     <td><?php echo date("d/m/Y", strtotime($fila['fecha_inicio'])); ?></td>
                                     <td class="text-end">
@@ -221,20 +223,30 @@ $rs = $db->obtenerTodo($sql, array($empresaID));
                                             <?php endif; ?>
 
                                         <?php else: ?>
-                                            <span class="text-muted small">Sin usuario</span>
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <span class="badge bg-secondary me-1">Sin usuario</span>
+                                                <button class="btn btn-success btn-sm fw-bold btn-crear-usuario"
+                                                    title="Crear Usuario del Sistema" data-id="<?php echo $fila['empleadoID']; ?>"
+                                                    data-nombre="<?php echo htmlspecialchars($fila['empleado']); ?>">
+                                                    <i class="fas fa-plus-circle me-1"></i> + Crear Usuario
+                                                </button>
+                                            </div>
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center">
                                         <form method="post" action="Empleado_modificar.php">
                                             <input type="hidden" name="empleadoID" value="<?php echo $fila['empleadoID']; ?>">
                                             <input type="hidden" name="auth" value="empleados.php">
-                                            <button type="submit" style="background:none; border:none; color:#0d6efd; padding:0; cursor:pointer;" title="Modificar Ficha">
+                                            <button type="submit"
+                                                style="background:none; border:none; color:#0d6efd; padding:0; cursor:pointer;"
+                                                title="Modificar Ficha">
                                                 <i class="fas fa-pencil-alt fa-lg"></i>
                                             </button>
                                         </form>
                                     </td>
                                     <td class="text-center">
-                                        <button class="dar-baja" style="background:none; border:none; color:#dc3545; padding:0; cursor:pointer;"
+                                        <button class="dar-baja"
+                                            style="background:none; border:none; color:#dc3545; padding:0; cursor:pointer;"
                                             data-empleadoid="<?php echo $fila['empleadoID']; ?>"
                                             data-nombre="<?php echo $fila['empleado']; ?>" title="Dar de Baja Laboral">
                                             <i class="fas fa-user-minus fa-lg"></i>

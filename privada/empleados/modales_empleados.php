@@ -43,7 +43,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="cancelResetBtn" class="btn btn-secondary btn-sm" onclick="hideResetModal()">CANCELAR</button>
+                <button id="cancelResetBtn" class="btn btn-secondary btn-sm"
+                    onclick="hideResetModal()">CANCELAR</button>
                 <button id="confirmResetBtn" class="btn btn-success btn-sm fw-bold">RESETEAR AHORA</button>
             </div>
         </div>
@@ -71,19 +72,57 @@
                         <label class="form-label fw-bold">Cargo / Rol:</label>
                         <select name="rolID" id="contratoRolID" class="form-control border-dark">
                             <?php foreach ($roles_select as $r): ?>
-                                <option value="<?php echo $r['rolID']; ?>"><?php echo htmlspecialchars($r['rol']); ?></option>
+                                <option value="<?php echo $r['rolID']; ?>"><?php echo htmlspecialchars($r['rol']); ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Sueldo Mensual (Bs.):</label>
-                        <input type="number" name="sueldo" id="contratoSueldo" class="form-control border-dark" step="0.01" required>
+                        <input type="number" name="sueldo" id="contratoSueldo" class="form-control border-dark"
+                            step="0.01" required>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary btn-sm" onclick="hideContratoModal()">CANCELAR</button>
                 <button id="btnGuardarContrato" class="btn btn-primary btn-sm fw-bold">GUARDAR CAMBIOS</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CREAR USUARIO -->
+<div class="modal" id="modalCrearUsuario">
+    <div class="modal-dialog">
+        <div class="modal-content border-success">
+            <div class="modal-header bg-success text-white">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-user-plus me-2"></i>CREAR USUARIO DEL SISTEMA</h5>
+                <button type="button" class="btn-close btn-close-white" onclick="hideCrearUsuarioModal()"></button>
+            </div>
+            <div class="modal-body py-4">
+                <div id="crearUsuarioStatus"></div>
+                <div id="crearUsuarioBody">
+                    <p class="mb-2">Empleado: <b id="crearUsuarioEmpleadoNombre"></b></p>
+                    <div class="alert alert-info py-2 mb-3 small">
+                        <i class="fas fa-info-circle me-1"></i> <b>Nota Informativa:</b>
+                        La contraseña por defecto asignada al usuario será: <b class="text-success">123456</b>
+                    </div>
+                    <form id="formCrearUsuario">
+                        <input type="hidden" name="empleadoID" id="crearUsuarioEmpleadoID">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">(*) Nombre de Usuario:</label>
+                            <input type="text" name="usuario" id="crearUsuarioNombre" class="form-control border-dark"
+                                placeholder="ej: jperez" required autocomplete="off"
+                                onkeyup="this.value=this.value.toLowerCase().replace(/\s/g,'')">
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelCrearUsuarioBtn" class="btn btn-secondary btn-sm"
+                    onclick="hideCrearUsuarioModal()">CANCELAR</button>
+                <button id="btnGuardarNuevoUsuario" class="btn btn-success btn-sm fw-bold">CREAR USUARIO</button>
             </div>
         </div>
     </div>
