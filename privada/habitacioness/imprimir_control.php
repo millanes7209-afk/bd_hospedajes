@@ -111,7 +111,7 @@ foreach ($habitaciones as $hab) {
             /* Fondo gris para simular hoja en pantalla */
             margin: 0;
             padding: 20px;
-            font-size: 10px;
+            font-size: 11px;
             line-height: 1.15;
         }
 
@@ -140,7 +140,7 @@ foreach ($habitaciones as $hab) {
             border-radius: 4px;
             cursor: pointer;
             text-decoration: none;
-            font-size: 12px;
+            font-size: 13px;
         }
 
         .btn-print:hover {
@@ -155,7 +155,7 @@ foreach ($habitaciones as $hab) {
             min-height: 33cm;
             /* Oficio portrait height de ~33cm */
             margin: 0 auto;
-            padding: 0.3cm;
+            padding: 1.2cm 0.5cm 1.2cm 0.5cm;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
             box-sizing: border-box;
             border-radius: 2px;
@@ -173,7 +173,7 @@ foreach ($habitaciones as $hab) {
         }
 
         .header-title {
-            font-size: 18px;
+            font-size: 19px;
             font-weight: bold;
             text-align: center;
             flex-grow: 1;
@@ -182,7 +182,7 @@ foreach ($habitaciones as $hab) {
         }
 
         .header-meta {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: bold;
             white-space: nowrap;
         }
@@ -203,7 +203,7 @@ foreach ($habitaciones as $hab) {
         }
 
         .control-box-title {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: bold;
             text-transform: uppercase;
             margin-bottom: 4px;
@@ -215,7 +215,7 @@ foreach ($habitaciones as $hab) {
         .table-compact {
             width: 100%;
             border-collapse: collapse;
-            font-size: 11.5px;
+            font-size: 12.5px;
         }
 
         .table-compact th,
@@ -246,7 +246,7 @@ foreach ($habitaciones as $hab) {
             display: flex;
             justify-content: space-between;
             margin-bottom: 5px;
-            font-size: 10px;
+            font-size: 11px;
         }
 
         .caja-line span {
@@ -264,7 +264,7 @@ foreach ($habitaciones as $hab) {
             min-height: 52px;
             margin-top: 8px;
             padding: 6px;
-            font-size: 9px;
+            font-size: 10px;
             box-sizing: border-box;
         }
 
@@ -275,7 +275,7 @@ foreach ($habitaciones as $hab) {
         }
 
         .floor-title {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: bold;
             border-bottom: 2px solid #000;
             padding-bottom: 2px;
@@ -316,7 +316,7 @@ foreach ($habitaciones as $hab) {
 
         .room-card-header {
             font-weight: bold;
-            font-size: 12px;
+            font-size: 13px;
             border-bottom: 1px solid #000;
             padding-bottom: 2px;
             margin-bottom: 1px;
@@ -338,8 +338,8 @@ foreach ($habitaciones as $hab) {
         .room-data-line {
             display: flex;
             align-items: flex-end;
-            font-size: 10px;
-            height: 10px;
+            font-size: 11px;
+            height: 11px;
         }
 
         .room-data-line-label {
@@ -373,7 +373,7 @@ foreach ($habitaciones as $hab) {
         }
 
         .room-status-deuda-text {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: bold;
             color: #ff0000;
             white-space: nowrap;
@@ -424,7 +424,7 @@ foreach ($habitaciones as $hab) {
 
         @page {
             size: legal portrait;
-            margin: 0.5cm;
+            margin: 1.2cm 0.5cm 1.2cm 0.5cm;
         }
     </style>
 </head>
