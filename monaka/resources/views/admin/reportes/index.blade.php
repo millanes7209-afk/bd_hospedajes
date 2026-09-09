@@ -18,11 +18,7 @@
     @include('layouts.admin_navbar')
 
     <div class="max-w-7xl mx-auto px-4 py-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <h2 class="text-2xl font-black uppercase flex items-center gap-2" style="color:var(--color-text)">
-                <i class="fa-solid fa-chart-pie text-amber-400"></i>REPORTES DE VENTAS Y MÉTRICAS
-            </h2>
-
+        <div class="flex flex-col md:flex-row md:items-center justify-end gap-4 mb-6">
             <!-- Filtro de Fechas -->
             <form action="{{ route('admin.reportes') }}" method="GET"
                 class="flex items-center gap-2 admin-box p-2 rounded-xl border shadow-sm">
@@ -136,7 +132,8 @@
                 @foreach ($ventasPorHora as $vh)
                     <div class="p-3 rounded-xl admin-subcard border text-center">
                         <div class="text-xs font-black text-amber-600 dark:text-amber-400">
-                            {{ sprintf('%02d:00', $vh->hora) }}</div>
+                            {{ sprintf('%02d:00', $vh->hora) }}
+                        </div>
                         <div class="text-sm font-black admin-text-main mt-1">Bs.{{ number_format($vh->total_monto, 2) }}
                         </div>
                         <div class="text-[10px] admin-text-muted font-bold mt-0.5">{{ $vh->total_ventas }} ventas</div>

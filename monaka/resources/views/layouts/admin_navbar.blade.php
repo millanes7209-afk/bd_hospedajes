@@ -40,6 +40,12 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
                 <i class="fa-solid fa-clipboard-list text-sm"></i>PEDIDOS
             </a>
 
+            <a href="{{ route('admin.transacciones') }}"
+                class="px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 {{ request()->routeIs('admin.transacciones*') ? 'bg-amber-500/20 font-black text-amber-500' : 'hover:bg-white/10' }}"
+                style="color: {{ request()->routeIs('admin.transacciones*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
+                <i class="fa-solid fa-receipt text-sm"></i>TRANSACCIONES
+            </a>
+
             <a href="{{ route('admin.productos') }}"
                 class="px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 {{ request()->routeIs('admin.productos*') ? 'bg-amber-500/20 font-black text-amber-500' : 'hover:bg-white/10' }}"
                 style="color: {{ request()->routeIs('admin.productos*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
@@ -117,6 +123,12 @@ $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_pat
             class="px-4 py-2.5 rounded-lg flex items-center gap-2.5 {{ request()->routeIs('admin.pedidos*') ? 'bg-amber-500/20 font-black text-amber-500' : 'hover:bg-white/10' }}"
             style="color: {{ request()->routeIs('admin.pedidos*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
             <i class="fa-solid fa-clipboard-list text-sm w-5 text-center"></i>PEDIDOS
+        </a>
+
+        <a href="{{ route('admin.transacciones') }}"
+            class="px-4 py-2.5 rounded-lg flex items-center gap-2.5 {{ request()->routeIs('admin.transacciones*') ? 'bg-amber-500/20 font-black text-amber-500' : 'hover:bg-white/10' }}"
+            style="color: {{ request()->routeIs('admin.transacciones*') ? 'var(--color-primary, #FFE66D)' : 'var(--color-text)' }}">
+            <i class="fa-solid fa-receipt text-sm w-5 text-center"></i>TRANSACCIONES
         </a>
 
         <a href="{{ route('admin.productos') }}"

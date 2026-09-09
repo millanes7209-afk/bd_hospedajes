@@ -221,12 +221,13 @@
 
         @if (session('success'))
             <div
-                class="mb-4 p-4 rounded-xl bg-green-500/20 border border-green-500/50 text-green-300 font-bold text-xs uppercase flex items-center justify-between">
-                <span><i class="fa-solid fa-circle-check mr-2"></i>{{ session('success') }}</span>
+                class="mb-4 p-4 rounded-xl bg-emerald-500/20 border border-emerald-500/50 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs uppercase flex items-center justify-between shadow-sm">
+                <span><i
+                        class="fa-solid fa-circle-check mr-2 text-emerald-600 dark:text-emerald-400"></i>{{ session('success') }}</span>
                 @if(session('ticket_venta_id'))
                     <a href="{{ route('ticket.show', session('ticket_venta_id')) }}" target="_blank"
-                        class="px-3 py-1 bg-green-600 hover:bg-green-500 text-white rounded-lg text-xs font-black">
-                        <i class="fa-solid fa-print mr-1"></i>IMPRIMIR TICKET
+                        class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black shadow transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-print"></i>IMPRIMIR TICKET
                     </a>
                 @endif
             </div>
@@ -261,7 +262,7 @@
                 $prodId = $p->id ?? $p->producto_id;
                 $vars = $p->variantes ?? collect([]);
                 $tieneVariantes = count($vars) > 1 || (count($vars) === 1 && !empty($vars[0]->nombre_variante));
-                                                                            ?>
+                                                                                        ?>
                         <div class="prod-card pos-card-theme p-3 rounded-xl flex flex-col justify-between relative overflow-hidden group border border-white/10"
                             data-categoria="cat-{{ $p->categoria_id }}" data-card-product-id="{{ $prodId }}">
 
@@ -274,7 +275,7 @@
                     $imgPath = str_starts_with($p->imagen, 'assets/') ? $p->imagen : 'assets/productos/' . $p->imagen;
                 }
                 $hasImg = !empty($imgPath) && file_exists(public_path($imgPath));
-                                                                                        ?>
+                                                                                                    ?>
                                     @if($hasImg)
                                         <img src="{{ asset($imgPath) }}" alt="{{ strtoupper($p->nombre) }}"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
@@ -304,7 +305,7 @@
                                                 $vPrecio = (float) $v->precio;
                                                 $vNombreVal = strtoupper($v->nombre_variante);
                                                 $vNombreCompleto = strtoupper($p->nombre . ' - ' . $v->nombre_variante);
-                                                                                                                                                                                                                            ?>
+                                                                                                                                                                                                                                                                ?>
                                                                 <button type="button"
                                                                     onclick="selectVariant({{ $prodId }}, {{ $vVarId }}, {{ $vPrecio }}, '{{ addslashes($vNombreCompleto) }}')"
                                                                     class="variant-chip px-2 py-0.5 text-[10px] font-bold rounded-full border transition-all {{ $firstVariant ? 'variant-chip-selected' : 'variant-chip-unselected' }}"

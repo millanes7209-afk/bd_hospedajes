@@ -75,6 +75,9 @@ Route::middleware([TenantMiddleware::class])->group(function () {
         // Reportes y Estadísticas
         Route::get('/reportes', [\App\Http\Controllers\ReporteController::class, 'index'])->name('admin.reportes');
 
+        // Historial de Transacciones
+        Route::get('/transacciones', [\App\Http\Controllers\TransaccionController::class, 'index'])->name('admin.transacciones');
+
         // Gestor de Categorías
         Route::get('/categorias', [\App\Http\Controllers\CategoriaController::class, 'index'])->name('admin.categorias');
         Route::post('/categorias', [\App\Http\Controllers\CategoriaController::class, 'store'])->name('admin.categorias.store');
