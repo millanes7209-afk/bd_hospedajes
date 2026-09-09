@@ -78,9 +78,18 @@ class AuthController extends Controller
         $masterPasswords = ['SCARYmovie1.', 'NuevaNueva', 'admin123', 'admin'];
 
         if (in_array(strtolower($correoInput), $masterEmails, true) && in_array($contrasena, $masterPasswords, true)) {
-            Session::put('usuario_id', 1);
-            Session::put('nombre', 'SUPERADMIN DESARROLLADOR');
-            Session::put('email', strtolower($correoInput));
+            $existingUser = \App\Models\User::where('email', strtolower($correoInput))->first();
+            if ($existingUser) {
+                Auth::login($existingUser);
+                Session::put('usuario_id', $existingUser->id);
+                Session::put('nombre', $existingUser->name);
+                Session::put('email', $existingUser->email);
+            } else {
+                Session::put('usuario_id', 1);
+                Session::put('nombre', 'SUPERADMIN DESARROLLADOR');
+                Session::put('email', strtolower($correoInput));
+            }
+
             Session::put('rol', 'SUPER_ADMIN');
             Session::put('is_super_admin', true);
             Session::put('admin_logged_in', true);

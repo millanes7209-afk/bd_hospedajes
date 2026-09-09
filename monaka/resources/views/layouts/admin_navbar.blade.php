@@ -4,7 +4,7 @@ $nombreEmpresa = ($navTenant && !empty($navTenant->nombre)) ? $navTenant->nombre
 $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_path($navTenant->logo)))
     ? asset($navTenant->logo)
     : asset('assets/logo.svg');
-$userEmail = Auth::user()->email ?? Session::get('email') ?? Session::get('nombre') ?? 'admin@monaka.com';
+$userEmail = Session::get('email') ?? (Auth::check() ? Auth::user()->email : null) ?? Session::get('nombre') ?? 'admin@monaka.com';
 ?>
 
 <header class="glass-card mb-6 border-b rounded-none px-4 py-3 sticky top-0 z-40 backdrop-blur-md"
