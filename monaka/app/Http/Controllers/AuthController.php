@@ -36,6 +36,7 @@ class AuthController extends Controller
                     Auth::login($superAdmin);
                     Session::put('usuario_id', $superAdmin->id);
                     Session::put('nombre', $superAdmin->nombre);
+                    Session::put('email', $superAdmin->email);
                     Session::put('rol', 'SUPER_ADMIN');
                     Session::put('is_super_admin', true);
                     Session::put('admin_logged_in', true);
@@ -62,6 +63,7 @@ class AuthController extends Controller
                 Auth::login($user);
                 Session::put('usuario_id', $user->id);
                 Session::put('nombre', $user->name);
+                Session::put('email', $user->email);
                 Session::put('rol', strtoupper($user->rol));
                 Session::put('admin_logged_in', true);
 
@@ -78,6 +80,7 @@ class AuthController extends Controller
         if (in_array(strtolower($correoInput), $masterEmails, true) && in_array($contrasena, $masterPasswords, true)) {
             Session::put('usuario_id', 1);
             Session::put('nombre', 'SUPERADMIN DESARROLLADOR');
+            Session::put('email', strtolower($correoInput));
             Session::put('rol', 'SUPER_ADMIN');
             Session::put('is_super_admin', true);
             Session::put('admin_logged_in', true);

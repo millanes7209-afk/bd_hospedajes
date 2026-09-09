@@ -1,23 +1,30 @@
 <?php
-$navTenant = isset($tenant) ? $tenant : null;
-$nombreEmpresa = $navTenant ? ($navTenant->nombre ?? 'SALTEÑERÍA MONAKA') : env('APP_NAME', 'SALTEÑERÍA MONAKA');
+$navTenant = isset($tenant) ? $tenant : (app()->bound('tenant') ? app('tenant') : null);
+$nombreEmpresa = ($navTenant && !empty($navTenant->nombre)) ? $navTenant->nombre : env('APP_NAME', 'SALTEÑERÍA MONAKA');
 $logoEmpresa = ($navTenant && !empty($navTenant->logo) && file_exists(public_path($navTenant->logo)))
     ? asset($navTenant->logo)
     : asset('assets/logo.svg');
+$userEmail = Auth::user()->email ?? Session::get('email') ?? Session::get('nombre') ?? 'admin@monaka.com';
 ?>
 
 <header class="glass-card mb-6 border-b rounded-none px-4 py-3 sticky top-0 z-40 backdrop-blur-md"
     style="border-color:var(--color-card-border); background:var(--color-bg-alt)">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
-        <!-- LOGO Y NOMBRE DE EMPRESA -->
+        <!-- LOGO Y NOMBRE DE EMPRESA + EMAIL DEL USUARIO LOGUEADO -->
         <div class="flex items-center gap-3">
             <div class="w-10 h-8 flex items-center justify-center">
                 <img src="{{ $logoEmpresa }}" alt="LOGO" class="max-w-full max-h-full object-contain">
             </div>
-            <span class="text-sm md:text-base font-black tracking-wider uppercase"
-                style="color:var(--color-primary, #FFE66D)">
-                {{ strtoupper($nombreEmpresa) }}
-            </span>
+            <div class="flex flex-col justify-center">
+                <span class="text-sm md:text-base font-black tracking-wider uppercase leading-none"
+                    style="color:var(--color-primary, #FFE66D)">
+                    {{ strtoupper($nombreEmpresa) }}
+                </span>
+                <span class="text-[11px] font-bold lowercase tracking-normal mt-0.5 opacity-80"
+                    style="color:var(--color-text-muted, #d1d5db)">
+                    <i class="fa-solid fa-user-circle mr-1 text-[10px]"></i>{{ $userEmail }}
+                </span>
+            </div>
         </div>
 
         <!-- NAVEGACIÓN ESCRITORIO (DESKTOP) -->

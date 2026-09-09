@@ -72,7 +72,7 @@
                     <thead class="uppercase bg-black/10 dark:bg-white/5 border-b border-white/10"
                         style="color:var(--color-text-muted,#9ca3af);">
                         <tr>
-                            <th class="py-3.5 px-4 font-black"># VENTA / FECHA</th>
+                            <th class="py-3.5 px-4 font-black">FECHA / HORA</th>
                             <th class="py-3.5 px-4 font-black">CANAL</th>
                             <th class="py-3.5 px-4 font-black">PRODUCTOS Y DETALLE</th>
                             <th class="py-3.5 px-4 font-black">PAGO</th>
@@ -89,10 +89,9 @@
                             $cajero = $v->usuarioApertura->nombre ?? ($v->usuarioApertura->username ?? 'SISTEMA');
                                                     ?>
                                                 <tr class="hover:bg-amber-500/5 transition-colors">
-                                                    <!-- ID y Fecha -->
+                                                    <!-- Fecha y Hora -->
                                                     <td class="py-3 px-4 font-extrabold whitespace-nowrap">
-                                                        <div class="text-amber-600 dark:text-amber-400 font-black">#{{ $v->id }}</div>
-                                                        <div class="text-[11px] opacity-70 font-semibold">
+                                                        <div class="text-amber-600 dark:text-amber-400 font-black text-xs">
                                                             {{ \Carbon\Carbon::parse($v->fecha_apertura)->format('d/m/Y H:i') }}
                                                         </div>
                                                     </td>
