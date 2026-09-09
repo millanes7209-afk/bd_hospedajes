@@ -54,8 +54,13 @@ class Venta extends Model
         return $this->pagos()->sum('monto');
     }
 
-    public function saldoPendiente()
+    public function usuarioApertura()
     {
-        return max(0, $this->monto_total - $this->totalPagado());
+        return $this->belongsTo(User::class, 'usuario_apertura_id');
+    }
+
+    public function usuarioCierre()
+    {
+        return $this->belongsTo(User::class, 'usuario_cierre_id');
     }
 }

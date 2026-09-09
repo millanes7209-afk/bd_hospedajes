@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Venta;
+use Illuminate\Support\Facades\DB;
 
 class TransaccionController extends Controller
 {
@@ -16,10 +17,11 @@ class TransaccionController extends Controller
 
         try {
             $ventas = Venta::with(['items', 'pagos', 'usuarioApertura'])
-                ->whereIn('estado', $estadosValidos)
-                ->whereDate('fecha_apertura', '>=', $fechaInicio)
-                ->whereDate('fecha_apertura', '<=', $fechaFin)
-                ->orderBy('fecha_apertura', 'desc')
+                ->where(function ($q) use ($fechaInicio, $fechaFin) {
+                    $q->whereDate(DB::raw('IFNULL(fecha_apertura, created_at)'), '>=', $fechaInicio)
+                        ->whereDate(DB::raw('IFNULL(fecha_apertura, created_at)'), '<=', $fechaFin);
+                })
+                ->orderBy('id', 'desc')
                 ->get();
 
             $totalRecaudado = $ventas->sum('monto_total');
