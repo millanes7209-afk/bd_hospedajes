@@ -370,5 +370,94 @@ class PedidoController extends Controller
 
         return redirect()->back();
     }
+
+    /**
+     * Impresión Directa mediante Socket TCP IP (Puerto 9100 - Impresora de Red/RICOH/ESC-POS)
+     */
+    public function imprimirDirectoTcp(Request $request, $id)
+    {
+        $printerIp = $request->input('ip', '192.168.0.211');
+        $printerPort = (int) $request->input('port', 9100);
+
+        $pedido = DB::table('pedidos')->where('pedidoID', $id)->first();
+        if (!$pedido) {
+            return response()->json(['success' => false, 'error' => 'Pedido no encontrado'], 404);
+        }
+
+        $items = DB::table('pedido_items')
+            ->leftJoin('productos', 'pedido_items.productoID', '=', 'productos.productoID')
+            ->select(
+                'pedido_items.*',
+                DB::raw("COALESCE(NULLIF(pedido_items.nombre_variante, ''), productos.nombre, 'PRODUCTO') AS nombre_variante")
+            )
+            ->where('pedido_items.pedidoID', $id)
+            ->get();
+
+        // Construir flujo de comandos ESC/POS
+        $ESC = "\x1b";
+        $GS = "\x1d";
+        $LF = "\x0a";
+
+        $data = $ESC . "@"; // Inicializar
+        $data .= $ESC . "a\x01"; // Centrar
+        $data .= $ESC . "!\x30"; // Texto Doble Alto / Ancho (Encabezado)
+        $data .= "RICO POLLO\n";
+        $data .= $ESC . "!\x00"; // Normal
+        $data .= "COMPROBANTE DE COMPRA\n";
+        $data .= "Tel: 591-76543210\n";
+        $data .= "--------------------------------\n";
+
+        $data .= $ESC . "a\x00"; // Izquierda
+        $data .= "Pedido:  #" . $pedido->numero_pedido . "\n";
+        $data .= "Fecha:   " . date('d/m/Y H:i', strtotime($pedido->fecha_creacion)) . "\n";
+        $data .= "Cliente: " . mb_strtoupper($pedido->cliente_nombre) . "\n";
+        $data .= "Tel:     " . $pedido->cliente_telefono . "\n";
+        $data .= "Tipo:    " . mb_strtoupper($pedido->tipo_pedido) . "\n";
+        if (!empty($pedido->direccion_entrega)) {
+            $data .= "Direccion: " . mb_strtoupper($pedido->direccion_entrega) . "\n";
+        }
+        if (!empty($pedido->metodo_pago) && $pedido->metodo_pago !== 'ninguno') {
+            $data .= "Pago:    " . mb_strtoupper($pedido->metodo_pago) . "\n";
+        }
+        $data .= "--------------------------------\n";
+
+        foreach ($items as $item) {
+            $cant = (int) $item->cantidad;
+            $nombre = mb_strtoupper($item->nombre_variante ?: 'PRODUCTO');
+            $precio = "Bs." . number_format((float) $item->precio_total, 2);
+            $lineaNombre = $cant . "x " . $nombre;
+
+            if (mb_strlen($lineaNombre) + mb_strlen($precio) >= 32) {
+                $lineaNombre = mb_substr($lineaNombre, 0, 31 - mb_strlen($precio));
+            }
+            $espacios = max(1, 32 - mb_strlen($lineaNombre) - mb_strlen($precio));
+            $data .= $lineaNombre . str_repeat(" ", $espacios) . $precio . "\n";
+        }
+
+        $data .= "--------------------------------\n";
+        $data .= $ESC . "a\x01"; // Centrar
+        $data .= $ESC . "!\x20"; // Texto Doble Alto
+        $data .= "TOTAL: Bs." . number_format((float) $pedido->monto_total, 2) . "\n";
+        $data .= $ESC . "!\x00"; // Normal
+        $data .= "\nGRACIAS POR SU COMPRA!\n\n\n\n";
+        $data .= $GS . "V\x01"; // Corte de papel
+
+        // Conexión TCP Socket a la impresora de red
+        $fp = @fsockopen($printerIp, $printerPort, $errno, $errstr, 2.5);
+        if (!$fp) {
+            return response()->json([
+                'success' => false,
+                'error' => "No se pudo conectar a la impresora en {$printerIp}:{$printerPort}. Verifique que la impresora esté encendida y conectada a la red local. (Detalle: {$errstr})"
+            ], 500);
+        }
+
+        fwrite($fp, $data);
+        fclose($fp);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Ticket impreso correctamente en {$printerIp}:{$printerPort}"
+        ]);
+    }
 }
 

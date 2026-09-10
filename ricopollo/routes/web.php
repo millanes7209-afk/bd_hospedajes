@@ -42,6 +42,7 @@ Route::middleware([TenantMiddleware::class])->group(function () {
     Route::post('/order/confirm', [PedidoController::class, 'storeOrder'])->name('order.confirm');
     Route::get('/ticket/{id}', [PedidoController::class, 'showTicket'])->name('ticket.show');
     Route::get('/api/pedidos/{id}/estado', [PedidoController::class, 'getApiEstado'])->name('api.pedidos.estado');
+    Route::match(['get', 'post'], '/api/pedidos/{id}/imprimir-directo', [PedidoController::class, 'imprimirDirectoTcp'])->name('api.pedidos.imprimirDirecto');
     Route::post('/pedidos/{id}/confirmar-pago', [PedidoController::class, 'confirmarPagoCliente'])->name('pedidos.confirmarPago');
 
     Route::prefix('admin')->middleware([AdminAuthMiddleware::class])->group(function () {

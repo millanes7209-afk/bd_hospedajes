@@ -487,7 +487,6 @@
         font-weight: 900 !important;
       }
     }
-    }
   </style>
 </head>
 
@@ -687,8 +686,8 @@ $wspUrl = "https://wa.me/591" . preg_replace('/[^0-9]/', '', $pedido['cliente_te
       </a>
 
       <?php if (!in_array($estado, ['pendiente', 'cancelado'])): ?>
-      <button onclick="window.print()" class="btn-action btn-menu" style="background:#4b5563;">
-        🖨️ IMPRIMIR COMPROBANTE
+      <button onclick="ejecutarImpresion()" class="btn-action btn-menu" style="background:#ff5722;" id="btn-print-main">
+        🖨️ IMPRIMIR TICKET
       </button>
       <?php endif; ?>
 
@@ -751,11 +750,194 @@ $wspUrl = "https://wa.me/591" . preg_replace('/[^0-9]/', '', $pedido['cliente_te
         .catch(err => console.log('Polling error:', err));
     }, 4000);
 
-    // Auto impresión para Impresora Térmica 58mm (IMP006)
+    // ============================================================
+    // IMPRESIÓN BLUETOOTH - IMP006 58mm (ESC/POS via Web Bluetooth)
+    // ============================================================
+    const BT_SERVICE_UUID = '000018f0-0000-1000-8000-00805f9b34fb';
+    const BT_CHAR_UUID = '00002af1-0000-1000-8000-00805f9b34fb';
+    const CHUNK_SIZE = 100; // bytes por envío (seguro para BLE)
+
+    // Datos del ticket (inyectados desde PHP)
+    const ticketData = {
+      empresa: 'RICO POLLO',
+      numero: '<?php echo addslashes($pedido["numero_pedido"]); ?>',
+      fecha: '<?php echo date("d/m/Y H:i", strtotime($pedido["fecha_creacion"])); ?>',
+      cliente: '<?php echo addslashes($pedido["cliente_nombre"]); ?>',
+      tipo: '<?php echo strtoupper(addslashes($pedido["tipo_pedido"])); ?>',
+      metodoPago: '<?php echo strtoupper(addslashes($pedido["metodo_pago"] ?? "")); ?>',
+      total: '<?php echo number_format($pedido["monto_total"], 2); ?>',
+      items: <?php
+$itemsJs = array_map(function ($i) {
+  return [
+    'qty' => (int) $i['cantidad'],
+    'nombre' => strtoupper($i['nombre_variante'] ?: 'PRODUCTO'),
+    'precio' => number_format((float) $i['precio_total'], 2),
+  ];
+}, $items);
+echo json_encode($itemsJs);
+      ?>
+    };
+
+    function escBytes(str) {
+      return Array.from(new TextEncoder().encode(str));
+    }
+
+    function buildEscPos(data) {
+      const ESC = 0x1B, GS = 0x1D, LF = 0x0A;
+      let cmd = [];
+
+      const txt = (s) => { cmd.push(...escBytes(s)); };
+      const nl = (n = 1) => { for (let i = 0; i < n; i++) cmd.push(LF); };
+      const center = () => cmd.push(ESC, 0x61, 0x01);
+      const left = () => cmd.push(ESC, 0x61, 0x00);
+      const bold = () => cmd.push(ESC, 0x45, 0x01);
+      const nobo = () => cmd.push(ESC, 0x45, 0x00);
+      const big = () => cmd.push(ESC, 0x21, 0x10);
+      const normal = () => cmd.push(ESC, 0x21, 0x00);
+      const line = () => { txt('--------------------------------'); nl(); };
+
+      // Reset
+      cmd.push(ESC, 0x40);
+
+      // Encabezado
+      center(); big(); bold();
+      txt(data.empresa); nl();
+      nobo(); normal();
+      txt('COMPROBANTE OFICIAL'); nl();
+      txt('Tel: 591-7654-3210'); nl();
+      line();
+
+      // Info pedido
+      left();
+      txt('Pedido: #' + data.numero); nl();
+      txt('Fecha:  ' + data.fecha); nl();
+      txt('Cliente: ' + data.cliente); nl();
+      txt('Tipo:    ' + data.tipo); nl();
+      if (data.metodoPago && data.metodoPago !== 'NINGUNO') {
+        txt('Pago:    ' + data.metodoPago); nl();
+      }
+      line();
+
+      // Items
+      data.items.forEach(item => {
+        const linea = item.qty + 'x ' + item.nombre;
+        const precio = 'Bs.' + item.precio;
+        // Alinear precio a la derecha (32 chars)
+        const spaces = Math.max(1, 32 - linea.length - precio.length);
+        txt(linea + ' '.repeat(spaces) + precio); nl();
+      });
+
+      line();
+
+      // Total
+      center(); bold(); big();
+      txt('TOTAL: Bs.' + data.total); nl();
+      nobo(); normal();
+
+      // Footer
+      nl();
+      center();
+      txt('GRACIAS POR ELEGIR'); nl();
+      txt(data.empresa + '!'); nl();
+      txt('CONSERVA ESTE COMPROBANTE'); nl(2);
+      nl(3);
+
+      // Corte parcial
+      cmd.push(GS, 0x56, 0x01);
+
+      return new Uint8Array(cmd);
+    }
+
+    async function sendChunked(characteristic, data) {
+      for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+        const chunk = data.slice(i, i + CHUNK_SIZE);
+        await characteristic.writeValueWithoutResponse(chunk);
+        await new Promise(r => setTimeout(r, 30)); // pausa entre chunks
+      }
+    }
+
+    async function imprimirBluetooth() {
+      const btn = document.getElementById('btn-bt-print');
+      if (!navigator.bluetooth) {
+        alert('⚠️ Tu navegador no soporta Web Bluetooth.\nUsa Chrome en Android.');
+        return;
+      }
+      const original = btn ? btn.innerHTML : '';
+      try {
+        if (btn) { btn.innerHTML = '⏳ Conectando...'; btn.disabled = true; }
+
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [{ services: [BT_SERVICE_UUID] }],
+          optionalServices: [BT_SERVICE_UUID]
+        });
+
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService(BT_SERVICE_UUID);
+        const char = await service.getCharacteristic(BT_CHAR_UUID);
+
+        if (btn) btn.innerHTML = '📤 Enviando...';
+
+        const bytes = buildEscPos(ticketData);
+        await sendChunked(char, bytes);
+
+        if (btn) { btn.innerHTML = '✅ ¡Impreso!'; }
+        setTimeout(() => { if (btn) { btn.innerHTML = original; btn.disabled = false; } }, 3000);
+
+      } catch (err) {
+        console.error('BT Error:', err);
+        if (btn) { btn.innerHTML = original; btn.disabled = false; }
+        if (err.name === 'NotFoundError') {
+          // Usuario canceló el diálogo
+          return;
+        }
+        // UUID no encontrado — dar instrucciones
+        if (err.name === 'NotSupportedError' || err.message.includes('GATT')) {
+          alert('⚠️ No se encontró el servicio en la impresora.\n\n' +
+            'Pasos para verificar los UUIDs reales:\n' +
+            '1. Instala la app "nRF Connect" en tu celular.\n' +
+            '2. Conéctate a la IMP006 y copia el UUID del servicio de escritura.\n' +
+            '3. Comparte los UUIDs con el desarrollador.');
+        } else {
+          alert('Error Bluetooth: ' + err.message);
+        }
+      }
+    }
+
+    // ============================================================
+    // IMPRESIÓN UNIFICADA (AUTOMÁTICA SILENCIOSA CON RESPALDO)
+    // ============================================================
+    function ejecutarImpresion() {
+      const btn = document.getElementById('btn-print-main');
+      const original = btn ? btn.innerHTML : '🖨️ IMPRIMIR TICKET';
+      if (btn) { btn.innerHTML = '⏳ Imprimiendo...'; btn.disabled = true; }
+
+      // 1. Intentar impresión directa por red (TCP Socket)
+      fetch('{{ route("api.pedidos.imprimirDirecto", ["id" => $pedido["pedidoID"]]) }}')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            if (btn) { btn.innerHTML = '✅ ¡Ticket Impreso!'; }
+            setTimeout(() => { if (btn) { btn.innerHTML = original; btn.disabled = false; } }, 2500);
+          } else {
+            // Si la impresión por red falla o la IP no responde, usar ventana normal de impresión
+            console.warn('Impresión por red falló, usando ventana:', data.error);
+            if (btn) { btn.innerHTML = original; btn.disabled = false; }
+            window.print();
+          }
+        })
+        .catch(err => {
+          // Si hay error de red, usar ventana normal de impresión
+          console.warn('Error AJAX, usando window.print()', err);
+          if (btn) { btn.innerHTML = original; btn.disabled = false; }
+          window.print();
+        });
+    }
+
+    // Auto-impresión si viene parámetro print o autoprint en la URL
     <?php if (request()->has('print') || request()->has('autoprint')): ?>
     window.addEventListener('load', () => {
       setTimeout(() => {
-        window.print();
+        ejecutarImpresion();
       }, 500);
     });
     <?php endif; ?>
