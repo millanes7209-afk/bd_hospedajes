@@ -866,80 +866,75 @@ echo json_encode($itemsJs);
     }
 
     async function imprimirBluetooth() {
-      const btn = document.getElementById('btn-bt-print');
       if (!navigator.bluetooth) {
-        alert('⚠️ Tu navegador no soporta Web Bluetooth.\nUsa Chrome en Android.');
-        return;
+        throw new Error('Web Bluetooth no disponible');
       }
-      const original = btn ? btn.innerHTML : '';
-      try {
-        if (btn) { btn.innerHTML = '⏳ Conectando...'; btn.disabled = true; }
 
-        const device = await navigator.bluetooth.requestDevice({
-          filters: [{ services: [BT_SERVICE_UUID] }],
-          optionalServices: [BT_SERVICE_UUID]
-        });
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: [
+          '000018f0-0000-1000-8000-00805f9b34fb',
+          '0000ff00-0000-1000-8000-00805f9b34fb',
+          '0000ae30-0000-1000-8000-00805f9b34fb',
+          'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+          '00004953-0000-1000-8000-00805f9b34fb'
+        ]
+      });
 
-        const server = await device.gatt.connect();
-        const service = await server.getPrimaryService(BT_SERVICE_UUID);
-        const char = await service.getCharacteristic(BT_CHAR_UUID);
+      const server = await device.gatt.connect();
+      const services = await server.getPrimaryServices();
+      let targetChar = null;
 
-        if (btn) btn.innerHTML = '📤 Enviando...';
-
-        const bytes = buildEscPos(ticketData);
-        await sendChunked(char, bytes);
-
-        if (btn) { btn.innerHTML = '✅ ¡Impreso!'; }
-        setTimeout(() => { if (btn) { btn.innerHTML = original; btn.disabled = false; } }, 3000);
-
-      } catch (err) {
-        console.error('BT Error:', err);
-        if (btn) { btn.innerHTML = original; btn.disabled = false; }
-        if (err.name === 'NotFoundError') {
-          // Usuario canceló el diálogo
-          return;
-        }
-        // UUID no encontrado — dar instrucciones
-        if (err.name === 'NotSupportedError' || err.message.includes('GATT')) {
-          alert('⚠️ No se encontró el servicio en la impresora.\n\n' +
-            'Pasos para verificar los UUIDs reales:\n' +
-            '1. Instala la app "nRF Connect" en tu celular.\n' +
-            '2. Conéctate a la IMP006 y copia el UUID del servicio de escritura.\n' +
-            '3. Comparte los UUIDs con el desarrollador.');
-        } else {
-          alert('Error Bluetooth: ' + err.message);
-        }
+      for (const service of services) {
+        try {
+          const chars = await service.getCharacteristics();
+          for (const c of chars) {
+            if (c.properties.write || c.properties.writeWithoutResponse) {
+              targetChar = c;
+              break;
+            }
+          }
+          if (targetChar) break;
+        } catch (e) {}
       }
+
+      if (!targetChar) {
+        throw new Error('No se encontró canal de escritura en la impresora Bluetooth seleccionada.');
+      }
+
+      const bytes = buildEscPos(ticketData);
+      await sendChunked(targetChar, bytes);
+      return true;
     }
 
     // ============================================================
-    // IMPRESIÓN UNIFICADA (AUTOMÁTICA SILENCIOSA CON RESPALDO)
+    // IMPRESIÓN UNIFICADA (WEB BLUETOOTH DIRECTO CON RESPALDO NATIVO)
     // ============================================================
-    function ejecutarImpresion() {
+    async function ejecutarImpresion() {
       const btn = document.getElementById('btn-print-main');
       const original = btn ? btn.innerHTML : '🖨️ IMPRIMIR TICKET';
-      if (btn) { btn.innerHTML = '⏳ Imprimiendo...'; btn.disabled = true; }
+      if (btn) { btn.innerHTML = '⏳ Conectando...'; btn.disabled = true; }
 
-      // 1. Intentar impresión directa por red (TCP Socket)
-      fetch('{{ route("api.pedidos.imprimirDirecto", ["id" => $pedido["pedidoID"]]) }}')
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            if (btn) { btn.innerHTML = '✅ ¡Ticket Impreso!'; }
-            setTimeout(() => { if (btn) { btn.innerHTML = original; btn.disabled = false; } }, 2500);
-          } else {
-            // Si la impresión por red falla o la IP no responde, usar ventana normal de impresión
-            console.warn('Impresión por red falló, usando ventana:', data.error);
+      // 1. Intentar Web Bluetooth directo nativo de Chrome (Sin instalar nada)
+      if (navigator.bluetooth) {
+        try {
+          await imprimirBluetooth();
+          if (btn) { btn.innerHTML = '✅ ¡Ticket Impreso!'; }
+          setTimeout(() => { if (btn) { btn.innerHTML = original; btn.disabled = false; } }, 2500);
+          return;
+        } catch (btErr) {
+          console.warn('Bluetooth no completado:', btErr);
+          if (btErr.name === 'NotFoundError') {
+            // Usuario canceló la selección del menú Bluetooth
             if (btn) { btn.innerHTML = original; btn.disabled = false; }
-            window.print();
+            return;
           }
-        })
-        .catch(err => {
-          // Si hay error de red, usar ventana normal de impresión
-          console.warn('Error AJAX, usando window.print()', err);
-          if (btn) { btn.innerHTML = original; btn.disabled = false; }
-          window.print();
-        });
+        }
+      }
+
+      // 2. Respaldo normal de ventana (window.print)
+      if (btn) { btn.innerHTML = original; btn.disabled = false; }
+      window.print();
     }
 
     // Auto-impresión si viene parámetro print o autoprint en la URL
