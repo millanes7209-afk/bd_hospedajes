@@ -427,20 +427,21 @@
 
     @media print {
       @page {
-        size: 58mm auto;
-        margin: 0mm;
+        size: 80mm auto;
+        margin: 0mm !important;
       }
 
-      body {
+      html, body {
         background: #ffffff !important;
         color: #000000 !important;
         padding: 0 !important;
         margin: 0 !important;
-        width: 58mm !important;
+        width: 100% !important;
         font-family: 'Courier New', Courier, monospace !important;
         font-size: 11px !important;
       }
 
+      .no-print,
       .status-card,
       .payment-module,
       .action-buttons,
@@ -448,11 +449,15 @@
       header,
       footer {
         display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
 
       .container {
-        max-width: 58mm !important;
-        width: 58mm !important;
+        max-width: 100% !important;
+        width: 100% !important;
         padding: 0 !important;
         margin: 0 !important;
       }
@@ -460,8 +465,9 @@
       .ticket-paper {
         box-shadow: none !important;
         border-radius: 0 !important;
-        padding: 2mm !important;
-        width: 58mm !important;
+        padding: 2mm 4mm !important;
+        width: 100% !important;
+        max-width: 100% !important;
         color: #000000 !important;
       }
 
@@ -470,7 +476,7 @@
       }
 
       .paper-header h2 {
-        font-size: 15px !important;
+        font-size: 16px !important;
         font-weight: 900 !important;
       }
 
@@ -478,12 +484,12 @@
       .paper-details,
       .paper-item,
       .paper-footer {
-        font-size: 10px !important;
+        font-size: 11px !important;
         line-height: 1.3 !important;
       }
 
       .paper-total {
-        font-size: 13px !important;
+        font-size: 14px !important;
         font-weight: 900 !important;
       }
     }
@@ -493,8 +499,8 @@
 <body>
   <div class="container">
 
-    <!-- BANNER: MANTENER VENTANA ABIERTA -->
-    <div
+    <!-- BANNER: MANTENER VENTANA ABIERTA (NO IMPRIMIR) -->
+    <div class="no-print"
       style="background:rgba(255,230,109,0.08);border:1px solid rgba(255,230,109,0.35);border-radius:14px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
       <div style="font-size:22px;flex-shrink:0;">🔔</div>
       <div>
