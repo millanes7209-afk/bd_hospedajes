@@ -687,11 +687,12 @@ $curr = $badges[$estado] ?? $badges['pendiente'];
     <!-- 4. BOTONES DE ACCIÓN Y CONTACTO POR WHATSAPP -->
     <div class="action-buttons">
       <?php
+$phoneRicoPollo = "71865086";
 $msgWsp = urlencode("Hola Rico Pollo, tengo una consulta/reclamo sobre mi pedido comprobante #" . $pedido['numero_pedido']);
-$wspUrl = "https://wa.me/591" . preg_replace('/[^0-9]/', '', $pedido['cliente_telefono']) . "?text=" . $msgWsp;
+$wspUrl = "https://wa.me/591" . $phoneRicoPollo . "?text=" . $msgWsp;
       ?>
       <a href="<?php echo $wspUrl; ?>" target="_blank" class="btn-action btn-whatsapp-support">
-        📱 ¿DUDAS O RECLAMOS? CONTACTAR AL LOCAL VIA WHATSAPP
+        📱 ¿DUDAS O RECLAMOS? CONTACTAR AL LOCAL VIA WHATSAPP (71865086)
       </a>
 
       <?php if (!in_array($estado, ['pendiente', 'cancelado'])): ?>
@@ -895,7 +896,7 @@ echo json_encode($itemsJs);
             }
           }
           if (targetChar) break;
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (!targetChar) {
