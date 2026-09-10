@@ -427,11 +427,12 @@
 
     @media print {
       @page {
-        size: 80mm auto;
+        size: auto;
         margin: 0mm !important;
       }
 
-      html, body {
+      html,
+      body {
         background: #ffffff !important;
         color: #000000 !important;
         padding: 0 !important;
@@ -464,10 +465,12 @@
 
       .ticket-paper {
         box-shadow: none !important;
+        border: 1px dashed #aaa !important;
         border-radius: 0 !important;
-        padding: 2mm 4mm !important;
-        width: 100% !important;
+        padding: 8px 12px !important;
+        width: 80mm !important;
         max-width: 100% !important;
+        margin: 0 auto !important;
         color: #000000 !important;
       }
 
