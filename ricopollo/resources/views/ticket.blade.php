@@ -871,16 +871,40 @@ echo json_encode($itemsJs);
         throw new Error('Web Bluetooth no disponible');
       }
 
-      const device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: [
-          '000018f0-0000-1000-8000-00805f9b34fb',
-          '0000ff00-0000-1000-8000-00805f9b34fb',
-          '0000ae30-0000-1000-8000-00805f9b34fb',
-          'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
-          '00004953-0000-1000-8000-00805f9b34fb'
-        ]
-      });
+      let device = null;
+
+      // 1. Intentar reconexión automática sin abrir menú si ya se eligió una impresora previamente
+      if (navigator.bluetooth.getDevices) {
+        try {
+          const prevDevices = await navigator.bluetooth.getDevices();
+          const savedId = localStorage.getItem('rp_selected_bt_id');
+          if (savedId) {
+            device = prevDevices.find(d => d.id === savedId);
+          }
+          if (!device && prevDevices.length > 0) {
+            device = prevDevices[0];
+          }
+        } catch (e) {
+          console.warn('Error al buscar dispositivos Bluetooth previamente emparejados:', e);
+        }
+      }
+
+      // 2. Si es la primera vez y no hay impresora recordada, solicitar selección al usuario
+      if (!device) {
+        device = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: [
+            '000018f0-0000-1000-8000-00805f9b34fb',
+            '0000ff00-0000-1000-8000-00805f9b34fb',
+            '0000ae30-0000-1000-8000-00805f9b34fb',
+            'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+            '00004953-0000-1000-8000-00805f9b34fb'
+          ]
+        });
+        if (device && device.id) {
+          localStorage.setItem('rp_selected_bt_id', device.id);
+        }
+      }
 
       const server = await device.gatt.connect();
       const services = await server.getPrimaryServices();
