@@ -7,17 +7,18 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('insumos', function (Blueprint $table) {
+        Schema::create('categorias', function (Blueprint $table) {
             $table->id();
             $table->string('nombre', 100);
-            $table->string('unidad_medida', 30)->default('kg'); // kg, lt, unidad, paquete
-            $table->decimal('costo_unitario', 10, 2);
+            $table->string('slug', 120)->unique();
+            $table->string('icono', 50)->nullable(); // emoji or icon class
+            $table->boolean('activa')->default(true);
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('insumos');
+        Schema::dropIfExists('categorias');
     }
 };

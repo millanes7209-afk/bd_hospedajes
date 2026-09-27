@@ -7,18 +7,16 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('sucursales', function (Blueprint $table) {
+        Schema::create('insumos', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre', 100);
-            $table->string('direccion', 255)->nullable();
-            $table->string('encargado', 100)->nullable();
-            $table->boolean('activa')->default(true);
+            $table->string('nombre');
+            $table->string('unidad_medida');
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('sucursales');
+        Schema::dropIfExists('insumos');
     }
 };

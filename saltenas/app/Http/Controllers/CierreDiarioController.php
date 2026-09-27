@@ -2,83 +2,74 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Carrito;
 use App\Models\CierreDiario;
-use App\Models\Sucursal;
-use App\Models\CostoSaltena;
+use App\Models\Promocion;
+use App\Models\VarianteSaltena;
+use App\Services\CierreValidationService;
 use Illuminate\Http\Request;
 
 class CierreDiarioController extends Controller
 {
+    protected $cierreService;
+
+    public function __construct(CierreValidationService $cierreService)
+    {
+        $this->cierreService = $cierreService;
+    }
+
     public function index(Request $request)
     {
-        $sucursales = Sucursal::where('activa', true)->orderBy('nombre')->get();
-        $sucursal_id = $request->query('sucursal_id');
+        $carritoId = $request->get('carrito_id');
 
-        $query = CierreDiario::with(['sucursal'])->orderBy('fecha', 'desc');
+        $query = CierreDiario::with(['carrito', 'detalles.variante', 'detalles.promocionesDetalle.promocion']);
 
-        if ($sucursal_id) {
-            $query->where('sucursal_id', $sucursal_id);
+        if ($carritoId) {
+            $query->where('carrito_id', $carritoId);
         }
 
-        $cierres = $query->paginate(15)->withQueryString();
+        $cierres = $query->orderBy('fecha', 'desc')->orderBy('id', 'desc')->paginate(15);
 
-        // Obtener costo promedio por salteña para estimaciones
-        $costoPromedio = CostoSaltena::avg('costo_unidad') ?? 3.60;
+        $carritos = Carrito::where('activo', true)->orderBy('nombre')->get();
+        $variantes = VarianteSaltena::with([
+            'promociones' => function ($q) {
+                $q->where('activo', true);
+            }
+        ])->where('activo', true)->orderBy('nombre')->get();
 
-        return view('cierres.index', compact('sucursales', 'cierres', 'sucursal_id', 'costoPromedio'));
+        return view('cierres.index', compact('cierres', 'carritos', 'variantes', 'carritoId'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'sucursal_id' => 'required|exists:sucursales,id',
+            'carrito_id' => 'required|exists:carritos,id',
             'fecha' => 'required|date',
-            'clima' => 'required|in:frio_lluvia,templado_nublado,caluroso_soleado',
-            'temp_min' => 'nullable|integer',
-            'temp_max' => 'nullable|integer',
-            'saltenas_vendidas' => 'required|integer|min:0',
-            'saltenas_sobrantes' => 'required|integer|min:0',
-            'total_efectivo' => 'required|numeric|min:0',
-            'total_qr' => 'required|numeric|min:0',
-            'observaciones' => 'nullable|string|max:1000',
+            'temp_min' => 'nullable|numeric',
+            'temp_max' => 'nullable|numeric',
+            'monto_real' => 'required|numeric|min:0',
+            'detalles' => 'required|array|min:1',
+            'detalles.*.variante_id' => 'required|exists:variantes_saltena,id',
+            'detalles.*.cantidad_entregada' => 'required|integer|min:0',
+            'detalles.*.cantidad_vendida_normal' => 'required|integer|min:0',
+            'detalles.*.cantidad_sobrante' => 'required|integer|min:0',
+            'observaciones' => 'nullable|string',
         ]);
 
-        $totalRecaudado = floatval($request->total_efectivo) + floatval($request->total_qr);
+        $cierre = $this->cierreService->guardarCierre($request->all());
 
-        // Calcular costo total aproximado según insumos/variantes
-        $costoPromedioUnitario = CostoSaltena::avg('costo_unidad') ?? 3.60;
-        $totalProducidas = intval($request->saltenas_vendidas) + intval($request->saltenas_sobrantes);
-        $costoTotalJornada = $totalProducidas * $costoPromedioUnitario;
-        $gananciaNeta = $totalRecaudado - $costoTotalJornada;
+        if ($cierre->inconsistente) {
+            return redirect()->route('cierres.index')->with('warning', 'Cierre guardado. ATENCIÓN: El sistema detectó INCONSISTENCIAS en las cantidades o un descuadre en el dinero.');
+        }
 
-        CierreDiario::updateOrCreate(
-            [
-                'sucursal_id' => $request->sucursal_id,
-                'fecha' => $request->fecha,
-            ],
-            [
-                'clima' => $request->clima,
-                'temp_min' => $request->temp_min,
-                'temp_max' => $request->temp_max,
-                'saltenas_vendidas' => $request->saltenas_vendidas,
-                'saltenas_sobrantes' => $request->saltenas_sobrantes,
-                'total_efectivo' => $request->total_efectivo,
-                'total_qr' => $request->total_qr,
-                'total_recaudado' => $totalRecaudado,
-                'costo_total_jornada' => $costoTotalJornada,
-                'ganancia_neta' => $gananciaNeta,
-                'observaciones' => $request->observaciones,
-            ]
-        );
-
-        return redirect()->route('cierres.index')
-            ->with('success', '¡Cierre Diario registrado exitosamente!');
+        return redirect()->route('cierres.index')->with('success', 'Cierre Diario registrado exitosamente. El ingreso a Bóveda Central se generó automáticamente.');
     }
 
     public function destroy($id)
     {
         $cierre = CierreDiario::findOrFail($id);
         $cierre->delete();
-        return back()->with('success', 'Registro de cierre eliminado.');
+
+        return redirect()->route('cierres.index')->with('success', 'Registro de cierre eliminado.');
     }
 }

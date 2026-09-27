@@ -12,38 +12,39 @@ class CierreDiario extends Model
     protected $table = 'cierres_diarios';
 
     protected $fillable = [
-        'sucursal_id',
+        'carrito_id',
         'fecha',
-        'clima',
         'temp_min',
         'temp_max',
-        'saltenas_vendidas',
-        'saltenas_sobrantes',
-        'total_efectivo',
-        'total_qr',
-        'total_recaudado',
-        'costo_total_jornada',
-        'ganancia_neta',
+        'monto_real',
+        'monto_estimado',
+        'diferencia',
+        'inconsistente',
         'observaciones',
-        'user_id',
     ];
 
     protected $casts = [
         'fecha' => 'date',
-        'total_efectivo' => 'decimal:2',
-        'total_qr' => 'decimal:2',
-        'total_recaudado' => 'decimal:2',
-        'costo_total_jornada' => 'decimal:2',
-        'ganancia_neta' => 'decimal:2',
+        'temp_min' => 'decimal:2',
+        'temp_max' => 'decimal:2',
+        'monto_real' => 'decimal:2',
+        'monto_estimado' => 'decimal:2',
+        'diferencia' => 'decimal:2',
+        'inconsistente' => 'boolean',
     ];
 
-    public function sucursal()
+    public function carrito()
     {
-        return $this->belongsTo(Sucursal::class);
+        return $this->belongsTo(Carrito::class, 'carrito_id');
     }
 
-    public function usuario()
+    public function detalles()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->hasMany(CierreDiarioDetalle::class, 'cierre_diario_id');
+    }
+
+    public function bovedaMovimiento()
+    {
+        return $this->hasOne(BovedaMovimiento::class, 'cierre_diario_id');
     }
 }

@@ -1,0 +1,174 @@
+App de Venta de Ropa
+Documento de visión, lógica y hoja de ruta por fases
+Última actualización: 11 de septiembre de 2026
+1. Idea general
+La aplicación es un marketplace de ropa pensado para mujeres, donde cualquier persona puede publicar prendas para vender y otras personas pueden descubrirlas, filtrarlas y contactar al vendedor para negociar la compra. Por estar dirigida a un público donde la seguridad es prioritaria, el crecimiento del producto se apoya tanto en simplicidad inicial como en mecanismos de confianza (invitaciones y verificación de identidad) antes de escalar a funciones más sociales o de tiempo real.
+Principio fundamental del modelo
+La app NO es una pasarela de pagos ni gestiona transacciones. Es un mercado que conecta oferta y demanda: muestra publicaciones, registra el interés y el resultado (quién compró qué), pero la negociación, el pago y la entrega ocurren por fuera (por ejemplo, coordinando por WhatsApp). Esto simplifica el producto y evita la complejidad legal/operativa de procesar dinero, al menos en esta etapa.
+Principio de construcción: simplicidad primero
+La prioridad número uno es lanzar un marketplace simple y funcional. Funciones como el sistema de reputación/reseñas, la verificación de identidad o las subastas en vivo se construyen después, una vez que la base esté funcionando y probada con usuarias reales. Aun así, algunas estructuras de datos se dejan preparadas desde el inicio (sin construir toda la lógica todavía) para no tener que rehacerlas más adelante:
+Los tags de estilo, color y categoría que se capturan desde la Fase 1 son los que después alimentarán las recomendaciones de outfits de la fase de comunidad + IA.
+El registro de quién mostró interés y a quién se le vendió cada prenda queda guardado desde la Fase 1, aunque el sistema de reseñas/calificaciones todavía no esté activo — así, cuando se active, ya hay historial para trabajar.
+El concepto de "transacción" se diseña desde el inicio como flexible (compra directa, puja ganadora) para no reconstruir la lógica de registro cada vez.
+No se pide ubicación por ahora, ya que el funcionamiento será local. Sin embargo, el modelo de datos no debe asumir una única ciudad fija, para poder activar filtros por ubicación el día que la app crezca a más zonas, sin rediseñar la base.
+Identidad visual
+Paleta de marca definida para toda la app: fondo blanco como base, verde esmeralda como color principal (encabezados, navegación, elementos de marca) y un rosa pastel como color de acento para llamadas a la acción y detalles, buscando una imagen actual y cercana para el público al que está dirigida la app.
+Color
+Uso
+Código
+Verde esmeralda
+Color principal: encabezados, navegación, botones primarios.
+#0E7A5F
+Rosa pastel
+Color de acento: llamadas a la acción secundarias, detalles, notificaciones.
+#F4B8C8
+Blanco
+Fondo base de la app.
+#FFFFFF
+Hoja de ruta general
+Fase
+Objetivo
+Estado
+Fase 1 — Marketplace básico
+Validar que la gente publica, descubre y contacta para comprar/vender ropa, con la menor fricción posible.
+Definida (en construcción)
+Fase 2 — Seguridad y confianza
+Registro por invitación, verificación de identidad y sistema de reputación, para dar seguridad a las usuarias.
+Visión inicial trazada
+Fase 3 — Live selling + Subastas
+Convertir la venta en un evento social en tiempo real, con pujas, al estilo TikTok Live.
+Visión inicial trazada
+Fase 4 — Comunidad de estilo + IA
+La app ayuda a armar outfits con sugerencias de la comunidad y una IA que visualiza la combinación.
+Visión de largo plazo
+2. Fase 1 — Marketplace básico
+Objetivo: validar que las personas usan la app para publicar prendas y para encontrar y contactar vendedores. Esta fase construye toda la base de confianza y de datos que las siguientes fases van a reutilizar.
+2.1 Roles y permisos
+Rol
+Puede hacer
+Usuario (todos)
+Publicar prendas, ver el catálogo, contactar vendedores.
+Administrador
+Moderar publicaciones reportadas, suspender usuarios, gestionar reportes.
+No se separan "comprador" y "vendedor" como roles distintos: es la misma cuenta, y el contexto cambia según la acción que realiza el usuario en cada momento.
+2.2 La publicación: entidad central
+Como la app registra pero no transacciona, la publicación es el corazón del sistema. Tiene un ciclo de vida con estados definidos:
+Borrador — el usuario la está armando, no es visible aún.
+Publicada — visible en el catálogo, activa para recibir interesados.
+Reservada (opcional) — el vendedor marca que tiene un interesado avanzando en la negociación.
+Vendida — el vendedor la cierra manualmente y confirma a qué usuario se la vendió.
+Expirada / Eliminada — se retira del catálogo por inactividad o remoción.
+Decisión de diseño
+El estado 'Vendida' depende de que el vendedor sea honesto y la marque manualmente, ya que la app no procesa el pago. Por eso el flujo pide, al marcar como vendida, elegir de la lista de interesados a quién se le vendió — esto es lo que habilita un sistema de reputación verificable en vez de uno genérico.
+2.3 Datos de cada publicación
+Esenciales para la Fase 1
+Fotos
+Título
+Categoría
+Talla
+Marca
+Estado (nuevo / usado)
+Precio
+Descripción
+Metadata pensada para el futuro (capturar ya, usar después)
+Tags de estilo (casual, formal, streetwear, etc.)
+Color dominante
+Temporada
+Esta metadata no se usa activamente en la Fase 1, pero es la que va a alimentar las recomendaciones de outfits y la IA de la fase de comunidad. Capturarla desde ahora evita tener que pedirle a los usuarios que vuelvan a completar información más adelante.
+Sobre la ubicación
+Por ahora no se pide ubicación/zona: la operación será local. No obstante, conviene no "hardcodear" el alcance a una sola ciudad en el modelo de datos, para poder activar un campo de ubicación y filtros geográficos más adelante sin rediseñar la base, en caso de que la app crezca a más zonas.
+2.4 Flujo de contacto (reemplaza el checkout tradicional)
+Este flujo sustituye por completo el proceso de compra de un marketplace tradicional:
+1. El usuario ve una prenda y presiona el botón "Contactar por WhatsApp".
+2. Se abre WhatsApp con un mensaje prellenado referenciando la publicación.
+3. La app registra el evento (quién hizo click y sobre qué publicación) como dato de intención de compra, aunque no se sepa todavía si se concretó.
+4. Comprador y vendedor negocian por fuera de la app.
+5. El vendedor vuelve a la app y marca la publicación como Vendida, eligiendo de su lista de interesados a quién se la vendió.
+Reputación: pospuesta a la Fase 2
+En esta primera versión NO se construye el sistema de reseñas/calificaciones — esa lógica todavía no está bien definida y se prefiere primero ver la app funcionando con usuarias reales. Lo único que se conserva desde la Fase 1 es el dato de quién compró qué (paso 5), que servirá como base cuando el sistema de reputación se diseñe con más detalle en la Fase 2.
+2.5 Moderación básica
+Para mantener la simplicidad, en la Fase 1 la moderación es liviana:
+Publicación libre e instantánea, sin revisión previa de un administrador, para no generar fricción.
+Reporte de publicaciones sospechosas, engañosas o de productos prohibidos.
+El administrador solo revisa lo reportado, no todo el flujo.
+2.6 Entidades y relaciones (modelo conceptual)
+Entidad
+Descripción y relaciones
+Usuario
+Tiene muchas publicaciones.
+Publicación
+Pertenece a un usuario (vendedor). Tiene una lista de interesados (usuarios). Tiene un estado (borrador, publicada, reservada, vendida, expirada). Tiene un comprador confirmado, solo cuando su estado es 'Vendida'.
+Interés / Contacto
+Relación entre un usuario (interesado) y una publicación, con fecha y hora. Es el dato de intención de compra.
+Reporte
+Conecta a un usuario (quien reporta) con una publicación, incluye motivo y estado (pendiente / revisado).
+Categoría / Tag
+Catálogo de clasificación usado para filtros y, a futuro, para las recomendaciones de outfits.
+Con este modelo, la Fase 1 cierra su lógica mínima de negocio: publicar, descubrir, contactar, cerrar la venta y moderar lo reportado. Todo lo demás (reputación, verificación, subastas, IA) se construye después, sobre esta base.
+3. Fase 2 — Seguridad y confianza
+Objetivo: dar a las usuarias un entorno más seguro antes de escalar a funciones sociales o de tiempo real, dado que la app está pensada específicamente para mujeres. Esta fase introduce fricción deliberada en el registro, a cambio de mayor confianza.
+3.1 Registro por invitación
+Ya no es posible crear una cuenta libremente: se requiere una invitación de un usuario ya registrado.
+Se registra quién emitió cada invitación, de modo que exista trazabilidad de quién invitó a quién.
+Esto crea una red de confianza (similar a un círculo cerrado) y desincentiva cuentas falsas o mal intencionadas, ya que cada usuario responde en cierta medida por quien invita.
+3.2 Verificación de identidad
+Al registrarse, la usuaria debe mostrar su documento de identidad.
+Se usa la cámara del dispositivo para capturar su rostro y confirmar que coincide con la persona del documento.
+Mientras la verificación esté pendiente o rechazada, la cuenta puede tener funciones limitadas (por ejemplo, no poder publicar o no poder pujar en subastas).
+3.3 Reputación (a definir con más detalle en esta etapa)
+Aquí es donde se retoma y se termina de diseñar el sistema de reseñas mutuas mencionado como visión: calificación entre comprador y vendedor, verificable porque solo puede calificar quien fue confirmado en una venta real. Se documentará con más profundidad cuando se aborde esta fase.
+3.4 Entidades nuevas (modelo conceptual)
+Entidad
+Descripción y relaciones
+Invitación
+Conecta a un usuario emisor con un usuario invitado. Tiene un estado (pendiente, usada, expirada).
+Verificación de identidad
+Pertenece a un usuario. Incluye documento de identidad, captura facial y estado (pendiente, aprobada, rechazada).
+Reseña
+Conecta a dos usuarios (quién califica a quién) en el contexto de una publicación específica ya vendida.
+4. Fase 3 — Live selling + Subastas
+Objetivo: convertir la venta en un evento social en tiempo real, al estilo de un live de TikTok, manteniendo el mismo principio de la Fase 1 — la app registra el resultado, pero no procesa pagos.
+4.1 Elementos nuevos
+Rol de Host: un vendedor que transmite en vivo.
+Sesión en vivo: catálogo de productos vinculado a la transmisión.
+Botón de "Subasta": el host activa el modo subasta sobre una prenda específica durante el vivo.
+Estructura de subasta a construir: tiempo límite, puja mínima, incremento mínimo, historial de pujas en tiempo real.
+Registro del ganador: la app registra qué usuario ganó la puja (igual que en la Fase 1, sin gestionar el pago) y ambos se contactan por fuera para coordinar.
+Chat en vivo y reacciones durante la transmisión.
+Pendiente de definir
+La estructura detallada de la subasta (reglas exactas de tiempo, incrementos, qué pasa si el ganador no concreta la compra) todavía no está bien planteada y se terminará de diseñar cuando se aborde esta fase en profundidad. Al llegar aquí ya existirá el sistema de verificación de identidad de la Fase 2, lo que ayuda a que las pujas sean de usuarias verificadas.
+5. Fase 4 — Comunidad de estilo + Inteligencia Artificial
+Objetivo: convertir la app en un espacio de descubrimiento de estilo, no solo de compraventa directa.
+5.1 Flujo de recomendación de outfits
+Un usuario sube una prenda (propia o del catálogo) y pide sugerencias de qué combinar con ella.
+La comunidad responde sugiriendo otras prendas, ya sea de su propio clóset (fomentando la reventa) o del catálogo general (fomentando venta cruzada).
+El usuario arma un "outfit board" con las sugerencias que recibe.
+Si una prenda sugerida está en venta dentro de la app, aparece un botón directo para contactar al vendedor.
+Una IA genera una visualización de cómo se vería el outfit combinado.
+5.2 Incentivo para quien sugiere
+En esta fase, quien sugiere una combinación y acierta no recibe una comisión monetaria — el incentivo es de reputación (puntos, insignias o posicionamiento dentro de la comunidad). Se evaluará más adelante, cuando la fase esté más madura, si conviene introducir algún incentivo económico.
+5.3 Monetización
+Aún no está definido el modelo de monetización de la plataforma. La idea actual es que se irá definiendo a medida que la app crezca y se entienda mejor el comportamiento y el volumen de los usuarios, en lugar de fijarlo de antemano.
+6. Stack tecnológico (decisión inicial)
+Aunque el foco de este documento es la lógica del producto y no el código, se deja registrada la decisión de tecnología base para no perderla:
+Capa
+Elección
+Por qué
+Backend
+Laravel (PHP)
+Framework con muchas funciones ya resueltas (autenticación, notificaciones, colas, etc.), acorde a la preferencia de simplicidad y de "llamar funciones" en vez de reconstruir todo desde cero.
+Estilos (CSS)
+Bootstrap 5, personalizado
+Framework ya conocido por el equipo, lo que da velocidad de desarrollo. Se personaliza a fondo (variables de Sass: colores, tipografía, bordes, sombras) para que no se vea genérico, sino con identidad propia acorde a la paleta de marca.
+Aclaración sobre las capas del stack
+El backend (Laravel) y el CSS (Bootstrap) resuelven cosas distintas: uno es la lógica y los datos, el otro es la apariencia visual. No son alternativas entre sí, sino piezas complementarias. La interactividad en tiempo real (por ejemplo, ver una puja subir en vivo sin recargar la página) es una tercera capa aparte, que se evaluará recién en la Fase 3 con Livewire y/o Alpine.js — ambos son compatibles con Bootstrap y no obligan a cambiar de CSS ni de backend.
+Esta decisión se revisará cuando se llegue a la Fase 3 (live selling), ya que las subastas en tiempo real exigen actualizaciones instantáneas entre usuarias — punto en el que se evaluará si Livewire/Alpine son suficientes o si conviene sumar alguna herramienta adicional (por ejemplo, WebSockets).
+7. Próximos pasos
+Temas que quedan abiertos para seguir documentando a medida que se desarrolla el proyecto:
+Catálogo y taxonomía completa de categorías y filtros.
+Lógica de notificaciones (avisos al vendedor cuando alguien se interesa, recordatorios, etc.).
+Diseño detallado del sistema de reputación/reseñas (Fase 2).
+Reglas exactas de la subasta, incluyendo qué pasa si el ganador no concreta la compra (Fase 3).
+Definición del modelo de monetización cuando la app tenga tracción (Fase 4).
+ 
+Este documento se irá actualizando a medida que avancen las conversaciones sobre la lógica del producto.

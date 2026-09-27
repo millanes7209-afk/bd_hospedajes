@@ -2,47 +2,46 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Carrito;
 use App\Models\CierreDiario;
-use App\Models\Sucursal;
-use App\Models\CostoSaltena;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\Compra;
+use App\Services\BovedaService;
 
 class DashboardController extends Controller
 {
+    protected $bovedaService;
+
+    public function __construct(BovedaService $bovedaService)
+    {
+        $this->bovedaService = $bovedaService;
+    }
+
     public function index()
     {
-        $totalSucursales = Sucursal::where('activa', true)->count();
-        $totalVendidas = CierreDiario::sum('saltenas_vendidas');
-        $totalRecaudado = CierreDiario::sum('total_recaudado');
-        $gananciaTotal = CierreDiario::sum('ganancia_neta');
+        $saldoBoveda = $this->bovedaService->getSaldoActual();
+        $totalCarritos = Carrito::where('activo', true)->count();
+        $totalCierresInconsistentes = CierreDiario::where('inconsistente', true)->count();
+        $totalUltimasCompras = Compra::count();
 
-        // Promedio de ventas según clima (Analítica clave)
-        $promedioClima = CierreDiario::select('clima', DB::raw('AVG(saltenas_vendidas) as avg_vendidas'), DB::raw('COUNT(*) as total_dias'))
-            ->groupBy('clima')
-            ->get()
-            ->keyBy('clima');
-
-        // Datos para gráfico de Ventas por Sucursal
-        $ventasPorSucursal = Sucursal::withSum('cierres', 'saltenas_vendidas')
-            ->withSum('cierres', 'total_recaudado')
+        $ultimosCierres = CierreDiario::with(['carrito', 'detalles.variante'])
+            ->orderBy('fecha', 'desc')
+            ->orderBy('id', 'desc')
+            ->limit(5)
             ->get();
 
-        // Datos para gráfico de los últimos 15 cierres
-        $ultimosCierres = CierreDiario::with('sucursal')
+        $cierresInconsistentesList = CierreDiario::with(['carrito', 'detalles.variante'])
+            ->where('inconsistente', true)
             ->orderBy('fecha', 'desc')
-            ->take(15)
-            ->get()
-            ->reverse();
+            ->limit(5)
+            ->get();
 
         return view('dashboard', compact(
-            'totalSucursales',
-            'totalVendidas',
-            'totalRecaudado',
-            'gananciaTotal',
-            'promedioClima',
-            'ventasPorSucursal',
-            'ultimosCierres'
+            'saldoBoveda',
+            'totalCarritos',
+            'totalCierresInconsistentes',
+            'totalUltimasCompras',
+            'ultimosCierres',
+            'cierresInconsistentesList'
         ));
     }
 }

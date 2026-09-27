@@ -4,31 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Salteñas — Analítica & Ventas')</title>
+    <title>@yield('title', 'Salteñas — Sistema Administrativo')</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#fffbeb',
-                            100: '#fef3c7',
-                            500: '#f59e0b',
-                            600: '#d97706',
-                            700: '#b45309',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <!-- FontAwesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body class="h-full font-sans antialiased bg-slate-950 text-slate-100 selection:bg-amber-500 selection:text-slate-950">
@@ -51,47 +31,74 @@
                                 SALTEÑAS
                             </span>
                             <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest -mt-1">
-                                Control & Analítica
+                                Control & Bóveda
                             </span>
                         </div>
                     </a>
                 </div>
 
                 <!-- Nav Links -->
-                <div class="flex items-center gap-1 sm:gap-2">
+                <div class="flex items-center gap-1 sm:gap-1.5 overflow-x-auto py-2">
                     <a href="{{ route('dashboard') }}"
-                        class="px-3 py-2 rounded-lg text-xs font-extrabold uppercase transition-all flex items-center gap-2 {{ request()->routeIs('dashboard') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
-                        <i class="fa-solid fa-chart-pie text-sm"></i>
-                        <span class="hidden md:inline">Dashboard</span>
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('dashboard') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>Inicio</span>
+                    </a>
+
+                    <a href="{{ route('boveda.index') }}"
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('boveda.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
+                        <i class="fa-solid fa-vault text-amber-400"></i>
+                        <span>Bóveda</span>
                     </a>
 
                     <a href="{{ route('cierres.index') }}"
-                        class="px-3 py-2 rounded-lg text-xs font-extrabold uppercase transition-all flex items-center gap-2 {{ request()->routeIs('cierres.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
-                        <i class="fa-solid fa-calendar-check text-sm"></i>
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('cierres.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
+                        <i class="fa-solid fa-calendar-check text-emerald-400"></i>
                         <span>Cierre Diario</span>
                     </a>
 
-                    <a href="{{ route('sucursales.index') }}"
-                        class="px-3 py-2 rounded-lg text-xs font-extrabold uppercase transition-all flex items-center gap-2 {{ request()->routeIs('sucursales.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
-                        <i class="fa-solid fa-store text-sm"></i>
-                        <span class="hidden sm:inline">Sucursales</span>
+                    <a href="{{ route('compras.index') }}"
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('compras.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
+                        <i class="fa-solid fa-cart-shopping text-cyan-400"></i>
+                        <span>Compras</span>
                     </a>
 
-                    <a href="{{ route('costos.index') }}"
-                        class="px-3 py-2 rounded-lg text-xs font-extrabold uppercase transition-all flex items-center gap-2 {{ request()->routeIs('costos.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
-                        <i class="fa-solid fa-coins text-sm"></i>
-                        <span class="hidden sm:inline">Costos & Receta</span>
+                    <a href="{{ route('carritos.index') }}"
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('carritos.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
+                        <i class="fa-solid fa-store text-purple-400"></i>
+                        <span>Carritos</span>
+                    </a>
+
+                    <a href="{{ route('insumos.index') }}"
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('insumos.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
+                        <i class="fa-solid fa-boxes-stacked text-orange-400"></i>
+                        <span>Insumos</span>
+                    </a>
+
+                    <a href="{{ route('preparaciones.index') }}"
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('preparaciones.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
+                        <i class="fa-solid fa-bowl-rice text-rose-400"></i>
+                        <span>Masa / Recetas</span>
+                    </a>
+
+                    <a href="{{ route('variantes.index') }}"
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('variantes.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
+                        <i class="fa-solid fa-cookie text-amber-400"></i>
+                        <span>Variantes</span>
+                    </a>
+
+                    <a href="{{ route('promociones.index') }}"
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('promociones.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
+                        <i class="fa-solid fa-tags text-indigo-400"></i>
+                        <span>Promos</span>
                     </a>
 
                     <!-- User Info & Logout -->
                     <div class="ml-2 pl-2 border-l border-slate-800 flex items-center gap-2">
-                        <span class="hidden lg:inline text-xs font-bold text-slate-400">
-                            <i class="fa-solid fa-user text-amber-500 mr-1"></i> {{ Auth::user()->name ?? 'Admin' }}
-                        </span>
                         <form action="{{ route('logout') }}" method="POST" class="inline">
                             @csrf
                             <button type="submit" title="Cerrar Sesión"
-                                class="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-all text-xs">
+                                class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-all text-xs">
                                 <i class="fa-solid fa-power-off"></i>
                             </button>
                         </form>
@@ -108,6 +115,16 @@
                 class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold text-xs uppercase flex items-center justify-between shadow-sm mb-4">
                 <span class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
                     {{ session('success') }}</span>
+                <button onclick="this.parentElement.remove()" class="opacity-70 hover:opacity-100">✕</button>
+            </div>
+        @endif
+
+        @if (session('warning'))
+            <div
+                class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-extrabold text-xs uppercase flex items-center justify-between shadow-sm mb-4">
+                <span class="flex items-center gap-2"><i
+                        class="fa-solid fa-triangle-exclamation text-amber-400 text-base"></i>
+                    {{ session('warning') }}</span>
                 <button onclick="this.parentElement.remove()" class="opacity-70 hover:opacity-100">✕</button>
             </div>
         @endif
@@ -134,7 +151,7 @@
 
     <!-- Global Footer -->
     <footer class="border-t border-slate-900 bg-slate-950/80 py-6 mt-12 text-center text-xs text-slate-500">
-        <p class="font-bold">SALTEÑAS © {{ date('Y') }} — Control de Ventas, Clima & Costos</p>
+        <p class="font-bold">SALTEÑAS © {{ date('Y') }} — Bóveda Central & Control de Carritos</p>
     </footer>
 
     @yield('scripts')
