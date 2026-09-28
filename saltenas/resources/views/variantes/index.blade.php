@@ -43,8 +43,16 @@
                         </div>
 
                         <div class="space-y-3">
-                            <label class="block text-[11px] font-black uppercase text-amber-400">COMPONENTES DE
-                                RECETA</label>
+                            <label class="block text-[11px] font-black uppercase text-amber-400">COMPONENTES DE RECETA
+                                (OPCIONAL)</label>
+
+                            @if(!$preparaciones->count() && !$insumos->count())
+                                <div
+                                    class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400 font-bold uppercase">
+                                    💡 No hay insumos ni preparaciones creadas aún. Puedes crear esta Variante ahora y agregar
+                                    su receta más adelante.
+                                </div>
+                            @endif
 
                             <!-- Fila 0: Masa/Preparación -->
                             @if($preparaciones->count())
@@ -64,7 +72,7 @@
                                             </select>
                                         </div>
                                         <div class="col-span-4">
-                                            <input type="number" step="0.0001" name="componentes[0][cantidad_usada]"
+                                            <input type="number" step="any" name="componentes[0][cantidad_usada]"
                                                 placeholder="CANT."
                                                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-white focus:border-amber-500 focus:outline-none uppercase">
                                         </div>
@@ -92,7 +100,7 @@
                                             </select>
                                         </div>
                                         <div class="col-span-4">
-                                            <input type="number" step="0.0001" name="componentes[1][cantidad_usada]"
+                                            <input type="number" step="any" name="componentes[1][cantidad_usada]"
                                                 placeholder="CANT."
                                                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-white focus:border-amber-500 focus:outline-none uppercase">
                                         </div>

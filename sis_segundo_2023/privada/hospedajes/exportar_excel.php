@@ -42,7 +42,17 @@ $sql = "SELECT
         GROUP BY h.hospedajeID
         ORDER BY h.checkin DESC";
 
-$rs = $db->obtenerTodo($sql, [$fecha_inicio, $fecha_fin, $sucursal_id]);
+// Depuración: mostrar la consulta SQL
+error_log("SQL Exportar Excel: " . $sql);
+error_log("Parámetros: " . print_r([$fecha_inicio, $fecha_fin, $sucursal_id], true));
+
+try {
+    $rs = $db->obtenerTodo($sql, [$fecha_inicio, $fecha_fin, $sucursal_id]);
+    error_log("Resultado: " . ($rs ? "OK - " . count($rs) . " registros" : "NULL"));
+} catch (Exception $e) {
+    error_log("ERROR SQL: " . $e->getMessage());
+    die("Error en consulta: " . $e->getMessage());
+}
 
 // Construcción de la tabla para Excel
 echo "<table border='1'>";

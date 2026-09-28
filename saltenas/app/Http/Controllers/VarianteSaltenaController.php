@@ -24,7 +24,7 @@ class VarianteSaltenaController extends Controller
         $request->validate([
             'nombre' => 'required|string|max:255',
             'precio_venta' => 'required|numeric|min:0.01',
-            'componentes' => 'required|array|min:1',
+            'componentes' => 'nullable|array',
         ]);
 
         $var = VarianteSaltena::create([
@@ -33,16 +33,34 @@ class VarianteSaltenaController extends Controller
             'activo' => true,
         ]);
 
-        foreach ($request->componentes as $comp) {
-            VarianteReceta::create([
-                'variante_id' => $var->id,
-                'tipo_componente' => $comp['tipo_componente'],
-                'insumo_id' => $comp['tipo_componente'] === 'insumo' ? $comp['insumo_id'] : null,
-                'preparacion_id' => $comp['tipo_componente'] === 'preparacion' ? $comp['preparacion_id'] : null,
-                'cantidad_usada' => $comp['cantidad_usada'],
-            ]);
+        if ($request->has('componentes') && is_array($request->componentes)) {
+            foreach ($request->componentes as $comp) {
+                $tipo = $comp['tipo_componente'] ?? null;
+                $insumoId = $comp['insumo_id'] ?? null;
+                $preparacionId = $comp['preparacion_id'] ?? null;
+                $cantidad = $comp['cantidad_usada'] ?? null;
+
+                // Solo guardar si se seleccionó un insumo o preparación válido con cantidad > 0
+                if ($tipo === 'insumo' && $insumoId && $cantidad > 0) {
+                    VarianteReceta::create([
+                        'variante_id' => $var->id,
+                        'tipo_componente' => 'insumo',
+                        'insumo_id' => $insumoId,
+                        'preparacion_id' => null,
+                        'cantidad_usada' => $cantidad,
+                    ]);
+                } elseif ($tipo === 'preparacion' && $preparacionId && $cantidad > 0) {
+                    VarianteReceta::create([
+                        'variante_id' => $var->id,
+                        'tipo_componente' => 'preparacion',
+                        'insumo_id' => null,
+                        'preparacion_id' => $preparacionId,
+                        'cantidad_usada' => $cantidad,
+                    ]);
+                }
+            }
         }
 
-        return redirect()->route('variantes.index')->with('success', 'Variante de Salteña creada exitosamente con su receta.');
+        return redirect()->route('variantes.index')->with('success', 'Variante de Salteña creada exitosamente.');
     }
 }
