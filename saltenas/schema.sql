@@ -222,5 +222,19 @@ INSERT INTO `users` (`id`, `name`, `email`, `password`, `created_at`, `updated_a
 VALUES (1, 'Administrador', 'millanes7209@gmail.com', '$2y$10$xMdfLI1n/sxWB0jIThBKRuEaq/cFC4yR8zcxDR5yLU7ceKFNtSKxK', NOW(), NOW())
 ON DUPLICATE KEY UPDATE `password` = VALUES(`password`);
 
+-- 17. DATOS INICIALES (CARRITOS Y VARIANTES)
+INSERT INTO `carritos` (`id`, `nombre`, `zona`, `activo`, `created_at`, `updated_at`)
+VALUES 
+(1, 'CARRITO 1 - PEREZ VELASCO', 'CENTRO', 1, NOW(), NOW()),
+(2, 'CARRITO 2 - SAN FRANCISCO', 'CENTRO', 1, NOW(), NOW())
+ON DUPLICATE KEY UPDATE `nombre` = VALUES(`nombre`);
+
+INSERT INTO `variantes_saltena` (`id`, `nombre`, `precio_venta`, `activo`, `created_at`, `updated_at`)
+VALUES 
+(1, 'SALTEÑA DE POLLO', 8.00, 1, NOW(), NOW()),
+(2, 'SALTEÑA DE CARNE', 8.00, 1, NOW(), NOW())
+ON DUPLICATE KEY UPDATE `nombre` = VALUES(`nombre`);
+
 SET FOREIGN_KEY_CHECKS = 1;
+
 
