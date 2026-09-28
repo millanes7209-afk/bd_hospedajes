@@ -16,17 +16,43 @@
         </div>
 
         @if($carritos->isEmpty() || $variantes->isEmpty())
-            <div
-                class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 text-amber-400 font-bold text-sm flex items-start gap-3">
-                <i class="fa-solid fa-triangle-exclamation text-2xl mt-0.5"></i>
-                <div>
-                    <p class="font-black uppercase">CONFIGURACIÓN INCOMPLETA</p>
-                    <p class="text-xs mt-1 uppercase">PARA REGISTRAR UN CIERRE NECESITAS TENER AL MENOS UN CARRITO Y UNA VARIANTE DE SALTEÑA CREADOS.</p>
-                    <div class="flex gap-3 mt-3">
-                        <a href="{{ route('carritos.index') }}"
-                            class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-black text-xs uppercase">+ CREAR CARRITO</a>
-                        <a href="{{ route('variantes.index') }}"
-                            class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-black text-xs uppercase">+ CREAR VARIANTE</a>
+            <div class="bg-slate-900 border border-amber-500/30 rounded-2xl p-6 space-y-4 shadow-xl">
+                <div class="flex items-center gap-3 text-amber-400">
+                    <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                    <h2 class="text-sm font-black uppercase tracking-wider">CONFIGURACIÓN PREVIA REQUERIDA PARA REGISTRAR CIERRES</h2>
+                </div>
+                <p class="text-xs text-slate-300 uppercase">
+                    PARA PODER HABILITAR EL FORMULARIO DE CIERRE DIARIO, EL SISTEMA NECESITA TENER REGISTRADO AL MENOS UN <strong class="text-white">CARRITO</strong> Y UNA <strong class="text-white">VARIANTE DE SALTEÑA</strong>.
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div class="p-4 rounded-xl border {{ $carritos->count() ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400' }}">
+                        <div class="flex items-center justify-between">
+                            <span class="font-black text-xs uppercase flex items-center gap-2">
+                                <i class="fa-solid {{ $carritos->count() ? 'fa-circle-check text-emerald-400' : 'fa-circle-xmark text-rose-400' }}"></i>
+                                1. CARRITOS (PUNTOS DE VENTA)
+                            </span>
+                            <span class="text-xs font-extrabold uppercase px-2 py-0.5 rounded {{ $carritos->count() ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300' }}">
+                                {{ $carritos->count() }} REGISTRADOS
+                            </span>
+                        </div>
+                        @if(!$carritos->count())
+                            <a href="{{ route('carritos.index') }}" class="mt-3 inline-block px-3 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-400 text-slate-950 font-black text-[11px] uppercase shadow">+ CREAR CARRITO</a>
+                        @endif
+                    </div>
+
+                    <div class="p-4 rounded-xl border {{ $variantes->count() ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400' }}">
+                        <div class="flex items-center justify-between">
+                            <span class="font-black text-xs uppercase flex items-center gap-2">
+                                <i class="fa-solid {{ $variantes->count() ? 'fa-circle-check text-emerald-400' : 'fa-circle-xmark text-rose-400' }}"></i>
+                                2. VARIANTES DE SALTEÑA
+                            </span>
+                            <span class="text-xs font-extrabold uppercase px-2 py-0.5 rounded {{ $variantes->count() ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300' }}">
+                                {{ $variantes->count() }} REGISTRADAS
+                            </span>
+                        </div>
+                        @if(!$variantes->count())
+                            <a href="{{ route('variantes.index') }}" class="mt-3 inline-block px-3 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-400 text-slate-950 font-black text-[11px] uppercase shadow">+ CREAR VARIANTE DE SALTEÑA</a>
+                        @endif
                     </div>
                 </div>
             </div>
