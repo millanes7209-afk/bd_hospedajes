@@ -25,7 +25,7 @@ $sql = "SELECT
             GROUP_CONCAT(c.apellido2 SEPARATOR ' | ') as maternos,
             GROUP_CONCAT(c.nombres SEPARATOR ' | ') as nombres_ind,
             GROUP_CONCAT(c.ci SEPARATOR ', ') as cis,
-            GROUP_CONCAT(c.pais SEPARATOR ' | ') as nacionalidades,
+            GROUP_CONCAT(ps.nombre SEPARATOR ' | ') as nacionalidades,
             GROUP_CONCAT(c.fecha_nacimiento SEPARATOR ' | ') as fechas_nac,
             GROUP_CONCAT(c.estado_civil SEPARATOR ' | ') as estados_civiles,
             GROUP_CONCAT(c.profesion SEPARATOR ' | ') as profesiones,
@@ -34,6 +34,7 @@ $sql = "SELECT
         FROM hospedajes h
         JOIN hospedajes_clientes ch ON h.hospedajeID = ch.hospedajeID
         JOIN clientes c ON ch.clienteID = c.clienteID
+        LEFT JOIN paises ps ON c.paisID = ps.paisID
         JOIN habitaciones hab ON h.habitacionID = hab.habitacionID
         WHERE h._estado <> 'X' AND ch._estado <> 'X' AND c._estado <> 'X'
         AND DATE(h.checkin) BETWEEN ? AND ? 
