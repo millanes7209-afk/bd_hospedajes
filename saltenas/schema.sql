@@ -217,4 +217,10 @@ CREATE TABLE `boveda_movimientos` (
   CONSTRAINT `fk_bm_compra` FOREIGN KEY (`compra_id`) REFERENCES `compras` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 16. USUARIO ADMINISTRADOR INICIAL
+INSERT INTO `users` (`id`, `name`, `email`, `password`, `created_at`, `updated_at`)
+VALUES (1, 'Administrador', 'millanes7209@gmail.com', '$2y$10$xMdfLI1n/sxWB0jIThBKRuEaq/cFC4yR8zcxDR5yLU7ceKFNtSKxK', NOW(), NOW())
+ON DUPLICATE KEY UPDATE `password` = VALUES(`password`);
+
 SET FOREIGN_KEY_CHECKS = 1;
+
