@@ -70,13 +70,13 @@
                                     <div>
                                         <label
                                             class="block text-[10px] font-bold text-slate-400 uppercase mb-1">CANTIDAD</label>
-                                        <input type="number" step="0.01" name="items[0][cantidad]" required placeholder="EJ. 50"
+                                        <input type="number" step="any" name="items[0][cantidad]" required placeholder="EJ. 50"
                                             class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-white focus:border-cyan-500 focus:outline-none uppercase">
                                     </div>
                                     <div>
                                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">PRECIO UNITARIO
                                             (BS.)</label>
-                                        <input type="number" step="0.10" name="items[0][precio_unitario]" required
+                                        <input type="number" step="any" name="items[0][precio_unitario]" required
                                             placeholder="EJ. 6.50"
                                             class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-cyan-400 focus:border-cyan-500 focus:outline-none uppercase">
                                     </div>

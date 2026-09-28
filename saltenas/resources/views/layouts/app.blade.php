@@ -155,6 +155,17 @@
     </footer>
 
     @yield('scripts')
+    <script>
+        document.addEventListener('input', function (e) {
+            if (e.target && e.target.tagName === 'INPUT') {
+                if (e.target.type === 'number' || e.target.getAttribute('step') || e.target.name?.includes('precio') || e.target.name?.includes('monto') || e.target.name?.includes('cantidad')) {
+                    if (typeof e.target.value === 'string' && e.target.value.includes(',')) {
+                        e.target.value = e.target.value.replace(',', '.');
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>

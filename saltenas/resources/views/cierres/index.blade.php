@@ -90,7 +90,7 @@
                         <div>
                             <label class="block text-[11px] font-black uppercase text-slate-400 mb-1">MONTO REAL ENTREGADO (BS.)
                                 <span class="text-rose-500">*</span></label>
-                            <input type="number" step="0.50" name="monto_real" required placeholder="EJ. 350"
+                            <input type="number" step="any" name="monto_real" required placeholder="EJ. 350.50"
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-black text-rose-400 focus:border-emerald-500 focus:outline-none uppercase">
                         </div>
                     </div>

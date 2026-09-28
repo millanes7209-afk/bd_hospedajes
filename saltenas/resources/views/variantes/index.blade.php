@@ -37,7 +37,7 @@
                             <div>
                                 <label class="block text-[11px] font-black uppercase text-slate-400 mb-1">PRECIO VENTA
                                     (BS.)</label>
-                                <input type="number" step="0.50" name="precio_venta" required placeholder="EJ. 8"
+                                <input type="number" step="any" name="precio_venta" required placeholder="EJ. 3.5"
                                     class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-amber-400 focus:border-amber-500 focus:outline-none uppercase">
                             </div>
                         </div>
@@ -58,7 +58,8 @@
                                                 <option value="" class="uppercase">NINGUNA</option>
                                                 @foreach($preparaciones as $prep)
                                                     <option value="{{ $prep->id }}" class="uppercase">
-                                                        {{ strtoupper($prep->nombre) }} (RINDE {{ $prep->rinde_cantidad }})</option>
+                                                        {{ strtoupper($prep->nombre) }} (RINDE {{ $prep->rinde_cantidad }})
+                                                    </option>
                                                 @endforeach
                                             </select>
                                         </div>
