@@ -61,6 +61,6 @@ class VarianteSaltenaController extends Controller
             }
         }
 
-        return redirect()->route('variantes.index')->with('success', 'Variante de Salteña creada exitosamente.');
+        return redirect()->route('productos.index', ['tab' => 'variantes'])->with('success', 'Variante de Salteña creada exitosamente.');
     }
 }

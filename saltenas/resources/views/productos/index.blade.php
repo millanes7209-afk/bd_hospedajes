@@ -1,0 +1,417 @@
+@extends('layouts.app')
+
+@section('title', 'PRODUCTOS & RECETAS — SALTEÑAS')
+
+@section('content')
+    <div class="space-y-6" x-data="{ activeTab: '{{ $tab }}' }">
+
+        <!-- Banner Principal -->
+        <div
+            class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-black text-white uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-boxes-stacked text-amber-400"></i> CATÁLOGO DE PRODUCTOS & RECETAS
+                </h1>
+                <p class="text-xs text-slate-400 mt-1 uppercase">
+                    GESTIONA LAS VARIANTES DE SALTEÑA, LAS PREPARACIONES INTERMEDIAS (MASAS) Y LA MATERIA PRIMA EN UN SOLO
+                    LUGAR.
+                </p>
+            </div>
+        </div>
+
+        <!-- Navegación por Pestañas -->
+        <div class="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto">
+            <button type="button" @click="activeTab = 'variantes'; history.replaceState(null, '', '?tab=variantes')"
+                :class="activeTab === 'variantes' ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20' : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'"
+                class="px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-cookie"></i>
+                <span>1. VARIANTES DE SALTEÑA ({{ $variantes->count() }})</span>
+            </button>
+
+            <button type="button" @click="activeTab = 'preparaciones'; history.replaceState(null, '', '?tab=preparaciones')"
+                :class="activeTab === 'preparaciones' ? 'bg-rose-500 text-slate-950 shadow-lg shadow-rose-500/20' : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'"
+                class="px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-bowl-rice"></i>
+                <span>2. MASA / PREPARACIONES ({{ $preparaciones->count() }})</span>
+            </button>
+
+            <button type="button" @click="activeTab = 'insumos'; history.replaceState(null, '', '?tab=insumos')"
+                :class="activeTab === 'insumos' ? 'bg-orange-500 text-slate-950 shadow-lg shadow-orange-500/20' : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'"
+                class="px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span>3. INSUMOS / MATERIA PRIMA ({{ $insumos->count() }})</span>
+            </button>
+        </div>
+
+        <!-- PESTAÑA 1: VARIANTES DE SALTEÑA -->
+        <div x-show="activeTab === 'variantes'" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- Formulario Variante (Col 5) -->
+                <div class="lg:col-span-5">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                        <h2
+                            class="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
+                            <i class="fa-solid fa-plus-circle"></i> NUEVA VARIANTE DE SALTEÑA
+                        </h2>
+
+                        <form action="{{ route('variantes.store') }}" method="POST" class="space-y-4">
+                            @csrf
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-black uppercase text-slate-400 mb-1">NOMBRE <span
+                                            class="text-amber-500">*</span></label>
+                                    <input type="text" name="nombre" required placeholder="EJ. SALTEÑA DE POLLO"
+                                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:border-amber-500 focus:outline-none uppercase">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-black uppercase text-slate-400 mb-1">PRECIO VENTA
+                                        (BS.) <span class="text-amber-500">*</span></label>
+                                    <input type="number" step="any" name="precio_venta" required placeholder="EJ. 8.00"
+                                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-amber-400 focus:border-amber-500 focus:outline-none uppercase">
+                                </div>
+                            </div>
+
+                            <div class="space-y-3">
+                                <label class="block text-[11px] font-black uppercase text-amber-400">COMPONENTES DE RECETA
+                                    (OPCIONAL)</label>
+
+                                @if(!$preparaciones->count() && !$insumos->count())
+                                    <div
+                                        class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400 font-bold uppercase">
+                                        💡 NO HAY INSUMOS NI PREPARACIONES CREADAS AÚN. PUEDES CREAR ESTA VARIANTE AHORA Y
+                                        AGREGAR SU RECETA MÁS ADELANTE.
+                                    </div>
+                                @endif
+
+                                <!-- Preparación Intermedia (Masa) -->
+                                @if($preparaciones->count())
+                                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                                        <span class="text-[10px] font-black text-rose-400 uppercase">→ PREPARACIÓN INTERMEDIA
+                                            (MASA)</span>
+                                        <div class="grid grid-cols-12 gap-2">
+                                            <div class="col-span-8">
+                                                <select name="componentes[0][preparacion_id]"
+                                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-white focus:border-amber-500 focus:outline-none uppercase">
+                                                    <option value="" class="uppercase">NINGUNA</option>
+                                                    @foreach($preparaciones as $prep)
+                                                        <option value="{{ $prep->id }}" class="uppercase">
+                                                            {{ strtoupper($prep->nombre) }} (RINDE {{ $prep->rinde_cantidad }})
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-span-4">
+                                                <input type="number" step="any" name="componentes[0][cantidad_usada]"
+                                                    placeholder="CANT."
+                                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-white focus:border-amber-500 focus:outline-none uppercase">
+                                            </div>
+                                            <input type="hidden" name="componentes[0][tipo_componente]" value="preparacion">
+                                            <input type="hidden" name="componentes[0][insumo_id]" value="">
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <!-- Insumo Directo -->
+                                @if($insumos->count())
+                                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                                        <span class="text-[10px] font-black text-orange-400 uppercase">→ INSUMO DIRECTO (EJ.
+                                            RELLENO)</span>
+                                        <div class="grid grid-cols-12 gap-2">
+                                            <div class="col-span-8">
+                                                <select name="componentes[1][insumo_id]"
+                                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-white focus:border-amber-500 focus:outline-none uppercase">
+                                                    <option value="" class="uppercase">SELECCIONAR INSUMO...</option>
+                                                    @foreach($insumos as $ins)
+                                                        <option value="{{ $ins->id }}" class="uppercase">
+                                                            {{ strtoupper($ins->nombre) }} ({{ strtoupper($ins->unidad_medida) }})
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-span-4">
+                                                <input type="number" step="any" name="componentes[1][cantidad_usada]"
+                                                    placeholder="CANT."
+                                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-white focus:border-amber-500 focus:outline-none uppercase">
+                                            </div>
+                                            <input type="hidden" name="componentes[1][tipo_componente]" value="insumo">
+                                            <input type="hidden" name="componentes[1][preparacion_id]" value="">
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <button type="submit"
+                                class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-save"></i> GUARDAR VARIANTE
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Lista Variantes (Col 7) -->
+                <div class="lg:col-span-7">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                        <div class="px-6 py-4 border-b border-slate-800">
+                            <h2 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-list text-amber-400"></i> VARIANTES DEFINIDAS
+                            </h2>
+                        </div>
+
+                        <div class="divide-y divide-slate-800/80">
+                            @forelse($variantes as $var)
+                                <div class="p-4 space-y-2 hover:bg-slate-800/30">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-black text-white text-sm flex items-center gap-2 uppercase">
+                                            🥟 {{ strtoupper($var->nombre) }}
+                                            @if(!$var->activo)
+                                                <span
+                                                    class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-bold uppercase">INACTIVO</span>
+                                            @endif
+                                        </span>
+                                        <span class="text-sm font-black text-amber-400 uppercase">BS.
+                                            {{ number_format($var->precio_venta, 2) }}</span>
+                                    </div>
+
+                                    <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+                                        <span
+                                            class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">RECETA:</span>
+                                        @forelse($var->recetas as $rec)
+                                            <div class="flex justify-between text-slate-300 uppercase">
+                                                @if($rec->tipo_componente === 'insumo')
+                                                    <span class="font-bold text-orange-400 uppercase">• [INSUMO]
+                                                        {{ strtoupper($rec->insumo->nombre ?? '—') }}</span>
+                                                @else
+                                                    <span class="font-bold text-rose-400 uppercase">• [MASA]
+                                                        {{ strtoupper($rec->preparacion->nombre ?? '—') }}</span>
+                                                @endif
+                                                <span class="text-amber-400 font-bold uppercase">X {{ $rec->cantidad_usada }}</span>
+                                            </div>
+                                        @empty
+                                            <span class="text-[11px] text-slate-500 italic uppercase">SIN COMPONENTES DE RECETA
+                                                ASIGNADOS</span>
+                                        @endforelse
+
+                                        @if($var->promociones->count())
+                                            <div class="mt-2 pt-2 border-t border-slate-800">
+                                                <span class="text-[10px] font-black text-indigo-400 uppercase">PROMOCIONES
+                                                    ACTIVAS:</span>
+                                                @foreach($var->promociones as $promo)
+                                                    <span class="text-[10px] font-bold text-slate-300 block ml-2 uppercase">
+                                                        🏷️ {{ strtoupper($promo->nombre) }} — {{ $promo->unidades_por_paquete }} UDS.
+                                                        POR BS. {{ number_format($promo->precio_paquete, 2) }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="p-8 text-center text-slate-500 font-bold uppercase text-xs">
+                                    NO HAY VARIANTES CREADAS AÚN.
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 2: MASA / PREPARACIONES -->
+        <div x-show="activeTab === 'preparaciones'" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- Formulario Preparaciones (Col 5) -->
+                <div class="lg:col-span-5">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                        <h2
+                            class="text-xs font-black text-rose-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
+                            <i class="fa-solid fa-bowl-rice"></i> NUEVA PREPARACIÓN / MASA
+                        </h2>
+
+                        @if($insumos->isEmpty())
+                            <div
+                                class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold space-y-2 uppercase">
+                                <p>PRIMERO DEBES REGISTRAR INSUMOS (EJ. HARINA, MANTECA, AGUA) EN LA PESTAÑA DE INSUMOS.</p>
+                                <button type="button" @click="activeTab = 'insumos'"
+                                    class="px-3 py-1.5 rounded-lg bg-rose-500 text-slate-950 font-black text-xs uppercase shadow">+
+                                    IR A INSUMOS</button>
+                            </div>
+                        @else
+                            <form action="{{ route('preparaciones.store') }}" method="POST" class="space-y-4">
+                                @csrf
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[11px] font-black uppercase text-slate-400 mb-1">NOMBRE <span
+                                                class="text-amber-500">*</span></label>
+                                        <input type="text" name="nombre" required placeholder="EJ. MASA DE SALTEÑA"
+                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:border-rose-500 focus:outline-none uppercase">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-black uppercase text-slate-400 mb-1">RINDE (CANT.
+                                            SALTEÑAS) <span class="text-amber-500">*</span></label>
+                                        <input type="number" step="any" name="rinde_cantidad" required placeholder="EJ. 100"
+                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-amber-400 focus:border-rose-500 focus:outline-none uppercase">
+                                    </div>
+                                </div>
+
+                                <div class="space-y-3 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                    <label class="block text-[11px] font-black uppercase text-rose-400">INSUMOS PARA ESTA
+                                        MASA</label>
+
+                                    <!-- Fila Insumo 0 -->
+                                    <div class="grid grid-cols-12 gap-2">
+                                        <div class="col-span-7">
+                                            <select name="insumos[0][insumo_id]" required
+                                                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-white focus:border-rose-500 focus:outline-none uppercase">
+                                                <option value="" class="uppercase">SELECCIONAR INSUMO...</option>
+                                                @foreach($insumos as $ins)
+                                                    <option value="{{ $ins->id }}" class="uppercase">{{ strtoupper($ins->nombre) }}
+                                                        ({{ strtoupper($ins->unidad_medida) }})</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-span-5">
+                                            <input type="number" step="any" name="insumos[0][cantidad_usada]" required
+                                                placeholder="CANT. USADA"
+                                                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-white focus:border-rose-500 focus:outline-none uppercase">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit"
+                                    class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-rose-500/20 transition-all flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-save"></i> GUARDAR PREPARACIÓN (MASA)
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Lista Preparaciones (Col 7) -->
+                <div class="lg:col-span-7">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                        <div class="px-6 py-4 border-b border-slate-800">
+                            <h2 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-list text-rose-400"></i> PREPARACIONES DEFINIDAS
+                            </h2>
+                        </div>
+
+                        <div class="divide-y divide-slate-800/80">
+                            @forelse($preparaciones as $prep)
+                                <div class="p-4 space-y-2 hover:bg-slate-800/30">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-black text-white text-sm flex items-center gap-2 uppercase">
+                                            🥣 {{ strtoupper($prep->nombre) }}
+                                        </span>
+                                        <span class="text-xs font-black text-rose-400 uppercase">RINDE
+                                            {{ $prep->rinde_cantidad }} UNIDADES</span>
+                                    </div>
+
+                                    <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+                                        <span
+                                            class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">INSUMOS
+                                            UTILIZADOS:</span>
+                                        @foreach($prep->receta as $rec)
+                                            <div class="flex justify-between text-slate-300 uppercase">
+                                                <span class="font-bold text-orange-400 uppercase">•
+                                                    {{ strtoupper($rec->insumo->nombre ?? '—') }}</span>
+                                                <span class="text-rose-400 font-bold uppercase">{{ $rec->cantidad_usada }}
+                                                    {{ strtoupper($rec->insumo->unidad_medida ?? '') }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="p-8 text-center text-slate-500 font-bold uppercase text-xs">
+                                    NO HAY PREPARACIONES CREADAS AÚN.
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 3: INSUMOS / MATERIA PRIMA -->
+        <div x-show="activeTab === 'insumos'" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- Formulario Insumos (Col 5) -->
+                <div class="lg:col-span-5">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                        <h2
+                            class="text-xs font-black text-orange-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
+                            <i class="fa-solid fa-plus-circle"></i> NUEVO INSUMO / MATERIA PRIMA
+                        </h2>
+
+                        <form action="{{ route('insumos.store') }}" method="POST" class="space-y-4">
+                            @csrf
+                            <div>
+                                <label class="block text-[11px] font-black uppercase text-slate-400 mb-1">NOMBRE DEL INSUMO
+                                    <span class="text-amber-500">*</span></label>
+                                <input type="text" name="nombre" required placeholder="EJ. HARINA DE TRIGO, HARINA, POLLO"
+                                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:border-orange-500 focus:outline-none uppercase">
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-black uppercase text-slate-400 mb-1">UNIDAD DE MEDIDA
+                                    <span class="text-amber-500">*</span></label>
+                                <input type="text" name="unidad_medida" required
+                                    placeholder="EJ. KG, LITROS, QUINTAL, UNIDAD"
+                                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-orange-400 focus:border-orange-500 focus:outline-none uppercase">
+                            </div>
+
+                            <button type="submit"
+                                class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-orange-500/20 transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-save"></i> GUARDAR INSUMO
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Lista Insumos (Col 7) -->
+                <div class="lg:col-span-7">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                        <div class="px-6 py-4 border-b border-slate-800">
+                            <h2 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-boxes-stacked text-orange-400"></i> CATÁLOGO DE INSUMOS
+                            </h2>
+                        </div>
+
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr
+                                    class="bg-slate-950/70 border-b border-slate-800 text-[10px] font-black uppercase text-slate-400">
+                                    <th class="py-3 px-4">NOMBRE</th>
+                                    <th class="py-3 px-4">UNIDAD MEDIDA</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800/60">
+                                @forelse($insumos as $ins)
+                                    <tr class="hover:bg-slate-800/30">
+                                        <td class="py-3 px-4 font-black text-white uppercase">📦 {{ strtoupper($ins->nombre) }}
+                                        </td>
+                                        <td class="py-3 px-4 font-bold text-orange-400 uppercase">
+                                            {{ strtoupper($ins->unidad_medida) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="2" class="py-8 text-center text-slate-500 font-bold uppercase">NO HAY
+                                            INSUMOS REGISTRADOS AÚN.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+@endsection
+
+@section('scripts')
+    <!-- AlpineJS para el cambio dinámico de pestañas sin recargar página -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+@endsection

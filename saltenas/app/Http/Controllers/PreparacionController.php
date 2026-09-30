@@ -40,6 +40,6 @@ class PreparacionController extends Controller
             ]);
         }
 
-        return redirect()->route('preparaciones.index')->with('success', 'Preparación (ej. Masa) creada exitosamente.');
+        return redirect()->route('productos.index', ['tab' => 'preparaciones'])->with('success', 'Preparación (ej. Masa) creada exitosamente.');
     }
 }

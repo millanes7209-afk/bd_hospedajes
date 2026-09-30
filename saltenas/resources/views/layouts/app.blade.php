@@ -69,22 +69,10 @@
                         <span>Carritos</span>
                     </a>
 
-                    <a href="{{ route('insumos.index') }}"
-                        class="px-2.5 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('insumos.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
-                        <i class="fa-solid fa-boxes-stacked text-orange-400"></i>
-                        <span>Insumos</span>
-                    </a>
-
-                    <a href="{{ route('preparaciones.index') }}"
-                        class="px-2.5 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('preparaciones.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
-                        <i class="fa-solid fa-bowl-rice text-rose-400"></i>
-                        <span>Masa / Recetas</span>
-                    </a>
-
-                    <a href="{{ route('variantes.index') }}"
-                        class="px-2.5 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('variantes.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
-                        <i class="fa-solid fa-cookie text-amber-400"></i>
-                        <span>Variantes</span>
+                    <a href="{{ route('productos.index') }}"
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('productos.*') || request()->routeIs('insumos.*') || request()->routeIs('preparaciones.*') || request()->routeIs('variantes.*') ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-amber-400' }}">
+                        <i class="fa-solid fa-boxes-stacked text-amber-400"></i>
+                        <span>Productos & Recetas</span>
                     </a>
 
                     <a href="{{ route('promociones.index') }}"

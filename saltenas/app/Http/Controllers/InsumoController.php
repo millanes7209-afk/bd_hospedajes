@@ -30,6 +30,6 @@ class InsumoController extends Controller
             'unidad_medida' => $request->unidad_medida,
         ]);
 
-        return redirect()->route('insumos.index')->with('success', 'Insumo creado correctamente.');
+        return redirect()->route('productos.index', ['tab' => 'insumos'])->with('success', 'Insumo creado correctamente.');
     }
 }

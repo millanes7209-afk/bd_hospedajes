@@ -35,16 +35,25 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/carritos', [CarritoController::class, 'store'])->name('carritos.store');
     Route::get('/carritos/toggle/{id}', [CarritoController::class, 'toggleEstado'])->name('carritos.toggle');
 
+    // Catálogo Unificado: Productos & Recetas (Variantes, Preparaciones, Insumos)
+    Route::get('/productos', [\App\Http\Controllers\ProductoController::class, 'index'])->name('productos.index');
+
     // Insumos
-    Route::get('/insumos', [InsumoController::class, 'index'])->name('insumos.index');
+    Route::get('/insumos', function () {
+        return redirect()->route('productos.index', ['tab' => 'insumos']);
+    })->name('insumos.index');
     Route::post('/insumos', [InsumoController::class, 'store'])->name('insumos.store');
 
     // Preparaciones Intermedias (Masa)
-    Route::get('/preparaciones', [PreparacionController::class, 'index'])->name('preparaciones.index');
+    Route::get('/preparaciones', function () {
+        return redirect()->route('productos.index', ['tab' => 'preparaciones']);
+    })->name('preparaciones.index');
     Route::post('/preparaciones', [PreparacionController::class, 'store'])->name('preparaciones.store');
 
     // Variantes de Salteña & Receta
-    Route::get('/variantes', [VarianteSaltenaController::class, 'index'])->name('variantes.index');
+    Route::get('/variantes', function () {
+        return redirect()->route('productos.index', ['tab' => 'variantes']);
+    })->name('variantes.index');
     Route::post('/variantes', [VarianteSaltenaController::class, 'store'])->name('variantes.store');
 
     // Promociones Explícitas (Combos 3x10Bs)
