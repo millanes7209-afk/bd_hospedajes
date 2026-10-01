@@ -35,6 +35,8 @@ class ImportarCierresCommand extends Command
             return 1;
         }
 
+        $variante->update(['precio_venta' => 3.50]);
+
         $this->info("Variante seleccionada: ID {$variante->id} - {$variante->nombre} (Bs. {$variante->precio_venta})");
 
         // Datos del cuadro proporcionado por el usuario
