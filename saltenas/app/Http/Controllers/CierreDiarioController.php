@@ -21,6 +21,9 @@ class CierreDiarioController extends Controller
     public function index(Request $request)
     {
         $carritoId = $request->get('carrito_id');
+        $fechaInicio = $request->get('fecha_inicio');
+        $fechaFin = $request->get('fecha_fin');
+        $perPage = $request->get('per_page', 15);
 
         $query = CierreDiario::with(['carrito', 'detalles.variante', 'detalles.promocionesDetalle.promocion']);
 
@@ -28,7 +31,20 @@ class CierreDiarioController extends Controller
             $query->where('carrito_id', $carritoId);
         }
 
-        $cierres = $query->orderBy('fecha', 'desc')->orderBy('id', 'desc')->paginate(15);
+        if ($fechaInicio) {
+            $query->whereDate('fecha', '>=', $fechaInicio);
+        }
+
+        if ($fechaFin) {
+            $query->whereDate('fecha', '<=', $fechaFin);
+        }
+
+        if ($perPage === 'all') {
+            $cierres = $query->orderBy('fecha', 'desc')->orderBy('id', 'desc')->get();
+        } else {
+            $limit = is_numeric($perPage) && (int) $perPage > 0 ? (int) $perPage : 15;
+            $cierres = $query->orderBy('fecha', 'desc')->orderBy('id', 'desc')->paginate($limit)->appends($request->all());
+        }
 
         $carritos = Carrito::where('activo', true)->orderBy('nombre')->get();
         $variantes = VarianteSaltena::with([
@@ -37,7 +53,7 @@ class CierreDiarioController extends Controller
             }
         ])->where('activo', true)->orderBy('nombre')->get();
 
-        return view('cierres.index', compact('cierres', 'carritos', 'variantes', 'carritoId'));
+        return view('cierres.index', compact('cierres', 'carritos', 'variantes', 'carritoId', 'fechaInicio', 'fechaFin', 'perPage'));
     }
 
     public function store(Request $request)

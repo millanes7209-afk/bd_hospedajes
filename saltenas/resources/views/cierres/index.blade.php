@@ -165,19 +165,62 @@
 
         <!-- Historial de Cierres -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
-            <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-3">
-                <h2 class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-clock-rotate-left text-emerald-500"></i> HISTORIAL DE CIERRES
-                </h2>
-                <form action="{{ route('cierres.index') }}" method="GET" class="flex items-center gap-2">
-                    <select name="carrito_id" onchange="this.form.submit()"
-                        class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase">
-                        <option value="" class="uppercase">TODOS LOS CARRITOS</option>
-                        @foreach($carritos as $car)
-                            <option value="{{ $car->id }}" {{ $carritoId == $car->id ? 'selected' : '' }} class="uppercase">{{ strtoupper($car->nombre) }}
-                            </option>
-                        @endforeach
-                    </select>
+            <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 space-y-3">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <h2 class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-emerald-500"></i> HISTORIAL DE CIERRES
+                    </h2>
+                    @if($carritoId || $fechaInicio || $fechaFin || request('per_page'))
+                        <a href="{{ route('cierres.index') }}" class="text-[10px] font-bold text-rose-600 dark:text-rose-400 hover:underline uppercase flex items-center gap-1">
+                            <i class="fa-solid fa-rotate-left"></i> LIMPIAR FILTROS
+                        </a>
+                    @endif
+                </div>
+
+                <!-- Barra de Filtros Completa -->
+                <form action="{{ route('cierres.index') }}" method="GET" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-0.5">CARRITO</label>
+                        <select name="carrito_id"
+                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase">
+                            <option value="" class="uppercase">TODOS</option>
+                            @foreach($carritos as $car)
+                                <option value="{{ $car->id }}" {{ $carritoId == $car->id ? 'selected' : '' }} class="uppercase">{{ strtoupper($car->nombre) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-0.5">DESDE FECHA</label>
+                        <input type="date" name="fecha_inicio" value="{{ $fechaInicio }}"
+                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-0.5">HASTA FECHA</label>
+                        <input type="date" name="fecha_fin" value="{{ $fechaFin }}"
+                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-0.5">FILAS</label>
+                        <select name="per_page"
+                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase">
+                            <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10 FILAS</option>
+                            <option value="15" {{ $perPage == 15 ? 'selected' : '' }}>15 FILAS</option>
+                            <option value="25" {{ $perPage == 25 ? 'selected' : '' }}>25 FILAS</option>
+                            <option value="50" {{ $perPage == 50 ? 'selected' : '' }}>50 FILAS</option>
+                            <option value="100" {{ $perPage == 100 ? 'selected' : '' }}>100 FILAS</option>
+                            <option value="all" {{ $perPage == 'all' ? 'selected' : '' }}>TODOS</option>
+                        </select>
+                    </div>
+
+                    <div class="col-span-2 sm:col-span-1 lg:col-span-2 flex items-end gap-2">
+                        <button type="submit"
+                            class="w-full py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase shadow-sm transition-all flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-filter"></i> FILTRAR
+                        </button>
+                    </div>
                 </form>
             </div>
 
@@ -235,7 +278,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="py-8 text-center text-slate-400 font-bold uppercase">NO HAY CIERRES REGISTRADOS AÚN.</td>
+                                <td colspan="8" class="py-8 text-center text-slate-400 font-bold uppercase">NO HAY CIERRES REGISTRADOS CON LOS FILTROS SELECCIONADOS.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -243,7 +286,13 @@
             </div>
 
             <div class="px-5 py-3 border-t border-slate-100 dark:border-slate-800">
-                {{ $cierres->links() }}
+                @if($cierres instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                    {{ $cierres->links() }}
+                @else
+                    <div class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-center py-1">
+                        MOSTRANDO TODOS LOS REGISTROS ({{ count($cierres) }})
+                    </div>
+                @endif
             </div>
         </div>
     </div>
