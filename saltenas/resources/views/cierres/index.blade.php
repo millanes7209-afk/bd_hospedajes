@@ -49,9 +49,6 @@
                                 {{ $variantes->count() }} REGISTRADAS
                             </span>
                         </div>
-                        @if(!$variantes->count())
-                            <a href="{{ route('productos.index', ['tab' => 'variantes']) }}" class="mt-3 inline-block px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-black text-[11px] uppercase shadow-sm">+ CREAR VARIANTE DE SALTEÑA</a>
-                        @endif
                     </div>
                 </div>
             </div>
@@ -65,9 +62,9 @@
                 <form action="{{ route('cierres.store') }}" method="POST" class="space-y-4">
                     @csrf
 
-                    <!-- Carrito + Fecha + Temperatura -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="md:col-span-2">
+                    <!-- Carrito + Fecha + Temperaturas + Monto Real -->
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        <div class="col-span-2 md:col-span-2">
                             <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">CARRITO / PUNTO DE VENTA <span class="text-amber-500">*</span></label>
                             <select name="carrito_id" required
                                 class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase">
@@ -84,10 +81,21 @@
                                 class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 focus:border-emerald-500 focus:outline-none">
                         </div>
                         <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">MONTO REAL ENTREGADO (BS.) <span class="text-rose-500">*</span></label>
-                            <input type="number" step="any" name="monto_real" required placeholder="EJ. 350.50"
-                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-rose-600 dark:text-rose-400 focus:border-emerald-500 focus:outline-none uppercase">
+                            <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">TEMP. MIN (°C)</label>
+                            <input type="number" step="any" name="temp_min" placeholder="EJ. 12.5"
+                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-cyan-600 dark:text-cyan-400 focus:border-emerald-500 focus:outline-none uppercase">
                         </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">TEMP. MÁX (°C)</label>
+                            <input type="number" step="any" name="temp_max" placeholder="EJ. 24.0"
+                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 focus:border-emerald-500 focus:outline-none uppercase">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">MONTO REAL ENTREGADO (BS.) <span class="text-rose-500">*</span></label>
+                        <input type="number" step="any" name="monto_real" required placeholder="EJ. 350.50"
+                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-rose-600 dark:text-rose-400 focus:border-emerald-500 focus:outline-none uppercase">
                     </div>
 
                     <!-- Detalle por Variante -->
@@ -179,6 +187,7 @@
                         <tr class="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">
                             <th class="py-2.5 px-4">FECHA</th>
                             <th class="py-2.5 px-4">CARRITO</th>
+                            <th class="py-2.5 px-4 text-center">TEMP. MIN / MÁX</th>
                             <th class="py-2.5 px-4 text-right">MONTO ESTIMADO</th>
                             <th class="py-2.5 px-4 text-right">MONTO REAL</th>
                             <th class="py-2.5 px-4 text-right">DIFERENCIA</th>
@@ -193,6 +202,17 @@
                                     {{ \Carbon\Carbon::parse($cierre->fecha)->format('d/m/Y') }}
                                 </td>
                                 <td class="py-2.5 px-4 font-bold text-purple-600 dark:text-purple-400 uppercase">{{ strtoupper($cierre->carrito->nombre ?? '—') }}</td>
+                                <td class="py-2.5 px-4 text-center font-bold text-slate-600 dark:text-slate-300 uppercase">
+                                    @if($cierre->temp_min !== null || $cierre->temp_max !== null)
+                                        <span class="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-[11px]">
+                                            🌡️ <span class="text-cyan-600 dark:text-cyan-400">{{ $cierre->temp_min !== null ? number_format($cierre->temp_min, 1) . '°C' : '—' }}</span>
+                                            /
+                                            <span class="text-rose-600 dark:text-rose-400">{{ $cierre->temp_max !== null ? number_format($cierre->temp_max, 1) . '°C' : '—' }}</span>
+                                        </span>
+                                    @else
+                                        <span class="text-slate-400 font-normal text-[11px]">—</span>
+                                    @endif
+                                </td>
                                 <td class="py-2.5 px-4 text-right font-bold text-slate-600 dark:text-slate-300 uppercase">BS. {{ number_format($cierre->monto_estimado, 2) }}</td>
                                 <td class="py-2.5 px-4 text-right font-bold text-slate-900 dark:text-white uppercase">BS. {{ number_format($cierre->monto_real, 2) }}</td>
                                 <td class="py-2.5 px-4 text-right font-black {{ abs($cierre->diferencia) < 0.01 ? 'text-emerald-600 dark:text-emerald-400' : ($cierre->diferencia > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-cyan-600 dark:text-cyan-400') }}">
