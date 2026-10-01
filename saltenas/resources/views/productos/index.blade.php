@@ -56,9 +56,33 @@
                                 <label
                                     class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">UNIDAD
                                     DE MEDIDA <span class="text-amber-500">*</span></label>
-                                <input type="text" name="unidad_medida" required
-                                    placeholder="EJ. KG, LITROS, QUINTAL, UNIDAD"
+                                <select name="unidad_medida" required
                                     class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 focus:border-amber-500 focus:outline-none uppercase">
+                                    <option value="">SELECCIONAR UNIDAD...</option>
+                                    <optgroup label="── PESO ──">
+                                        <option value="kg">KG — KILOGRAMO</option>
+                                        <option value="g">G — GRAMO</option>
+                                        <option value="quintal">QUINTAL (46 KG)</option>
+                                        <option value="libra">LIBRA (500 G)</option>
+                                    </optgroup>
+                                    <optgroup label="── VOLUMEN ──">
+                                        <option value="litro">LITRO</option>
+                                        <option value="ml">ML — MILILITRO</option>
+                                        <option value="taza">TAZA (250 ML)</option>
+                                        <option value="cucharada">CUCHARADA (15 ML)</option>
+                                        <option value="cucharadita">CUCHARADITA (5 ML)</option>
+                                    </optgroup>
+                                    <optgroup label="── CANTIDAD ──">
+                                        <option value="unidad">UNIDAD</option>
+                                        <option value="docena">DOCENA (12 UDS.)</option>
+                                        <option value="paquete">PAQUETE</option>
+                                        <option value="caja">CAJA</option>
+                                        <option value="bolsa">BOLSA</option>
+                                        <option value="lata">LATA</option>
+                                        <option value="botella">BOTELLA</option>
+                                        <option value="porcion">PORCIÓN</option>
+                                    </optgroup>
+                                </select>
                             </div>
 
                             <button type="submit"
@@ -92,9 +116,11 @@
                                 @forelse($insumos as $ins)
                                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                                         <td class="py-2.5 px-4 font-bold text-slate-900 dark:text-white uppercase">📦
-                                            {{ strtoupper($ins->nombre) }}</td>
+                                            {{ strtoupper($ins->nombre) }}
+                                        </td>
                                         <td class="py-2.5 px-4 font-bold text-amber-600 dark:text-amber-400 uppercase">
-                                            {{ strtoupper($ins->unidad_medida) }}</td>
+                                            {{ strtoupper($ins->unidad_medida) }}
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>

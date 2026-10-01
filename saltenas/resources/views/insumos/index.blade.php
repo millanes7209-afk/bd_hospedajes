@@ -41,11 +41,30 @@
                                 MEDIDA</label>
                             <select name="unidad_medida" required
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:border-orange-500 focus:outline-none uppercase">
-                                <option value="Kg" class="uppercase">KILOGRAMO (KG)</option>
-                                <option value="Gramo" class="uppercase">GRAMO (G)</option>
-                                <option value="Litro" class="uppercase">LITRO (L)</option>
-                                <option value="Unidad" class="uppercase">UNIDAD (UD)</option>
-                                <option value="Quintal" class="uppercase">QUINTAL (QQ)</option>
+                                <option value="">SELECCIONAR UNIDAD...</option>
+                                <optgroup label="── PESO ──">
+                                    <option value="kg">KILOGRAMO (KG)</option>
+                                    <option value="g">GRAMO (G)</option>
+                                    <option value="quintal">QUINTAL (QQ)</option>
+                                    <option value="libra">LIBRA (LB)</option>
+                                </optgroup>
+                                <optgroup label="── VOLUMEN ──">
+                                    <option value="litro">LITRO (L)</option>
+                                    <option value="ml">MILILITRO (ML)</option>
+                                    <option value="taza">TAZA (250 ML)</option>
+                                    <option value="cucharada">CUCHARADA (15 ML)</option>
+                                    <option value="cucharadita">CUCHARADITA (5 ML)</option>
+                                </optgroup>
+                                <optgroup label="── CANTIDAD ──">
+                                    <option value="unidad">UNIDAD (UD)</option>
+                                    <option value="docena">DOCENA (12 UDS)</option>
+                                    <option value="paquete">PAQUETE</option>
+                                    <option value="caja">CAJA</option>
+                                    <option value="bolsa">BOLSA</option>
+                                    <option value="lata">LATA</option>
+                                    <option value="botella">BOTELLA</option>
+                                    <option value="porcion">PORCIÓN</option>
+                                </optgroup>
                             </select>
                         </div>
 

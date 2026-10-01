@@ -195,9 +195,17 @@ require_once("../../libreria_menu.php");
                 </div>
                 <div class="row g-2 mb-3">
                     <div class="col-4">
-                        <label class="form-label fw-bold text-dark">Medida / Litros</label>
-                        <input type="text" id="nuevaMedida" class="form-control bg-white" placeholder="Ej. 2"
-                            onfocus="setTimeout(() => this.select(), 50)" onclick="setTimeout(() => this.select(), 50)">
+                        <label class="form-label fw-bold text-dark">Unidad / Medida</label>
+                        <select id="nuevaMedida" class="form-select bg-white fw-bold">
+                            <option value="und">Unidad (und)</option>
+                            <option value="kg">Kilogramo (kg)</option>
+                            <option value="g">Gramo (g)</option>
+                            <option value="lt">Litro (lt)</option>
+                            <option value="ml">Mililitro (ml)</option>
+                            <option value="paquete">Paquete</option>
+                            <option value="caja">Caja</option>
+                            <option value="porcion">Porción</option>
+                        </select>
                     </div>
                     <div class="col-4">
                         <label class="form-label fw-bold text-dark">Precio Venta (Bs) *</label>
