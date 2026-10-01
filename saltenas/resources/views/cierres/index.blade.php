@@ -3,15 +3,23 @@
 @section('title', 'CIERRE DIARIO — SALTEÑAS')
 
 @section('content')
-    <div class="space-y-6">
+    <div class="space-y-6" x-data="{ showModal: false }">
 
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-xl shadow-sm">
-            <h1 class="text-xl font-black text-slate-900 dark:text-white uppercase flex items-center gap-2">
-                <i class="fa-solid fa-calendar-check text-emerald-600 dark:text-emerald-400"></i> REGISTRAR CIERRE DIARIO POR CARRITO
-            </h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 uppercase">
-                EL SISTEMA VERIFICA AUTOMÁTICAMENTE SI LA CANTIDAD ENTREGADA CUADRA CON LO VENDIDO + SOBRANTE, Y SI EL MONTO ESTIMADO COINCIDE CON EL MONTO REAL ENTREGADO.
-            </p>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-xl font-black text-slate-900 dark:text-white uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-check text-emerald-600 dark:text-emerald-400"></i> CIERRES DIARIOS POR CARRITO
+                </h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 uppercase">
+                    EL SISTEMA VERIFICA AUTOMÁTICAMENTE SI LA CANTIDAD ENTREGADA CUADRA CON LO VENDIDO + SOBRANTE, Y GENERA EL INGRESO EN BÓVEDA.
+                </p>
+            </div>
+            @if(!$carritos->isEmpty() && !$variantes->isEmpty())
+                <button @click="showModal = true" type="button"
+                    class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0">
+                    <i class="fa-solid fa-plus-circle"></i> + REGISTRAR NUEVO CIERRE
+                </button>
+            @endif
         </div>
 
         @if($carritos->isEmpty() || $variantes->isEmpty())
@@ -23,143 +31,147 @@
                 <p class="text-xs text-slate-600 dark:text-slate-300 uppercase">
                     PARA PODER HABILITAR EL FORMULARIO DE CIERRE DIARIO, EL SISTEMA NECESITA TENER REGISTRADO AL MENOS UN <strong class="text-slate-900 dark:text-white">CARRITO</strong> Y UNA <strong class="text-slate-900 dark:text-white">VARIANTE DE SALTEÑA</strong>.
                 </p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                    <div class="p-4 rounded-xl border {{ $carritos->count() ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400' }}">
-                        <div class="flex items-center justify-between">
-                            <span class="font-black text-xs uppercase flex items-center gap-2">
-                                <i class="fa-solid {{ $carritos->count() ? 'fa-circle-check text-emerald-600 dark:text-emerald-400' : 'fa-circle-xmark text-rose-600 dark:text-rose-400' }}"></i>
-                                1. CARRITOS (PUNTOS DE VENTA)
-                            </span>
-                            <span class="text-xs font-extrabold uppercase px-2 py-0.5 rounded {{ $carritos->count() ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300' }}">
-                                {{ $carritos->count() }} REGISTRADOS
-                            </span>
-                        </div>
-                        @if(!$carritos->count())
-                            <a href="{{ route('carritos.index') }}" class="mt-3 inline-block px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-black text-[11px] uppercase shadow-sm">+ CREAR CARRITO</a>
-                        @endif
-                    </div>
-
-                    <div class="p-4 rounded-xl border {{ $variantes->count() ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400' }}">
-                        <div class="flex items-center justify-between">
-                            <span class="font-black text-xs uppercase flex items-center gap-2">
-                                <i class="fa-solid {{ $variantes->count() ? 'fa-circle-check text-emerald-600 dark:text-emerald-400' : 'fa-circle-xmark text-rose-600 dark:text-rose-400' }}"></i>
-                                2. VARIANTES DE SALTEÑA
-                            </span>
-                            <span class="text-xs font-extrabold uppercase px-2 py-0.5 rounded {{ $variantes->count() ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300' }}">
-                                {{ $variantes->count() }} REGISTRADAS
-                            </span>
-                        </div>
-                    </div>
-                </div>
             </div>
         @else
-            <!-- Formulario Cierre Diario -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4 shadow-sm">
-                <h2 class="text-xs font-black text-slate-900 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                    <i class="fa-solid fa-plus-circle text-emerald-500"></i> NUEVO CIERRE DIARIO
-                </h2>
+            <!-- MODAL FORMULARIO DE CIERRE DIARIO -->
+            <div x-show="showModal" x-cloak
+                class="fixed inset-0 z-50 overflow-y-auto"
+                aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                    <!-- Backdrop -->
+                    <div x-show="showModal"
+                        x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                        x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                        @click="showModal = false"
+                        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
 
-                <form action="{{ route('cierres.store') }}" method="POST" class="space-y-4">
-                    @csrf
+                    <!-- Centering trick -->
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-                    <!-- Carrito + Fecha + Temperaturas + Monto Real -->
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-                        <div class="col-span-2 md:col-span-2">
-                            <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">CARRITO / PUNTO DE VENTA <span class="text-amber-500">*</span></label>
-                            <select name="carrito_id" required
-                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase">
-                                <option value="" class="uppercase">SELECCIONAR CARRITO...</option>
-                                @foreach($carritos as $car)
-                                    <option value="{{ $car->id }}" class="uppercase">{{ strtoupper($car->nombre) }} @if($car->zona)({{ strtoupper($car->zona) }})@endif
-                                    </option>
-                                @endforeach
-                            </select>
+                    <!-- Modal Body -->
+                    <div x-show="showModal"
+                        x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        class="inline-block align-bottom bg-white dark:bg-slate-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full border border-slate-200 dark:border-slate-800">
+                        
+                        <!-- Modal Header -->
+                        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                            <h2 class="text-xs font-black text-slate-900 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-plus-circle text-emerald-500"></i> REGISTRAR NUEVO CIERRE DIARIO
+                            </h2>
+                            <button @click="showModal = false" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                                <i class="fa-solid fa-xmark text-lg"></i>
+                            </button>
                         </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">FECHA DEL CIERRE <span class="text-amber-500">*</span></label>
-                            <input type="date" name="fecha" required value="{{ date('Y-m-d') }}"
-                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 focus:border-emerald-500 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">TEMP. MIN (°C)</label>
-                            <input type="number" step="any" name="temp_min" placeholder="EJ. 12.5"
-                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-cyan-600 dark:text-cyan-400 focus:border-emerald-500 focus:outline-none uppercase">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">TEMP. MÁX (°C)</label>
-                            <input type="number" step="any" name="temp_max" placeholder="EJ. 24.0"
-                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 focus:border-emerald-500 focus:outline-none uppercase">
-                        </div>
-                    </div>
 
-                    <div>
-                        <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">MONTO REAL ENTREGADO (BS.) <span class="text-rose-500">*</span></label>
-                        <input type="number" step="any" name="monto_real" required placeholder="EJ. 350.50"
-                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-rose-600 dark:text-rose-400 focus:border-emerald-500 focus:outline-none uppercase">
-                    </div>
+                        <!-- Formulario Inside Modal -->
+                        <form action="{{ route('cierres.store') }}" method="POST" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                            @csrf
 
-                    <!-- Detalle por Variante -->
-                    @foreach($variantes as $i => $var)
-                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-4 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="font-black text-slate-900 dark:text-amber-400 uppercase">🥟 {{ strtoupper($var->nombre) }}</span>
-                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">PRECIO NORMAL: <strong class="text-slate-900 dark:text-white">BS. {{ $var->precio_venta }}</strong></span>
-                            </div>
-                            <input type="hidden" name="detalles[{{ $i }}][variante_id]" value="{{ $var->id }}">
-
-                            <div class="grid grid-cols-3 gap-3">
-                                <div>
-                                    <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">SALTEÑAS ENTREGADAS 🥟</label>
-                                    <input type="number" name="detalles[{{ $i }}][cantidad_entregada]" min="0" placeholder="EJ. 100"
-                                        class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase"
-                                        required>
+                            <!-- Carrito + Fecha + Temperaturas -->
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div class="col-span-2">
+                                    <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">CARRITO / PUNTO DE VENTA <span class="text-amber-500">*</span></label>
+                                    <select name="carrito_id" required
+                                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase">
+                                        <option value="" class="uppercase">SELECCIONAR CARRITO...</option>
+                                        @foreach($carritos as $car)
+                                            <option value="{{ $car->id }}" class="uppercase">{{ strtoupper($car->nombre) }} @if($car->zona)({{ strtoupper($car->zona) }})@endif</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">FECHA DEL CIERRE <span class="text-amber-500">*</span></label>
+                                    <input type="date" name="fecha" required value="{{ date('Y-m-d') }}"
+                                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 focus:border-emerald-500 focus:outline-none">
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">VENDIDAS NORMAL</label>
-                                    <input type="number" name="detalles[{{ $i }}][cantidad_vendida_normal]" min="0" placeholder="EJ. 10"
-                                        class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase"
-                                        required>
+                                    <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">TEMP. MIN (°C)</label>
+                                    <input type="number" step="any" name="temp_min" placeholder="EJ. 12.5"
+                                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-cyan-600 dark:text-cyan-400 focus:border-emerald-500 focus:outline-none uppercase">
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">SOBRANTES</label>
-                                    <input type="number" name="detalles[{{ $i }}][cantidad_sobrante]" min="0" placeholder="EJ. 15"
-                                        class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase"
-                                        required>
+                                    <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">TEMP. MÁX (°C)</label>
+                                    <input type="number" step="any" name="temp_max" placeholder="EJ. 24.0"
+                                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 focus:border-emerald-500 focus:outline-none uppercase">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">MONTO REAL ENTREGADO (BS.) <span class="text-rose-500">*</span></label>
+                                    <input type="number" step="any" name="monto_real" required placeholder="EJ. 350.50"
+                                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-rose-600 dark:text-rose-400 focus:border-emerald-500 focus:outline-none uppercase">
                                 </div>
                             </div>
 
-                            <!-- Sección de Promociones -->
-                            @if($var->promociones->count())
-                                <div class="bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-200 dark:border-indigo-500/20 rounded-lg p-3 space-y-2">
-                                    <span class="text-[10px] font-bold text-indigo-700 dark:text-indigo-400 uppercase block">🏷️ PAQUETES / COMBOS VENDIDOS</span>
-                                    @foreach($var->promociones as $j => $promo)
-                                        <div class="flex items-center gap-3">
-                                            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex-1 uppercase">{{ strtoupper($promo->nombre) }} ({{ $promo->unidades_por_paquete }} UDS. X BS. {{ $promo->precio_paquete }})</label>
-                                            <input type="hidden" name="detalles[{{ $i }}][promociones][{{ $j }}][promocion_id]" value="{{ $promo->id }}">
-                                            <div class="w-28">
-                                                <input type="number" min="0" value="0"
-                                                    name="detalles[{{ $i }}][promociones][{{ $j }}][paquetes_vendidos]"
-                                                    placeholder="# PAQUETES"
-                                                    class="w-full bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-500/30 rounded-lg px-3 py-1.5 text-xs font-black text-indigo-700 dark:text-indigo-400 focus:border-indigo-500 focus:outline-none text-center uppercase">
-                                            </div>
+                            <!-- Detalle por Variante -->
+                            @foreach($variantes as $i => $var)
+                                <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-4 space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-black text-slate-900 dark:text-amber-400 uppercase">🥟 {{ strtoupper($var->nombre) }}</span>
+                                        <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">PRECIO NORMAL: <strong class="text-slate-900 dark:text-white">BS. {{ $var->precio_venta }}</strong></span>
+                                    </div>
+                                    <input type="hidden" name="detalles[{{ $i }}][variante_id]" value="{{ $var->id }}">
+
+                                    <div class="grid grid-cols-3 gap-3">
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">SALTEÑAS ENTREGADAS 🥟</label>
+                                            <input type="number" name="detalles[{{ $i }}][cantidad_entregada]" min="0" placeholder="EJ. 100"
+                                                class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase"
+                                                required>
                                         </div>
-                                    @endforeach
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">VENDIDAS NORMAL</label>
+                                            <input type="number" name="detalles[{{ $i }}][cantidad_vendida_normal]" min="0" placeholder="EJ. 10"
+                                                class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase"
+                                                required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">SOBRANTES</label>
+                                            <input type="number" name="detalles[{{ $i }}][cantidad_sobrante]" min="0" placeholder="EJ. 15"
+                                                class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase"
+                                                required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Sección de Promociones -->
+                                    @if($var->promociones->count())
+                                        <div class="bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-200 dark:border-indigo-500/20 rounded-lg p-3 space-y-2">
+                                            <span class="text-[10px] font-bold text-indigo-700 dark:text-indigo-400 uppercase block">🏷️ PAQUETES / COMBOS VENDIDOS</span>
+                                            @foreach($var->promociones as $j => $promo)
+                                                <div class="flex items-center gap-3">
+                                                    <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex-1 uppercase">{{ strtoupper($promo->nombre) }} ({{ $promo->unidades_por_paquete }} UDS. X BS. {{ $promo->precio_paquete }})</label>
+                                                    <input type="hidden" name="detalles[{{ $i }}][promociones][{{ $j }}][promocion_id]" value="{{ $promo->id }}">
+                                                    <div class="w-28">
+                                                        <input type="number" min="0" value="0"
+                                                            name="detalles[{{ $i }}][promociones][{{ $j }}][paquetes_vendidos]"
+                                                            placeholder="# PAQUETES"
+                                                            class="w-full bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-500/30 rounded-lg px-3 py-1.5 text-xs font-black text-indigo-700 dark:text-indigo-400 focus:border-indigo-500 focus:outline-none text-center uppercase">
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
-                            @endif
-                        </div>
-                    @endforeach
+                            @endforeach
 
-                    <div>
-                        <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">OBSERVACIONES / NOTA</label>
-                        <textarea name="observaciones" rows="2" placeholder="EJ. DÍA LLUVIOSO, SE VENDIÓ MENOS..."
-                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none uppercase"></textarea>
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">OBSERVACIONES / NOTA</label>
+                                <textarea name="observaciones" rows="2" placeholder="EJ. DÍA LLUVIOSO, SE VENDIÓ MENOS..."
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none uppercase"></textarea>
+                            </div>
+
+                            <div class="pt-2 flex items-center justify-end gap-2">
+                                <button type="button" @click="showModal = false"
+                                    class="py-2.5 px-4 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase transition-all">
+                                    CANCELAR
+                                </button>
+                                <button type="submit"
+                                    class="py-2.5 px-5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all flex items-center gap-2">
+                                    <i class="fa-solid fa-calendar-check"></i> GUARDAR CIERRE
+                                </button>
+                            </div>
+                        </form>
                     </div>
-
-                    <button type="submit"
-                        class="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-calendar-check"></i> REGISTRAR CIERRE & GENERAR INGRESO EN BÓVEDA
-                    </button>
-                </form>
+                </div>
             </div>
         @endif
 
