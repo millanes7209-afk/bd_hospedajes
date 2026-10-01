@@ -109,7 +109,7 @@
 
                             <div class="grid grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">CANTIDAD ENTREGADA ☝</label>
+                                    <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">SALTEÑAS ENTREGADAS 🥟</label>
                                     <input type="number" name="detalles[{{ $i }}][cantidad_entregada]" min="0" placeholder="EJ. 100"
                                         class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase"
                                         required>
