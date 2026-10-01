@@ -11,7 +11,7 @@
                 :class="activeTab === 'insumos' ? 'bg-amber-500 text-slate-950 font-black shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800 font-bold'"
                 class="px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-boxes-stacked"></i>
-                <span>1. INSUMOS / MATERIA PRIMA ({{ $insumos->count() }})</span>
+                <span>1. INSUMOS ({{ $insumos->count() }})</span>
             </button>
 
             <button type="button" @click="activeTab = 'preparaciones'; history.replaceState(null, '', '?tab=preparaciones')"
@@ -157,7 +157,22 @@
                                     IR A INSUMOS</button>
                             </div>
                         @else
-                            <form action="{{ route('preparaciones.store') }}" method="POST" class="space-y-4">
+                            <form action="{{ route('preparaciones.store') }}" method="POST" class="space-y-4" x-data="{
+                                        rows: [{ insumo_id: '', cantidad_usada: '', unidad: '' }],
+                                        insumosMap: {{ json_encode($insumos->keyBy('id')->toArray()) }},
+                                        updateUnidad(idx) {
+                                            const id = this.rows[idx].insumo_id;
+                                            this.rows[idx].unidad = (id && this.insumosMap[id]) ? this.insumosMap[id].unidad_medida.toUpperCase() : '';
+                                        },
+                                        addRow() {
+                                            this.rows.push({ insumo_id: '', cantidad_usada: '', unidad: '' });
+                                        },
+                                        removeRow(idx) {
+                                            if (this.rows.length > 1) {
+                                                this.rows.splice(idx, 1);
+                                            }
+                                        }
+                                    }">
                                 @csrf
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
@@ -178,28 +193,47 @@
 
                                 <div
                                     class="space-y-3 bg-slate-50 dark:bg-slate-950 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
-                                    <label
-                                        class="block text-[11px] font-bold uppercase text-rose-600 dark:text-rose-400">INSUMOS
-                                        PARA ESTA MASA</label>
-
-                                    <!-- Fila Insumo 0 -->
-                                    <div class="grid grid-cols-12 gap-2">
-                                        <div class="col-span-7">
-                                            <select name="insumos[0][insumo_id]" required
-                                                class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:border-rose-500 focus:outline-none uppercase">
-                                                <option value="" class="uppercase">SELECCIONAR INSUMO...</option>
-                                                @foreach($insumos as $ins)
-                                                    <option value="{{ $ins->id }}" class="uppercase">{{ strtoupper($ins->nombre) }}
-                                                        ({{ strtoupper($ins->unidad_medida) }})</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-span-5">
-                                            <input type="number" step="any" name="insumos[0][cantidad_usada]" required
-                                                placeholder="CANT. USADA"
-                                                class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:border-rose-500 focus:outline-none uppercase">
-                                        </div>
+                                    <div class="flex items-center justify-between">
+                                        <label
+                                            class="block text-[11px] font-bold uppercase text-rose-600 dark:text-rose-400">INSUMOS
+                                            PARA ESTA MASA</label>
+                                        <button type="button" @click="addRow()"
+                                            class="text-[10px] font-black text-rose-600 dark:text-rose-400 hover:underline uppercase flex items-center gap-1">
+                                            <i class="fa-solid fa-plus-circle"></i> + AGREGAR OTRO INSUMO
+                                        </button>
                                     </div>
+
+                                    <template x-for="(row, idx) in rows" :key="idx">
+                                        <div
+                                            class="grid grid-cols-12 gap-2 items-center bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
+                                            <div class="col-span-6">
+                                                <select :name="`insumos[${idx}][insumo_id]`" x-model="row.insumo_id"
+                                                    @change="updateUnidad(idx)" required
+                                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:border-rose-500 focus:outline-none uppercase">
+                                                    <option value="" class="uppercase">SELECCIONAR INSUMO...</option>
+                                                    @foreach($insumos as $ins)
+                                                        <option value="{{ $ins->id }}" class="uppercase">
+                                                            {{ strtoupper($ins->nombre) }} ({{ strtoupper($ins->unidad_medida) }})
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-span-5 flex items-center gap-1">
+                                                <input type="number" step="any" :name="`insumos[${idx}][cantidad_usada]`"
+                                                    x-model="row.cantidad_usada" required placeholder="CANT."
+                                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:border-rose-500 focus:outline-none uppercase">
+                                                <span x-show="row.unidad"
+                                                    class="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 uppercase shrink-0"
+                                                    x-text="row.unidad"></span>
+                                            </div>
+                                            <div class="col-span-1 text-right">
+                                                <button type="button" @click="removeRow(idx)" x-show="rows.length > 1"
+                                                    class="text-slate-400 hover:text-rose-500 text-xs p-1">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </div>
 
                                 <button type="submit"
@@ -384,7 +418,7 @@
                             </h2>
                         </div>
 
-                        <div class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                        <div class="divide-y divide-slate-100 dark:divide-slate-800/80" x-data="{ editingId: null }">
                             @forelse($variantes as $var)
                                 <div class="p-4 space-y-2 hover:bg-slate-50 dark:hover:bg-slate-800/30">
                                     <div class="flex items-center justify-between">
@@ -396,8 +430,15 @@
                                                     class="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase">INACTIVO</span>
                                             @endif
                                         </span>
-                                        <span class="text-sm font-black text-amber-600 dark:text-amber-400 uppercase">BS.
-                                            {{ number_format($var->precio_venta, 2) }}</span>
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-sm font-black text-amber-600 dark:text-amber-400 uppercase">BS.
+                                                {{ number_format($var->precio_venta, 2) }}</span>
+                                            <button type="button"
+                                                @click="editingId = (editingId === {{ $var->id }} ? null : {{ $var->id }})"
+                                                class="px-2 py-1 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/80 text-[10px] font-black uppercase transition-all flex items-center gap-1">
+                                                <i class="fa-solid fa-pen-to-square"></i> EDITAR
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div
@@ -436,6 +477,84 @@
                                             </div>
                                         @endif
                                     </div>
+
+                                    <!-- Formulario de Edición de Variante & Receta -->
+                                    <form action="{{ route('variantes.update', $var->id) }}" method="POST"
+                                        x-show="editingId === {{ $var->id }}"
+                                        class="mt-3 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg space-y-3"
+                                        x-cloak>
+                                        @csrf
+                                        @method('PUT')
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label
+                                                    class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">NOMBRE</label>
+                                                <input type="text" name="nombre" value="{{ $var->nombre }}" required
+                                                    class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs font-bold text-slate-900 dark:text-white uppercase">
+                                            </div>
+                                            <div>
+                                                <label
+                                                    class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">PRECIO
+                                                    VENTA (BS.)</label>
+                                                <input type="number" step="any" name="precio_venta"
+                                                    value="{{ $var->precio_venta }}" required
+                                                    class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase">
+                                            </div>
+                                        </div>
+
+                                        <div class="space-y-2 pt-1 border-t border-amber-200/60 dark:border-amber-800/60">
+                                            <label
+                                                class="block text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400">ASIGNAR
+                                                / ACTUALIZAR RECETA</label>
+
+                                            @if($preparaciones->count())
+                                                <div class="grid grid-cols-12 gap-2 items-center text-xs">
+                                                    <span
+                                                        class="col-span-4 text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">MASA:</span>
+                                                    <select name="componentes[0][preparacion_id]"
+                                                        class="col-span-5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-[11px] font-bold text-slate-900 dark:text-white uppercase">
+                                                        <option value="">NINGUNA</option>
+                                                        @foreach($preparaciones as $prep)
+                                                            <option value="{{ $prep->id }}" {{ $var->recetas->where('tipo_componente', 'preparacion')->first()?->preparacion_id == $prep->id ? 'selected' : '' }}>{{ strtoupper($prep->nombre) }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <input type="number" step="any" name="componentes[0][cantidad_usada]"
+                                                        value="{{ $var->recetas->where('tipo_componente', 'preparacion')->first()?->cantidad_usada ?? '' }}"
+                                                        placeholder="CANT."
+                                                        class="col-span-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-[11px] font-bold text-slate-900 dark:text-white uppercase">
+                                                    <input type="hidden" name="componentes[0][tipo_componente]" value="preparacion">
+                                                </div>
+                                            @endif
+
+                                            @if($insumos->count())
+                                                <div class="grid grid-cols-12 gap-2 items-center text-xs">
+                                                    <span
+                                                        class="col-span-4 text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">RELLENO
+                                                        / INSUMO:</span>
+                                                    <select name="componentes[1][insumo_id]"
+                                                        class="col-span-5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-[11px] font-bold text-slate-900 dark:text-white uppercase">
+                                                        <option value="">NINGUNO</option>
+                                                        @foreach($insumos as $ins)
+                                                            <option value="{{ $ins->id }}" {{ $var->recetas->where('tipo_componente', 'insumo')->first()?->insumo_id == $ins->id ? 'selected' : '' }}>{{ strtoupper($ins->nombre) }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <input type="number" step="any" name="componentes[1][cantidad_usada]"
+                                                        value="{{ $var->recetas->where('tipo_componente', 'insumo')->first()?->cantidad_usada ?? '' }}"
+                                                        placeholder="CANT."
+                                                        class="col-span-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-[11px] font-bold text-slate-900 dark:text-white uppercase">
+                                                    <input type="hidden" name="componentes[1][tipo_componente]" value="insumo">
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        <div class="flex justify-end gap-2 pt-1">
+                                            <button type="button" @click="editingId = null"
+                                                class="px-2.5 py-1 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[10px] uppercase">CANCELAR</button>
+                                            <button type="submit"
+                                                class="px-3 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[10px] uppercase shadow">GUARDAR
+                                                CAMBIOS</button>
+                                        </div>
+                                    </form>
                                 </div>
                             @empty
                                 <div class="p-8 text-center text-slate-400 font-bold uppercase text-xs">
@@ -452,6 +571,21 @@
 @endsection
 
 @section('scripts')
-    <!-- AlpineJS para el cambio dinámico de pestañas -->
+    <!-- AlpineJS para el cambio dinámico de pestañas y componentes -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        document.addEventListener('submit', function (e) {
+            var form = e.target;
+            if (form.dataset.submitting === 'true') {
+                e.preventDefault();
+                return false;
+            }
+            form.dataset.submitting = 'true';
+            var btn = form.querySelector('button[type="submit"]');
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        });
+    </script>
 @endsection

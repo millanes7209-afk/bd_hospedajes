@@ -55,6 +55,7 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('productos.index', ['tab' => 'variantes']);
     })->name('variantes.index');
     Route::post('/variantes', [VarianteSaltenaController::class, 'store'])->name('variantes.store');
+    Route::put('/variantes/{id}', [VarianteSaltenaController::class, 'update'])->name('variantes.update');
 
     // Promociones Explícitas (Combos 3x10Bs)
     Route::get('/promociones', [PromocionController::class, 'index'])->name('promociones.index');

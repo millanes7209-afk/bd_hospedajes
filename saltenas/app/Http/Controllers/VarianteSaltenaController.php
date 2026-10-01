@@ -63,4 +63,51 @@ class VarianteSaltenaController extends Controller
 
         return redirect()->route('productos.index', ['tab' => 'variantes'])->with('success', 'Variante de Salteña creada exitosamente.');
     }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'precio_venta' => 'required|numeric|min:0.01',
+            'componentes' => 'nullable|array',
+        ]);
+
+        $var = VarianteSaltena::findOrFail($id);
+        $var->update([
+            'nombre' => $request->nombre,
+            'precio_venta' => $request->precio_venta,
+        ]);
+
+        if ($request->has('componentes')) {
+            VarianteReceta::where('variante_id', $var->id)->delete();
+            if (is_array($request->componentes)) {
+                foreach ($request->componentes as $comp) {
+                    $tipo = $comp['tipo_componente'] ?? null;
+                    $insumoId = $comp['insumo_id'] ?? null;
+                    $preparacionId = $comp['preparacion_id'] ?? null;
+                    $cantidad = $comp['cantidad_usada'] ?? null;
+
+                    if ($tipo === 'insumo' && $insumoId && $cantidad > 0) {
+                        VarianteReceta::create([
+                            'variante_id' => $var->id,
+                            'tipo_componente' => 'insumo',
+                            'insumo_id' => $insumoId,
+                            'preparacion_id' => null,
+                            'cantidad_usada' => $cantidad,
+                        ]);
+                    } elseif ($tipo === 'preparacion' && $preparacionId && $cantidad > 0) {
+                        VarianteReceta::create([
+                            'variante_id' => $var->id,
+                            'tipo_componente' => 'preparacion',
+                            'insumo_id' => null,
+                            'preparacion_id' => $preparacionId,
+                            'cantidad_usada' => $cantidad,
+                        ]);
+                    }
+                }
+            }
+        }
+
+        return redirect()->route('productos.index', ['tab' => 'variantes'])->with('success', 'Variante de Salteña actualizada exitosamente.');
+    }
 }
