@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <script>(function () { var s = localStorage.getItem('app_theme') || 'dark'; document.documentElement.className = s === 'light' ? 'light-mode' : 'dark-mode'; })();</script>
+    <script>(function () { var s = localStorage.getItem('theme') || 'dark'; document.documentElement.className = s === 'light' ? 'light-mode' : 'dark-mode'; })();</script>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Iniciar Sesión</title>
     <!-- Tailwind CSS CDN -->
@@ -276,9 +276,9 @@
                 htmlNode.className = 'dark-mode';
                 modeIcon.textContent = '☀️';
             }
-            localStorage.setItem('app_theme', theme);
+            localStorage.setItem('theme', theme);
         }
-        applyTheme(localStorage.getItem('app_theme') || 'dark');
+        applyTheme(localStorage.getItem('theme') || 'dark');
         if (modeBtn) {
             modeBtn.addEventListener('click', function () {
                 applyTheme(htmlNode.classList.contains('light-mode') ? 'dark' : 'light');
