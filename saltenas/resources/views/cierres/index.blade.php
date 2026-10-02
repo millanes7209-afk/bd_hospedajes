@@ -3,7 +3,7 @@
 @section('title', 'CIERRE DIARIO — SALTEÑAS')
 
 @section('content')
-    <div class="space-y-6" x-data="{ showModal: false }">
+    <div class="space-y-6" x-data="cierreDiarioModal()" @keydown.escape.window="closeModal()">
 
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
@@ -42,7 +42,7 @@
                     <div x-show="showModal"
                         x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                         x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                        @click="showModal = false"
+                        @click="closeModal()"
                         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
 
                     <!-- Centering trick -->
@@ -59,13 +59,13 @@
                             <h2 class="text-xs font-black text-slate-900 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
                                 <i class="fa-solid fa-plus-circle text-emerald-500"></i> REGISTRAR NUEVO CIERRE DIARIO
                             </h2>
-                            <button @click="showModal = false" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                            <button @click="closeModal()" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                                 <i class="fa-solid fa-xmark text-lg"></i>
                             </button>
                         </div>
 
                         <!-- Formulario Inside Modal -->
-                        <form action="{{ route('cierres.store') }}" method="POST" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                        <form id="formCierreDiario" action="{{ route('cierres.store') }}" method="POST" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto" @submit.prevent="validarYEnviar($event)">
                             @csrf
 
                             <!-- Carrito + Fecha + Temperaturas -->
@@ -104,7 +104,9 @@
 
                             <!-- Detalle por Variante -->
                             @foreach($variantes as $i => $var)
-                                <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-4 space-y-3">
+                                <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-4 space-y-3"
+                                    data-variante-nombre="{{ strtoupper($var->nombre) }}"
+                                    data-variante-precio="{{ $var->precio_venta }}">
                                     <div class="flex items-center justify-between">
                                         <span class="font-black text-slate-900 dark:text-amber-400 uppercase">🥟 {{ strtoupper($var->nombre) }}</span>
                                         <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">PRECIO NORMAL: <strong class="text-slate-900 dark:text-white">BS. {{ $var->precio_venta }}</strong></span>
@@ -159,8 +161,35 @@
                                     class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none uppercase"></textarea>
                             </div>
 
-                            <div class="pt-2 flex items-center justify-end gap-2">
-                                <button type="button" @click="showModal = false"
+                            <!-- Panel de Advertencias (se muestra antes de enviar si hay inconsistencias) -->
+                            <div x-show="warnings.length > 0" x-cloak
+                                class="rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 p-4 space-y-3">
+                                <div class="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                                    <i class="fa-solid fa-triangle-exclamation text-base"></i>
+                                    <span class="font-black text-xs uppercase tracking-wider">SE DETECTARON INCONSISTENCIAS — ¿DESEA GUARDAR DE TODAS FORMAS?</span>
+                                </div>
+                                <ul class="space-y-1">
+                                    <template x-for="w in warnings" :key="w">
+                                        <li class="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-start gap-1.5">
+                                            <i class="fa-solid fa-circle-exclamation mt-0.5 shrink-0"></i>
+                                            <span x-text="w"></span>
+                                        </li>
+                                    </template>
+                                </ul>
+                                <div class="flex items-center justify-end gap-2 pt-1">
+                                    <button type="button" @click="warnings = []"
+                                        class="py-2 px-4 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold text-xs uppercase transition-all">
+                                        <i class="fa-solid fa-arrow-left"></i> VOLVER Y CORREGIR
+                                    </button>
+                                    <button type="button" @click="submitForzado()"
+                                        class="py-2 px-4 rounded-lg bg-amber-500 hover:bg-amber-400 text-white font-black text-xs uppercase shadow-sm transition-all flex items-center gap-1.5">
+                                        <i class="fa-solid fa-triangle-exclamation"></i> GUARDAR CON INCONSISTENCIA
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="pt-2 flex items-center justify-end gap-2" x-show="warnings.length === 0">
+                                <button type="button" @click="closeModal()"
                                     class="py-2.5 px-4 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase transition-all">
                                     CANCELAR
                                 </button>
@@ -309,3 +338,69 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+function cierreDiarioModal() {
+    return {
+        showModal: false,
+        warnings: [],
+        _form: null,
+
+        closeModal() {
+            this.showModal = false;
+            this.warnings = [];
+        },
+
+        validarYEnviar(event) {
+            this._form = event.target;
+            const avisos = [];
+
+            // Verificar cada bloque de variante
+            const bloques = this._form.querySelectorAll('[data-variante-nombre]');
+            let montoEstimado = 0;
+
+            bloques.forEach(bloque => {
+                const nombre    = bloque.dataset.varianteNombre;
+                const precio    = parseFloat(bloque.dataset.variantePrecio) || 0;
+                const entregada = parseInt(bloque.querySelector('[name$="[cantidad_entregada]"]')?.value) || 0;
+                const vendida   = parseInt(bloque.querySelector('[name$="[cantidad_vendida_normal]"]')?.value) || 0;
+                const sobrante  = parseInt(bloque.querySelector('[name$="[cantidad_sobrante]"]')?.value) || 0;
+
+                // Inconsistencia de cantidades
+                if (entregada !== (vendida + sobrante)) {
+                    avisos.push(
+                        `${nombre}: ENTREGADAS (${entregada}) ≠ VENDIDAS (${vendida}) + SOBRANTES (${sobrante}). Diferencia: ${entregada - vendida - sobrante}`
+                    );
+                }
+
+                montoEstimado += vendida * precio;
+            });
+
+            // Verificar monto real vs estimado
+            const montoReal = parseFloat(this._form.querySelector('[name="monto_real"]')?.value) || 0;
+            const diff = Math.abs(montoReal - montoEstimado);
+            if (diff > 0.01) {
+                avisos.push(
+                    `MONTO REAL INGRESADO (BS. ${montoReal.toFixed(2)}) ≠ MONTO ESTIMADO POR VENTAS (BS. ${montoEstimado.toFixed(2)}). Diferencia: BS. ${(montoReal - montoEstimado).toFixed(2)}`
+                );
+            }
+
+            if (avisos.length > 0) {
+                // Mostrar panel de advertencias, NO enviar todavía
+                this.warnings = avisos;
+            } else {
+                // Sin inconsistencias: enviar directo
+                this._form.submit();
+            }
+        },
+
+        submitForzado() {
+            if (this._form) {
+                this._form.submit();
+            }
+        }
+    };
+}
+</script>
+@endpush
