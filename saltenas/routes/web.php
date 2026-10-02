@@ -69,7 +69,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Usuarios del Sistema & Cambio de Contraseña
     Route::get('/usuarios', [UserController::class, 'index'])->name('usuarios.index');
-    Route::post('/usuarios', [UserController::class, 'store'])->name('usuarios.store');
-    Route::post('/usuarios/password', [UserController::class, 'updatePassword'])->name('usuarios.password.update');
+    Route::post('/usuarios/{id}/password', [UserController::class, 'updatePassword'])->name('usuarios.password.update');
+
 });
 
