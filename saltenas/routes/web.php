@@ -67,9 +67,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/cierres', [CierreDiarioController::class, 'store'])->name('cierres.store');
     Route::get('/cierres/eliminar/{id}', [CierreDiarioController::class, 'destroy'])->name('cierres.destroy');
 
-    // Usuarios del Sistema & Cambio de Contraseña
+    // Usuarios del Sistema & Cambio de Contraseña Propia
     Route::get('/usuarios', [UserController::class, 'index'])->name('usuarios.index');
-    Route::post('/usuarios/{id}/password', [UserController::class, 'updatePassword'])->name('usuarios.password.update');
+    Route::post('/usuarios/password', [UserController::class, 'updatePassword'])->name('usuarios.password.update');
+
 
 });
 
