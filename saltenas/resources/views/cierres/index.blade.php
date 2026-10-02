@@ -65,7 +65,8 @@
                         </div>
 
                         <!-- Formulario Inside Modal -->
-                        <form id="formCierreDiario" action="{{ route('cierres.store') }}" method="POST" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                        <form id="formCierreDiario" action="{{ route('cierres.store') }}" method="POST" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto"
+                            @submit="if (hayInconsistencias) { $event.preventDefault(); alert('No se permite guardar un cierre con inconsistencias. Corrija las cantidades o el monto.'); }">
                             @csrf
 
                             <!-- Carrito + Fecha + Temperaturas -->
@@ -149,6 +150,9 @@
                                                     <div class="w-28">
                                                         <input type="number" min="0" value="0"
                                                             name="detalles[{{ $i }}][promociones][{{ $j }}][paquetes_vendidos]"
+                                                            data-promo-unidades="{{ $promo->unidades_por_paquete }}"
+                                                            data-promo-precio="{{ $promo->precio_paquete }}"
+                                                            @input="recalcular()"
                                                             placeholder="# PAQUETES"
                                                             class="w-full bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-500/30 rounded-lg px-3 py-1.5 text-xs font-black text-indigo-700 dark:text-indigo-400 focus:border-indigo-500 focus:outline-none text-center uppercase">
                                                     </div>
@@ -209,9 +213,9 @@
                                 </div>
 
                                 <!-- Aviso si hay inconsistencias -->
-                                <div x-show="hayInconsistencias" class="rounded-lg bg-amber-100 dark:bg-amber-500/15 border border-amber-300 dark:border-amber-500/40 px-3 py-2 text-[11px] font-bold text-amber-800 dark:text-amber-300 flex items-center gap-2">
-                                    <i class="fa-solid fa-triangle-exclamation"></i>
-                                    HAY INCONSISTENCIAS. PUEDE GUARDAR DE TODAS FORMAS, PERO QUEDARÁ MARCADO COMO INCONSISTENTE EN EL HISTORIAL.
+                                <div x-show="hayInconsistencias" class="rounded-lg bg-rose-100 dark:bg-rose-500/15 border border-rose-300 dark:border-rose-500/40 px-3 py-2.5 text-[11px] font-bold text-rose-800 dark:text-rose-300 flex items-center gap-2">
+                                    <i class="fa-solid fa-ban text-rose-600 dark:text-rose-400 text-sm shrink-0"></i>
+                                    <span>HAY INCONSISTENCIAS EN EL REGISTRO. <strong>GUARDADO DESHABILITADO:</strong> EL VENDEDOR Y EL PROPIETARIO DEBEN REVISAR Y CORREGIR LAS CANTIDADES O MONTO HASTA QUE LOS DATOS CUADREN.</span>
                                 </div>
                             </div>
 
@@ -221,10 +225,11 @@
                                     CANCELAR
                                 </button>
                                 <button type="submit"
-                                    :class="hayInconsistencias ? 'bg-amber-500 hover:bg-amber-400' : 'bg-emerald-600 hover:bg-emerald-500'"
-                                    class="py-2.5 px-5 rounded-lg text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all flex items-center gap-2">
-                                    <i class="fa-solid" :class="hayInconsistencias ? 'fa-triangle-exclamation' : 'fa-calendar-check'"></i>
-                                    <span x-text="hayInconsistencias ? 'GUARDAR CON INCONSISTENCIA' : 'GUARDAR CIERRE'"></span>
+                                    :disabled="hayInconsistencias"
+                                    :class="hayInconsistencias ? 'bg-slate-300 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-300 dark:border-slate-700' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md hover:shadow-lg'"
+                                    class="py-2.5 px-5 rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2">
+                                    <i class="fa-solid" :class="hayInconsistencias ? 'fa-ban' : 'fa-calendar-check'"></i>
+                                    <span x-text="hayInconsistencias ? 'GUARDAR BLOQUEADO (INCONSISTENTE)' : 'GUARDAR CIERRE'"></span>
                                 </button>
                             </div>
                         </form>
@@ -400,12 +405,34 @@ function cierreDiarioModal() {
                 const vendida   = parseInt(bloque.querySelector('[name$="[cantidad_vendida_normal]"]')?.value) || 0;
                 const sobrante  = parseInt(bloque.querySelector('[name$="[cantidad_sobrante]"]')?.value) || 0;
 
-                // Solo mostramos la fila si al menos hay un valor distinto de 0
-                if (entregada > 0 || vendida > 0 || sobrante > 0) {
-                    const ok = entregada === (vendida + sobrante);
+                // Promociones / Combos en este bloque
+                let unidadesPromo = 0;
+                let montoPromo = 0;
+                const promoInputs = bloque.querySelectorAll('[data-promo-unidades]');
+                promoInputs.forEach(inp => {
+                    const paquetes = parseInt(inp.value) || 0;
+                    if (paquetes > 0) {
+                        const udsPorPaq = parseInt(inp.dataset.promoUnidades) || 0;
+                        const precioPaq = parseFloat(inp.dataset.promoPrecio) || 0;
+                        unidadesPromo += (paquetes * udsPorPaq);
+                        montoPromo += (paquetes * precioPaq);
+                    }
+                });
+
+                const totalJustificado = vendida + unidadesPromo + sobrante;
+
+                // Mostrar fila si se ha introducido algún valor
+                if (entregada > 0 || vendida > 0 || sobrante > 0 || unidadesPromo > 0) {
+                    const ok = (entregada === totalJustificado);
                     if (!ok) inconsistente = true;
-                    nuevasFila.push({ nombre, entregada, vendida, sobrante, ok });
-                    montoEstimado += vendida * precio;
+                    nuevasFila.push({
+                        nombre,
+                        entregada,
+                        vendida: vendida + (unidadesPromo > 0 ? ` (${vendida} norm. + ${unidadesPromo} promo)` : ''),
+                        sobrante,
+                        ok
+                    });
+                    montoEstimado += (vendida * precio) + montoPromo;
                 }
             });
 
