@@ -65,7 +65,7 @@
                         </div>
 
                         <!-- Formulario Inside Modal -->
-                        <form id="formCierreDiario" action="{{ route('cierres.store') }}" method="POST" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto" @submit.prevent="validarYEnviar($event)">
+                        <form id="formCierreDiario" action="{{ route('cierres.store') }}" method="POST" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
                             @csrf
 
                             <!-- Carrito + Fecha + Temperaturas -->
@@ -98,6 +98,7 @@
                                 <div class="col-span-2">
                                     <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">MONTO REAL ENTREGADO (BS.) <span class="text-rose-500">*</span></label>
                                     <input type="number" step="any" name="monto_real" required placeholder="EJ. 350.50"
+                                        @input="recalcular()"
                                         class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-rose-600 dark:text-rose-400 focus:border-emerald-500 focus:outline-none uppercase">
                                 </div>
                             </div>
@@ -117,18 +118,21 @@
                                         <div>
                                             <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">SALTEÑAS ENTREGADAS 🥟</label>
                                             <input type="number" name="detalles[{{ $i }}][cantidad_entregada]" min="0" placeholder="EJ. 100"
+                                                @input="recalcular()"
                                                 class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase"
                                                 required>
                                         </div>
                                         <div>
                                             <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">VENDIDAS NORMAL</label>
                                             <input type="number" name="detalles[{{ $i }}][cantidad_vendida_normal]" min="0" placeholder="EJ. 10"
+                                                @input="recalcular()"
                                                 class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase"
                                                 required>
                                         </div>
                                         <div>
                                             <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">SOBRANTES</label>
                                             <input type="number" name="detalles[{{ $i }}][cantidad_sobrante]" min="0" placeholder="EJ. 15"
+                                                @input="recalcular()"
                                                 class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none uppercase"
                                                 required>
                                         </div>
@@ -161,41 +165,66 @@
                                     class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none uppercase"></textarea>
                             </div>
 
-                            <!-- Panel de Advertencias (se muestra antes de enviar si hay inconsistencias) -->
-                            <div x-show="warnings.length > 0" x-cloak
-                                class="rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 p-4 space-y-3">
-                                <div class="flex items-center gap-2 text-amber-700 dark:text-amber-400">
-                                    <i class="fa-solid fa-triangle-exclamation text-base"></i>
-                                    <span class="font-black text-xs uppercase tracking-wider">SE DETECTARON INCONSISTENCIAS — ¿DESEA GUARDAR DE TODAS FORMAS?</span>
+                            <!-- Panel de estado en tiempo real -->
+                            <div x-show="resumen.length > 0" x-cloak class="space-y-2">
+                                <p class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">📊 VERIFICACIÓN EN TIEMPO REAL</p>
+
+                                <!-- Filas por variante -->
+                                <template x-for="fila in resumen" :key="fila.nombre">
+                                    <div :class="fila.ok ? 'border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10' : 'border-rose-300 dark:border-rose-500/40 bg-rose-50 dark:bg-rose-500/10'"
+                                        class="rounded-lg border px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
+                                        <span class="text-[11px] font-black uppercase"
+                                            :class="fila.ok ? 'text-emerald-800 dark:text-emerald-300' : 'text-rose-800 dark:text-rose-300'"
+                                            x-text="'🥟 ' + fila.nombre"></span>
+                                        <div class="flex items-center gap-3 text-[11px] font-bold">
+                                            <span class="text-slate-600 dark:text-slate-400"
+                                                x-text="'Entregadas: ' + fila.entregada"></span>
+                                            <span class="text-slate-500">=</span>
+                                            <span class="text-slate-600 dark:text-slate-400"
+                                                x-text="'Vendidas: ' + fila.vendida"></span>
+                                            <span class="text-slate-500">+</span>
+                                            <span class="text-slate-600 dark:text-slate-400"
+                                                x-text="'Sobrantes: ' + fila.sobrante"></span>
+                                            <span x-show="!fila.ok" class="font-black text-rose-700 dark:text-rose-400"
+                                                x-text="'⚠ DIFF: ' + (fila.entregada - fila.vendida - fila.sobrante)"></span>
+                                            <span x-show="fila.ok" class="text-emerald-700 dark:text-emerald-400 font-black">✓ OK</span>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Fila de monto -->
+                                <div x-show="montoResumen.visible"
+                                    :class="montoResumen.ok ? 'border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10' : 'border-rose-300 dark:border-rose-500/40 bg-rose-50 dark:bg-rose-500/10'"
+                                    class="rounded-lg border px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
+                                    <span class="text-[11px] font-black uppercase"
+                                        :class="montoResumen.ok ? 'text-emerald-800 dark:text-emerald-300' : 'text-rose-800 dark:text-rose-300'">💰 MONTO</span>
+                                    <div class="flex items-center gap-3 text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                                        <span x-text="'Ingresado: BS. ' + montoResumen.real"></span>
+                                        <span class="text-slate-500">|</span>
+                                        <span x-text="'Estimado: BS. ' + montoResumen.estimado"></span>
+                                        <span x-show="!montoResumen.ok" class="font-black text-rose-700 dark:text-rose-400"
+                                            x-text="'⚠ DIFF: BS. ' + montoResumen.diff"></span>
+                                        <span x-show="montoResumen.ok" class="text-emerald-700 dark:text-emerald-400 font-black">✓ OK</span>
+                                    </div>
                                 </div>
-                                <ul class="space-y-1">
-                                    <template x-for="w in warnings" :key="w">
-                                        <li class="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-start gap-1.5">
-                                            <i class="fa-solid fa-circle-exclamation mt-0.5 shrink-0"></i>
-                                            <span x-text="w"></span>
-                                        </li>
-                                    </template>
-                                </ul>
-                                <div class="flex items-center justify-end gap-2 pt-1">
-                                    <button type="button" @click="warnings = []"
-                                        class="py-2 px-4 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold text-xs uppercase transition-all">
-                                        <i class="fa-solid fa-arrow-left"></i> VOLVER Y CORREGIR
-                                    </button>
-                                    <button type="button" @click="submitForzado()"
-                                        class="py-2 px-4 rounded-lg bg-amber-500 hover:bg-amber-400 text-white font-black text-xs uppercase shadow-sm transition-all flex items-center gap-1.5">
-                                        <i class="fa-solid fa-triangle-exclamation"></i> GUARDAR CON INCONSISTENCIA
-                                    </button>
+
+                                <!-- Aviso si hay inconsistencias -->
+                                <div x-show="hayInconsistencias" class="rounded-lg bg-amber-100 dark:bg-amber-500/15 border border-amber-300 dark:border-amber-500/40 px-3 py-2 text-[11px] font-bold text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    HAY INCONSISTENCIAS. PUEDE GUARDAR DE TODAS FORMAS, PERO QUEDARÁ MARCADO COMO INCONSISTENTE EN EL HISTORIAL.
                                 </div>
                             </div>
 
-                            <div class="pt-2 flex items-center justify-end gap-2" x-show="warnings.length === 0">
+                            <div class="pt-2 flex items-center justify-end gap-2">
                                 <button type="button" @click="closeModal()"
                                     class="py-2.5 px-4 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase transition-all">
                                     CANCELAR
                                 </button>
                                 <button type="submit"
-                                    class="py-2.5 px-5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all flex items-center gap-2">
-                                    <i class="fa-solid fa-calendar-check"></i> GUARDAR CIERRE
+                                    :class="hayInconsistencias ? 'bg-amber-500 hover:bg-amber-400' : 'bg-emerald-600 hover:bg-emerald-500'"
+                                    class="py-2.5 px-5 rounded-lg text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all flex items-center gap-2">
+                                    <i class="fa-solid" :class="hayInconsistencias ? 'fa-triangle-exclamation' : 'fa-calendar-check'"></i>
+                                    <span x-text="hayInconsistencias ? 'GUARDAR CON INCONSISTENCIA' : 'GUARDAR CIERRE'"></span>
                                 </button>
                             </div>
                         </form>
@@ -344,21 +373,25 @@
 function cierreDiarioModal() {
     return {
         showModal: false,
-        warnings: [],
-        _form: null,
+        resumen: [],
+        montoResumen: { visible: false, ok: true, real: '0.00', estimado: '0.00', diff: '0.00' },
+        hayInconsistencias: false,
 
         closeModal() {
             this.showModal = false;
-            this.warnings = [];
+            this.resumen = [];
+            this.montoResumen = { visible: false, ok: true, real: '0.00', estimado: '0.00', diff: '0.00' };
+            this.hayInconsistencias = false;
         },
 
-        validarYEnviar(event) {
-            this._form = event.target;
-            const avisos = [];
+        recalcular() {
+            const form = document.getElementById('formCierreDiario');
+            if (!form) return;
 
-            // Verificar cada bloque de variante
-            const bloques = this._form.querySelectorAll('[data-variante-nombre]');
+            const bloques = form.querySelectorAll('[data-variante-nombre]');
             let montoEstimado = 0;
+            let inconsistente = false;
+            const nuevasFila = [];
 
             bloques.forEach(bloque => {
                 const nombre    = bloque.dataset.varianteNombre;
@@ -367,38 +400,35 @@ function cierreDiarioModal() {
                 const vendida   = parseInt(bloque.querySelector('[name$="[cantidad_vendida_normal]"]')?.value) || 0;
                 const sobrante  = parseInt(bloque.querySelector('[name$="[cantidad_sobrante]"]')?.value) || 0;
 
-                // Inconsistencia de cantidades
-                if (entregada !== (vendida + sobrante)) {
-                    avisos.push(
-                        `${nombre}: ENTREGADAS (${entregada}) ≠ VENDIDAS (${vendida}) + SOBRANTES (${sobrante}). Diferencia: ${entregada - vendida - sobrante}`
-                    );
+                // Solo mostramos la fila si al menos hay un valor distinto de 0
+                if (entregada > 0 || vendida > 0 || sobrante > 0) {
+                    const ok = entregada === (vendida + sobrante);
+                    if (!ok) inconsistente = true;
+                    nuevasFila.push({ nombre, entregada, vendida, sobrante, ok });
+                    montoEstimado += vendida * precio;
                 }
-
-                montoEstimado += vendida * precio;
             });
 
-            // Verificar monto real vs estimado
-            const montoReal = parseFloat(this._form.querySelector('[name="monto_real"]')?.value) || 0;
-            const diff = Math.abs(montoReal - montoEstimado);
-            if (diff > 0.01) {
-                avisos.push(
-                    `MONTO REAL INGRESADO (BS. ${montoReal.toFixed(2)}) ≠ MONTO ESTIMADO POR VENTAS (BS. ${montoEstimado.toFixed(2)}). Diferencia: BS. ${(montoReal - montoEstimado).toFixed(2)}`
-                );
-            }
+            this.resumen = nuevasFila;
 
-            if (avisos.length > 0) {
-                // Mostrar panel de advertencias, NO enviar todavía
-                this.warnings = avisos;
+            // Chequeo de monto
+            const montoReal = parseFloat(form.querySelector('[name="monto_real"]')?.value) || 0;
+            if (montoReal > 0 || montoEstimado > 0) {
+                const diff = Math.abs(montoReal - montoEstimado);
+                const montoOk = diff <= 0.01;
+                if (!montoOk) inconsistente = true;
+                this.montoResumen = {
+                    visible: true,
+                    ok: montoOk,
+                    real: montoReal.toFixed(2),
+                    estimado: montoEstimado.toFixed(2),
+                    diff: (montoReal - montoEstimado).toFixed(2)
+                };
             } else {
-                // Sin inconsistencias: enviar directo
-                this._form.submit();
+                this.montoResumen = { visible: false, ok: true, real: '0.00', estimado: '0.00', diff: '0.00' };
             }
-        },
 
-        submitForzado() {
-            if (this._form) {
-                this._form.submit();
-            }
+            this.hayInconsistencias = inconsistente;
         }
     };
 }
