@@ -104,6 +104,12 @@
                         <span>Promos</span>
                     </a>
 
+                    <a href="{{ route('usuarios.index') }}"
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('usuarios.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-amber-600 dark:hover:text-amber-400' }}">
+                        <i class="fa-solid fa-users text-rose-500 dark:text-rose-400"></i>
+                        <span>Usuarios</span>
+                    </a>
+
                     <!-- User Actions: Theme Toggle & Logout -->
                     <div class="ml-2 pl-2 border-l border-slate-200 dark:border-slate-800 flex items-center gap-1">
                         <button type="button" id="theme-toggle" title="Cambiar Modo Claro/Oscuro"
@@ -199,6 +205,14 @@
                     Promociones</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
             </a>
+
+            <a href="{{ route('usuarios.index') }}" @click="mobileMenuOpen = false"
+                class="px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('usuarios.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                <span class="flex items-center gap-3"><i class="fa-solid fa-users text-rose-500 text-sm"></i>
+                    Usuarios</span>
+                <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
+            </a>
+
 
             <div class="pt-3 mt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <span class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Sesión de Usuario</span>

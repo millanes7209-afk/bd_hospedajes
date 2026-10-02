@@ -11,6 +11,7 @@ use App\Http\Controllers\PreparacionController;
 use App\Http\Controllers\VarianteSaltenaController;
 use App\Http\Controllers\PromocionController;
 use App\Http\Controllers\CierreDiarioController;
+use App\Http\Controllers\UserController;
 
 // Rutas Públicas
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -65,4 +66,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cierres', [CierreDiarioController::class, 'index'])->name('cierres.index');
     Route::post('/cierres', [CierreDiarioController::class, 'store'])->name('cierres.store');
     Route::get('/cierres/eliminar/{id}', [CierreDiarioController::class, 'destroy'])->name('cierres.destroy');
+
+    // Usuarios del Sistema & Cambio de Contraseña
+    Route::get('/usuarios', [UserController::class, 'index'])->name('usuarios.index');
+    Route::post('/usuarios', [UserController::class, 'store'])->name('usuarios.store');
+    Route::post('/usuarios/password', [UserController::class, 'updatePassword'])->name('usuarios.password.update');
 });
+
