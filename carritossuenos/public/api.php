@@ -20,19 +20,41 @@ if ($accion === 'aceptar_stock') {
 
 if ($accion === 'registrar_venta') {
     $input = json_decode(file_get_contents('php://input'), true);
-    $tipo = $input['tipo'] ?? 'individual';
-    $productoId = $input['producto_id'] ?? null;
-    $promocionId = $input['promocion_id'] ?? null;
-    $cantidad = (int) ($input['cantidad'] ?? 1);
-    $monto = (float) ($input['monto'] ?? 0.00);
     $metodoPago = in_array(($input['metodo_pago'] ?? 'efectivo'), ['efectivo', 'qr']) ? $input['metodo_pago'] : 'efectivo';
 
-    try {
-        $stmt = $pdo->prepare("INSERT INTO ventas (fecha_hora, producto_id, promocion_id, cantidad, monto, metodo_pago) VALUES (NOW(), ?, ?, ?, ?, ?)");
-        $stmt->execute([$productoId, $promocionId, $cantidad, $monto, $metodoPago]);
+    // Puede recibir un lote (items) o un registro individual
+    $items = [];
+    if (isset($input['items']) && is_array($input['items'])) {
+        $items = $input['items'];
+    } else {
+        $items[] = [
+            'tipo' => $input['tipo'] ?? 'individual',
+            'producto_id' => $input['producto_id'] ?? null,
+            'promocion_id' => $input['promocion_id'] ?? null,
+            'cantidad' => (int) ($input['cantidad'] ?? 1),
+            'monto' => (float) ($input['monto'] ?? 0.00)
+        ];
+    }
 
-        echo json_encode(['success' => true, 'message' => 'Venta registrada']);
+    try {
+        $pdo->beginTransaction();
+        $stmt = $pdo->prepare("INSERT INTO ventas (fecha_hora, producto_id, promocion_id, cantidad, monto, metodo_pago) VALUES (NOW(), ?, ?, ?, ?, ?)");
+
+        foreach ($items as $item) {
+            $pId = $item['producto_id'] ?? null;
+            $prId = $item['promocion_id'] ?? null;
+            $cant = (int) ($item['cantidad'] ?? 1);
+            $monto = (float) ($item['monto'] ?? 0.00);
+
+            $stmt->execute([$pId, $prId, $cant, $monto, $metodoPago]);
+        }
+        $pdo->commit();
+
+        echo json_encode(['success' => true, 'message' => 'Venta registrada con éxito']);
     } catch (Exception $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
     exit;

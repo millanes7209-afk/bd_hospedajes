@@ -56,9 +56,18 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
 
-    try { $pdo->exec("ALTER TABLE `ventas` ADD COLUMN `metodo_pago` ENUM('efectivo', 'qr') NOT NULL DEFAULT 'efectivo';"); } catch (Exception $e) {}
-    try { $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_efectivo` DECIMAL(10,2) NOT NULL DEFAULT 0.00;"); } catch (Exception $e) {}
-    try { $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_qr` DECIMAL(10,2) NOT NULL DEFAULT 0.00;"); } catch (Exception $e) {}
+    try {
+        $pdo->exec("ALTER TABLE `ventas` ADD COLUMN `metodo_pago` ENUM('efectivo', 'qr') NOT NULL DEFAULT 'efectivo';");
+    } catch (Exception $e) {
+    }
+    try {
+        $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_efectivo` DECIMAL(10,2) NOT NULL DEFAULT 0.00;");
+    } catch (Exception $e) {
+    }
+    try {
+        $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_qr` DECIMAL(10,2) NOT NULL DEFAULT 0.00;");
+    } catch (Exception $e) {
+    }
 
     $countProd = $pdo->query("SELECT COUNT(*) FROM `productos`")->fetchColumn();
     if ($countProd == 0) {
@@ -90,7 +99,6 @@ try {
         ");
     }
 } catch (Exception $e) {
-    // Si falla algo menor, continuar
 }
 
 // 1. Obtener productos
@@ -110,7 +118,7 @@ foreach ($stockHoy as $st) {
     if ($st['aceptado'] == 1) {
         $stockAceptado = true;
     }
-    $totalStockEnviado += (int)$st['cantidad_enviada'];
+    $totalStockEnviado += (int) $st['cantidad_enviada'];
 }
 
 // 4. Obtener ventas registradas hoy con desglose Efectivo vs QR
@@ -126,10 +134,10 @@ $stmtVentas = $pdo->prepare("
 $stmtVentas->execute([$hoy]);
 $resVentas = $stmtVentas->fetch();
 
-$unidadesVendidasHoy = (int)($resVentas['total_unidades'] ?? 0);
-$dineroRecaudadoHoy = (float)($resVentas['total_dinero'] ?? 0.00);
-$dineroEfectivoHoy = (float)($resVentas['dinero_efectivo'] ?? 0.00);
-$dineroQrHoy = (float)($resVentas['dinero_qr'] ?? 0.00);
+$unidadesVendidasHoy = (int) ($resVentas['total_unidades'] ?? 0);
+$dineroRecaudadoHoy = (float) ($resVentas['total_dinero'] ?? 0.00);
+$dineroEfectivoHoy = (float) ($resVentas['dinero_efectivo'] ?? 0.00);
+$dineroQrHoy = (float) ($resVentas['dinero_qr'] ?? 0.00);
 
 // 5. Verificar si el turno ya fue cerrado hoy
 $stmtCierre = $pdo->prepare("SELECT * FROM cierres WHERE fecha = ?");
@@ -138,12 +146,14 @@ $cierreHoy = $stmtCierre->fetch();
 ?>
 <!DOCTYPE html>
 <html lang="es" class="theme-light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Carrito Sueños — POS Celular</title>
     <!-- Google Fonts & Bootstrap 5 & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
@@ -155,7 +165,7 @@ $cierreHoy = $stmtCierre->fetch();
             --card-border: #e2e8f0;
             --text-main: #0f172a;
             --text-muted: #64748b;
-            --header-bg: rgba(255, 255, 255, 0.92);
+            --header-bg: rgba(255, 255, 255, 0.95);
             --header-border: #e2e8f0;
             --accent-primary: #2563eb;
             --accent-success: #16a34a;
@@ -171,7 +181,7 @@ $cierreHoy = $stmtCierre->fetch();
             --card-border: #334155;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --header-bg: rgba(30, 41, 59, 0.90);
+            --header-bg: rgba(30, 41, 59, 0.95);
             --header-border: #334155;
             --accent-primary: #3b82f6;
             --accent-success: #22c55e;
@@ -185,7 +195,7 @@ $cierreHoy = $stmtCierre->fetch();
             background-color: var(--bg-main);
             color: var(--text-main);
             margin: 0;
-            padding-bottom: 105px;
+            padding-bottom: 120px;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.25s ease, color 0.25s ease;
@@ -211,18 +221,37 @@ $cierreHoy = $stmtCierre->fetch();
             margin-bottom: 3px;
         }
 
-        .miniletrero-vendidas { background: rgba(22, 163, 74, 0.12); color: #16a34a; border: 1px solid rgba(22, 163, 74, 0.25); }
-        .miniletrero-restantes { background: rgba(37, 99, 235, 0.12); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.25); }
-        .miniletrero-efectivo { background: rgba(217, 119, 6, 0.12); color: #d97706; border: 1px solid rgba(217, 119, 6, 0.25); }
-        .miniletrero-qr { background: rgba(147, 51, 234, 0.12); color: #9333ea; border: 1px solid rgba(147, 51, 234, 0.25); }
+        .miniletrero-vendidas {
+            background: rgba(22, 163, 74, 0.12);
+            color: #16a34a;
+            border: 1px solid rgba(22, 163, 74, 0.25);
+        }
+
+        .miniletrero-restantes {
+            background: rgba(37, 99, 235, 0.12);
+            color: #2563eb;
+            border: 1px solid rgba(37, 99, 235, 0.25);
+        }
+
+        .miniletrero-efectivo {
+            background: rgba(217, 119, 6, 0.12);
+            color: #d97706;
+            border: 1px solid rgba(217, 119, 6, 0.25);
+        }
+
+        .miniletrero-qr {
+            background: rgba(147, 51, 234, 0.12);
+            color: #9333ea;
+            border: 1px solid rgba(147, 51, 234, 0.25);
+        }
 
         .btn-touch-product {
             background: var(--btn-product-bg);
             border: 2px solid var(--btn-product-border);
             border-radius: 18px;
-            padding: 20px 16px;
+            padding: 18px 14px;
             transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
             text-align: left;
             width: 100%;
         }
@@ -230,14 +259,14 @@ $cierreHoy = $stmtCierre->fetch();
         .btn-touch-product:active {
             transform: scale(0.94);
             border-color: var(--accent-primary);
-            background: rgba(37, 99, 235, 0.06);
+            background: rgba(37, 99, 235, 0.08);
         }
 
         .btn-touch-promo {
             background: linear-gradient(135deg, #059669 0%, #047857 100%);
             border: none;
             border-radius: 18px;
-            padding: 18px;
+            padding: 16px;
             color: #ffffff;
             box-shadow: 0 4px 14px rgba(4, 120, 87, 0.25);
             width: 100%;
@@ -248,39 +277,78 @@ $cierreHoy = $stmtCierre->fetch();
             transform: scale(0.95);
         }
 
-        .payment-toggle-bar {
+        /* SECCIÓN CARRITO DEL PEDIDO ACTUAL */
+        .order-cart-card {
             background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 6px;
+            border: 2px solid var(--card-border);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .cart-item-row {
             display: flex;
-            gap: 6px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dashed var(--card-border);
         }
 
-        .btn-payment-option {
-            flex: 1;
+        .cart-item-row:last-child {
+            border-bottom: none;
+        }
+
+        .btn-qty-control {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: var(--bg-main);
+            color: var(--text-main);
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .btn-qty-control:active {
+            transform: scale(0.9);
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .btn-checkout-efectivo {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            color: #ffffff;
             border: none;
-            background: transparent;
-            color: var(--text-muted);
-            font-weight: 700;
-            font-size: 0.9rem;
-            padding: 12px 10px;
-            border-radius: 12px;
-            transition: all 0.2s ease;
+            border-radius: 16px;
+            padding: 16px;
+            font-weight: 800;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(217, 119, 6, 0.35);
+            transition: all 0.15s ease;
         }
 
-        .btn-payment-option.active-efectivo {
-            background: #d97706;
-            color: #ffffff;
-            box-shadow: 0 3px 10px rgba(217, 119, 6, 0.3);
+        .btn-checkout-efectivo:active {
+            transform: scale(0.96);
         }
 
-        .btn-payment-option.active-qr {
-            background: #9333ea;
+        .btn-checkout-qr {
+            background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
             color: #ffffff;
-            box-shadow: 0 3px 10px rgba(147, 51, 234, 0.3);
+            border: none;
+            border-radius: 16px;
+            padding: 16px;
+            font-weight: 800;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(147, 51, 234, 0.35);
+            transition: all 0.15s ease;
+        }
+
+        .btn-checkout-qr:active {
+            transform: scale(0.96);
         }
 
         .floating-footer {
@@ -296,6 +364,7 @@ $cierreHoy = $stmtCierre->fetch();
         }
     </style>
 </head>
+
 <body>
 
     <!-- CABECERA DE MONITOR CON MINILETREROS Y TOGGLE TEMA -->
@@ -305,7 +374,8 @@ $cierreHoy = $stmtCierre->fetch();
                 <i class="bi bi-shop me-2 text-warning fs-5"></i>Carrito Sueños
             </span>
             <!-- Botón Cambiar Modo Claro / Oscuro -->
-            <button type="button" onclick="toggleTheme()" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-bold" style="font-size: 0.75rem;">
+            <button type="button" onclick="toggleTheme()"
+                class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-bold" style="font-size: 0.75rem;">
                 <span id="theme-icon"><i class="bi bi-moon-stars-fill me-1"></i> Modo Oscuro</span>
             </button>
         </div>
@@ -315,26 +385,30 @@ $cierreHoy = $stmtCierre->fetch();
             <div class="col-3">
                 <div class="p-1 rounded-3" style="background: var(--card-bg); border: 1px solid var(--card-border);">
                     <span class="miniletrero-badge miniletrero-vendidas">VENDIDAS</span>
-                    <div class="fs-5 fw-extrabold text-success" id="counter-vendidas"><?= $unidadesVendidasHoy ?> u.</div>
+                    <div class="fs-5 fw-extrabold text-success" id="counter-vendidas"><?= $unidadesVendidasHoy ?> u.
+                    </div>
                 </div>
             </div>
             <div class="col-3">
                 <div class="p-1 rounded-3" style="background: var(--card-bg); border: 1px solid var(--card-border);">
                     <span class="miniletrero-badge miniletrero-restantes">RESTANTES</span>
                     <?php $stockRestante = max(0, $totalStockEnviado - $unidadesVendidasHoy); ?>
-                    <div class="fs-5 fw-extrabold text-primary" id="counter-stock"><?= $stockAceptado ? $stockRestante : 0 ?> u.</div>
+                    <div class="fs-5 fw-extrabold text-primary" id="counter-stock">
+                        <?= $stockAceptado ? $stockRestante : 0 ?> u.</div>
                 </div>
             </div>
             <div class="col-3">
                 <div class="p-1 rounded-3" style="background: var(--card-bg); border: 1px solid var(--card-border);">
                     <span class="miniletrero-badge miniletrero-efectivo">EFECTIVO</span>
-                    <div class="fs-6 fw-extrabold text-warning" id="counter-efectivo">Bs. <?= number_format($dineroEfectivoHoy, 0) ?></div>
+                    <div class="fs-6 fw-extrabold text-warning" id="counter-efectivo">Bs.
+                        <?= number_format($dineroEfectivoHoy, 0) ?></div>
                 </div>
             </div>
             <div class="col-3">
                 <div class="p-1 rounded-3" style="background: var(--card-bg); border: 1px solid var(--card-border);">
                     <span class="miniletrero-badge miniletrero-qr">PAGO QR</span>
-                    <div class="fs-6 fw-extrabold" style="color: #9333ea;" id="counter-qr">Bs. <?= number_format($dineroQrHoy, 0) ?></div>
+                    <div class="fs-6 fw-extrabold" style="color: #9333ea;" id="counter-qr">Bs.
+                        <?= number_format($dineroQrHoy, 0) ?></div>
                 </div>
             </div>
         </div>
@@ -350,7 +424,8 @@ $cierreHoy = $stmtCierre->fetch();
                 </div>
                 <h4 class="fw-bold">¡Turno Cerrado!</h4>
                 <p class="text-muted small">Has finalizado la jornada de hoy (<?= date('d/m/Y') ?>).</p>
-                <div class="card border-0 rounded-4 p-3 text-start mx-auto mt-4 shadow-sm" style="max-width: 400px; background-color: var(--card-bg); border: 1px solid var(--card-border);">
+                <div class="card border-0 rounded-4 p-3 text-start mx-auto mt-4 shadow-sm"
+                    style="max-width: 400px; background-color: var(--card-bg); border: 1px solid var(--card-border);">
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Salteñas Vendidas:</span>
                         <span class="fw-bold text-success"><?= $cierreHoy['total_vendidas'] ?> u.</span>
@@ -361,15 +436,18 @@ $cierreHoy = $stmtCierre->fetch();
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Cobrado en Efectivo:</span>
-                        <span class="fw-bold text-warning">Bs. <?= number_format($cierreHoy['dinero_efectivo'] ?? $cierreHoy['dinero_cobrado'], 2) ?></span>
+                        <span class="fw-bold text-warning">Bs.
+                            <?= number_format($cierreHoy['dinero_efectivo'] ?? $cierreHoy['dinero_cobrado'], 2) ?></span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Cobrado en QR:</span>
-                        <span class="fw-bold" style="color: #9333ea;">Bs. <?= number_format($cierreHoy['dinero_qr'] ?? 0, 2) ?></span>
+                        <span class="fw-bold" style="color: #9333ea;">Bs.
+                            <?= number_format($cierreHoy['dinero_qr'] ?? 0, 2) ?></span>
                     </div>
                     <div class="d-flex justify-content-between pt-2 border-top">
                         <span class="fw-bold">Total General:</span>
-                        <span class="fw-bold text-dark fs-5">Bs. <?= number_format($cierreHoy['dinero_cobrado'], 2) ?></span>
+                        <span class="fw-bold text-dark fs-5">Bs.
+                            <?= number_format($cierreHoy['dinero_cobrado'], 2) ?></span>
                     </div>
                     <?php if (!empty($cierreHoy['observaciones'])): ?>
                         <div class="mt-2 pt-2 border-top">
@@ -389,11 +467,15 @@ $cierreHoy = $stmtCierre->fetch();
                 <h4 class="fw-bold mb-1">Confirmar Recepción</h4>
                 <p class="text-muted small mb-4">Verifica la cantidad de salteñas entregadas por Central:</p>
 
-                <div class="card border-0 rounded-4 p-3 mb-4 text-start shadow-sm" style="background-color: var(--card-bg); border: 1px solid var(--card-border);">
+                <div class="card border-0 rounded-4 p-3 mb-4 text-start shadow-sm"
+                    style="background-color: var(--card-bg); border: 1px solid var(--card-border);">
                     <?php foreach ($stockHoy as $st): ?>
                         <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                            <span class="fw-bold fs-6" style="color: var(--text-main);"><?= htmlspecialchars($st['producto_nombre']) ?></span>
-                            <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fs-6"><?= $st['cantidad_enviada'] ?> unidades</span>
+                            <span class="fw-bold fs-6"
+                                style="color: var(--text-main);"><?= htmlspecialchars($st['producto_nombre']) ?></span>
+                            <span
+                                class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fs-6"><?= $st['cantidad_enviada'] ?>
+                                unidades</span>
                         </div>
                     <?php endforeach; ?>
                     <div class="d-flex justify-content-between align-items-center pt-3">
@@ -402,39 +484,84 @@ $cierreHoy = $stmtCierre->fetch();
                     </div>
                 </div>
 
-                <button type="button" onclick="aceptarStock()" class="btn btn-warning btn-lg w-100 py-3 rounded-4 fw-bold shadow-lg text-dark">
+                <button type="button" onclick="aceptarStock()"
+                    class="btn btn-warning btn-lg w-100 py-3 rounded-4 fw-bold shadow-lg text-dark">
                     <i class="bi bi-check-lg me-2"></i> ACEPTAR STOCK E INICIAR VENTA
                 </button>
             </div>
 
         <?php else: ?>
-            <!-- PANTALLA 2: BOTONERA DE VENTA RÁPIDA -->
+            <!-- PANTALLA 2: VENTA RÁPIDA CON CARRITO MULTI-PRODUCTO -->
 
-            <!-- SELECTOR DE MÉTODO DE PAGO (EFECTIVO vs QR) -->
-            <div class="payment-toggle-bar">
-                <button type="button" id="btn-pay-efectivo" onclick="setMetodoPago('efectivo')" class="btn-payment-option active-efectivo">
-                    <i class="bi bi-cash-stack me-1"></i> 💵 Cobro en Efectivo
-                </button>
-                <button type="button" id="btn-pay-qr" onclick="setMetodoPago('qr')" class="btn-payment-option">
-                    <i class="bi bi-qr-code-scan me-1"></i> 📱 Pago por QR
-                </button>
+            <!-- CARRITO DEL PEDIDO ACTUAL -->
+            <div class="order-cart-card">
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                    <span class="fw-bold text-uppercase small text-muted">
+                        <i class="bi bi-cart3 me-1 text-primary"></i> Pedido Actual
+                    </span>
+                    <button type="button" onclick="vaciarCarrito()"
+                        class="btn btn-link text-danger text-decoration-none p-0 extra-small fw-bold" id="btn-vaciar-cart"
+                        style="display: none;">
+                        <i class="bi bi-trash me-1"></i> Vaciar
+                    </button>
+                </div>
+
+                <!-- LISTA DINÁMICA DE ITEMS DEL PEDIDO -->
+                <div id="cart-items-container">
+                    <div class="text-center py-3 text-muted small" id="cart-empty-msg">
+                        <i class="bi bi-hand-index-thumb fs-4 d-block mb-1"></i>
+                        Toca las salteñas de abajo para agregarlas al pedido
+                    </div>
+                </div>
+
+                <!-- RESUMEN DEL PEDIDO -->
+                <div class="pt-3 border-top mt-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted extra-small d-block fw-bold">TOTAL PEDIDO</span>
+                        <span class="fs-4 fw-extrabold text-success" id="cart-total-monto">Bs. 0.00</span>
+                    </div>
+                    <div class="text-end">
+                        <span class="text-muted extra-small d-block fw-bold">SALTEÑAS</span>
+                        <span class="fs-5 fw-extrabold text-primary" id="cart-total-unidades">0 u.</span>
+                    </div>
+                </div>
+
+                <!-- BOTONES DE COBRO FINAL (EFECTIVO Y QR) -->
+                <div class="row g-2 mt-3" id="checkout-buttons-container" style="display: none;">
+                    <div class="col-6">
+                        <button type="button" onclick="procesarCobroOrden('efectivo')" class="btn-checkout-efectivo w-100">
+                            <i class="bi bi-cash-stack d-block fs-4 mb-1"></i>
+                            Cobrar EFECTIVO
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" onclick="procesarCobroOrden('qr')" class="btn-checkout-qr w-100">
+                            <i class="bi bi-qr-code-scan d-block fs-4 mb-1"></i>
+                            Cobrar por QR
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <div class="mb-3 d-flex justify-content-between align-items-center">
-                <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-hand-index-thumb me-1"></i> Toca para Vender (+1)</span>
-                <span class="badge bg-success-subtle text-success border border-success border-opacity-25 rounded-pill"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>En Venta</span>
+            <!-- TARJETAS TIPOGRÁFICAS PARA SELECCIONAR SALTEÑAS (SUMAN AL CARRITO) -->
+            <div class="mb-2 d-flex justify-content-between align-items-center">
+                <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-grid-fill me-1"></i> Salteñas por
+                    Unidad</span>
             </div>
 
-            <!-- TARJETAS TIPOGRÁFICAS LIMPIAS DE PRODUCTOS (SIN EMOJIS) -->
             <div class="row g-3 mb-4">
                 <?php foreach ($productos as $prod): ?>
                     <div class="col-6">
-                        <button type="button" onclick="registrarVentaProducto(<?= $prod['id'] ?>, '<?= addslashes($prod['nombre']) ?>', <?= $prod['precio'] ?>)" class="btn-touch-product">
+                        <button type="button"
+                            onclick="agregarAlCarrito('individual', <?= $prod['id'] ?>, '<?= addslashes($prod['nombre']) ?>', <?= $prod['precio'] ?>, 1)"
+                            class="btn-touch-product">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="fw-extrabold fs-5" style="color: var(--text-main);"><?= htmlspecialchars($prod['nombre']) ?></span>
-                                <span class="badge bg-warning text-dark rounded-pill fw-extrabold px-2 py-1">Bs. <?= number_format($prod['precio'], 0) ?></span>
+                                <span class="fw-extrabold fs-5"
+                                    style="color: var(--text-main);"><?= htmlspecialchars($prod['nombre']) ?></span>
+                                <span class="badge bg-warning text-dark rounded-pill fw-extrabold px-2 py-1">Bs.
+                                    <?= number_format($prod['precio'], 0) ?></span>
                             </div>
-                            <div class="text-muted extra-small fw-semibold">+1 Salteña</div>
+                            <div class="text-muted extra-small fw-semibold">+ Añadir al Pedido</div>
                         </button>
                     </div>
                 <?php endforeach; ?>
@@ -443,19 +570,25 @@ $cierreHoy = $stmtCierre->fetch();
             <!-- PROMOCIONES / COMBOS DE CENTRAL -->
             <?php if (count($promociones) > 0): ?>
                 <div class="mb-2">
-                    <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-stars me-1 text-warning"></i> Promociones Configuradas</span>
+                    <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-stars me-1 text-warning"></i>
+                        Promociones Configuradas</span>
                 </div>
                 <div class="row g-3 mb-4">
                     <?php foreach ($promociones as $promo): ?>
                         <div class="col-12">
-                            <button type="button" onclick="registrarVentaPromo(<?= $promo['id'] ?>, '<?= addslashes($promo['nombre']) ?>', <?= $promo['unidades'] ?>, <?= $promo['precio'] ?>)" class="btn-touch-promo">
+                            <button type="button"
+                                onclick="agregarAlCarrito('promocion', <?= $promo['id'] ?>, '<?= addslashes($promo['nombre']) ?>', <?= $promo['precio'] ?>, <?= $promo['unidades'] ?>)"
+                                class="btn-touch-promo">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <span class="fw-extrabold fs-6 d-block text-warning mb-1"><i class="bi bi-tag-fill me-1"></i><?= htmlspecialchars($promo['nombre']) ?></span>
-                                        <span class="text-white opacity-90 small">Descuenta <?= $promo['unidades'] ?> salteñas del stock</span>
+                                        <span class="fw-extrabold fs-6 d-block text-warning mb-1"><i
+                                                class="bi bi-tag-fill me-1"></i><?= htmlspecialchars($promo['nombre']) ?></span>
+                                        <span class="text-white opacity-90 small">Descuenta <?= $promo['unidades'] ?> salteñas del
+                                            stock</span>
                                     </div>
                                     <div class="text-end">
-                                        <span class="fs-4 fw-extrabold text-white">Bs. <?= number_format($promo['precio'], 0) ?></span>
+                                        <span class="fs-4 fw-extrabold text-white">Bs.
+                                            <?= number_format($promo['precio'], 0) ?></span>
                                     </div>
                                 </div>
                             </button>
@@ -471,7 +604,8 @@ $cierreHoy = $stmtCierre->fetch();
     <?php if ($stockAceptado && !$cierreHoy): ?>
         <!-- BOTÓN FIJO INFERIOR: CERRAR TURNO -->
         <div class="floating-footer">
-            <button type="button" class="btn btn-outline-danger w-100 py-3 rounded-4 fw-bold" data-bs-toggle="modal" data-bs-target="#modalCierre">
+            <button type="button" class="btn btn-outline-danger w-100 py-3 rounded-4 fw-bold" data-bs-toggle="modal"
+                data-bs-target="#modalCierre">
                 <i class="bi bi-door-closed-fill me-2"></i> CERRAR TURNO DEL DÍA
             </button>
         </div>
@@ -480,43 +614,53 @@ $cierreHoy = $stmtCierre->fetch();
     <!-- MODAL DE CIERRE DE TURNO -->
     <div class="modal fade" id="modalCierre" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 rounded-4" style="background-color: var(--card-bg); border: 1px solid var(--card-border);">
+            <div class="modal-content border-0 rounded-4"
+                style="background-color: var(--card-bg); border: 1px solid var(--card-border);">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold" style="color: var(--text-main);"><i class="bi bi-clipboard-check text-warning me-2"></i>Cierre de Turno</h5>
+                    <h5 class="modal-title fw-bold" style="color: var(--text-main);"><i
+                            class="bi bi-clipboard-check text-warning me-2"></i>Cierre de Turno</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <p class="text-muted small">Revisa el resumen final de tu jornada antes de enviar:</p>
 
-                    <div class="p-3 rounded-3 mb-3" style="background: rgba(0,0,0,0.04); border: 1px solid var(--card-border);">
+                    <div class="p-3 rounded-3 mb-3"
+                        style="background: rgba(0,0,0,0.04); border: 1px solid var(--card-border);">
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Salteñas Vendidas:</span>
-                            <span class="fw-bold text-success" id="modal-total-vendidas"><?= $unidadesVendidasHoy ?> u.</span>
+                            <span class="fw-bold text-success" id="modal-total-vendidas"><?= $unidadesVendidasHoy ?>
+                                u.</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Stock Sobrante Estimado:</span>
-                            <span class="fw-bold text-primary" id="modal-total-sobrantes"><?= $stockRestante ?> u.</span>
+                            <span class="fw-bold text-primary" id="modal-total-sobrantes"><?= $stockRestante ?>
+                                u.</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Recaudado en Efectivo:</span>
-                            <span class="fw-bold text-warning" id="modal-dinero-efectivo">Bs. <?= number_format($dineroEfectivoHoy, 2) ?></span>
+                            <span class="fw-bold text-warning" id="modal-dinero-efectivo">Bs.
+                                <?= number_format($dineroEfectivoHoy, 2) ?></span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Recaudado en QR:</span>
-                            <span class="fw-bold" style="color: #9333ea;" id="modal-dinero-qr">Bs. <?= number_format($dineroQrHoy, 2) ?></span>
+                            <span class="fw-bold" style="color: #9333ea;" id="modal-dinero-qr">Bs.
+                                <?= number_format($dineroQrHoy, 2) ?></span>
                         </div>
                         <div class="d-flex justify-content-between pt-2 border-top">
                             <span class="fw-bold text-dark">Total Dinero General:</span>
-                            <span class="fw-bold text-dark fs-5" id="modal-total-dinero">Bs. <?= number_format($dineroRecaudadoHoy, 2) ?></span>
+                            <span class="fw-bold text-dark fs-5" id="modal-total-dinero">Bs.
+                                <?= number_format($dineroRecaudadoHoy, 2) ?></span>
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label small text-muted">Salteñas Dañadas / Rotas u Observaciones:</label>
-                        <textarea id="observaciones-cierre" rows="3" class="form-control rounded-3" placeholder="Ej: Se rompió 1 salteña de pollo al transportar..."></textarea>
+                        <textarea id="observaciones-cierre" rows="3" class="form-control rounded-3"
+                            placeholder="Ej: Se rompió 1 salteña de pollo al transportar..."></textarea>
                     </div>
 
-                    <button type="button" onclick="confirmarCierreTurno()" class="btn btn-warning w-100 py-3 rounded-3 fw-bold text-dark">
+                    <button type="button" onclick="confirmarCierreTurno()"
+                        class="btn btn-warning w-100 py-3 rounded-3 fw-bold text-dark">
                         <i class="bi bi-send-check-fill me-1"></i> CONFIRMAR Y FINALIZAR TURNO
                     </button>
                 </div>
@@ -532,21 +676,9 @@ $cierreHoy = $stmtCierre->fetch();
         let dineroEfectivo = <?= $dineroEfectivoHoy ?>;
         let dineroQr = <?= $dineroQrHoy ?>;
         let totalStockEnviado = <?= $totalStockEnviado ?>;
-        let metodoPagoActual = 'efectivo';
 
-        function setMetodoPago(metodo) {
-            metodoPagoActual = metodo;
-            const btnEfectivo = document.getElementById('btn-pay-efectivo');
-            const btnQr = document.getElementById('btn-pay-qr');
-
-            if (metodo === 'efectivo') {
-                btnEfectivo.className = 'btn-payment-option active-efectivo';
-                btnQr.className = 'btn-payment-option';
-            } else {
-                btnEfectivo.className = 'btn-payment-option';
-                btnQr.className = 'btn-payment-option active-qr';
-            }
-        }
+        // ESTADO DEL CARRITO TEMPORAL DEL PEDIDO ACTUAL
+        let carrito = [];
 
         function toggleTheme() {
             const html = document.documentElement;
@@ -560,6 +692,140 @@ $cierreHoy = $stmtCierre->fetch();
                 html.classList.add('theme-light');
                 icon.innerHTML = '<i class="bi bi-moon-stars-fill me-1"></i> Modo Oscuro';
             }
+        }
+
+        function agregarAlCarrito(tipo, id, nombre, precio, unidadesPorPack) {
+            if (navigator.vibrate) navigator.vibrate(35);
+
+            let key = tipo + '_' + id;
+            let itemExistente = carrito.find(i => i.key === key);
+
+            if (itemExistente) {
+                itemExistente.cantidad += 1;
+            } else {
+                carrito.push({
+                    key: key,
+                    tipo: tipo,
+                    id: id,
+                    nombre: nombre,
+                    precio: parseFloat(precio),
+                    unidadesPorPack: parseInt(unidadesPorPack),
+                    cantidad: 1
+                });
+            }
+
+            renderizarCarrito();
+        }
+
+        function cambiarCantidadItem(key, delta) {
+            let item = carrito.find(i => i.key === key);
+            if (item) {
+                item.cantidad += delta;
+                if (item.cantidad <= 0) {
+                    carrito = carrito.filter(i => i.key !== key);
+                }
+            }
+            renderizarCarrito();
+        }
+
+        function vaciarCarrito() {
+            carrito = [];
+            renderizarCarrito();
+        }
+
+        function renderizarCarrito() {
+            const container = document.getElementById('cart-items-container');
+            const emptyMsg = document.getElementById('cart-empty-msg');
+            const btnVaciar = document.getElementById('btn-vaciar-cart');
+            const checkoutBtns = document.getElementById('checkout-buttons-container');
+
+            if (carrito.length === 0) {
+                container.innerHTML = '<div class="text-center py-3 text-muted small"><i class="bi bi-hand-index-thumb fs-4 d-block mb-1"></i>Toca las salteñas de abajo para agregarlas al pedido</div>';
+                btnVaciar.style.display = 'none';
+                checkoutBtns.style.display = 'none';
+                document.getElementById('cart-total-monto').innerText = 'Bs. 0.00';
+                document.getElementById('cart-total-unidades').innerText = '0 u.';
+                return;
+            }
+
+            btnVaciar.style.display = 'inline-block';
+            checkoutBtns.style.display = 'flex';
+
+            let html = '';
+            let totalMonto = 0;
+            let totalUnidades = 0;
+
+            carrito.forEach(item => {
+                let subtotal = item.precio * item.cantidad;
+                let unidadesItem = item.unidadesPorPack * item.cantidad;
+                totalMonto += subtotal;
+                totalUnidades += unidadesItem;
+
+                html += `
+                    <div class="cart-item-row">
+                        <div>
+                            <span class="fw-extrabold d-block" style="color: var(--text-main); font-size: 0.95rem;">${item.nombre}</span>
+                            <span class="text-muted extra-small">Bs. ${item.precio.toFixed(2)} c/u</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn-qty-control" onclick="cambiarCantidadItem('${item.key}', -1)">-</button>
+                            <span class="fw-extrabold px-1 fs-6" style="color: var(--text-main);">${item.cantidad}</span>
+                            <button type="button" class="btn-qty-control" onclick="cambiarCantidadItem('${item.key}', 1)">+</button>
+                            <span class="fw-bold text-success ms-2" style="min-width: 60px; text-align: right;">Bs. ${subtotal.toFixed(0)}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            document.getElementById('cart-total-monto').innerText = 'Bs. ' + totalMonto.toFixed(2);
+            document.getElementById('cart-total-unidades').innerText = totalUnidades + ' u.';
+        }
+
+        function procesarCobroOrden(metodo) {
+            if (carrito.length === 0) return;
+            if (navigator.vibrate) navigator.vibrate(60);
+
+            let payloadItems = [];
+            let totalCobrado = 0;
+            let totalSalteñasVendidas = 0;
+
+            carrito.forEach(i => {
+                let subtotal = i.precio * i.cantidad;
+                let uCount = i.unidadesPorPack * i.cantidad;
+                totalCobrado += subtotal;
+                totalSalteñasVendidas += uCount;
+
+                payloadItems.push({
+                    tipo: i.tipo,
+                    producto_id: i.tipo === 'individual' ? i.id : null,
+                    promocion_id: i.tipo === 'promocion' ? i.id : null,
+                    cantidad: uCount,
+                    monto: subtotal
+                });
+            });
+
+            // Actualizar interfaz al instante
+            unidadesVendidas += totalSalteñasVendidas;
+            if (metodo === 'efectivo') {
+                dineroEfectivo += totalCobrado;
+            } else {
+                dineroQr += totalCobrado;
+            }
+            actualizarIndicadores();
+
+            // Limpiar carrito
+            vaciarCarrito();
+
+            // Enviar orden al servidor
+            fetch('api.php?accion=registrar_venta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    items: payloadItems,
+                    metodo_pago: metodo
+                })
+            });
         }
 
         function actualizarIndicadores() {
@@ -589,56 +855,6 @@ $cierreHoy = $stmtCierre->fetch();
                 });
         }
 
-        function registrarVentaProducto(id, nombre, precio) {
-            if (navigator.vibrate) navigator.vibrate(40);
-
-            let p = parseFloat(precio);
-            unidadesVendidas += 1;
-            if (metodoPagoActual === 'efectivo') {
-                dineroEfectivo += p;
-            } else {
-                dineroQr += p;
-            }
-            actualizarIndicadores();
-
-            fetch('api.php?accion=registrar_venta', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tipo: 'individual',
-                    producto_id: id,
-                    cantidad: 1,
-                    monto: p,
-                    metodo_pago: metodoPagoActual
-                })
-            });
-        }
-
-        function registrarVentaPromo(id, nombre, unidades, precio) {
-            if (navigator.vibrate) navigator.vibrate(60);
-
-            let p = parseFloat(precio);
-            unidadesVendidas += parseInt(unidades);
-            if (metodoPagoActual === 'efectivo') {
-                dineroEfectivo += p;
-            } else {
-                dineroQr += p;
-            }
-            actualizarIndicadores();
-
-            fetch('api.php?accion=registrar_venta', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tipo: 'promocion',
-                    promocion_id: id,
-                    cantidad: unidades,
-                    monto: p,
-                    metodo_pago: metodoPagoActual
-                })
-            });
-        }
-
         function confirmarCierreTurno() {
             let obs = document.getElementById('observaciones-cierre').value;
             let sobrantes = Math.max(0, totalStockEnviado - unidadesVendidas);
@@ -656,15 +872,16 @@ $cierreHoy = $stmtCierre->fetch();
                     observaciones: obs
                 })
             })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('Error al cerrar turno: ' + data.error);
-                }
-            });
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error al cerrar turno: ' + data.error);
+                    }
+                });
         }
     </script>
 </body>
+
 </html>
