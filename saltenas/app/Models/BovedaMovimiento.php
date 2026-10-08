@@ -16,6 +16,8 @@ class BovedaMovimiento extends Model
     protected $fillable = [
         'tipo',
         'monto',
+        'dinero_efectivo',
+        'dinero_qr',
         'fecha',
         'cierre_diario_id',
         'compra_id',

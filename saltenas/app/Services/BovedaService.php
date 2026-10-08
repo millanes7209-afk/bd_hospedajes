@@ -22,6 +22,8 @@ class BovedaService
         return BovedaMovimiento::create([
             'tipo' => 'ingreso',
             'monto' => $cierre->monto_real,
+            'dinero_efectivo' => $cierre->dinero_efectivo ?? 0,
+            'dinero_qr' => $cierre->dinero_qr ?? 0,
             'fecha' => $cierre->fecha,
             'cierre_diario_id' => $cierre->id,
             'compra_id' => null,
