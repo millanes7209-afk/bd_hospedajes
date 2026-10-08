@@ -5,10 +5,8 @@ namespace App\Services;
 use App\Models\Carrito;
 use App\Models\CierreDiario;
 use App\Models\CierreDiarioDetalle;
-use App\Models\CierreDiarioPromocionDetalle;
 use App\Models\VarianteSaltena;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class ProyeccionVentasService
 {
@@ -23,128 +21,246 @@ class ProyeccionVentasService
     ];
 
     /**
-     * Calcula la proyección de producción y ventas para una fecha específica.
+     * Calcula la proyección econométrica de ventas y producción utilizando:
+     * 1. Regresión Lineal OLS ponderada por antigüedad (EWMA) para tendencia temporal.
+     * 2. Factor econométrico de estacionalidad por día de la semana (Dummy Variables).
+     * 3. Elasticidad de demanda respecto a la temperatura (Sensibilidad térmica).
      */
     public function obtenerProyeccion($fechaTarget = null, $carritoId = null, $tempMin = null, $tempMax = null)
     {
-        // Fecha por defecto: Mañana
         $fecha = $fechaTarget ? Carbon::parse($fechaTarget) : Carbon::tomorrow();
         $fechaStr = $fecha->format('Y-m-d');
         $dayOfWeekNum = $fecha->dayOfWeek; // 0=Domingo, 1=Lunes, ...
         $nombreDia = self::$diasEspaniol[$dayOfWeekNum] ?? 'DÍA';
 
-        // 1. Obtener cierres históricos del mismo día de la semana
-        $queryCierres = CierreDiario::whereRaw('DAYOFWEEK(fecha) = ?', [$dayOfWeekNum + 1]); // MySQL DAYOFWEEK: 1=Sun, 2=Mon...
-
+        // 1. Obtener cierres históricos ordenados cronológicamente
+        $queryCierres = CierreDiario::orderBy('fecha', 'asc');
         if ($carritoId) {
             $queryCierres->where('carrito_id', $carritoId);
         }
 
-        // Si se especificaron temperaturas, se consideran cierres en un rango de +/- 4 °C si hay datos
-        if ($tempMin !== null && $tempMin !== '') {
-            $queryCierres->where(function ($q) use ($tempMin) {
-                $q->whereNull('temp_min')
-                    ->orWhereBetween('temp_min', [(float) $tempMin - 4, (float) $tempMin + 4]);
-            });
-        }
-        if ($tempMax !== null && $tempMax !== '') {
-            $queryCierres->where(function ($q) use ($tempMax) {
-                $q->whereNull('temp_max')
-                    ->orWhereBetween('temp_max', [(float) $tempMax - 4, (float) $tempMax + 4]);
-            });
-        }
+        $cierres = $queryCierres->get();
+        $totalCierresHistoricos = $cierres->count();
 
-        $cierreIds = $queryCierres->pluck('id')->toArray();
-        $diasAnalizadosCount = count($cierreIds);
-
-        // Si no hay cierres históricos suficientes en ese día de la semana con filtro estricto,
-        // ampliamos la búsqueda a todos los cierres históricos del mismo día de la semana sin filtro de clima
-        if ($diasAnalizadosCount === 0) {
-            $queryFallback = CierreDiario::whereRaw('DAYOFWEEK(fecha) = ?', [$dayOfWeekNum + 1]);
-            if ($carritoId) {
-                $queryFallback->where('carrito_id', $carritoId);
-            }
-            $cierreIds = $queryFallback->pluck('id')->toArray();
-            $diasAnalizadosCount = count($cierreIds);
-        }
-
-        // Si aún no hay datos históricos para ese día de la semana, usamos los últimos 30 cierres globales
-        if ($diasAnalizadosCount === 0) {
-            $queryGlobal = CierreDiario::query();
-            if ($carritoId) {
-                $queryGlobal->where('carrito_id', $carritoId);
-            }
-            $cierreIds = $queryGlobal->orderBy('fecha', 'desc')->limit(30)->pluck('id')->toArray();
-            $diasAnalizadosCount = count($cierreIds);
-        }
-
-        // 2. Calcular temperaturas promedio del día si no fueron provistas
+        // 2. Si se especifica o proyecta clima
         $tempMinPromedio = $tempMin;
         $tempMaxPromedio = $tempMax;
-        if ($diasAnalizadosCount > 0 && ($tempMin === null || $tempMin === '')) {
-            $tempMinPromedio = CierreDiario::whereIn('id', $cierreIds)->avg('temp_min');
+
+        if (($tempMin === null || $tempMin === '') && $totalCierresHistoricos > 0) {
+            $tempMinPromedio = $cierres->whereNotNull('temp_min')->avg('temp_min');
         }
-        if ($diasAnalizadosCount > 0 && ($tempMax === null || $tempMax === '')) {
-            $tempMaxPromedio = CierreDiario::whereIn('id', $cierreIds)->avg('temp_max');
+        if (($tempMax === null || $tempMax === '') && $totalCierresHistoricos > 0) {
+            $tempMaxPromedio = $cierres->whereNotNull('temp_max')->avg('temp_max');
         }
 
-        // 3. Desglose por Variante de Salteña
         $variantes = VarianteSaltena::where('activo', true)->orderBy('nombre')->get();
         $proyeccionVariantes = [];
         $totalUnidadesEstimadas = 0;
         $montoEstimadoTotal = 0;
 
-        foreach ($variantes as $var) {
-            $unidadesVendidasTotales = 0;
-            $muestrasValidas = 0;
-
-            if ($diasAnalizadosCount > 0) {
-                $detalles = CierreDiarioDetalle::with(['promocionesDetalle.promocion'])
-                    ->whereIn('cierre_diario_id', $cierreIds)
-                    ->where('variante_id', $var->id)
-                    ->get();
-
-                foreach ($detalles as $det) {
-                    $muestrasValidas++;
-                    $vendidaNormal = (int) $det->cantidad_vendida_normal;
-                    $unidadesPromos = 0;
-                    foreach ($det->promocionesDetalle as $pd) {
-                        if ($pd->promocion) {
-                            $unidadesPromos += ($pd->paquetes_vendidos * $pd->promocion->unidades_por_paquete);
-                        }
-                    }
-                    $unidadesVendidasTotales += ($vendidaNormal + $unidadesPromos);
-                }
+        // Si no hay datos suficientes en base de datos, fallback seguro
+        if ($totalCierresHistoricos === 0) {
+            foreach ($variantes as $var) {
+                $proyeccionVariantes[] = [
+                    'variante_id' => $var->id,
+                    'nombre' => strtoupper($var->nombre),
+                    'precio_venta' => (float) $var->precio_venta,
+                    'unidades_sugeridas' => 0,
+                    'monto_estimado' => 0,
+                    'muestras' => 0,
+                    'tendencia' => 'SIN DATOS',
+                    'factor_estacionalidad' => 1.0,
+                    'factor_clima' => 1.0,
+                    'r2' => 0.0,
+                ];
             }
 
-            $unidadesSugeridas = $muestrasValidas > 0 ? (int) round($unidadesVendidasTotales / $muestrasValidas) : 0;
-            $montoEstimadoVariante = $unidadesSugeridas * (float) $var->precio_venta;
+            return [
+                'metodo' => 'MODELO ECONOMÉTRICO OLS + ESTACIONALIDAD + ELASTICIDAD CLIMA',
+                'fecha_target' => $fechaStr,
+                'nombre_dia' => $nombreDia,
+                'day_of_week' => $dayOfWeekNum,
+                'carrito_id' => $carritoId ? (int) $carritoId : null,
+                'carritos_lista' => Carrito::where('activo', true)->orderBy('nombre')->get(),
+                'temp_min' => $tempMinPromedio !== null ? round((float) $tempMinPromedio, 1) : null,
+                'temp_max' => $tempMaxPromedio !== null ? round((float) $tempMaxPromedio, 1) : null,
+                'dias_analizados' => 0,
+                'total_unidades' => 0,
+                'monto_total' => 0.0,
+                'variantes' => $proyeccionVariantes,
+            ];
+        }
 
-            $totalUnidadesEstimadas += $unidadesSugeridas;
+        // Mapear cierres para econometría: indexar por fecha y día de la semana
+        $cierreIds = $cierres->pluck('id')->toArray();
+        $fechaInicial = Carbon::parse($cierres->first()->fecha);
+        $diasSerieTarget = $fechaInicial->diffInDays($fecha);
+
+        // Pre-cargar todos los detalles de venta de los cierres analizados
+        $detallesVentas = CierreDiarioDetalle::with(['promocionesDetalle.promocion'])
+            ->whereIn('cierre_diario_id', $cierreIds)
+            ->get()
+            ->groupBy('variante_id');
+
+        // Ponderación exponencial por antigüedad (lambda = 0.90)
+        $lambda = 0.90;
+
+        foreach ($variantes as $var) {
+            $detallesVar = $detallesVentas->get($var->id, collect());
+
+            // Construir serie temporal de ventas por variante por cierre
+            $serie = [];
+            foreach ($cierres as $idx => $cierre) {
+                $det = $detallesVar->where('cierre_diario_id', $cierre->id)->first();
+                $ventas = 0;
+                if ($det) {
+                    $ventasNormales = (int) $det->cantidad_vendida_normal;
+                    $ventasPromos = 0;
+                    foreach ($det->promocionesDetalle as $pd) {
+                        if ($pd->promocion) {
+                            $ventasPromos += ($pd->paquetes_vendidos * $pd->promocion->unidades_por_paquete);
+                        }
+                    }
+                    $ventas = $ventasNormales + $ventasPromos;
+                }
+
+                $dt = Carbon::parse($cierre->fecha);
+                $x_t = $fechaInicial->diffInDays($dt); // Días transcurridos
+                $dow = $dt->dayOfWeek; // Día de la semana
+                $tmax = $cierre->temp_max !== null ? (float) $cierre->temp_max : (float) $tempMaxPromedio;
+
+                $serie[] = [
+                    'x' => $x_t,
+                    'y' => $ventas,
+                    'dow' => $dow,
+                    'temp_max' => $tmax,
+                    'cierre_id' => $cierre->id,
+                ];
+            }
+
+            $N = count($serie);
+            if ($N === 0) {
+                $proyeccionVariantes[] = [
+                    'variante_id' => $var->id,
+                    'nombre' => strtoupper($var->nombre),
+                    'precio_venta' => (float) $var->precio_venta,
+                    'unidades_sugeridas' => 0,
+                    'monto_estimado' => 0,
+                    'muestras' => 0,
+                    'tendencia' => 'SIN REGISTRO',
+                    'factor_estacionalidad' => 1.0,
+                    'factor_clima' => 1.0,
+                    'r2' => 0.0,
+                ];
+                continue;
+            }
+
+            // A) Regresión Lineal Ponderada OLS (Trend Estimation)
+            $sumW = 0;
+            $sumWX = 0;
+            $sumWY = 0;
+            $sumWXX = 0;
+            $sumWXY = 0;
+            $sumWYY = 0;
+            foreach ($serie as $i => $pt) {
+                $w = pow($lambda, $N - 1 - $i); // Ponderación EWMA
+                $x = $pt['x'];
+                $y = $pt['y'];
+
+                $sumW += $w;
+                $sumWX += $w * $x;
+                $sumWY += $w * $y;
+                $sumWXX += $w * $x * $x;
+                $sumWXY += $w * $x * $y;
+                $sumWYY += $w * $y * $y;
+            }
+
+            $meanX = $sumWX / $sumW;
+            $meanY = $sumWY / $sumW;
+
+            $denomSlope = $sumWXX - ($sumWX * $sumWX / $sumW);
+            $beta = $denomSlope != 0 ? ($sumWXY - ($sumWX * $sumWY / $sumW)) / $denomSlope : 0;
+            $alpha = $meanY - ($beta * $meanX);
+
+            // Tendencia estimada para la fecha objetivo
+            $y_trend = $alpha + ($beta * $diasSerieTarget);
+            if ($y_trend < 0) {
+                $y_trend = max(0, $meanY);
+            }
+
+            // Coeficiente de determinación R2
+            $denomR2 = sqrt(max(1e-9, ($sumWXX - $sumWX * $sumWX / $sumW) * ($sumWYY - $sumWY * $sumWY / $sumW)));
+            $r2 = $denomR2 > 0 ? pow(($sumWXY - $sumWX * $sumWY / $sumW) / $denomR2, 2) : 0.0;
+
+            // B) Factor Econométrico de Estacionalidad por Día de la Semana
+            $serieDoW = array_filter($serie, function ($item) use ($dayOfWeekNum) {
+                return $item['dow'] == $dayOfWeekNum;
+            });
+            $avgDoW = count($serieDoW) > 0 ? (array_sum(array_column($serieDoW, 'y')) / count($serieDoW)) : $meanY;
+            $factorEstacionalidad = $meanY > 0 ? ($avgDoW / $meanY) : 1.0;
+            // Limitar el factor de estacionalidad entre 0.5 y 1.8 para estabilidad
+            $factorEstacionalidad = min(1.8, max(0.5, $factorEstacionalidad));
+
+            // C) Elasticidad Clima / Sensibilidad Térmica
+            $factorClima = 1.0;
+            if ($tempMaxPromedio !== null && $meanY > 0) {
+                $covTemp = 0;
+                $varTemp = 0;
+                foreach ($serie as $pt) {
+                    $dT = $pt['temp_max'] - $tempMaxPromedio;
+                    $dY = $pt['y'] - $meanY;
+                    $covTemp += $dT * $dY;
+                    $varTemp += $dT * $dT;
+                }
+                $gammaTemp = $varTemp > 0 ? ($covTemp / $varTemp) : 0;
+                $deltaTTarget = ($tempMax !== null && $tempMax !== '') ? ((float) $tempMax - $tempMaxPromedio) : 0;
+                $sensibilidad = ($gammaTemp * $deltaTTarget) / $meanY;
+                $factorClima = 1.0 + min(0.35, max(-0.35, $sensibilidad));
+            }
+
+            // D) Cálculo Econométrico Final de la Variante
+            $unidadesEstimadas = (int) round($y_trend * $factorEstacionalidad * $factorClima);
+            if ($unidadesEstimadas < 0) {
+                $unidadesEstimadas = 0;
+            }
+
+            $montoEstimadoVariante = $unidadesEstimadas * (float) $var->precio_venta;
+            $totalUnidadesEstimadas += $unidadesEstimadas;
             $montoEstimadoTotal += $montoEstimadoVariante;
+
+            // Clasificación de la Tendencia
+            $tendenciaTexto = 'ESTABLE ➔';
+            if ($beta > 0.05) {
+                $tendenciaTexto = 'ALCISTA ↑';
+            } elseif ($beta < -0.05) {
+                $tendenciaTexto = 'DECRECIENTE ↓';
+            }
 
             $proyeccionVariantes[] = [
                 'variante_id' => $var->id,
                 'nombre' => strtoupper($var->nombre),
                 'precio_venta' => (float) $var->precio_venta,
-                'unidades_sugeridas' => $unidadesSugeridas,
+                'unidades_sugeridas' => $unidadesEstimadas,
                 'monto_estimado' => $montoEstimadoVariante,
-                'muestras' => $muestrasValidas,
+                'muestras' => $N,
+                'tendencia' => $tendenciaTexto,
+                'beta_tendencia' => round($beta, 4),
+                'factor_estacionalidad' => round($factorEstacionalidad, 2),
+                'factor_clima' => round($factorClima, 2),
+                'r2' => round($r2, 4),
             ];
         }
 
-        // 4. Lista de Carritos para el filtro
-        $carritosList = Carrito::where('activo', true)->orderBy('nombre')->get();
-
         return [
+            'metodo' => 'MODELO ECONOMÉTRICO OLS + ESTACIONALIDAD + ELASTICIDAD CLIMA',
             'fecha_target' => $fechaStr,
             'nombre_dia' => $nombreDia,
             'day_of_week' => $dayOfWeekNum,
             'carrito_id' => $carritoId ? (int) $carritoId : null,
-            'carritos_lista' => $carritosList,
-            'temp_min' => $tempMinPromedio !== null ? round($tempMinPromedio, 1) : null,
-            'temp_max' => $tempMaxPromedio !== null ? round($tempMaxPromedio, 1) : null,
-            'dias_analizados' => $diasAnalizadosCount,
+            'carritos_lista' => Carrito::where('activo', true)->orderBy('nombre')->get(),
+            'temp_min' => $tempMinPromedio !== null ? round((float) $tempMinPromedio, 1) : null,
+            'temp_max' => $tempMaxPromedio !== null ? round((float) $tempMaxPromedio, 1) : null,
+            'dias_analizados' => $totalCierresHistoricos,
             'total_unidades' => $totalUnidadesEstimadas,
             'monto_total' => $montoEstimadoTotal,
             'variantes' => $proyeccionVariantes,
