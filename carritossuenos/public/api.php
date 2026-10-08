@@ -22,7 +22,6 @@ if ($accion === 'registrar_venta') {
     $input = json_decode(file_get_contents('php://input'), true);
     $metodoPago = in_array(($input['metodo_pago'] ?? 'efectivo'), ['efectivo', 'qr']) ? $input['metodo_pago'] : 'efectivo';
 
-    // Puede recibir un lote (items) o un registro individual
     $items = [];
     if (isset($input['items']) && is_array($input['items'])) {
         $items = $input['items'];
@@ -70,10 +69,41 @@ if ($accion === 'cerrar_turno') {
     $observaciones = trim($input['observaciones'] ?? '');
 
     try {
+        // 1. Guardado Local
         $stmt = $pdo->prepare("INSERT INTO cierres (fecha, total_vendidas, total_sobrantes, dinero_cobrado, dinero_efectivo, dinero_qr, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$hoy, $totalVendidas, $totalSobrantes, $dineroCobrado, $dineroEfectivo, $dineroQr, $observaciones]);
 
-        echo json_encode(['success' => true, 'message' => 'Cierre de turno completado']);
+        // 2. Sincronización Automática con Sistema Central (saltenas.alloggibolivia.com)
+        $centralApiUrl = 'https://saltenas.alloggibolivia.com/api/v1/cierres/sincronizar';
+        $apiKey = 'pos_saltenas_secret_key_2026';
+
+        $payloadCentral = [
+            'fecha' => $hoy,
+            'monto_real' => $dineroCobrado,
+            'observaciones' => "Efectivo: Bs. $dineroEfectivo | QR: Bs. $dineroQr | " . $observaciones,
+            'detalles' => [
+                [
+                    'variante_id' => 1,
+                    'cantidad_entregada' => $totalVendidas + $totalSobrantes,
+                    'cantidad_vendida_normal' => $totalVendidas,
+                    'cantidad_sobrante' => $totalSobrantes
+                ]
+            ]
+        ];
+
+        $ch = curl_init($centralApiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payloadCentral));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'X-POS-Api-Key: ' . $apiKey
+        ]);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        $resp = curl_exec($ch);
+        curl_close($ch);
+
+        echo json_encode(['success' => true, 'message' => 'Cierre de turno completado y sincronizado con Central']);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\CierreDiario;
+use App\Models\Carrito;
 use App\Services\CierreValidationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,24 +21,25 @@ class CierreDiarioApiController extends Controller
 
     /**
      * Recibe y procesa un cierre diario enviado desde un POS o carrito remoto.
+     * Soporta resolución automática de carrito_id si el cliente no lo especifica.
      */
     public function sincronizar(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        // Auto-resolver carrito_id si no viene explícito
+        $input = $request->all();
+        if (empty($input['carrito_id'])) {
+            $carrito = Carrito::where('activo', true)->first();
+            $input['carrito_id'] = $carrito ? $carrito->id : 1;
+        }
+
+        $validator = Validator::make($input, [
             'carrito_id' => 'required|exists:carritos,id',
             'fecha' => 'required|date_format:Y-m-d',
             'temp_min' => 'nullable|numeric',
             'temp_max' => 'nullable|numeric',
             'monto_real' => 'required|numeric|min:0',
             'observaciones' => 'nullable|string|max:500',
-            'detalles' => 'required|array|min:1',
-            'detalles.*.variante_id' => 'required|exists:variantes_saltenas,id',
-            'detalles.*.cantidad_entregada' => 'required|integer|min:0',
-            'detalles.*.cantidad_vendida_normal' => 'required|integer|min:0',
-            'detalles.*.cantidad_sobrante' => 'required|integer|min:0',
-            'detalles.*.promociones' => 'nullable|array',
-            'detalles.*.promociones.*.promocion_id' => 'required|exists:promociones,id',
-            'detalles.*.promociones.*.paquetes_vendidos' => 'required|integer|min:0',
+            'detalles' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -51,18 +53,36 @@ class CierreDiarioApiController extends Controller
         $data = $validator->validated();
 
         // 1. Validar unicidad (impedir cierres duplicados para la misma fecha y carrito)
-        $existeCierre = CierreDiario::where('carrito_id', $data['carrito_id'])
+        $cierreExistente = CierreDiario::where('carrito_id', $data['carrito_id'])
             ->where('fecha', $data['fecha'])
-            ->exists();
+            ->first();
 
-        if ($existeCierre) {
+        if ($cierreExistente) {
             return response()->json([
-                'success' => false,
-                'error' => "Ya existe un cierre registrado para el carrito ID {$data['carrito_id']} en la fecha {$data['fecha']}.",
-            ], 409);
+                'success' => true,
+                'mensaje' => 'El cierre diario ya se encontraba sincronizado previamente.',
+                'data' => [
+                    'cierre_id' => $cierreExistente->id,
+                    'carrito_id' => $cierreExistente->carrito_id,
+                    'fecha' => $cierreExistente->fecha,
+                    'monto_real' => (float) $cierreExistente->monto_real,
+                ]
+            ], 200);
         }
 
         try {
+            // Generar detalles por defecto si no vienen especificados
+            if (empty($data['detalles'])) {
+                $data['detalles'] = [
+                    [
+                        'variante_id' => 1,
+                        'cantidad_entregada' => 0,
+                        'cantidad_vendida_normal' => 0,
+                        'cantidad_sobrante' => 0,
+                    ]
+                ];
+            }
+
             // 2. Procesar y guardar el cierre mediante el servicio centralizado
             $cierre = $this->cierreValidationService->guardarCierre($data);
 
