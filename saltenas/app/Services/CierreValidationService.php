@@ -23,6 +23,8 @@ class CierreValidationService
         return DB::transaction(function () use ($data) {
             $montoEstimadoTotal = 0;
             $hayInconsistenciaGlobal = false;
+            $estado = $data['estado'] ?? 'aprobado';
+            $origen = $data['origen'] ?? 'manual';
 
             // 1. Crear el registro cabecera temporal para obtener ID
             $cierre = CierreDiario::create([
@@ -33,7 +35,11 @@ class CierreValidationService
                 'monto_real' => $data['monto_real'],
                 'monto_estimado' => 0,
                 'diferencia' => 0,
+                'dinero_efectivo' => $data['dinero_efectivo'] ?? 0,
+                'dinero_qr' => $data['dinero_qr'] ?? 0,
                 'inconsistente' => false,
+                'estado' => $estado,
+                'origen' => $origen,
                 'observaciones' => $data['observaciones'] ?? null,
             ]);
 
@@ -114,9 +120,24 @@ class CierreValidationService
                 'inconsistente' => $hayInconsistenciaGlobal,
             ]);
 
-            // 4. Generar ingreso automático en la Bóveda Central por el monto_real recaudado
-            $this->bovedaService->registrarIngresoPorCierre($cierre);
+            // 4. Generar ingreso automático en la Bóveda Central solo si el cierre es aprobado (manual o aprobado por dueño)
+            if ($estado === 'aprobado') {
+                $this->bovedaService->registrarIngresoPorCierre($cierre);
+            }
 
+            return $cierre;
+        });
+    }
+
+    /**
+     * Aprueba un cierre pendiente remoto, ejecuta la validación contable
+     * y registra el ingreso en la Bóveda.
+     */
+    public function aprobarCierre(CierreDiario $cierre): CierreDiario
+    {
+        return DB::transaction(function () use ($cierre) {
+            $cierre->update(['estado' => 'aprobado']);
+            $this->bovedaService->registrarIngresoPorCierre($cierre);
             return $cierre;
         });
     }

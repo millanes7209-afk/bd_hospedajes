@@ -22,7 +22,86 @@
             @endif
         </div>
 
+        {{-- =====================================================================
+             PANEL: CIERRES REMOTOS PENDIENTES DE APROBACIÓN
+             Aparece solo cuando algún carrito ha enviado su cierre del día
+             ===================================================================== --}}
+        @php
+            $cierresPendientes = \App\Models\CierreDiario::with('carrito')
+                ->where('estado', 'pendiente')
+                ->where('origen', 'remoto')
+                ->orderByDesc('fecha')
+                ->get();
+        @endphp
+
+        @if($cierresPendientes->isNotEmpty())
+            <div class="bg-white dark:bg-slate-900 border-2 border-amber-400 dark:border-amber-500/50 rounded-xl overflow-hidden shadow-sm">
+                <div class="px-5 py-3 bg-amber-50 dark:bg-amber-500/10 border-b border-amber-200 dark:border-amber-500/30 flex items-center gap-3">
+                    <i class="fa-solid fa-bell text-amber-600 dark:text-amber-400 text-sm animate-pulse"></i>
+                    <h2 class="text-xs font-black text-amber-800 dark:text-amber-300 uppercase tracking-wider">
+                        CIERRES REMOTOS PENDIENTES DE APROBACIÓN ({{ $cierresPendientes->count() }})
+                    </h2>
+                    <span class="ml-auto text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase">
+                        Revisa y aprueba o rechaza cada cierre enviado por los carritos
+                    </span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-amber-50 dark:bg-amber-500/5 border-b border-amber-200 dark:border-amber-500/20 text-[10px] font-black uppercase text-amber-700 dark:text-amber-400">
+                                <th class="py-2.5 px-4">CARRITO</th>
+                                <th class="py-2.5 px-4">FECHA</th>
+                                <th class="py-2.5 px-4 text-right">EFECTIVO</th>
+                                <th class="py-2.5 px-4 text-right">QR</th>
+                                <th class="py-2.5 px-4 text-right">TOTAL COBRADO</th>
+                                <th class="py-2.5 px-4">OBSERVACIONES</th>
+                                <th class="py-2.5 px-4 text-center">ACCIÓN</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-amber-100 dark:divide-amber-500/10">
+                            @foreach($cierresPendientes as $cp)
+                                <tr class="hover:bg-amber-50/50 dark:hover:bg-amber-500/5 transition-colors" id="cierre-row-{{ $cp->id }}">
+                                    <td class="py-3 px-4 font-black text-purple-700 dark:text-purple-400 uppercase">
+                                        {{ strtoupper($cp->carrito->nombre ?? '—') }}
+                                    </td>
+                                    <td class="py-3 px-4 font-bold text-slate-900 dark:text-white">
+                                        {{ \Carbon\Carbon::parse($cp->fecha)->format('d/m/Y') }}
+                                    </td>
+                                    <td class="py-3 px-4 text-right font-bold text-amber-700 dark:text-amber-400">
+                                        BS. {{ number_format($cp->dinero_efectivo, 2) }}
+                                    </td>
+                                    <td class="py-3 px-4 text-right font-bold text-purple-700 dark:text-purple-400">
+                                        BS. {{ number_format($cp->dinero_qr, 2) }}
+                                    </td>
+                                    <td class="py-3 px-4 text-right font-black text-emerald-700 dark:text-emerald-400">
+                                        BS. {{ number_format($cp->monto_real, 2) }}
+                                    </td>
+                                    <td class="py-3 px-4 text-slate-500 dark:text-slate-400 italic text-[11px] max-w-xs truncate">
+                                        {{ $cp->observaciones ?: '—' }}
+                                    </td>
+                                    <td class="py-3 px-4 text-center">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <button onclick="accionCierre({{ $cp->id }}, 'aprobar')"
+                                                class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase transition-all flex items-center gap-1">
+                                                <i class="fa-solid fa-check"></i> APROBAR
+                                            </button>
+                                            <button onclick="accionCierre({{ $cp->id }}, 'rechazar')"
+                                                class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-black text-[10px] uppercase transition-all flex items-center gap-1">
+                                                <i class="fa-solid fa-xmark"></i> RECHAZAR
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+
         @if($carritos->isEmpty() || $variantes->isEmpty())
+
             <div class="bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-500/30 rounded-xl p-5 space-y-4 shadow-sm">
                 <div class="flex items-center gap-3 text-amber-600 dark:text-amber-400">
                     <i class="fa-solid fa-triangle-exclamation text-xl"></i>
@@ -375,6 +454,30 @@
 
 @push('scripts')
 <script>
+function accionCierre(id, accion) {
+    const labels = { aprobar: 'APROBAR', rechazar: 'RECHAZAR' };
+    if (!confirm('¿' + labels[accion] + ' este cierre remoto?')) return;
+
+    const apiKey = 'pos_saltenas_secret_key_2026';
+    fetch(`/api/v1/cierres/${id}/${accion}`, {
+        method: 'PATCH',
+        headers: { 'X-POS-Api-Key': apiKey, 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const row = document.getElementById('cierre-row-' + id);
+            if (row) row.remove();
+            // Si no quedan filas, ocultar el panel completo
+            const tbody = document.querySelector('[id^="cierre-row-"]');
+            if (!tbody) location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(() => alert('Error de red al procesar la acción.'));
+}
+
 function cierreDiarioModal() {
     return {
         showModal: false,

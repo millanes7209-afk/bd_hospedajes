@@ -19,7 +19,11 @@ class CierreDiario extends Model
         'monto_real',
         'monto_estimado',
         'diferencia',
+        'dinero_efectivo',
+        'dinero_qr',
         'inconsistente',
+        'estado',
+        'origen',
         'observaciones',
     ];
 

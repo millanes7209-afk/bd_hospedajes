@@ -20,26 +20,38 @@ class CierreDiarioApiController extends Controller
     }
 
     /**
-     * Recibe y procesa un cierre diario enviado desde un POS o carrito remoto.
-     * Soporta resolución automática de carrito_id si el cliente no lo especifica.
+     * Recibe el cierre de un carrito remoto y lo guarda como PENDIENTE para aprobación del dueño.
      */
     public function sincronizar(Request $request): JsonResponse
     {
-        // Auto-resolver carrito_id si no viene explícito
         $input = $request->all();
+
+        // Auto-resolver carrito_id por subdominio o tomar el primero activo
         if (empty($input['carrito_id'])) {
-            $carrito = Carrito::where('activo', true)->first();
+            $referer = $request->header('Referer') ?? $request->header('Origin') ?? '';
+            $carrito = null;
+
+            if ($referer) {
+                $host = parse_url($referer, PHP_URL_HOST);
+                $carrito = Carrito::where('subdominio', $host)->where('activo', true)->first();
+            }
+
+            if (!$carrito) {
+                $carrito = Carrito::where('activo', true)->first();
+            }
+
             $input['carrito_id'] = $carrito ? $carrito->id : 1;
         }
 
         $validator = Validator::make($input, [
             'carrito_id' => 'required|exists:carritos,id',
             'fecha' => 'required|date_format:Y-m-d',
-            'temp_min' => 'nullable|numeric',
-            'temp_max' => 'nullable|numeric',
             'monto_real' => 'required|numeric|min:0',
-            'observaciones' => 'nullable|string|max:500',
-            'detalles' => 'nullable|array',
+            'dinero_efectivo' => 'nullable|numeric|min:0',
+            'dinero_qr' => 'nullable|numeric|min:0',
+            'observaciones' => 'nullable|string|max:1000',
+            'total_vendidas' => 'nullable|integer|min:0',
+            'total_sobrantes' => 'nullable|integer|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -52,7 +64,7 @@ class CierreDiarioApiController extends Controller
 
         $data = $validator->validated();
 
-        // 1. Validar unicidad (impedir cierres duplicados para la misma fecha y carrito)
+        // Idempotencia: si ya existe un cierre para esta fecha+carrito, retornar el existente
         $cierreExistente = CierreDiario::where('carrito_id', $data['carrito_id'])
             ->where('fecha', $data['fecha'])
             ->first();
@@ -60,43 +72,41 @@ class CierreDiarioApiController extends Controller
         if ($cierreExistente) {
             return response()->json([
                 'success' => true,
-                'mensaje' => 'El cierre diario ya se encontraba sincronizado previamente.',
+                'mensaje' => 'El cierre ya estaba registrado en Central.',
                 'data' => [
                     'cierre_id' => $cierreExistente->id,
-                    'carrito_id' => $cierreExistente->carrito_id,
+                    'estado' => $cierreExistente->estado,
                     'fecha' => $cierreExistente->fecha,
-                    'monto_real' => (float) $cierreExistente->monto_real,
                 ]
             ], 200);
         }
 
         try {
-            // Generar detalles por defecto si no vienen especificados
-            if (empty($data['detalles'])) {
-                $data['detalles'] = [
-                    [
-                        'variante_id' => 1,
-                        'cantidad_entregada' => 0,
-                        'cantidad_vendida_normal' => 0,
-                        'cantidad_sobrante' => 0,
-                    ]
-                ];
-            }
+            // Construir detalles mínimos para el servicio
+            $data['detalles'] = [
+                [
+                    'variante_id' => 1,
+                    'cantidad_entregada' => (int) ($data['total_vendidas'] ?? 0) + (int) ($data['total_sobrantes'] ?? 0),
+                    'cantidad_vendida_normal' => (int) ($data['total_vendidas'] ?? 0),
+                    'cantidad_sobrante' => (int) ($data['total_sobrantes'] ?? 0),
+                ]
+            ];
 
-            // 2. Procesar y guardar el cierre mediante el servicio centralizado
+            // Guardar como PENDIENTE (requiere aprobación del dueño en Central)
+            $data['estado'] = 'pendiente';
+            $data['origen'] = 'remoto';
+
             $cierre = $this->cierreValidationService->guardarCierre($data);
 
             return response()->json([
                 'success' => true,
-                'mensaje' => 'Cierre diario sincronizado y registrado exitosamente en el sistema principal.',
+                'mensaje' => 'Cierre recibido. Pendiente de aprobación por el dueño en el Sistema Central.',
                 'data' => [
                     'cierre_id' => $cierre->id,
                     'carrito_id' => $cierre->carrito_id,
                     'fecha' => $cierre->fecha,
                     'monto_real' => (float) $cierre->monto_real,
-                    'monto_estimado' => (float) $cierre->monto_estimado,
-                    'diferencia' => (float) $cierre->diferencia,
-                    'inconsistente' => (bool) $cierre->inconsistente,
+                    'estado' => $cierre->estado,
                 ]
             ], 201);
         } catch (\Exception $e) {
@@ -105,5 +115,35 @@ class CierreDiarioApiController extends Controller
                 'error' => 'Error interno al procesar el cierre: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Aprueba un cierre pendiente remoto y lo registra en la Bóveda.
+     */
+    public function aprobar(CierreDiario $cierre): JsonResponse
+    {
+        if ($cierre->estado !== 'pendiente') {
+            return response()->json(['success' => false, 'error' => 'Este cierre ya fue procesado.'], 409);
+        }
+
+        try {
+            $cierre = $this->cierreValidationService->aprobarCierre($cierre);
+            return response()->json(['success' => true, 'mensaje' => 'Cierre aprobado y registrado en Bóveda.', 'cierre_id' => $cierre->id]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Rechaza un cierre pendiente remoto.
+     */
+    public function rechazar(CierreDiario $cierre): JsonResponse
+    {
+        if ($cierre->estado !== 'pendiente') {
+            return response()->json(['success' => false, 'error' => 'Este cierre ya fue procesado.'], 409);
+        }
+
+        $cierre->update(['estado' => 'rechazado']);
+        return response()->json(['success' => true, 'mensaje' => 'Cierre rechazado.']);
     }
 }

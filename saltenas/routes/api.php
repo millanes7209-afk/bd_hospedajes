@@ -27,4 +27,8 @@ Route::middleware([VerifyApiKey::class])->prefix('v1')->group(function () {
 
     // Recepción e ingesta de cierres diarios desde POS remotos
     Route::post('/cierres/sincronizar', [CierreDiarioApiController::class, 'sincronizar']);
+
+    // Aprobación y rechazo de cierres pendientes (uso del dueño en Central)
+    Route::patch('/cierres/{cierre}/aprobar', [CierreDiarioApiController::class, 'aprobar'])->name('api.cierres.aprobar');
+    Route::patch('/cierres/{cierre}/rechazar', [CierreDiarioApiController::class, 'rechazar'])->name('api.cierres.rechazar');
 });

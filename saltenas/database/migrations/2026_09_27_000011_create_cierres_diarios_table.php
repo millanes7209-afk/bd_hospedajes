@@ -13,10 +13,14 @@ return new class extends Migration {
             $table->date('fecha');
             $table->decimal('temp_min', 5, 2)->nullable();
             $table->decimal('temp_max', 5, 2)->nullable();
-            $table->decimal('monto_real', 10, 2);
-            $table->decimal('monto_estimado', 10, 2);
-            $table->decimal('diferencia', 10, 2);
+            $table->decimal('monto_real', 10, 2)->default(0);
+            $table->decimal('monto_estimado', 10, 2)->default(0);
+            $table->decimal('diferencia', 10, 2)->default(0);
+            $table->decimal('dinero_efectivo', 10, 2)->default(0);
+            $table->decimal('dinero_qr', 10, 2)->default(0);
             $table->boolean('inconsistente')->default(false);
+            $table->enum('estado', ['pendiente', 'aprobado', 'rechazado'])->default('aprobado');
+            $table->enum('origen', ['manual', 'remoto'])->default('manual');
             $table->text('observaciones')->nullable();
             $table->timestamps();
         });
