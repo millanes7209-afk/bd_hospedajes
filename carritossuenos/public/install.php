@@ -18,7 +18,7 @@ try {
         `activo` TINYINT(1) DEFAULT 1
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
-    echo "<p style='color:green;'>✅ Tabla <b>productos</b> creada.</p>";
+    echo "<p style='color:green;'>✅ Tabla <b>productos</b> creada/verificada.</p>";
 
     // Tabla 2: promociones
     $pdo->exec("
@@ -30,7 +30,7 @@ try {
         `activo` TINYINT(1) DEFAULT 1
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
-    echo "<p style='color:green;'>✅ Tabla <b>promociones</b> creada.</p>";
+    echo "<p style='color:green;'>✅ Tabla <b>promociones</b> creada/verificada.</p>";
 
     // Tabla 3: stock_diario
     $pdo->exec("
@@ -43,7 +43,7 @@ try {
         FOREIGN KEY (`producto_id`) REFERENCES `productos`(`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
-    echo "<p style='color:green;'>✅ Tabla <b>stock_diario</b> creada.</p>";
+    echo "<p style='color:green;'>✅ Tabla <b>stock_diario</b> creada/verificada.</p>";
 
     // Tabla 4: ventas
     $pdo->exec("
@@ -54,11 +54,19 @@ try {
         `promocion_id` INT NULL,
         `cantidad` INT NOT NULL DEFAULT 1,
         `monto` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `metodo_pago` ENUM('efectivo', 'qr') NOT NULL DEFAULT 'efectivo',
         FOREIGN KEY (`producto_id`) REFERENCES `productos`(`id`) ON DELETE SET NULL,
         FOREIGN KEY (`promocion_id`) REFERENCES `promociones`(`id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
-    echo "<p style='color:green;'>✅ Tabla <b>ventas</b> creada.</p>";
+
+    // Verificar si la columna metodo_pago existe (si la tabla ya fue creada anteriormente)
+    try {
+        $pdo->exec("ALTER TABLE `ventas` ADD COLUMN `metodo_pago` ENUM('efectivo', 'qr') NOT NULL DEFAULT 'efectivo';");
+    } catch (Exception $e) {
+        // Ignorar si ya existe
+    }
+    echo "<p style='color:green;'>✅ Tabla <b>ventas</b> creada/verificada con soporte Efectivo/QR.</p>";
 
     // Tabla 5: cierres
     $pdo->exec("
@@ -68,11 +76,22 @@ try {
         `total_vendidas` INT NOT NULL DEFAULT 0,
         `total_sobrantes` INT NOT NULL DEFAULT 0,
         `dinero_cobrado` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `dinero_efectivo` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `dinero_qr` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `observaciones` TEXT NULL,
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
-    echo "<p style='color:green;'>✅ Tabla <b>cierres</b> creada.</p>";
+
+    try {
+        $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_efectivo` DECIMAL(10,2) NOT NULL DEFAULT 0.00;");
+    } catch (Exception $e) {
+    }
+    try {
+        $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_qr` DECIMAL(10,2) NOT NULL DEFAULT 0.00;");
+    } catch (Exception $e) {
+    }
+    echo "<p style='color:green;'>✅ Tabla <b>cierres</b> creada/verificada con soporte Efectivo/QR.</p>";
 
     // Insertar Semillas iniciales si no existen
     $countProd = $pdo->query("SELECT COUNT(*) FROM `productos`")->fetchColumn();
@@ -109,7 +128,7 @@ try {
         echo "<p style='color:blue;'>ℹ️ Stock inicial de prueba del día insertado.</p>";
     }
 
-    echo "<h3>🎉 ¡Base de datos de produccion lista en sdb-65.hosting.stackcp.net!</h3>";
+    echo "<h3>🎉 ¡Base de datos de producción actualizada con soporte QR y Efectivo!</h3>";
     echo "<p><a href='index.php' style='padding:10px 20px; background:#22c55e; color:white; text-decoration:none; border-radius:8px; font-weight:bold;'>Ir al POS Celular</a></p>";
 
 } catch (Exception $e) {

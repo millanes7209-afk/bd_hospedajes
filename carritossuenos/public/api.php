@@ -25,10 +25,11 @@ if ($accion === 'registrar_venta') {
     $promocionId = $input['promocion_id'] ?? null;
     $cantidad = (int) ($input['cantidad'] ?? 1);
     $monto = (float) ($input['monto'] ?? 0.00);
+    $metodoPago = in_array(($input['metodo_pago'] ?? 'efectivo'), ['efectivo', 'qr']) ? $input['metodo_pago'] : 'efectivo';
 
     try {
-        $stmt = $pdo->prepare("INSERT INTO ventas (fecha_hora, producto_id, promocion_id, cantidad, monto) VALUES (NOW(), ?, ?, ?, ?)");
-        $stmt->execute([$productoId, $promocionId, $cantidad, $monto]);
+        $stmt = $pdo->prepare("INSERT INTO ventas (fecha_hora, producto_id, promocion_id, cantidad, monto, metodo_pago) VALUES (NOW(), ?, ?, ?, ?, ?)");
+        $stmt->execute([$productoId, $promocionId, $cantidad, $monto, $metodoPago]);
 
         echo json_encode(['success' => true, 'message' => 'Venta registrada']);
     } catch (Exception $e) {
@@ -42,11 +43,13 @@ if ($accion === 'cerrar_turno') {
     $totalVendidas = (int) ($input['total_vendidas'] ?? 0);
     $totalSobrantes = (int) ($input['total_sobrantes'] ?? 0);
     $dineroCobrado = (float) ($input['dinero_cobrado'] ?? 0.00);
+    $dineroEfectivo = (float) ($input['dinero_efectivo'] ?? 0.00);
+    $dineroQr = (float) ($input['dinero_qr'] ?? 0.00);
     $observaciones = trim($input['observaciones'] ?? '');
 
     try {
-        $stmt = $pdo->prepare("INSERT INTO cierres (fecha, total_vendidas, total_sobrantes, dinero_cobrado, observaciones) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$hoy, $totalVendidas, $totalSobrantes, $dineroCobrado, $observaciones]);
+        $stmt = $pdo->prepare("INSERT INTO cierres (fecha, total_vendidas, total_sobrantes, dinero_cobrado, dinero_efectivo, dinero_qr, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$hoy, $totalVendidas, $totalSobrantes, $dineroCobrado, $dineroEfectivo, $dineroQr, $observaciones]);
 
         echo json_encode(['success' => true, 'message' => 'Cierre de turno completado']);
     } catch (Exception $e) {
