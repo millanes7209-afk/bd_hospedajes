@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/database.php';
 $pdo = getDBConnection();
 $hoy = date('Y-m-d');
 
-// --- AUTO-MIGRACIÓN TRANSPARENTE DE BASE DE DATOS EN PRODUCCIÓN ---
+// --- AUTO-MIGRACIÓN DE TABLAS (SIN DATOS HARDCODEADOS DE PRUEBA) ---
 try {
     $pdo->exec("
     CREATE TABLE IF NOT EXISTS `productos` (
@@ -59,39 +59,73 @@ try {
     try { $pdo->exec("ALTER TABLE `ventas` ADD COLUMN `metodo_pago` ENUM('efectivo', 'qr') NOT NULL DEFAULT 'efectivo';"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_efectivo` DECIMAL(10,2) NOT NULL DEFAULT 0.00;"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_qr` DECIMAL(10,2) NOT NULL DEFAULT 0.00;"); } catch (Exception $e) {}
-
-    $countProd = $pdo->query("SELECT COUNT(*) FROM `productos`")->fetchColumn();
-    if ($countProd == 0) {
-        $pdo->exec("
-        INSERT INTO `productos` (`nombre`, `precio`) VALUES
-        ('Pollo', 10.00),
-        ('Carne', 10.00),
-        ('Fricasé', 11.00),
-        ('Veggie', 10.00);
-        ");
-    }
-
-    $countPromo = $pdo->query("SELECT COUNT(*) FROM `promociones`")->fetchColumn();
-    if ($countPromo == 0) {
-        $pdo->exec("
-        INSERT INTO `promociones` (`nombre`, `unidades`, `precio`) VALUES
-        ('Combo 3 Salteñas x 25 Bs', 3, 25.00),
-        ('Promo 5 Salteñas x 40 Bs', 5, 40.00);
-        ");
-    }
-
-    $countStock = $pdo->query("SELECT COUNT(*) FROM `stock_diario` WHERE `fecha` = '$hoy'")->fetchColumn();
-    if ($countStock == 0) {
-        $pdo->exec("
-        INSERT INTO `stock_diario` (`fecha`, `producto_id`, `cantidad_enviada`, `aceptado`) VALUES
-        ('$hoy', 1, 40, 0),
-        ('$hoy', 2, 30, 0),
-        ('$hoy', 3, 15, 0);
-        ");
-    }
 } catch (Exception $e) {}
 
-// 1. Obtener productos
+// --- SINCRONIZACIÓN EN VIVO CON SISTEMA CENTRAL (saltenas.alloggibolivia.com) ---
+try {
+    $ch = curl_init('https://saltenas.alloggibolivia.com/api/v1/catalogo');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-POS-Api-Key: pos_saltenas_secret_key_2026']);
+    $res = curl_exec($ch);
+    curl_close($ch);
+
+    if ($res) {
+        $json = json_decode($res, true);
+        if (isset($json['success']) && $json['success'] && isset($json['data'])) {
+            $dataCentral = $json['data'];
+
+            // 1. Sincronizar Variantes/Productos reales de Central
+            if (isset($dataCentral['variantes']) && is_array($dataCentral['variantes'])) {
+                foreach ($dataCentral['variantes'] as $v) {
+                    $stName = $pdo->prepare("SELECT id FROM productos WHERE id = ?");
+                    $stName->execute([$v['id']]);
+                    if ($stName->fetch()) {
+                        $up = $pdo->prepare("UPDATE productos SET nombre = ?, precio = ? WHERE id = ?");
+                        $up->execute([$v['nombre'], $v['precio_venta'], $v['id']]);
+                    } else {
+                        $ins = $pdo->prepare("INSERT INTO productos (id, nombre, precio) VALUES (?, ?, ?)");
+                        $ins->execute([$v['id'], $v['nombre'], $v['precio_venta']]);
+                    }
+                }
+            }
+
+            // 2. Sincronizar Promociones de Central
+            if (isset($dataCentral['promociones']) && is_array($dataCentral['promociones'])) {
+                foreach ($dataCentral['promociones'] as $pr) {
+                    $stPr = $pdo->prepare("SELECT id FROM promociones WHERE id = ?");
+                    $stPr->execute([$pr['id']]);
+                    if ($stPr->fetch()) {
+                        $upPr = $pdo->prepare("UPDATE promociones SET nombre = ?, unidades = ?, precio = ? WHERE id = ?");
+                        $upPr->execute([$pr['nombre'], $pr['unidades_por_paquete'], $pr['precio_paquete'], $pr['id']]);
+                    } else {
+                        $insPr = $pdo->prepare("INSERT INTO promociones (id, nombre, unidades, precio) VALUES (?, ?, ?, ?)");
+                        $insPr->execute([$pr['id'], $pr['nombre'], $pr['unidades_por_paquete'], $pr['precio_paquete']]);
+                    }
+                }
+            }
+
+            // 3. Sincronizar Despacho del día si viene de Central
+            if (isset($dataCentral['despacho_hoy']) && is_array($dataCentral['despacho_hoy']) && count($dataCentral['despacho_hoy']) > 0) {
+                foreach ($dataCentral['despacho_hoy'] as $dh) {
+                    $stStk = $pdo->prepare("SELECT id FROM stock_diario WHERE fecha = ? AND producto_id = ?");
+                    $stStk->execute([$hoy, $dh['variante_id']]);
+                    if ($stStk->fetch()) {
+                        $upStk = $pdo->prepare("UPDATE stock_diario SET cantidad_enviada = ? WHERE fecha = ? AND producto_id = ?");
+                        $upStk->execute([$dh['cantidad_enviada'], $hoy, $dh['variante_id']]);
+                    } else {
+                        $insStk = $pdo->prepare("INSERT INTO stock_diario (fecha, producto_id, cantidad_enviada, aceptado) VALUES (?, ?, ?, 0)");
+                        $insStk->execute([$hoy, $dh['variante_id'], $dh['cantidad_enviada']]);
+                    }
+                }
+            }
+        }
+    }
+} catch (Exception $e) {
+    // Si la Central está inalcanzable temporalmente, usa la base local
+}
+
+// 1. Obtener productos de la base de datos
 $productos = $pdo->query("SELECT * FROM productos WHERE activo = 1 ORDER BY nombre")->fetchAll();
 
 // 2. Obtener promociones
@@ -402,34 +436,46 @@ $cierreHoy = $stmtCierre->fetch();
             </div>
 
         <?php elseif (!$stockAceptado): ?>
-            <!-- PANTALLA 1: RECEPCIÓN Y ACEPTACIÓN DE STOCK -->
+            <!-- PANTALLA 1: RECEPCIÓN Y ACEPTACIÓN DE STOCK DE CENTRAL -->
             <div class="text-center py-3">
                 <div class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold mb-2">
-                    <i class="bi bi-box-seam me-1"></i> Stock Despachado Hoy
+                    <i class="bi bi-box-seam me-1"></i> Stock Despachado por Central Hoy
                 </div>
                 <h4 class="fw-bold mb-1">Confirmar Recepción</h4>
-                <p class="text-muted small mb-4">Verifica la cantidad de salteñas entregadas por Central:</p>
+                <p class="text-muted small mb-4">Verifica las variantes enviadas desde Administración Central:</p>
 
                 <div class="card border-0 rounded-4 p-3 mb-4 text-start shadow-sm" style="background-color: var(--card-bg); border: 1px solid var(--card-border);">
-                    <?php foreach ($stockHoy as $st): ?>
-                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                            <span class="fw-bold fs-6" style="color: var(--text-main);"><?= htmlspecialchars($st['producto_nombre']) ?></span>
-                            <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fs-6"><?= $st['cantidad_enviada'] ?> unidades</span>
+                    <?php if (count($stockHoy) === 0): ?>
+                        <div class="text-center py-3 text-muted small">
+                            <i class="bi bi-hourglass-split me-1"></i> Esperando asignación de despacho desde el Sistema Central...
                         </div>
-                    <?php endforeach; ?>
-                    <div class="d-flex justify-content-between align-items-center pt-3">
-                        <span class="fw-bold text-uppercase text-muted small">Total Despachado:</span>
-                        <span class="fs-5 fw-extrabold text-warning"><?= $totalStockEnviado ?> u.</span>
-                    </div>
+                    <?php else: ?>
+                        <?php foreach ($stockHoy as $st): ?>
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                <span class="fw-bold fs-6" style="color: var(--text-main);"><?= htmlspecialchars($st['producto_nombre']) ?></span>
+                                <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fs-6"><?= $st['cantidad_enviada'] ?> unidades</span>
+                            </div>
+                        <?php endforeach; ?>
+                        <div class="d-flex justify-content-between align-items-center pt-3">
+                            <span class="fw-bold text-uppercase text-muted small">Total Despachado:</span>
+                            <span class="fs-5 fw-extrabold text-warning"><?= $totalStockEnviado ?> u.</span>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
-                <button type="button" onclick="aceptarStock()" class="btn btn-warning btn-lg w-100 py-3 rounded-4 fw-bold shadow-lg text-dark">
-                    <i class="bi bi-check-lg me-2"></i> ACEPTAR STOCK E INICIAR VENTA
-                </button>
+                <?php if (count($stockHoy) > 0): ?>
+                    <button type="button" onclick="aceptarStock()" class="btn btn-warning btn-lg w-100 py-3 rounded-4 fw-bold shadow-lg text-dark">
+                        <i class="bi bi-check-lg me-2"></i> ACEPTAR STOCK E INICIAR VENTA
+                    </button>
+                <?php else: ?>
+                    <button type="button" onclick="location.reload()" class="btn btn-outline-primary w-100 py-3 rounded-4 fw-bold">
+                        <i class="bi bi-arrow-clockwise me-1"></i> ACTUALIZAR DESPACHO DESDE CENTRAL
+                    </button>
+                <?php endif; ?>
             </div>
 
         <?php else: ?>
-            <!-- PANTALLA 2: VENTA RÁPIDA CON CARRITO MULTI-PRODUCTO Y SELECCIÓN DE PAGO -->
+            <!-- PANTALLA 2: VENTA RÁPIDA CON CARRITO MULTI-PRODUCTO -->
 
             <!-- CARRITO DEL PEDIDO ACTUAL -->
             <div class="order-cart-card">
@@ -480,9 +526,9 @@ $cierreHoy = $stmtCierre->fetch();
                 </div>
             </div>
 
-            <!-- TARJETAS TIPOGRÁFICAS PARA SELECCIONAR SALTEÑAS -->
+            <!-- TARJETAS DINÁMICAS SINCRO DESDE CENTRAL -->
             <div class="mb-2 d-flex justify-content-between align-items-center">
-                <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-grid-fill me-1"></i> Salteñas por Unidad</span>
+                <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-grid-fill me-1"></i> Salteñas Sincronizadas desde Central</span>
             </div>
 
             <div class="row g-3 mb-4">
@@ -499,10 +545,10 @@ $cierreHoy = $stmtCierre->fetch();
                 <?php endforeach; ?>
             </div>
 
-            <!-- PROMOCIONES / COMBOS DE CENTRAL -->
+            <!-- PROMOCIONES DINÁMICAS DESDE CENTRAL -->
             <?php if (count($promociones) > 0): ?>
                 <div class="mb-2">
-                    <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-stars me-1 text-warning"></i> Promociones Configuradas</span>
+                    <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-stars me-1 text-warning"></i> Promociones de Central</span>
                 </div>
                 <div class="row g-3 mb-4">
                     <?php foreach ($promociones as $promo): ?>
@@ -545,7 +591,7 @@ $cierreHoy = $stmtCierre->fetch();
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small">Revisa el resumen final de tu jornada antes de enviar:</p>
+                    <p class="text-muted small">Revisa el resumen final de tu jornada antes de enviar a Central:</p>
 
                     <div class="p-3 rounded-3 mb-3" style="background: rgba(0,0,0,0.04); border: 1px solid var(--card-border);">
                         <div class="d-flex justify-content-between mb-2">
@@ -592,7 +638,6 @@ $cierreHoy = $stmtCierre->fetch();
         let dineroQr = <?= $dineroQrHoy ?>;
         let totalStockEnviado = <?= $totalStockEnviado ?>;
 
-        // ESTADO DEL CARRITO TEMPORAL DEL PEDIDO ACTUAL
         let carrito = [];
 
         function toggleTheme() {
@@ -720,7 +765,6 @@ $cierreHoy = $stmtCierre->fetch();
                 });
             });
 
-            // Actualizar interfaz al instante
             unidadesVendidas += totalSalteñasVendidas;
             if (metodo === 'efectivo') {
                 dineroEfectivo += totalCobrado;
@@ -729,10 +773,8 @@ $cierreHoy = $stmtCierre->fetch();
             }
             actualizarIndicadores();
 
-            // Limpiar carrito
             vaciarCarrito();
 
-            // Enviar orden al servidor
             fetch('api.php?accion=registrar_venta', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
