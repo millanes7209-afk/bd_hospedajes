@@ -13,6 +13,7 @@ class Carrito extends Model
 
     protected $fillable = [
         'nombre',
+        'subdominio',
         'zona',
         'activo',
     ];

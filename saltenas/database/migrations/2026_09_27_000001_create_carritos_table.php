@@ -10,6 +10,7 @@ return new class extends Migration {
         Schema::create('carritos', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
+            $table->string('subdominio')->nullable()->unique();
             $table->string('zona')->nullable();
             $table->boolean('activo')->default(true);
             $table->timestamps();
