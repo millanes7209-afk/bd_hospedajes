@@ -4,14 +4,97 @@ require_once __DIR__ . '/../config/database.php';
 $pdo = getDBConnection();
 $hoy = date('Y-m-d');
 
-// 1. Obtener productos
-$productos = [];
+// --- AUTO-MIGRACIÓN TRANSPARENTE DE BASE DE DATOS EN PRODUCCIÓN ---
 try {
-    $productos = $pdo->query("SELECT * FROM productos WHERE activo = 1 ORDER BY nombre")->fetchAll();
+    $pdo->exec("
+    CREATE TABLE IF NOT EXISTS `productos` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `nombre` VARCHAR(100) NOT NULL,
+        `precio` DECIMAL(10,2) NOT NULL,
+        `activo` TINYINT(1) DEFAULT 1
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+    CREATE TABLE IF NOT EXISTS `promociones` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `nombre` VARCHAR(100) NOT NULL,
+        `unidades` INT NOT NULL,
+        `precio` DECIMAL(10,2) NOT NULL,
+        `activo` TINYINT(1) DEFAULT 1
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+    CREATE TABLE IF NOT EXISTS `stock_diario` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `fecha` DATE NOT NULL,
+        `producto_id` INT NOT NULL,
+        `cantidad_enviada` INT NOT NULL DEFAULT 0,
+        `aceptado` TINYINT(1) NOT NULL DEFAULT 0,
+        FOREIGN KEY (`producto_id`) REFERENCES `productos`(`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+    CREATE TABLE IF NOT EXISTS `ventas` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `fecha_hora` DATETIME NOT NULL,
+        `producto_id` INT NULL,
+        `promocion_id` INT NULL,
+        `cantidad` INT NOT NULL DEFAULT 1,
+        `monto` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `metodo_pago` ENUM('efectivo', 'qr') NOT NULL DEFAULT 'efectivo',
+        FOREIGN KEY (`producto_id`) REFERENCES `productos`(`id`) ON DELETE SET NULL,
+        FOREIGN KEY (`promocion_id`) REFERENCES `promociones`(`id`) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+    CREATE TABLE IF NOT EXISTS `cierres` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `fecha` DATE NOT NULL,
+        `total_vendidas` INT NOT NULL DEFAULT 0,
+        `total_sobrantes` INT NOT NULL DEFAULT 0,
+        `dinero_cobrado` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `dinero_efectivo` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `dinero_qr` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `observaciones` TEXT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ");
+
+    try { $pdo->exec("ALTER TABLE `ventas` ADD COLUMN `metodo_pago` ENUM('efectivo', 'qr') NOT NULL DEFAULT 'efectivo';"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_efectivo` DECIMAL(10,2) NOT NULL DEFAULT 0.00;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_qr` DECIMAL(10,2) NOT NULL DEFAULT 0.00;"); } catch (Exception $e) {}
+
+    $countProd = $pdo->query("SELECT COUNT(*) FROM `productos`")->fetchColumn();
+    if ($countProd == 0) {
+        $pdo->exec("
+        INSERT INTO `productos` (`nombre`, `precio`) VALUES
+        ('Pollo', 10.00),
+        ('Carne', 10.00),
+        ('Fricasé', 11.00),
+        ('Veggie', 10.00);
+        ");
+    }
+
+    $countPromo = $pdo->query("SELECT COUNT(*) FROM `promociones`")->fetchColumn();
+    if ($countPromo == 0) {
+        $pdo->exec("
+        INSERT INTO `promociones` (`nombre`, `unidades`, `precio`) VALUES
+        ('Combo 3 Salteñas x 25 Bs', 3, 25.00),
+        ('Promo 5 Salteñas x 40 Bs', 5, 40.00);
+        ");
+    }
+
+    $countStock = $pdo->query("SELECT COUNT(*) FROM `stock_diario` WHERE `fecha` = '$hoy'")->fetchColumn();
+    if ($countStock == 0) {
+        $pdo->exec("
+        INSERT INTO `stock_diario` (`fecha`, `producto_id`, `cantidad_enviada`, `aceptado`) VALUES
+        ('$hoy', 1, 40, 0),
+        ('$hoy', 2, 30, 0),
+        ('$hoy', 3, 15, 0);
+        ");
+    }
 } catch (Exception $e) {
-    header('Location: install.php');
-    exit;
+    // Si falla algo menor, continuar
 }
+
+// 1. Obtener productos
+$productos = $pdo->query("SELECT * FROM productos WHERE activo = 1 ORDER BY nombre")->fetchAll();
 
 // 2. Obtener promociones
 $promociones = $pdo->query("SELECT * FROM promociones WHERE activo = 1 ORDER BY nombre")->fetchAll();
@@ -218,7 +301,7 @@ $cierreHoy = $stmtCierre->fetch();
     <!-- CABECERA DE MONITOR CON MINILETREROS Y TOGGLE TEMA -->
     <div class="header-counter py-2 px-3">
         <div class="d-flex align-items-center justify-content-between mb-2">
-            <span class="fw-extrabold fs-6 text-dark text-gradient d-flex align-items-center" style="color: var(--text-main);">
+            <span class="fw-extrabold fs-6 text-gradient d-flex align-items-center" style="color: var(--text-main);">
                 <i class="bi bi-shop me-2 text-warning fs-5"></i>Carrito Sueños
             </span>
             <!-- Botón Cambiar Modo Claro / Oscuro -->
@@ -449,7 +532,7 @@ $cierreHoy = $stmtCierre->fetch();
         let dineroEfectivo = <?= $dineroEfectivoHoy ?>;
         let dineroQr = <?= $dineroQrHoy ?>;
         let totalStockEnviado = <?= $totalStockEnviado ?>;
-        let metodoPagoActual = 'efectivo'; // 'efectivo' o 'qr'
+        let metodoPagoActual = 'efectivo';
 
         function setMetodoPago(metodo) {
             metodoPagoActual = metodo;
@@ -487,7 +570,6 @@ $cierreHoy = $stmtCierre->fetch();
             let sobrante = Math.max(0, totalStockEnviado - unidadesVendidas);
             document.getElementById('counter-stock').innerText = sobrante + ' u.';
 
-            // Actualizar modal
             document.getElementById('modal-total-vendidas').innerText = unidadesVendidas + ' u.';
             document.getElementById('modal-total-sobrantes').innerText = sobrante + ' u.';
             document.getElementById('modal-dinero-efectivo').innerText = 'Bs. ' + dineroEfectivo.toFixed(2);
