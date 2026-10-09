@@ -895,13 +895,26 @@ echo json_encode($itemsJs);
       // 2. Si no hay impresora guardada, solicitar selección al usuario
       if (!device) {
         device = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
+          filters: [
+            // Servicios comunes de impresoras térmicas Bluetooth
+            { services: ['000018f0-0000-1000-8000-00805f9b34fb'] }, // Servicio de impresión genérico
+            { services: ['0000ff00-0000-1000-8000-00805f9b34fb'] }, // Servicio común en impresoras chinas
+            { services: ['0000ae30-0000-1000-8000-00805f9b34fb'] }, // Servicio de impresora térmica
+            { services: ['e7810a71-73ae-499d-8c15-faa9aef0c3f2'] }, // Servicio específico
+            { services: ['00004953-0000-1000-8000-00805f9b34fb'] }, // Servicio de impresora
+            { services: ['00001101-0000-1000-8000-00805f9b34fb'] }, // Serial Port Profile (SPP)
+            { services: ['00001801-0000-1000-8000-00805f9b34fb'] }, // Generic Attribute Profile
+            { services: ['0000180a-0000-1000-8000-00805f9b34fb'] }, // Device Information
+          ],
           optionalServices: [
             '000018f0-0000-1000-8000-00805f9b34fb',
             '0000ff00-0000-1000-8000-00805f9b34fb',
             '0000ae30-0000-1000-8000-00805f9b34fb',
             'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
-            '00004953-0000-1000-8000-00805f9b34fb'
+            '00004953-0000-1000-8000-00805f9b34fb',
+            '00001101-0000-1000-8000-00805f9b34fb',
+            '00001801-0000-1000-8000-00805f9b34fb',
+            '0000180a-0000-1000-8000-00805f9b34fb'
           ]
         });
         if (device && device.id) {
