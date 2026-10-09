@@ -1017,6 +1017,15 @@ echo json_encode($itemsJs);
         conectarEImprimirAutomaticamente();
       }, 1000);
     });
+
+    // Auto-impresión si viene parámetro print o autoprint en la URL (para botón IMPRIMIR desde admin)
+    <?php if (request()->has('print') || request()->has('autoprint')): ?>
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        ejecutarImpresion();
+      }, 500);
+    });
+    <?php endif; ?>
   </script>
 </body>
 
