@@ -116,10 +116,17 @@ try {
         echo "<p style='color:blue;'>ℹ️ Promociones iniciales insertadas.</p>";
     }
 
-    // El stock diario se sincroniza dinámicamente desde el Sistema Central (saltenas) y no requiere semillas estáticas de prueba.
+    // Limpiar datos de prueba si se solicita via URL o por defecto en reinstalación
+    if (isset($_GET['limpiar']) || isset($_GET['purge'])) {
+        $pdo->exec("DELETE FROM stock_diario");
+        $pdo->exec("DELETE FROM ventas");
+        $pdo->exec("DELETE FROM cierres");
+        echo "<p style='color:orange; font-weight:bold;'>🧹 ¡Base de datos del hosting limpiada! (Stock, Ventas y Cierres vaciados).</p>";
+    }
 
-    echo "<h3>🎉 ¡Base de datos de producción actualizada con soporte QR y Efectivo!</h3>";
-    echo "<p><a href='index.php' style='padding:10px 20px; background:#22c55e; color:white; text-decoration:none; border-radius:8px; font-weight:bold;'>Ir al POS Celular</a></p>";
+    echo "<h3>🎉 ¡Base de datos de producción actualizada!</h3>";
+    echo "<p><a href='install.php?limpiar=1' style='padding:10px 20px; background:#ef4444; color:white; text-decoration:none; border-radius:8px; font-weight:bold; margin-right:10px;'>🧹 Limpiar Todos los Datos de Prueba en Hosting</a>";
+    echo "<a href='index.php' style='padding:10px 20px; background:#22c55e; color:white; text-decoration:none; border-radius:8px; font-weight:bold;'>Ir al POS Celular</a></p>";
 
 } catch (Exception $e) {
     echo "<p style='color:red;'>❌ Error durante la instalación: " . htmlspecialchars($e->getMessage()) . "</p>";
