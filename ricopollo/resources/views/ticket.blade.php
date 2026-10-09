@@ -767,6 +767,11 @@ $wspUrl = "https://wa.me/591" . $phoneRicoPollo . "?text=" . $msgWsp;
     const BT_CHAR_UUID = '00002af1-0000-1000-8000-00805f9b34fb';
     const CHUNK_SIZE = 100; // bytes por envío (seguro para BLE)
 
+    // Variable global para mantener la conexión
+    let connectedDevice = null;
+    let connectedServer = null;
+    let connectedChar = null;
+
     // Datos del ticket (inyectados desde PHP)
     const ticketData = {
       empresa: 'RICO POLLO',
@@ -866,14 +871,15 @@ echo json_encode($itemsJs);
       }
     }
 
-    async function imprimirBluetooth() {
+    // Función para conectar a la impresora (guarda la conexión globalmente)
+    async function conectarImpresora() {
       if (!navigator.bluetooth) {
         throw new Error('Web Bluetooth no disponible');
       }
 
       let device = null;
 
-      // 1. Intentar reconexión automática sin abrir menú si ya se eligió una impresora previamente
+      // 1. Intentar reconexión automática con impresora guardada
       if (navigator.bluetooth.getDevices) {
         try {
           const prevDevices = await navigator.bluetooth.getDevices();
@@ -881,15 +887,12 @@ echo json_encode($itemsJs);
           if (savedId) {
             device = prevDevices.find(d => d.id === savedId);
           }
-          if (!device && prevDevices.length > 0) {
-            device = prevDevices[0];
-          }
         } catch (e) {
           console.warn('Error al buscar dispositivos Bluetooth previamente emparejados:', e);
         }
       }
 
-      // 2. Si es la primera vez y no hay impresora recordada, solicitar selección al usuario
+      // 2. Si no hay impresora guardada, solicitar selección al usuario
       if (!device) {
         device = await navigator.bluetooth.requestDevice({
           acceptAllDevices: true,
@@ -927,9 +930,55 @@ echo json_encode($itemsJs);
         throw new Error('No se encontró canal de escritura en la impresora Bluetooth seleccionada.');
       }
 
-      const bytes = buildEscPos(ticketData);
-      await sendChunked(targetChar, bytes);
+      // Guardar conexión globalmente
+      connectedDevice = device;
+      connectedServer = server;
+      connectedChar = targetChar;
+
+      // Listener para desconexión
+      device.addEventListener('gattserverdisconnected', () => {
+        console.log('Impresora desconectada');
+        connectedDevice = null;
+        connectedServer = null;
+        connectedChar = null;
+      });
+
       return true;
+    }
+
+    async function imprimirBluetooth() {
+      // Si ya estamos conectados, usar la conexión existente
+      if (connectedChar) {
+        const bytes = buildEscPos(ticketData);
+        await sendChunked(connectedChar, bytes);
+        return true;
+      }
+
+      // Si no estamos conectados, conectar primero
+      await conectarImpresora();
+      const bytes = buildEscPos(ticketData);
+      await sendChunked(connectedChar, bytes);
+      return true;
+    }
+
+    // Función para conectar e imprimir automáticamente al cargar la página
+    async function conectarEImprimirAutomaticamente() {
+      const savedId = localStorage.getItem('rp_selected_bt_id');
+      if (!savedId) {
+        console.log('No hay impresora guardada, esperando configuración manual');
+        return;
+      }
+
+      try {
+        await conectarImpresora();
+        console.log('Impresora conectada automáticamente, imprimiendo...');
+        await imprimirBluetooth();
+        console.log('Impresión automática completada');
+      } catch (e) {
+        console.warn('No se pudo conectar automáticamente:', e);
+        // Si falla, limpiar el ID guardado para forzar reconfiguración
+        localStorage.removeItem('rp_selected_bt_id');
+      }
     }
 
     // ============================================================
@@ -962,14 +1011,12 @@ echo json_encode($itemsJs);
       window.print();
     }
 
-    // Auto-impresión si viene parámetro print o autoprint en la URL
-    <?php if (request()->has('print') || request()->has('autoprint')): ?>
+    // Auto-impresión automática al cargar la página si hay impresora guardada
     window.addEventListener('load', () => {
       setTimeout(() => {
-        ejecutarImpresion();
-      }, 500);
+        conectarEImprimirAutomaticamente();
+      }, 1000);
     });
-    <?php endif; ?>
   </script>
 </body>
 
