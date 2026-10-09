@@ -22,7 +22,20 @@ if (!function_exists('getDBConnection')) {
                     ]
                 );
             } catch (PDOException $e) {
-                die("<h3>Error de conexión a la Base de Datos en Hosting</h3><p>" . htmlspecialchars($e->getMessage()) . "</p>");
+                // Fallback a servidor local XAMPP (bd_saltenassuenos) si el servidor remoto no responde en entorno local
+                try {
+                    $pdo = new PDO(
+                        "mysql:host=localhost;dbname=bd_saltenassuenos;charset=utf8mb4",
+                        "root",
+                        "",
+                        [
+                            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                        ]
+                    );
+                } catch (PDOException $eLocal) {
+                    die("<h3>Error de conexión a la Base de Datos</h3><p>" . htmlspecialchars($e->getMessage()) . "</p>");
+                }
             }
         }
         return $pdo;

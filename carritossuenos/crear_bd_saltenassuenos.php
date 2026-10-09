@@ -103,18 +103,7 @@ try {
         echo "Promociones iniciales insertadas.\n";
     }
 
-    // Insertar un stock de prueba de hoy si no hay
-    $hoy = date('Y-m-d');
-    $countStock = $pdo->query("SELECT COUNT(*) FROM `stock_diario` WHERE `fecha` = '$hoy'")->fetchColumn();
-    if ($countStock == 0) {
-        $pdo->exec("
-        INSERT INTO `stock_diario` (`fecha`, `producto_id`, `cantidad_enviada`, `aceptado`) VALUES
-        ('$hoy', 1, 40, 0),
-        ('$hoy', 2, 30, 0),
-        ('$hoy', 3, 15, 0);
-        ");
-        echo "Stock inicial de prueba del día insertado.\n";
-    }
+    // El stock diario se sincroniza dinámicamente desde el Sistema Central (saltenas) y no requiere semillas estáticas de prueba.
 
     echo "¡Inicialización de base de datos bd_saltenassuenos completada satisfactoriamente!\n";
 

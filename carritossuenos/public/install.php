@@ -116,17 +116,7 @@ try {
         echo "<p style='color:blue;'>ℹ️ Promociones iniciales insertadas.</p>";
     }
 
-    $hoy = date('Y-m-d');
-    $countStock = $pdo->query("SELECT COUNT(*) FROM `stock_diario` WHERE `fecha` = '$hoy'")->fetchColumn();
-    if ($countStock == 0) {
-        $pdo->exec("
-        INSERT INTO `stock_diario` (`fecha`, `producto_id`, `cantidad_enviada`, `aceptado`) VALUES
-        ('$hoy', 1, 40, 0),
-        ('$hoy', 2, 30, 0),
-        ('$hoy', 3, 15, 0);
-        ");
-        echo "<p style='color:blue;'>ℹ️ Stock inicial de prueba del día insertado.</p>";
-    }
+    // El stock diario se sincroniza dinámicamente desde el Sistema Central (saltenas) y no requiere semillas estáticas de prueba.
 
     echo "<h3>🎉 ¡Base de datos de producción actualizada con soporte QR y Efectivo!</h3>";
     echo "<p><a href='index.php' style='padding:10px 20px; background:#22c55e; color:white; text-decoration:none; border-radius:8px; font-weight:bold;'>Ir al POS Celular</a></p>";
