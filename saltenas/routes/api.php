@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CatalogoApiController;
 use App\Http\Controllers\Api\CierreDiarioApiController;
+use App\Http\Controllers\Api\DespachoApiController;
 use App\Http\Middleware\VerifyApiKey;
 use Illuminate\Support\Facades\Route;
 
@@ -31,4 +32,8 @@ Route::middleware([VerifyApiKey::class])->prefix('v1')->group(function () {
     // Aprobación y rechazo de cierres pendientes (uso del dueño en Central)
     Route::patch('/cierres/{cierre}/aprobar', [CierreDiarioApiController::class, 'aprobar'])->name('api.cierres.aprobar');
     Route::patch('/cierres/{cierre}/rechazar', [CierreDiarioApiController::class, 'rechazar'])->name('api.cierres.rechazar');
+
+    // Despacho diario: consulta del POS y confirmación de aceptación
+    Route::get('/despachos/hoy', [DespachoApiController::class, 'hoy']);
+    Route::patch('/despachos/{despacho}/aceptar', [DespachoApiController::class, 'aceptar']);
 });

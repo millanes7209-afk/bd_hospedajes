@@ -1,40 +1,96 @@
 <?php
-require_once __DIR__ . '/conexion.php';
+session_start();
 
+require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/config/saltenas_api.php';
+
+$pdo = getDBConnection();
 $hoy = date('Y-m-d');
 
-// 1. Obtener productos
-$productos = $pdo->query("SELECT * FROM productos WHERE activo = 1 ORDER BY nombre")->fetchAll();
+// ── 1. Asegurar que stock_diario tenga la columna despacho_central_id ─────────
+try {
+    $pdo->exec("ALTER TABLE stock_diario ADD COLUMN IF NOT EXISTS despacho_central_id INT NULL DEFAULT NULL");
+} catch (Exception $e) {
+    // Columna ya existe u otro error menor → ignorar
+}
 
-// 2. Obtener promociones
+// ── 2. Sincronizar despacho desde Salteñas Central si aún no hay stock hoy ───
+$stmtExiste = $pdo->prepare("SELECT COUNT(*) FROM stock_diario WHERE fecha = ?");
+$stmtExiste->execute([$hoy]);
+$hayStockLocal = $stmtExiste->fetchColumn() > 0;
+
+$despachoRemoto = null;
+$errorConexionCentral = null;
+
+if (!$hayStockLocal) {
+    $resp = saltenas_api('GET', '/despachos/hoy?carrito_id=' . SALTENAS_CARRITO_ID);
+
+    if ($resp === null) {
+        $errorConexionCentral = 'No se pudo conectar con el Sistema Central. Verifica tu conexión.';
+    } elseif (!empty($resp['success']) && !empty($resp['despacho'])) {
+        $despachoRemoto = $resp['despacho'];
+        // Guardar despacho_central_id en sesión para el aceptar_stock
+        $_SESSION['despacho_central_id'] = $despachoRemoto['id'];
+
+        // Insertar en stock_diario local por cada variante
+        foreach ($despachoRemoto['detalles'] as $det) {
+            // Buscar si existe producto local con ese nombre
+            $stmtProd = $pdo->prepare("SELECT id FROM productos WHERE nombre = ? AND activo = 1 LIMIT 1");
+            $stmtProd->execute([$det['variante_nombre']]);
+            $prod = $stmtProd->fetch();
+
+            if (!$prod) {
+                // Crear el producto dinámicamente basado en la variante
+                $stmtIns = $pdo->prepare("INSERT INTO productos (nombre, precio, activo) VALUES (?, 10.00, 1)");
+                $stmtIns->execute([$det['variante_nombre']]);
+                $productoId = (int) $pdo->lastInsertId();
+            } else {
+                $productoId = (int) $prod['id'];
+            }
+
+            // Insertar en stock_diario
+            $stmtStock = $pdo->prepare("
+                INSERT INTO stock_diario (fecha, producto_id, cantidad_enviada, aceptado, despacho_central_id)
+                VALUES (?, ?, ?, 0, ?)
+            ");
+            $stmtStock->execute([$hoy, $productoId, (int) $det['cantidad_enviada'], $despachoRemoto['id']]);
+        }
+
+        // Si el despacho ya fue aceptado en central, marcarlo local también
+        if ($despachoRemoto['estado'] === 'aceptado') {
+            $pdo->prepare("UPDATE stock_diario SET aceptado = 1 WHERE fecha = ?")->execute([$hoy]);
+        }
+    }
+    // Si sin_despacho = true: no hay nada desde central, el vendedor verá el aviso
+}
+
+// ── 3. Recargar datos locales actualizados ────────────────────────────────────
+$productos = $pdo->query("SELECT * FROM productos WHERE activo = 1 ORDER BY nombre")->fetchAll();
 $promociones = $pdo->query("SELECT * FROM promociones WHERE activo = 1 ORDER BY nombre")->fetchAll();
 
-// 3. Obtener stock del día
 $stmtStock = $pdo->prepare("SELECT s.*, p.nombre as producto_nombre, p.precio FROM stock_diario s JOIN productos p ON s.producto_id = p.id WHERE s.fecha = ?");
 $stmtStock->execute([$hoy]);
 $stockHoy = $stmtStock->fetchAll();
 
-// Verificar si se ha aceptado el stock
 $stockAceptado = false;
 $totalStockEnviado = 0;
 foreach ($stockHoy as $st) {
-    if ($st['aceptado'] == 1) {
+    if ($st['aceptado'] == 1)
         $stockAceptado = true;
-    }
     $totalStockEnviado += (int) $st['cantidad_enviada'];
 }
 
-// 4. Obtener ventas registradas hoy
 $stmtVentas = $pdo->prepare("SELECT SUM(cantidad) as total_unidades, SUM(monto) as total_dinero FROM ventas WHERE DATE(fecha_hora) = ?");
 $stmtVentas->execute([$hoy]);
 $resVentas = $stmtVentas->fetch();
 $unidadesVendidasHoy = (int) ($resVentas['total_unidades'] ?? 0);
 $dineroRecaudadoHoy = (float) ($resVentas['total_dinero'] ?? 0.00);
 
-// Verificar si el turno ya fue cerrado hoy
 $stmtCierre = $pdo->prepare("SELECT * FROM cierres WHERE fecha = ?");
 $stmtCierre->execute([$hoy]);
 $cierreHoy = $stmtCierre->fetch();
+
+$stockRestante = max(0, $totalStockEnviado - $unidadesVendidasHoy);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -43,7 +99,6 @@ $cierreHoy = $stmtCierre->fetch();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Salteñas Sueños — POS Móvil</title>
-    <!-- Google Fonts & Bootstrap 5 & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
         rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -132,186 +187,192 @@ $cierreHoy = $stmtCierre->fetch();
                 <span class="text-uppercase text-muted extra-small fw-bold tracking-wider d-block"
                     style="font-size: 0.7rem;">RECAUDADO</span>
                 <span class="fs-4 fw-extrabold text-warning mb-0" id="counter-dinero">Bs.
-                    <?= number_format($dineroRecaudadoHoy, 2) ?>
-                </span>
+                    <?= number_format($dineroRecaudadoHoy, 2) ?></span>
             </div>
             <div class="text-center">
                 <span class="text-uppercase text-muted extra-small fw-bold d-block"
                     style="font-size: 0.7rem;">VENDIDAS</span>
-                <span class="fs-4 fw-extrabold text-success mb-0" id="counter-vendidas">
-                    <?= $unidadesVendidasHoy ?> u.
-                </span>
+                <span class="fs-4 fw-extrabold text-success mb-0" id="counter-vendidas"><?= $unidadesVendidasHoy ?>
+                    u.</span>
             </div>
             <div class="text-end">
                 <span class="text-uppercase text-muted extra-small fw-bold d-block"
                     style="font-size: 0.7rem;">STOCK</span>
-                @php
-                $stockRestante = max(0, $totalStockEnviado - $unidadesVendidasHoy);
-                @endphp
-                <span class="fs-4 fw-extrabold text-info mb-0" id="counter-stock">
-                    <?= $stockAceptado ? $stockRestante : 0 ?> u.
-                </span>
+                <span class="fs-4 fw-extrabold text-info mb-0"
+                    id="counter-stock"><?= $stockAceptado ? $stockRestante : 0 ?> u.</span>
             </div>
         </div>
     </div>
 
     <div class="container-fluid pt-3 px-3">
 
-        @if($cierreHoy)
-        <!-- TURNO CERRADO -->
-        <div class="text-center py-5">
-            <div class="mb-3">
-                <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+        <?php if ($errorConexionCentral): ?>
+            <!-- ERROR DE CONEXIÓN CON CENTRAL -->
+            <div class="alert alert-warning rounded-4 d-flex align-items-start gap-2">
+                <i class="bi bi-wifi-off fs-5 text-warning mt-1"></i>
+                <div>
+                    <div class="fw-bold">Sin conexión con Central</div>
+                    <div class="small opacity-75"><?= htmlspecialchars($errorConexionCentral) ?></div>
+                </div>
             </div>
-            <h4 class="fw-bold">¡Turno Cerrado!</h4>
-            <p class="text-muted small">Has finalizado la jornada de hoy (
-                <?= date('d/m/Y') ?>).
-            </p>
-            <div class="card card-bg border-0 rounded-4 p-3 text-start mx-auto mt-4"
-                style="max-width: 400px; background-color: var(--card-bg);">
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Total Vendidas:</span>
-                    <span class="fw-bold text-success">
-                        <?= $cierreHoy['total_vendidas'] ?> salteñas
-                    </span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Total Sobrantes:</span>
-                    <span class="fw-bold text-warning">
-                        <?= $cierreHoy['total_sobrantes'] ?> salteñas
-                    </span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Dinero Cobrado:</span>
-                    <span class="fw-bold text-warning">Bs.
-                        <?= number_format($cierreHoy['dinero_cobrado'], 2) ?>
-                    </span>
-                </div>
-                @if($cierreHoy['observaciones'])
-                <div class="mt-2 pt-2 border-top border-secondary">
-                    <span class="text-muted extra-small d-block">Observaciones / Salteñas dañadas:</span>
-                    <span class="small text-light">
-                        <?= htmlspecialchars($cierreHoy['observaciones']) ?>
-                    </span>
-                </div>
-                @endif
-            </div>
-        </div>
+        <?php endif; ?>
 
-        @elseif(!$stockAceptado)
-        <!-- PANTALLA 1: RECEPCIÓN Y ACEPTACIÓN DE STOCK -->
-        <div class="text-center py-3">
-            <div class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold mb-2">
-                <i class="bi bi-box-seam me-1"></i> Stock Despachado Hoy
-            </div>
-            <h4 class="fw-bold mb-1">Confirmar Recepción</h4>
-            <p class="text-muted small mb-4">Verifica la cantidad de salteñas entregadas por Central:</p>
-
-            <div class="card border-0 rounded-4 p-3 mb-4 text-start" style="background-color: var(--card-bg);">
-                @foreach($stockHoy as $st)
-                <div
-                    class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary border-opacity-25">
-                    <span class="fw-semibold text-light fs-6"><i class="bi bi-dot text-warning fs-4"></i>
-                        <?= $st['producto_nombre'] ?>
-                    </span>
-                    <span class="badge badge-stock px-3 py-2 rounded-pill fs-6">
-                        <?= $st['cantidad_enviada'] ?> unidades
-                    </span>
-                </div>
-                @endforeach
-                <div class="d-flex justify-content-between align-items-center pt-3">
-                    <span class="fw-bold text-uppercase text-muted small">Total Despachado:</span>
-                    <span class="fs-5 fw-extrabold text-warning">
-                        <?= $totalStockEnviado ?> u.
-                    </span>
+        <?php if ($cierreHoy): ?>
+            <!-- TURNO CERRADO -->
+            <div class="text-center py-5">
+                <div class="mb-3"><i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i></div>
+                <h4 class="fw-bold">¡Turno Cerrado!</h4>
+                <p class="text-muted small">Has finalizado la jornada de hoy (<?= date('d/m/Y') ?>).</p>
+                <div class="card border-0 rounded-4 p-3 text-start mx-auto mt-4"
+                    style="max-width: 400px; background-color: var(--card-bg);">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Total Vendidas:</span>
+                        <span class="fw-bold text-success"><?= $cierreHoy['total_vendidas'] ?> salteñas</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Total Sobrantes:</span>
+                        <span class="fw-bold text-warning"><?= $cierreHoy['total_sobrantes'] ?> salteñas</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Dinero Cobrado:</span>
+                        <span class="fw-bold text-warning">Bs. <?= number_format($cierreHoy['dinero_cobrado'], 2) ?></span>
+                    </div>
+                    <?php if ($cierreHoy['observaciones']): ?>
+                        <div class="mt-2 pt-2 border-top border-secondary">
+                            <span class="text-muted extra-small d-block">Observaciones:</span>
+                            <span class="small text-light"><?= htmlspecialchars($cierreHoy['observaciones']) ?></span>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
-            <button type="button" onclick="aceptarStock()"
-                class="btn btn-warning btn-lg w-100 py-3 rounded-4 fw-bold shadow-lg text-dark">
-                <i class="bi bi-check-lg me-2"></i> ACEPTAR STOCK E INICIAR VENTA
+        <?php elseif (!$stockAceptado): ?>
+            <!-- PANTALLA 1: RECEPCIÓN Y ACEPTACIÓN DE STOCK -->
+            <div class="text-center py-3">
+                <?php if (empty($stockHoy)): ?>
+                    <!-- Sin despacho del día -->
+                    <div class="py-5">
+                        <i class="bi bi-inbox fs-1 text-secondary opacity-50 d-block mb-3"></i>
+                        <h5 class="fw-bold text-light">Sin Despacho del Día</h5>
+                        <p class="text-muted small">
+                            <?php if ($errorConexionCentral): ?>
+                                No se pudo conectar con Central para obtener el despacho.
+                                <br><button class="btn btn-sm btn-outline-warning mt-3 rounded-3" onclick="location.reload()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i> Reintentar
+                                </button>
+                            <?php else: ?>
+                                El Sistema Central aún no ha registrado un despacho para hoy.<br>
+                                Comunícate con el dueño para que registre el despacho.
+                                <br><button class="btn btn-sm btn-outline-secondary mt-3 rounded-3" onclick="location.reload()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+                                </button>
+                            <?php endif; ?>
+                        </p>
+                    </div>
+                <?php else: ?>
+                    <!-- Despacho recibido: confirmar -->
+                    <div class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold mb-2">
+                        <i class="bi bi-box-seam me-1"></i> Stock Despachado Hoy desde Central
+                    </div>
+                    <h4 class="fw-bold mb-1">Confirmar Recepción</h4>
+                    <p class="text-muted small mb-4">Verifica la cantidad de salteñas entregadas:</p>
+
+                    <div class="card border-0 rounded-4 p-3 mb-4 text-start" style="background-color: var(--card-bg);">
+                        <?php foreach ($stockHoy as $st): ?>
+                            <div
+                                class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary border-opacity-25">
+                                <span class="fw-semibold text-light fs-6"><i class="bi bi-dot text-warning fs-4"></i>
+                                    <?= htmlspecialchars($st['producto_nombre']) ?></span>
+                                <span class="badge badge-stock px-3 py-2 rounded-pill fs-6"><?= $st['cantidad_enviada'] ?>
+                                    unidades</span>
+                            </div>
+                        <?php endforeach; ?>
+                        <div class="d-flex justify-content-between align-items-center pt-3">
+                            <span class="fw-bold text-uppercase text-muted small">Total Despachado:</span>
+                            <span class="fs-5 fw-extrabold text-warning"><?= $totalStockEnviado ?> u.</span>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="aceptarStock()"
+                        class="btn btn-warning btn-lg w-100 py-3 rounded-4 fw-bold shadow-lg text-dark">
+                        <i class="bi bi-check-lg me-2"></i> ACEPTAR STOCK E INICIAR VENTA
+                    </button>
+                <?php endif; ?>
+            </div>
+
+        <?php else: ?>
+            <!-- PANTALLA 2: BOTONERA DE VENTA RÁPIDA -->
+            <div class="mb-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-grid-fill me-1"></i> Toca para Vender
+                    (+1)</span>
+                <span class="badge bg-success-subtle text-success border border-success border-opacity-25 rounded-pill"><i
+                        class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>En Venta</span>
+            </div>
+
+            <!-- Botonera de Productos Individuales -->
+            <div class="row g-3 mb-4">
+                <?php foreach ($productos as $prod): ?>
+                    <div class="col-6">
+                        <button type="button"
+                            onclick="registrarVentaProducto(<?= $prod['id'] ?>, '<?= addslashes($prod['nombre']) ?>', <?= $prod['precio'] ?>)"
+                            class="btn btn-touch-product w-100 text-start text-light">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="fs-2">🥐</span>
+                                <span class="badge bg-warning text-dark rounded-pill fw-bold">Bs.
+                                    <?= number_format($prod['precio'], 0) ?></span>
+                            </div>
+                            <div class="fw-extrabold fs-5 mb-1"><?= htmlspecialchars($prod['nombre']) ?></div>
+                            <div class="text-muted extra-small">Tocar para sumar 1</div>
+                        </button>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Promociones / Combos -->
+            <?php if (count($promociones) > 0): ?>
+                <div class="mb-2">
+                    <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-stars me-1 text-warning"></i>
+                        Promociones</span>
+                </div>
+                <div class="row g-3 mb-4">
+                    <?php foreach ($promociones as $promo): ?>
+                        <div class="col-12">
+                            <button type="button"
+                                onclick="registrarVentaPromo(<?= $promo['id'] ?>, '<?= addslashes($promo['nombre']) ?>', <?= $promo['unidades'] ?>, <?= $promo['precio'] ?>)"
+                                class="btn btn-touch-promo w-100 text-start text-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-extrabold fs-6 d-block text-warning"><i class="bi bi-tag-fill me-1"></i>
+                                            <?= htmlspecialchars($promo['nombre']) ?></span>
+                                        <span class="text-light opacity-75 small">Descuenta <?= $promo['unidades'] ?> salteñas del
+                                            stock</span>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="fs-4 fw-extrabold text-light">Bs.
+                                            <?= number_format($promo['precio'], 0) ?></span>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+        <?php endif; ?>
+
+    </div>
+
+    <?php if ($stockAceptado && !$cierreHoy): ?>
+        <!-- BOTÓN FLOTANTE: CERRAR TURNO -->
+        <div class="floating-footer">
+            <button type="button" class="btn btn-outline-danger w-100 py-3 rounded-4 fw-bold" data-bs-toggle="modal"
+                data-bs-target="#modalCierre">
+                <i class="bi bi-door-closed-fill me-2"></i> CERRAR TURNO DEL DÍA
             </button>
         </div>
+    <?php endif; ?>
 
-        @else
-        <!-- PANTALLA 2: BOTONERA DE VENTA RÁPIDA -->
-        <div class="mb-3 d-flex justify-content-between align-items-center">
-            <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-grid-fill me-1"></i> Toca para Vender
-                (+1)</span>
-            <span class="badge bg-success-subtle text-success border border-success border-opacity-25 rounded-pill"><i
-                    class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>En Venta</span>
-        </div>
-
-        <!-- Botonera de Productos Individuales -->
-        <div class="row g-3 mb-4">
-            @foreach($productos as $prod)
-            <div class="col-6">
-                <button type="button"
-                    onclick="registrarVentaProducto(<?= $prod['id'] ?>, '<?= addslashes($prod['nombre']) ?>', <?= $prod['precio'] ?>)"
-                    class="btn btn-touch-product w-100 text-start text-light">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <span class="fs-2">🥐</span>
-                        <span class="badge bg-warning text-dark rounded-pill fw-bold">Bs.
-                            <?= number_format($prod['precio'], 0) ?>
-                        </span>
-                    </div>
-                    <div class="fw-extrabold fs-5 mb-1">
-                        <?= $prod['nombre'] ?>
-                    </div>
-                    <div class="text-muted extra-small">Tocar para sumar 1</div>
-                </button>
-            </div>
-            @endforeach
-        </div>
-
-        <!-- Promociones / Combos -->
-        @if(count($promociones) > 0)
-        <div class="mb-2">
-            <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-stars me-1 text-warning"></i>
-                Promociones de Central</span>
-        </div>
-        <div class="row g-3 mb-4">
-            @foreach($promociones as $promo)
-            <div class="col-12">
-                <button type="button"
-                    onclick="registrarVentaPromo(<?= $promo['id'] ?>, '<?= addslashes($promo['nombre']) ?>', <?= $promo['unidades'] ?>, <?= $promo['precio'] ?>)"
-                    class="btn btn-touch-promo w-100 text-start text-light">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="fw-extrabold fs-6 d-block text-warning"><i class="bi bi-tag-fill me-1"></i>
-                                <?= $promo['nombre'] ?>
-                            </span>
-                            <span class="text-light opacity-75 small">Descuenta
-                                <?= $promo['unidades'] ?> salteñas del stock
-                            </span>
-                        </div>
-                        <div class="text-end">
-                            <span class="fs-4 fw-extrabold text-light">Bs.
-                                <?= number_format($promo['precio'], 0) ?>
-                            </span>
-                        </div>
-                    </div>
-                </button>
-            </div>
-            @endforeach
-        </div>
-        @endif
-
-        @endif
-
-    </div>
-
-    @if($stockAceptado && !$cierreHoy)
-    <!-- BOTÓN DE FIJO INFERIOR: CERRAR TURNO -->
-    <div class="floating-footer">
-        <button type="button" class="btn btn-outline-danger w-100 py-3 rounded-4 fw-bold" data-bs-toggle="modal"
-            data-bs-target="#modalCierre">
-            <i class="bi bi-door-closed-fill me-2"></i> CERRAR TURNO DEL DÍA
-        </button>
-    </div>
-    @endif
-
-    <!-- MODAL DE CIERRE DE TURNO -->
+    <!-- MODAL CIERRE DE TURNO -->
     <div class="modal fade" id="modalCierre" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 rounded-4 text-light" style="background-color: var(--card-bg);">
@@ -321,36 +382,30 @@ $cierreHoy = $stmtCierre->fetch();
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small">Revisa el resumen final de tu jornada antes de enviar:</p>
-
+                    <p class="text-muted small">Revisa el resumen final de tu jornada:</p>
                     <div class="bg-dark bg-opacity-50 p-3 rounded-3 mb-3">
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Salteñas Vendidas:</span>
-                            <span class="fw-bold text-success" id="modal-total-vendidas">
-                                <?= $unidadesVendidasHoy ?> u.
-                            </span>
+                            <span class="fw-bold text-success" id="modal-total-vendidas"><?= $unidadesVendidasHoy ?>
+                                u.</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Stock Sobrante Estimado:</span>
-                            <span class="fw-bold text-warning" id="modal-total-sobrantes">
-                                <?= $stockRestante ?> u.
-                            </span>
+                            <span class="fw-bold text-warning" id="modal-total-sobrantes"><?= $stockRestante ?>
+                                u.</span>
                         </div>
                         <div class="d-flex justify-content-between">
                             <span class="text-muted">Efectivo Recaudado:</span>
                             <span class="fw-bold text-warning fs-5" id="modal-total-dinero">Bs.
-                                <?= number_format($dineroRecaudadoHoy, 2) ?>
-                            </span>
+                                <?= number_format($dineroRecaudadoHoy, 2) ?></span>
                         </div>
                     </div>
-
                     <div class="mb-3">
-                        <label class="form-label small text-muted">Aclaraciones / Salteñas Dañadas o Rotas:</label>
+                        <label class="form-label small text-muted">Aclaraciones / Salteñas Dañadas:</label>
                         <textarea id="observaciones-cierre" rows="3"
                             class="form-control bg-dark border-secondary text-light rounded-3"
-                            placeholder="Ej: Se rompió 1 salteña de pollo al transportar..."></textarea>
+                            placeholder="Ej: Se rompió 1 salteña al transportar..."></textarea>
                     </div>
-
                     <button type="button" onclick="confirmarCierreTurno()"
                         class="btn btn-warning w-100 py-3 rounded-3 fw-bold text-dark">
                         <i class="bi bi-send-check-fill me-1"></i> CONFIRMAR Y FINALIZAR TURNO
@@ -360,9 +415,7 @@ $cierreHoy = $stmtCierre->fetch();
         </div>
     </div>
 
-    <!-- JS de Bootstrap -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
         let unidadesVendidas = <?= $unidadesVendidasHoy ?>;
         let dineroRecaudado = <?= $dineroRecaudadoHoy ?>;
@@ -373,11 +426,12 @@ $cierreHoy = $stmtCierre->fetch();
             document.getElementById('counter-dinero').innerText = 'Bs. ' + dineroRecaudado.toFixed(2);
             let sobrante = Math.max(0, totalStockEnviado - unidadesVendidas);
             document.getElementById('counter-stock').innerText = sobrante + ' u.';
-
-            // Actualizar modal
-            document.getElementById('modal-total-vendidas').innerText = unidadesVendidas + ' u.';
-            document.getElementById('modal-total-sobrantes').innerText = sobrante + ' u.';
-            document.getElementById('modal-total-dinero').innerText = 'Bs. ' + dineroRecaudado.toFixed(2);
+            const mv = document.getElementById('modal-total-vendidas');
+            const ms = document.getElementById('modal-total-sobrantes');
+            const md = document.getElementById('modal-total-dinero');
+            if (mv) mv.innerText = unidadesVendidas + ' u.';
+            if (ms) ms.innerText = sobrante + ' u.';
+            if (md) md.innerText = 'Bs. ' + dineroRecaudado.toFixed(2);
         }
 
         function aceptarStock() {
@@ -387,15 +441,14 @@ $cierreHoy = $stmtCierre->fetch();
                     if (data.success) {
                         location.reload();
                     } else {
-                        alert('Error: ' + data.error);
+                        alert('Error: ' + (data.error || 'No se pudo aceptar el stock'));
                     }
-                });
+                })
+                .catch(() => alert('Error de red al aceptar el stock.'));
         }
 
         function registrarVentaProducto(id, nombre, precio) {
-            // Retroalimentación táctil si soporta
             if (navigator.vibrate) navigator.vibrate(40);
-
             unidadesVendidas += 1;
             dineroRecaudado += parseFloat(precio);
             actualizarIndicadores();
@@ -403,18 +456,12 @@ $cierreHoy = $stmtCierre->fetch();
             fetch('api.php?accion=registrar_venta', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tipo: 'individual',
-                    producto_id: id,
-                    cantidad: 1,
-                    monto: precio
-                })
+                body: JSON.stringify({ tipo: 'individual', producto_id: id, cantidad: 1, monto: precio })
             });
         }
 
         function registrarVentaPromo(id, nombre, unidades, precio) {
             if (navigator.vibrate) navigator.vibrate(60);
-
             unidadesVendidas += parseInt(unidades);
             dineroRecaudado += parseFloat(precio);
             actualizarIndicadores();
@@ -422,12 +469,7 @@ $cierreHoy = $stmtCierre->fetch();
             fetch('api.php?accion=registrar_venta', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tipo: 'promocion',
-                    promocion_id: id,
-                    cantidad: unidades,
-                    monto: precio
-                })
+                body: JSON.stringify({ tipo: 'promocion', promocion_id: id, cantidad: unidades, monto: precio })
             });
         }
 
@@ -450,9 +492,10 @@ $cierreHoy = $stmtCierre->fetch();
                     if (data.success) {
                         location.reload();
                     } else {
-                        alert('Error al cerrar turno: ' + data.error);
+                        alert('Error al cerrar turno: ' + (data.error || 'Error desconocido'));
                     }
-                });
+                })
+                .catch(() => alert('Error de red al cerrar el turno.'));
         }
     </script>
 </body>

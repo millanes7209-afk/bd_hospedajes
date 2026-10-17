@@ -12,6 +12,7 @@ use App\Http\Controllers\VarianteSaltenaController;
 use App\Http\Controllers\PromocionController;
 use App\Http\Controllers\CierreDiarioController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\DespachoController;
 
 // Rutas Públicas
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -66,6 +67,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cierres', [CierreDiarioController::class, 'index'])->name('cierres.index');
     Route::post('/cierres', [CierreDiarioController::class, 'store'])->name('cierres.store');
     Route::get('/cierres/eliminar/{id}', [CierreDiarioController::class, 'destroy'])->name('cierres.destroy');
+
+    // Despachos Diarios (Central → Carritos)
+    Route::get('/despachos', [DespachoController::class, 'index'])->name('despachos.index');
+    Route::get('/despachos/crear', [DespachoController::class, 'create'])->name('despachos.create');
+    Route::post('/despachos', [DespachoController::class, 'store'])->name('despachos.store');
+    Route::delete('/despachos/{id}', [DespachoController::class, 'destroy'])->name('despachos.destroy');
 
     // Usuarios del Sistema & Cambio de Contraseña Propia
     Route::get('/usuarios', [UserController::class, 'index'])->name('usuarios.index');

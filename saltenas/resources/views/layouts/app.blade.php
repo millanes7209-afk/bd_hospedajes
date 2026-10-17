@@ -92,6 +92,12 @@
                         <span>Carritos</span>
                     </a>
 
+                    <a href="{{ route('despachos.index') }}"
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('despachos.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-amber-600 dark:hover:text-amber-400' }}">
+                        <i class="fa-solid fa-truck-fast text-orange-500 dark:text-orange-400"></i>
+                        <span>Despachos</span>
+                    </a>
+
                     <a href="{{ route('productos.index') }}"
                         class="px-2.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('productos.*') || request()->routeIs('insumos.*') || request()->routeIs('preparaciones.*') || request()->routeIs('variantes.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-amber-600 dark:hover:text-amber-400' }}">
                         <i class="fa-solid fa-boxes-stacked text-amber-500 dark:text-amber-400"></i>
@@ -189,6 +195,13 @@
                 class="px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('carritos.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-store text-purple-600 text-sm"></i> Carritos
                     (Puntos de Venta)</span>
+                <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
+            </a>
+
+            <a href="{{ route('despachos.index') }}" @click="mobileMenuOpen = false"
+                class="px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('despachos.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                <span class="flex items-center gap-3"><i class="fa-solid fa-truck-fast text-orange-500 text-sm"></i>
+                    Despachos Diarios</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
             </a>
 
