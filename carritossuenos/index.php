@@ -250,24 +250,25 @@ $stockRestante = max(0, $totalStockEnviado - $unidadesVendidasHoy);
             <!-- PANTALLA 1: RECEPCIÓN Y ACEPTACIÓN DE STOCK -->
             <div class="text-center py-3">
                 <?php if (empty($stockHoy)): ?>
-                    <!-- Sin despacho del día -->
-                    <div class="py-5">
-                        <i class="bi bi-inbox fs-1 text-secondary opacity-50 d-block mb-3"></i>
-                        <h5 class="fw-bold text-light">Sin Despacho del Día</h5>
-                        <p class="text-muted small">
-                            <?php if ($errorConexionCentral): ?>
-                                No se pudo conectar con Central para obtener el despacho.
-                                <br><button class="btn btn-sm btn-outline-warning mt-3 rounded-3" onclick="location.reload()">
-                                    <i class="bi bi-arrow-clockwise me-1"></i> Reintentar
+                    <!-- Sin despacho: esperando en tiempo real -->
+                    <div class="py-5" id="esperando-despacho">
+                        <?php if ($errorConexionCentral): ?>
+                            <i class="bi bi-wifi-off fs-1 text-warning opacity-75 d-block mb-3"></i>
+                            <h5 class="fw-bold text-warning">Sin conexión con Central</h5>
+                            <p class="text-muted small">Reintentando automáticamente...<br>
+                                <button class="btn btn-sm btn-outline-warning mt-3 rounded-3" onclick="location.reload()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i> Reintentar ahora
                                 </button>
-                            <?php else: ?>
-                                El Sistema Central aún no ha registrado un despacho para hoy.<br>
-                                Comunícate con el dueño para que registre el despacho.
-                                <br><button class="btn btn-sm btn-outline-secondary mt-3 rounded-3" onclick="location.reload()">
-                                    <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
-                                </button>
-                            <?php endif; ?>
-                        </p>
+                            </p>
+                        <?php else: ?>
+                            <div class="mb-3">
+                                <span class="spinner-grow text-warning" style="width:2.5rem;height:2.5rem;"></span>
+                            </div>
+                            <h5 class="fw-bold text-light">Esperando despacho de Central...</h5>
+                            <p class="text-muted small mb-0">El sistema actualizará automáticamente en cuanto<br>el dueño registre
+                                el despacho del día.</p>
+                            <p class="text-muted mt-2" style="font-size:0.7rem;" id="polling-status">Verificando...</p>
+                        <?php endif; ?>
                     </div>
                 <?php else: ?>
                     <!-- Despacho recibido: confirmar -->
@@ -416,6 +417,45 @@ $stockRestante = max(0, $totalStockEnviado - $unidadesVendidasHoy);
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ── POLLING AUTOMÁTICO: solo activo si no hay stock aceptado ─────────────
+        <?php if (!$stockAceptado && empty($stockHoy) && !$errorConexionCentral): ?>
+                (function iniciarPolling() {
+                    let intentos = 0;
+                    const maxIntentos = 60; // 10 min máximo
+                    const statusEl = document.getElementById('polling-status');
+
+                    function verificar() {
+                        intentos++;
+                        if (statusEl) statusEl.textContent = 'Verificando... (intento ' + intentos + ')';
+
+                        fetch('api.php?accion=verificar_despacho')
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.success && data.hay_despacho) {
+                                    // ¡Llegó el despacho! Recargar la página para mostrarlo
+                                    if (statusEl) statusEl.textContent = '✅ ¡Despacho recibido! Cargando...';
+                                    setTimeout(() => location.reload(), 500);
+                                } else if (!data.success) {
+                                    if (statusEl) statusEl.textContent = '⚠️ Sin conexión con Central. Reintentando...';
+                                    if (intentos < maxIntentos) setTimeout(verificar, 15000);
+                                } else {
+                                    // Sin despacho aún, seguir esperando
+                                    if (intentos < maxIntentos) setTimeout(verificar, 10000);
+                                    else if (statusEl) statusEl.textContent = 'Timeout. Recarga la página para seguir esperando.';
+                                }
+                            })
+                            .catch(() => {
+                                if (statusEl) statusEl.textContent = '⚠️ Error de red. Reintentando...';
+                                if (intentos < maxIntentos) setTimeout(verificar, 15000);
+                            });
+                    }
+
+                    // Primera verificación a los 5 segundos de cargar
+                    setTimeout(verificar, 5000);
+                })();
+        <?php endif; ?>
+    </script>
     <script>
         let unidadesVendidas = <?= $unidadesVendidasHoy ?>;
         let dineroRecaudado = <?= $dineroRecaudadoHoy ?>;

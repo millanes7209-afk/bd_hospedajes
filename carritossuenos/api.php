@@ -87,4 +87,66 @@ if ($accion === 'cerrar_turno') {
     exit;
 }
 
+// ── VERIFICAR DESPACHO DESDE CENTRAL (polling) ────────────────────────────────
+if ($accion === 'verificar_despacho') {
+    try {
+        // ¿Ya hay stock local hoy?
+        $stmtEx = $pdo->prepare("SELECT COUNT(*) FROM stock_diario WHERE fecha = ?");
+        $stmtEx->execute([$hoy]);
+        if ($stmtEx->fetchColumn() > 0) {
+            // Ya hay stock, no hace falta consultar central
+            echo json_encode(['success' => true, 'hay_despacho' => true, 'ya_existia' => true]);
+            exit;
+        }
+
+        $resp = saltenas_api('GET', '/despachos/hoy?carrito_id=' . SALTENAS_CARRITO_ID);
+
+        if ($resp === null) {
+            echo json_encode(['success' => false, 'error' => 'Sin conexión con Central']);
+            exit;
+        }
+
+        if (!empty($resp['sin_despacho']) || empty($resp['success']) || empty($resp['despacho'])) {
+            echo json_encode(['success' => true, 'hay_despacho' => false]);
+            exit;
+        }
+
+        // Llegó un despacho nuevo → insertarlo en local
+        $despachoRemoto = $resp['despacho'];
+        $_SESSION['despacho_central_id'] = $despachoRemoto['id'];
+
+        // Asegurar columna
+        try {
+            $pdo->exec("ALTER TABLE stock_diario ADD COLUMN IF NOT EXISTS despacho_central_id INT NULL DEFAULT NULL");
+        } catch (Exception $e) {
+        }
+
+        foreach ($despachoRemoto['detalles'] as $det) {
+            $stmtProd = $pdo->prepare("SELECT id FROM productos WHERE nombre = ? AND activo = 1 LIMIT 1");
+            $stmtProd->execute([$det['variante_nombre']]);
+            $prod = $stmtProd->fetch();
+
+            if (!$prod) {
+                $stmtIns = $pdo->prepare("INSERT INTO productos (nombre, precio, activo) VALUES (?, 10.00, 1)");
+                $stmtIns->execute([$det['variante_nombre']]);
+                $productoId = (int) $pdo->lastInsertId();
+            } else {
+                $productoId = (int) $prod['id'];
+            }
+
+            $stmtStock = $pdo->prepare("INSERT IGNORE INTO stock_diario (fecha, producto_id, cantidad_enviada, aceptado, despacho_central_id) VALUES (?, ?, ?, 0, ?)");
+            $stmtStock->execute([$hoy, $productoId, (int) $det['cantidad_enviada'], $despachoRemoto['id']]);
+        }
+
+        if (($despachoRemoto['estado'] ?? '') === 'aceptado') {
+            $pdo->prepare("UPDATE stock_diario SET aceptado = 1 WHERE fecha = ?")->execute([$hoy]);
+        }
+
+        echo json_encode(['success' => true, 'hay_despacho' => true, 'nuevo' => true]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+    exit;
+}
+
 echo json_encode(['success' => false, 'error' => 'Acción no válida']);
