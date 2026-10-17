@@ -25,7 +25,7 @@ return new class extends Migration {
         Schema::create('despacho_detalles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('despacho_diario_id')->constrained('despachos_diarios')->onDelete('cascade');
-            $table->foreignId('variante_id')->constrained('variantes_saltenas')->onDelete('cascade');
+            $table->foreignId('variante_id')->constrained('variantes_saltena')->onDelete('cascade');
             $table->integer('cantidad_enviada')->default(0);
             $table->integer('cantidad_aceptada')->default(0);
             $table->timestamps();
