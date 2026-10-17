@@ -14,9 +14,9 @@ class DespachoController extends Controller
 {
     public function index(Request $request)
     {
-        $carritoId  = $request->get('carrito_id');
+        $carritoId = $request->get('carrito_id');
         $fechaInicio = $request->get('fecha_inicio');
-        $fechaFin   = $request->get('fecha_fin');
+        $fechaFin = $request->get('fecha_fin');
 
         $query = DespachoDiario::with(['carrito', 'detalles.variante', 'user'])
             ->orderByDesc('fecha')
@@ -33,14 +33,14 @@ class DespachoController extends Controller
         }
 
         $despachos = $query->paginate(15)->appends($request->all());
-        $carritos  = Carrito::where('activo', true)->orderBy('nombre')->get();
+        $carritos = Carrito::where('activo', true)->orderBy('nombre')->get();
 
         return view('despachos.index', compact('despachos', 'carritos', 'carritoId', 'fechaInicio', 'fechaFin'));
     }
 
     public function create()
     {
-        $carritos  = Carrito::where('activo', true)->orderBy('nombre')->get();
+        $carritos = Carrito::where('activo', true)->orderBy('nombre')->get();
         $variantes = VarianteSaltena::where('activo', true)->orderBy('nombre')->get();
 
         return view('despachos.create', compact('carritos', 'variantes'));
@@ -49,12 +49,12 @@ class DespachoController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'carrito_id'          => 'required|exists:carritos,id',
-            'fecha'               => 'required|date',
-            'observaciones'       => 'nullable|string|max:1000',
-            'detalles'            => 'required|array|min:1',
-            'detalles.*.variante_id'        => 'required|exists:variantes_saltenas,id',
-            'detalles.*.cantidad_enviada'   => 'required|integer|min:1',
+            'carrito_id' => 'required|exists:carritos,id',
+            'fecha' => 'required|date',
+            'observaciones' => 'nullable|string|max:1000',
+            'detalles' => 'required|array|min:1',
+            'detalles.*.variante_id' => 'required|exists:variantes_saltena,id',
+            'detalles.*.cantidad_enviada' => 'required|integer|min:1',
         ]);
 
         // Verificar que no exista ya un despacho para ese carrito y fecha
@@ -70,10 +70,10 @@ class DespachoController extends Controller
 
         DB::transaction(function () use ($request) {
             $despacho = DespachoDiario::create([
-                'carrito_id'    => $request->carrito_id,
-                'fecha'         => $request->fecha,
-                'estado'        => 'pendiente',
-                'user_id'       => Auth::id(),
+                'carrito_id' => $request->carrito_id,
+                'fecha' => $request->fecha,
+                'estado' => 'pendiente',
+                'user_id' => Auth::id(),
                 'observaciones' => $request->observaciones,
             ]);
 
@@ -81,9 +81,9 @@ class DespachoController extends Controller
                 if ((int) $det['cantidad_enviada'] > 0) {
                     DespachoDetalle::create([
                         'despacho_diario_id' => $despacho->id,
-                        'variante_id'        => $det['variante_id'],
-                        'cantidad_enviada'   => (int) $det['cantidad_enviada'],
-                        'cantidad_aceptada'  => 0,
+                        'variante_id' => $det['variante_id'],
+                        'cantidad_enviada' => (int) $det['cantidad_enviada'],
+                        'cantidad_aceptada' => 0,
                     ]);
                 }
             }
