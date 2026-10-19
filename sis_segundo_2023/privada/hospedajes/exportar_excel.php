@@ -19,7 +19,7 @@ header("Pragma: no-cache");
 header("Expires: 0");
 
 // Consulta con TODOS los campos de la tabla original
-$sql = "SELECT 
+$sql = "SELECT
             h.checkin, h.checkout,
             GROUP_CONCAT(c.apellido1 SEPARATOR ' | ') as paternos,
             GROUP_CONCAT(c.apellido2 SEPARATOR ' | ') as maternos,
@@ -37,13 +37,17 @@ $sql = "SELECT
         LEFT JOIN paises ps ON c.paisID = ps.paisID
         JOIN habitaciones hab ON h.habitacionID = hab.habitacionID
         WHERE h._estado <> 'X' AND ch._estado <> 'X' AND c._estado <> 'X'
-        AND DATE(h.checkin) BETWEEN ? AND ? 
+        AND DATE(h.checkin) BETWEEN ? AND ?
         AND h.empresaID = ?
         GROUP BY h.hospedajeID
         ORDER BY h.checkin DESC";
 
 // Depuración: mostrar la consulta SQL
-error_log("SQL Exportar Excel: " . $sql);
+error_log("=== EXPORTAR EXCEL - DEPURACIÓN ===");
+error_log("Fecha Inicio: " . $fecha_inicio);
+error_log("Fecha Fin: " . $fecha_fin);
+error_log("Sucursal ID: " . $sucursal_id);
+error_log("SQL: " . $sql);
 error_log("Parámetros: " . print_r([$fecha_inicio, $fecha_fin, $sucursal_id], true));
 
 try {
