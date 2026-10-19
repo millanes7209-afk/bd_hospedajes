@@ -12,7 +12,7 @@ $fecha_inicio = $_GET['fecha_inicio'] ?? date('Y-m-01');
 $fecha_fin = $_GET['fecha_fin'] ?? date('Y-m-d');
 
 // Consulta filtrada por el rango de fechas seleccionado
-$sql = "SELECT 
+$sql = "SELECT
             h.hospedajeID, h.estado, h.checkin, h.checkout,
             GROUP_CONCAT(c.apellido1 SEPARATOR '[NEXT]') as paternos,
             GROUP_CONCAT(c.apellido2 SEPARATOR '[NEXT]') as maternos,
@@ -30,12 +30,23 @@ $sql = "SELECT
         LEFT JOIN paises ps ON c.paisID = ps.paisID
         JOIN habitaciones hab ON h.habitacionID = hab.habitacionID
         WHERE h._estado <> 'X' AND ch._estado <> 'X' AND c._estado <> 'X'
-        AND DATE(h.checkin) BETWEEN ? AND ? 
+        AND DATE(h.checkin) BETWEEN ? AND ?
         AND h.empresaID = ?
         GROUP BY h.hospedajeID
         ORDER BY h.checkin DESC";
 
+// Depuración: mostrar parámetros y consulta en log
+error_log("=== CÁMARA HOTELERA - DEPURACIÓN ===");
+error_log("Fecha Inicio: " . $fecha_inicio);
+error_log("Fecha Fin: " . $fecha_fin);
+error_log("Empresa ID: " . ($_SESSION['empresaID'] ?? 'NO DEFINIDO'));
+error_log("SQL: " . $sql);
+error_log("Parámetros: " . print_r([$fecha_inicio, $fecha_fin, $_SESSION['empresaID']], true));
+
 $rs = $db->obtenerTodo($sql, [$fecha_inicio, $fecha_fin, $_SESSION['empresaID']]);
+
+error_log("Resultado: " . ($rs ? "OK - " . count($rs) . " registros" : "NULL"));
+error_log("====================================");
 ?>
 
 <!DOCTYPE html>
