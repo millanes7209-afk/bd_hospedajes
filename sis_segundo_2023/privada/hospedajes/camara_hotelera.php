@@ -11,6 +11,13 @@ $sucursal_id = $_GET['sucursal_id'] ?? $_SESSION['empresaID'] ?? 1;
 $fecha_inicio = $_GET['fecha_inicio'] ?? date('Y-m-01');
 $fecha_fin = $_GET['fecha_fin'] ?? date('Y-m-d');
 
+// Depuración: mostrar parámetros recibidos al presionar Consultar
+error_log("=== CÁMARA HOTELERA - DEPURACIÓN ===");
+error_log("Fecha Inicio: " . $fecha_inicio);
+error_log("Fecha Fin: " . $fecha_fin);
+error_log("Empresa ID: " . ($_SESSION['empresaID'] ?? 'NO DEFINIDO'));
+error_log("====================================");
+
 // Consulta filtrada por el rango de fechas seleccionado
 $sql = "SELECT
             h.hospedajeID, h.estado, h.checkin, h.checkout,
@@ -35,13 +42,8 @@ $sql = "SELECT
         GROUP BY h.hospedajeID
         ORDER BY h.checkin DESC";
 
-// Depuración: mostrar parámetros y consulta en log
-error_log("=== CÁMARA HOTELERA - DEPURACIÓN ===");
-error_log("Fecha Inicio: " . $fecha_inicio);
-error_log("Fecha Fin: " . $fecha_fin);
-error_log("Empresa ID: " . ($_SESSION['empresaID'] ?? 'NO DEFINIDO'));
 error_log("SQL: " . $sql);
-error_log("Parámetros: " . print_r([$fecha_inicio, $fecha_fin, $_SESSION['empresaID']], true));
+error_log("Parámetros SQL: " . print_r([$fecha_inicio, $fecha_fin, $_SESSION['empresaID']], true));
 
 $rs = $db->obtenerTodo($sql, [$fecha_inicio, $fecha_fin, $_SESSION['empresaID']]);
 
@@ -78,7 +80,7 @@ error_log("====================================");
                         <input type="date" name="fecha_fin" class="form-control w-100" value="<?= $fecha_fin ?>">
                     </div>
                     <div class="col-md-4 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">Consultar Rango</button>
+                        <button type="submit" class="btn btn-primary w-100">Consultar</button>
                     </div>
                 </div>
             </form>
