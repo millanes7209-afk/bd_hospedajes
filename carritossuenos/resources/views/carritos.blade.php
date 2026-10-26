@@ -146,7 +146,10 @@
 
     // Stock diario
     async function cargarStock() {
-        const resp = await api.get('/verificar-despacho'); // reutilizamos para actualizar stock y devolverlo
+        // Actualizar despacho del día (si existe)
+        await api.get('/verificar-despacho');
+        // Obtener stock actualizado
+        const resp = await api.get('/stock');
         const stock = resp.data.stock || [];
         const tbody = document.querySelector('#stockTable tbody');
         tbody.innerHTML = '';
