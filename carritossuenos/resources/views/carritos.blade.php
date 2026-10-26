@@ -15,6 +15,7 @@
     <title>Carritos - Registro de Ventas</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body class="bg-light">
@@ -94,7 +95,25 @@
         </thead>
         <tbody></tbody>
     </table>
-    <button class="btn btn-outline-primary mb-4" id="acceptStockBtn">Aceptar Stock del Día</button>
+    <button class="btn btn-primary mb-4" id="abrirTurnoBtn"><i class="fa fa-bell"></i> Abrir Turno</button>
+    <!-- Modal para despacho -->
+    <div class="modal fade" id="despachoModal" tabindex="-1" aria-labelledby="despachoModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="despachoModalLabel">Despacho del Día</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="despachoContent">
+            <!-- contenido dinámico -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="aceptarDespachoBtn">Aceptar</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Cierre de turno -->
     <div class="card">
@@ -146,9 +165,6 @@
 
     // Stock diario
     async function cargarStock() {
-        // Actualizar despacho del día (si existe)
-        await api.get('/verificar-despacho');
-        // Obtener stock actualizado
         const resp = await api.get('/stock');
         const stock = resp.data.stock || [];
         const tbody = document.querySelector('#stockTable tbody');
@@ -176,13 +192,7 @@
         await cargarDatos();
     });
 
-    // Aceptar stock del día
-    document.getElementById('acceptStockBtn').addEventListener('click', async () => {
-        await api.post('/aceptar-stock');
-        alert('Stock aceptado');
-        await cargarDatos();
-    });
-
+    // (Removed accept stock button; using abrir turno flow)
     // Cerrar turno
     document.getElementById('cierreForm').addEventListener('submit', async e => {
         e.preventDefault();
@@ -192,6 +202,43 @@
         alert('Turno cerrado');
         console.log(resp.data);
         e.target.reset();
+    });
+
+    // Abrir turno (consultar despacho)
+    document.getElementById('abrirTurnoBtn').addEventListener('click', async () => {
+        const resp = await api.get('/consultar-despacho');
+        if (!resp.data.hay_despacho) {
+            alert('No hay despacho para hoy');
+            return;
+        }
+        // Build modal content
+        const despacho = resp.data.despacho;
+        let html = `<p>ID Despacho: ${despacho.id}</p>`;
+        html += '<ul>';
+        despacho.detalles.forEach(det => {
+            html += `<li>${det.variante_nombre}: ${det.cantidad_enviada}</li>`;
+        });
+        html += '</ul>';
+        document.getElementById('despachoContent').innerHTML = html;
+        // Show modal (Bootstrap 5)
+        const modal = new bootstrap.Modal(document.getElementById('despachoModal'));
+        modal.show();
+    });
+
+    // Aceptar despacho (abrir turno)
+    document.getElementById('aceptarDespachoBtn').addEventListener('click', async () => {
+        const resp = await api.post('/aceptar-despacho');
+        if (resp.data.hay_despacho) {
+            alert('Turno abierto y stock actualizado');
+            // Refresh data
+            await cargarDatos();
+        } else {
+            alert('No se pudo abrir el turno');
+        }
+        // Hide modal
+        const modalEl = document.getElementById('despachoModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
     });
 
     // Inicializar

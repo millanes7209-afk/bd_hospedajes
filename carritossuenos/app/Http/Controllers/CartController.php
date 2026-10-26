@@ -73,89 +73,43 @@ class CartController extends Controller
     }
 
     /**
-     * Aceptar stock del día.
+     * Consultar despacho sin persistir (para la campana).
      */
-    public function aceptarStock(Request $request)
-    {
-        $hoy = now()->toDateString();
-        DB::table('stock_diario')
-            ->where('fecha', $hoy)
-            ->update(['aceptado' => true]);
-        return response()->json(['success' => true, 'message' => 'Stock aceptado']);
-    }
-
-    /**
-     * Registrar una venta.
-     * Expected JSON: producto_id, promocion_id (opcional), cantidad, monto, tipo_pago (efectivo|qr)
-     */
-    public function registrarVenta(Request $request)
-    {
-        $data = $request->validate([
-            'producto_id'   => 'required|exists:productos,id',
-            'promocion_id'  => 'nullable|exists:promociones,id',
-            'cantidad'      => 'required|integer|min:1',
-            'monto'         => 'required|numeric|min:0',
-            'tipo_pago'     => 'required|in:efectivo,qr',
-        ]);
-
-        $venta = Venta::create([
-            'producto_id'   => $data['producto_id'],
-            'promocion_id'  => $data['promocion_id'] ?? null,
-            'cantidad'      => $data['cantidad'],
-            'monto'         => $data['monto'],
-            'tipo_pago'     => $data['tipo_pago'],
-            'fecha_hora'    => now(),
-        ]);
-
-        return response()->json(['success' => true, 'venta' => $venta]);
-    }
-
-    /**
-     * Cerrar turno.
-     * Recibe totales por tipo de pago y observaciones opcionales.
-     */
-    public function cerrarTurno(Request $request)
-    {
-        $data = $request->validate([
-            'total_efectivo' => 'required|numeric|min:0',
-            'total_qr'       => 'required|numeric|min:0',
-            'observaciones'  => 'nullable|string',
-        ]);
-
-        // Guardar cierre en la BD local
-        DB::table('cierres')->insert([
-            'fecha'          => now()->toDateString(),
-            'total_efectivo' => $data['total_efectivo'],
-            'total_qr'       => $data['total_qr'],
-            'observaciones'  => $data['observaciones'] ?? null,
-            'created_at'     => now(),
-            'updated_at'     => now(),
-        ]);
-
-        // Enviar resumen al servidor central
-        $resumen = [
-            'fecha'          => now()->toDateString(),
-            'total_efectivo' => $data['total_efectivo'],
-            'total_qr'       => $data['total_qr'],
-            'sucursal'       => env('APP_URL'),
-        ];
-        $service = new SaltenasApiService();
-        $respuesta = $service->post('/cierre', $resumen);
-
-        return response()->json(['success' => true, 'central' => $respuesta]);
-    }
-
-    /**
-     * Verificar despacho desde la API central.
-     */
-    public function verificarDespacho(Request $request)
+    public function consultarDespacho()
     {
         $service = new SaltenasApiService();
         $hoy = now()->toDateString();
         $carritoId = env('CARROTO_ID', 1);
         $resp = $service->get('/despachos/hoy?carrito_id=' . $carritoId);
         if (! $resp || empty($resp['despacho'])) {
-            return response()->json(['success' => true, 'hay_despacho' => false]);
+            return response()->json([
+                'success' => true,
+                'hay_despacho' => false,
+                'despacho' => null,
+            ]);
+        }
+        return response()->json([
+            'success' => true,
+            'hay_despacho' => true,
+            'despacho' => $resp['despacho'],
+        ]);
+    }
+
+    /**
+     * Aceptar despacho y actualizar stock (abrir turno).
+     */
+    public function aceptarDespacho()
+    {
+        $service = new SaltenasApiService();
+        $hoy = now()->toDateString();
+        $carritoId = env('CARROTO_ID', 1);
+        $resp = $service->get('/despachos/hoy?carrito_id=' . $carritoId);
+        if (! $resp || empty($resp['despacho'])) {
+            return response()->json([
+                'success' => true,
+                'hay_despacho' => false,
+                'despacho' => null,
+            ]);
         }
         $despacho = $resp['despacho'];
         foreach ($despacho['detalles'] as $det) {
@@ -172,6 +126,48 @@ class CartController extends Controller
                 ]
             );
         }
-        return response()->json(['success' => true, 'hay_despacho' => true, 'nuevo' => true]);
+        return response()->json([
+            'success' => true,
+            'hay_despacho' => true,
+            'despacho' => $despacho,
+        ]);
+    }
+
+    /**
+     * Aceptar stock del día (marcar como aceptado).
+     */
+    public function aceptarStock(Request $request)
+    {
+        $hoy = now()->toDateString();
+        DB::table('stock_diario')
+            ->where('fecha', $hoy)
+            ->update(['aceptado' => true]);
+        return response()->json(['success' => true, 'message' => 'Stock aceptado']);
+    }
+
+    /**
+     * Registrar una venta.
+     */
+    public function registrarVenta(Request $request)
+    {
+        $data = $request->validate([
+            'producto_id' => 'required|exists:productos,id',
+            'promocion_id' => 'nullable|exists:promociones,id',
+            'cantidad' => 'required|integer|min:1',
+            'monto' => 'required|numeric|min:0',
+            'tipo_pago' => 'required|in:efectivo,qr',
+        ]);
+
+        $venta = Venta::create([
+            'producto_id' => $data['producto_id'],
+            'promocion_id' => $data['promocion_id'] ?? null,
+            'cantidad' => $data['cantidad'],
+            'monto' => $data['monto'],
+            'tipo_pago' => $data['tipo_pago'],
+            'fecha_hora' => now(),
+        ]);
+
+        return response()->json(['success' => true, 'venta' => $venta]);
     }
 }
+?>

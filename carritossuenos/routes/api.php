@@ -13,4 +13,7 @@ Route::prefix('carrito')->group(function () {
     Route::get('ventas', [CartController::class, 'obtenerVentas']);
     Route::get('totales-diarios', [CartController::class, 'obtenerTotales']);
     Route::get('stock', [CartController::class, 'obtenerStock']);
+    // Nuevo flujo para abrir turno y notificación de despacho
+    Route::get('consultar-despacho', [CartController::class, 'consultarDespacho']);
+    Route::post('aceptar-despacho', [CartController::class, 'aceptarDespacho']);
 });
