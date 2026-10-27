@@ -3,6 +3,11 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
+// Desactivar excepciones automáticas de MySQLi
+if (function_exists('mysqli_report')) {
+    mysqli_report(MYSQLI_REPORT_OFF);
+}
+
 // ---------- Configuración de conexión ----------
 $host = 'sdb-65.hosting.stackcp.net';
 $db   = 'carrito_suenos-353033395dd3';
@@ -37,12 +42,14 @@ if (!extension_loaded('pdo_mysql')) {
     }
 }
 
-// Si PDO falla, intentar MySQLi como fallback (opcional)
+// Si PDO falla, intentar MySQLi como fallback (seguro)
 if ($connectionError && extension_loaded('mysqli')) {
     $debugInfo['mysqli_attempt'] = 'yes';
     $mysqli = @new mysqli($host, $user, $pass, $db);
     if ($mysqli->connect_error) {
         $debugInfo['mysqli_error'] = $mysqli->connect_error;
+        // Mantener $connectionError con información de MySQLi
+        $connectionError = 'MySQLi error: ' . $mysqli->connect_error;
     } else {
         $debugInfo['mysqli'] = 'connected';
     }
