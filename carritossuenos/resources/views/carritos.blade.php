@@ -1,13 +1,11 @@
-<?php
-/**
- * Vista pública para gestionar ventas del carrito.
- * Utiliza Axios para llamar a los endpoints API y muestra:
- *  - Tabla de ventas de hoy
- *  - Totales por tipo de pago
- *  - Stock diario
- *  - Botones para aceptar stock y cerrar turno
- */
-?>
+{{--
+ Vista pública para gestionar ventas del carrito.
+ Utiliza Axios para llamar a los endpoints API y muestra:
+  - Tabla de ventas de hoy
+  - Totales por tipo de pago
+  - Stock diario
+  - Botones para aceptar stock y cerrar turno
+--}}
 <!DOCTYPE html>
 <html lang="es">
 <head>

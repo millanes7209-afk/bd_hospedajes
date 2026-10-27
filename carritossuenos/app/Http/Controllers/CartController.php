@@ -8,7 +8,7 @@ use App\Models\Producto;
 use App\Models\StockDiario;
 use App\Services\SaltenasApiService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CartController extends Controller
 {
@@ -17,6 +17,10 @@ class CartController extends Controller
      */
     public function obtenerVentas()
     {
+        // Si la tabla no existe (posible despliegue sin migraciones), devolvemos lista vacía
+        if (! \Schema::hasTable('ventas')) {
+            return response()->json(['ventas' => []]);
+        }
         $hoy = now()->toDateString();
         $ventas = Venta::whereDate('fecha_hora', $hoy)
             ->with('producto:id,nombre')
@@ -168,6 +172,15 @@ class CartController extends Controller
         ]);
 
         return response()->json(['success' => true, 'venta' => $venta]);
+    }
+
+    /**
+     * Cerrar turno (stub implementation).
+     */
+    public function cerrarTurno(Request $request)
+    {
+        // Placeholder: implement actual turn closing logic as needed.
+        return response()->json(['success' => true, 'message' => 'Turno cerrado (stub)']);
     }
 }
 ?>
