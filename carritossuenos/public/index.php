@@ -7,7 +7,7 @@ error_reporting(E_ALL);
 $host = 'sdb-65.hosting.stackcp.net';
 $db   = 'carrito_suenos-353033395dd3';
 $user = 'millanes7209@gmail.com';
-$pass = 'SCARYmovie';
+$pass = 'SCARYmovie1.';
 
 $connectionError = '';
 
