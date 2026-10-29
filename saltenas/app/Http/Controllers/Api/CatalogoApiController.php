@@ -24,13 +24,13 @@ class CatalogoApiController extends Controller
 
         // 1. Variantes de Salteñas activas
         $variantes = VarianteSaltena::where('activo', true)
-            ->select('id', 'nombre', 'precio_venta', 'descripcion')
+            ->select('id', 'nombre', 'precio_venta')
             ->orderBy('nombre')
             ->get();
 
         // 2. Promociones activas
         $promociones = Promocion::where('activo', true)
-            ->select('id', 'nombre', 'unidades_por_paquete', 'precio_paquete', 'descripcion')
+            ->select('id', 'nombre', 'unidades_por_paquete', 'precio_paquete')
             ->orderBy('nombre')
             ->get();
 

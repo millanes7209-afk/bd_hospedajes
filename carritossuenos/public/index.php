@@ -61,80 +61,104 @@ try {
     try { $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_qr` DECIMAL(10,2) NOT NULL DEFAULT 0.00;"); } catch (Exception $e) {}
 } catch (Exception $e) {}
 
-// --- SINCRONIZACIÓN EN VIVO CON SISTEMA CENTRAL (saltenas.alloggibolivia.com) ---
+// --- LIMPIEZA DE DATOS DE PRUEBA SI SE SOLICITA O AUTOMÁTICO ---
+if (isset($_GET['limpiar']) || isset($_GET['reset'])) {
+    $pdo->exec("DELETE FROM ventas");
+    $pdo->exec("DELETE FROM cierres");
+    $pdo->exec("DELETE FROM stock_diario");
+    $pdo->exec("DELETE FROM productos WHERE nombre IN ('Pollo', 'Carne', 'Fricasé', 'Veggie')");
+    $pdo->exec("DELETE FROM promociones WHERE nombre LIKE 'Combo 3%' OR nombre LIKE 'Promo 5%'");
+    header("Location: index.php");
+    exit;
+}
+
+// Limpiar productos y promociones ficticias
 try {
-    $ch = curl_init('https://saltenas.alloggibolivia.com/api/v1/catalogo');
+    $pdo->exec("DELETE FROM productos WHERE nombre IN ('Pollo', 'Carne', 'Fricasé', 'Veggie') AND id NOT IN (SELECT producto_id FROM stock_diario WHERE fecha = '$hoy')");
+    $pdo->exec("DELETE FROM promociones WHERE nombre LIKE 'Combo 3%' OR nombre LIKE 'Promo 5%'");
+} catch (Exception $e) {}
+
+// --- SINCRONIZACIÓN EN VIVO DEL DESPACHO REAL DE CENTRAL ---
+try {
+    $ch = curl_init('https://saltenas.alloggibolivia.com/api/v1/despachos/hoy?carrito_id=1');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-POS-Api-Key: pos_saltenas_secret_key_2026']);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Accept: application/json',
+        'X-POS-Api-Key: pos_saltenas_secret_key_2026'
+    ]);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    if ($res) {
+    if ($res && $httpCode === 200) {
         $json = json_decode($res, true);
-        if (isset($json['success']) && $json['success'] && isset($json['data'])) {
-            $dataCentral = $json['data'];
+        if (!empty($json['success']) && !empty($json['despacho'])) {
+            $desp = $json['despacho'];
+            $fechaDesp = $desp['fecha'] ?? $hoy;
+            $estaAceptado = ($desp['estado'] === 'aceptado');
 
-            // 1. Sincronizar Variantes/Productos reales de Central
-            if (isset($dataCentral['variantes']) && is_array($dataCentral['variantes'])) {
-                foreach ($dataCentral['variantes'] as $v) {
-                    $stName = $pdo->prepare("SELECT id FROM productos WHERE id = ?");
-                    $stName->execute([$v['id']]);
-                    if ($stName->fetch()) {
-                        $up = $pdo->prepare("UPDATE productos SET nombre = ?, precio = ? WHERE id = ?");
-                        $up->execute([$v['nombre'], $v['precio_venta'], $v['id']]);
+            if (!empty($desp['detalles']) && is_array($desp['detalles'])) {
+                foreach ($desp['detalles'] as $det) {
+                    $nombre = $det['variante_nombre'] ?? ($det['nombre'] ?? '');
+                    $cant = (int) ($det['cantidad_enviada'] ?? 0);
+                    $precio = (float) ($det['precio'] ?? 10.00);
+                    if (empty($nombre)) continue;
+
+                    // Crear o actualizar producto real recibido
+                    $stP = $pdo->prepare("SELECT id FROM productos WHERE nombre = ? LIMIT 1");
+                    $stP->execute([$nombre]);
+                    $prod = $stP->fetch();
+
+                    if (!$prod) {
+                        $stIns = $pdo->prepare("INSERT INTO productos (nombre, precio, activo) VALUES (?, ?, 1)");
+                        $stIns->execute([$nombre, $precio]);
+                        $prodId = (int) $pdo->lastInsertId();
                     } else {
-                        $ins = $pdo->prepare("INSERT INTO productos (id, nombre, precio) VALUES (?, ?, ?)");
-                        $ins->execute([$v['id'], $v['nombre'], $v['precio_venta']]);
+                        $prodId = (int) $prod['id'];
                     }
-                }
-            }
 
-            // 2. Sincronizar Promociones de Central
-            if (isset($dataCentral['promociones']) && is_array($dataCentral['promociones'])) {
-                foreach ($dataCentral['promociones'] as $pr) {
-                    $stPr = $pdo->prepare("SELECT id FROM promociones WHERE id = ?");
-                    $stPr->execute([$pr['id']]);
-                    if ($stPr->fetch()) {
-                        $upPr = $pdo->prepare("UPDATE promociones SET nombre = ?, unidades = ?, precio = ? WHERE id = ?");
-                        $upPr->execute([$pr['nombre'], $pr['unidades_por_paquete'], $pr['precio_paquete'], $pr['id']]);
-                    } else {
-                        $insPr = $pdo->prepare("INSERT INTO promociones (id, nombre, unidades, precio) VALUES (?, ?, ?, ?)");
-                        $insPr->execute([$pr['id'], $pr['nombre'], $pr['unidades_por_paquete'], $pr['precio_paquete']]);
-                    }
-                }
-            }
+                    // Sincronizar stock_diario para la fecha
+                    $stS = $pdo->prepare("SELECT id, aceptado FROM stock_diario WHERE fecha = ? AND producto_id = ?");
+                    $stS->execute([$fechaDesp, $prodId]);
+                    $rowS = $stS->fetch();
 
-            // 3. Sincronizar Despacho del día si viene de Central
-            if (isset($dataCentral['despacho_hoy']) && is_array($dataCentral['despacho_hoy']) && count($dataCentral['despacho_hoy']) > 0) {
-                foreach ($dataCentral['despacho_hoy'] as $dh) {
-                    $stStk = $pdo->prepare("SELECT id FROM stock_diario WHERE fecha = ? AND producto_id = ?");
-                    $stStk->execute([$hoy, $dh['variante_id']]);
-                    if ($stStk->fetch()) {
-                        $upStk = $pdo->prepare("UPDATE stock_diario SET cantidad_enviada = ? WHERE fecha = ? AND producto_id = ?");
-                        $upStk->execute([$dh['cantidad_enviada'], $hoy, $dh['variante_id']]);
+                    $acpVal = ($estaAceptado || ($rowS && $rowS['aceptado'] == 1)) ? 1 : 0;
+
+                    if ($rowS) {
+                        $stUp = $pdo->prepare("UPDATE stock_diario SET cantidad_enviada = ?, aceptado = ? WHERE id = ?");
+                        $stUp->execute([$cant, $acpVal, $rowS['id']]);
                     } else {
-                        $insStk = $pdo->prepare("INSERT INTO stock_diario (fecha, producto_id, cantidad_enviada, aceptado) VALUES (?, ?, ?, 0)");
-                        $insStk->execute([$hoy, $dh['variante_id'], $dh['cantidad_enviada']]);
+                        $stInS = $pdo->prepare("INSERT INTO stock_diario (fecha, producto_id, cantidad_enviada, aceptado) VALUES (?, ?, ?, ?)");
+                        $stInS->execute([$fechaDesp, $prodId, $cant, $acpVal]);
                     }
                 }
             }
         }
     }
-} catch (Exception $e) {
-    // Si la Central está inalcanzable temporalmente, usa la base local
-}
+} catch (Exception $e) {}
 
-// 1. Obtener productos de la base de datos
-$productos = $pdo->query("SELECT * FROM productos WHERE activo = 1 ORDER BY nombre")->fetchAll();
-
-// 2. Obtener promociones
-$promociones = $pdo->query("SELECT * FROM promociones WHERE activo = 1 ORDER BY nombre")->fetchAll();
-
-// 3. Obtener stock del día
-$stmtStock = $pdo->prepare("SELECT s.*, p.nombre as producto_nombre, p.precio FROM stock_diario s JOIN productos p ON s.producto_id = p.id WHERE s.fecha = ?");
+// 1. Obtener stock del día (únicamente las salteñas despachadas)
+$stmtStock = $pdo->prepare("
+    SELECT s.*, p.nombre as producto_nombre, p.precio 
+    FROM stock_diario s 
+    JOIN productos p ON s.producto_id = p.id 
+    WHERE s.fecha = ? AND s.cantidad_enviada > 0
+    ORDER BY p.nombre
+");
 $stmtStock->execute([$hoy]);
 $stockHoy = $stmtStock->fetchAll();
+
+// Si stockHoy está vacío para $hoy, verificar si la fecha del despacho en Central fue la más reciente
+if (empty($stockHoy)) {
+    $stRec = $pdo->query("SELECT DISTINCT fecha FROM stock_diario ORDER BY fecha DESC LIMIT 1")->fetchColumn();
+    if ($stRec) {
+        $stmtStock->execute([$stRec]);
+        $stockHoy = $stmtStock->fetchAll();
+        $hoy = $stRec;
+    }
+}
 
 $stockAceptado = false;
 $totalStockEnviado = 0;
@@ -144,6 +168,19 @@ foreach ($stockHoy as $st) {
     }
     $totalStockEnviado += (int)$st['cantidad_enviada'];
 }
+
+// 2. SOLO las salteñas recibidas en el despacho de hoy
+$productos = [];
+foreach ($stockHoy as $st) {
+    $productos[] = [
+        'id' => $st['producto_id'],
+        'nombre' => $st['producto_nombre'],
+        'precio' => $st['precio'] ?? 10.00
+    ];
+}
+
+// 3. Promociones reales (excluyendo combos ficticios de prueba)
+$promociones = $pdo->query("SELECT * FROM promociones WHERE activo = 1 AND nombre NOT LIKE 'Combo 3%' AND nombre NOT LIKE 'Promo 5%' ORDER BY nombre")->fetchAll();
 
 // 4. Obtener ventas registradas hoy con desglose Efectivo vs QR
 $stmtVentas = $pdo->prepare("
