@@ -81,16 +81,10 @@ try {
     try { $pdo->exec("ALTER TABLE stock_diario ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE cierres ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
-    try { $pdo->exec("ALTER TABLE turnos ADD COLUMN IF NOT EXISTS carrito_id INT NULL;"); } catch (Exception $e) {}
-    try { $pdo->exec("ALTER TABLE stock_diario ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
-    try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
-    try { $pdo->exec("ALTER TABLE cierres ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
-    try { $pdo->exec("ALTER TABLE `ventas` ADD COLUMN `metodo_pago` ENUM('efectivo', 'qr') NOT NULL DEFAULT 'efectivo';"); } catch (Exception $e) {}
-    try { $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_efectivo` DECIMAL(10,2) NOT NULL DEFAULT 0.00;"); } catch (Exception $e) {}
-    try { $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_qr` DECIMAL(10,2) NOT NULL DEFAULT 0.00;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE ventas MODIFY COLUMN metodo_pago VARCHAR(20) NOT NULL DEFAULT 'efectivo'"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_efectivo DECIMAL(10,2) NOT NULL DEFAULT 0.00"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_qr DECIMAL(10,2) NOT NULL DEFAULT 0.00"); } catch (Exception $e) {}
 } catch (Exception $e) {}
-
-
 
 // Limpiar productos y promociones ficticias
 try {
@@ -98,7 +92,7 @@ try {
     $pdo->exec("DELETE FROM promociones WHERE nombre LIKE 'Combo 3%' OR nombre LIKE 'Promo 5%'");
 } catch (Exception $e) {}
 
-// --- SINCRONIZACIÓN EN VIVO DEL CATÁLOGO Y PRECIOS REALES DESDE CENTRAL ---
+// --- SINCRONIZACIÓN EN VIVO DEL CATÁLOGO Y CARRIZOS DESDE CENTRAL ---
 try {
     $ch = curl_init('https://saltenas.alloggibolivia.com/api/v1/catalogo');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -125,14 +119,6 @@ try {
                 }
             }
 
-            // Sincronizar lista de carritos registrados en Central
-            if (!empty($data['carritos']) && is_array($data['carritos'])) {
-                foreach ($data['carritos'] as $car) {
-                    $stC = $pdo->prepare("INSERT INTO carritos_disponibles (id, nombre, zona) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), zona = VALUES(zona)");
-                    $stC->execute([$car['id'], $car['nombre'], $car['zona'] ?? null]);
-                }
-            }
-
             // 1. Sincronizar variantes con precios reales (sin defaults)
             if (!empty($data['variantes']) && is_array($data['variantes'])) {
                 foreach ($data['variantes'] as $v) {
@@ -148,7 +134,6 @@ try {
                         $stIns = $pdo->prepare("INSERT INTO productos (nombre, precio, activo) VALUES (?, ?, 1)");
                         $stIns->execute([$nombre, $precio]);
                     } else {
-                        // Actualizar siempre el precio oficial de Central (si es null, guarda null)
                         $stUpP = $pdo->prepare("UPDATE productos SET precio = ?, activo = 1 WHERE id = ?");
                         $stUpP->execute([$precio, $prod['id']]);
                     }
@@ -176,90 +161,45 @@ try {
                     }
                 }
             }
-
-            // 3. Sincronizar stock del día si Central registra despacho
-            if (!empty($data['despacho_hoy']) && is_array($data['despacho_hoy'])) {
-                foreach ($data['despacho_hoy'] as $det) {
-                    $nombre = $det['nombre'] ?? '';
-                    $cant = (int) ($det['cantidad_enviada'] ?? 0);
-                    if (empty($nombre)) continue;
-
-                    $stP = $pdo->prepare("SELECT id FROM productos WHERE nombre = ? LIMIT 1");
-                    $stP->execute([$nombre]);
-                    $prod = $stP->fetch();
-                    if (!$prod) continue;
-                    $prodId = (int) $prod['id'];
-
-                    $stS = $pdo->prepare("SELECT id, cantidad_enviada FROM stock_diario WHERE fecha = ? AND producto_id = ?");
-                    $stS->execute([$hoy, $prodId]);
-                    $rowS = $stS->fetch();
-
-                    if ($rowS) {
-                        if ($cant > (int)$rowS['cantidad_enviada']) {
-                            $stUp = $pdo->prepare("UPDATE stock_diario SET cantidad_enviada = ? WHERE id = ?");
-                            $stUp->execute([$cant, $rowS['id']]);
-                        }
-                    } else {
-                        $stInS = $pdo->prepare("INSERT INTO stock_diario (fecha, producto_id, cantidad_enviada, aceptado) VALUES (?, ?, ?, 0)");
-                        $stInS->execute([$hoy, $prodId, $cant]);
-                    }
-                }
-            }
+            // NOTA: NO insertamos stock automáticamente aquí; el stock se acepta explícitamente en el turno
         }
     }
 } catch (Exception $e) {}
 
-// 1. Obtener stock del día (únicamente las salteñas despachadas)
-$stmtStock = $pdo->prepare("
-    SELECT s.*, p.nombre as producto_nombre, p.precio 
-    FROM stock_diario s 
-    JOIN productos p ON s.producto_id = p.id 
-    WHERE s.fecha = ? AND s.cantidad_enviada > 0
-    ORDER BY p.nombre
-");
-$stmtStock->execute([$hoy]);
-$stockHoy = $stmtStock->fetchAll();
+// Carritos disponibles para selección
+$listaCarritos = $pdo->query("SELECT * FROM carritos_disponibles ORDER BY nombre")->fetchAll();
 
-
-
-$stockAceptado = false;
-$totalStockEnviado = 0;
-foreach ($stockHoy as $st) {
-    if ($st['aceptado'] == 1) {
-        $stockAceptado = true;
-    }
-    $totalStockEnviado += (int)$st['cantidad_enviada'];
-}
-
-// 2. SOLO las salteñas recibidas en el despacho de hoy
-$productos = [];
-foreach ($stockHoy as $st) {
-    $productos[] = [
-        'id' => $st['producto_id'],
-        'nombre' => $st['producto_nombre'],
-        'precio' => ($st['precio'] !== null && $st['precio'] !== '') ? (float)$st['precio'] : null
-    ];
-}
-
-// 3. Promociones reales (excluyendo combos ficticios de prueba)
-$promociones = $pdo->query("SELECT * FROM promociones WHERE activo = 1 AND nombre NOT LIKE 'Combo 3%' AND nombre NOT LIKE 'Promo 5%' ORDER BY nombre")->fetchAll();
-
-// 4. Control de Turno: verificar si el turno está abierto actualmente
+// Control de Turno: verificar si el turno está abierto actualmente
 $stmtTurno = $pdo->query("SELECT * FROM turnos WHERE estado = 'abierto' ORDER BY id DESC LIMIT 1");
 $turnoActual = $stmtTurno->fetch();
 $turnoAbierto = (bool) $turnoActual;
 
+$productos = [];
+$totalStockEnviado = 0;
+$stockRestante = 0;
+$detallesPendientes = [];
+$totalPendiente = 0;
+$despachoPendienteId = null;
+$nombreCarritoActivo = '';
+
 if (!$turnoAbierto) {
-    // Si el turno no está abierto, la pantalla principal no muestra nada de contadores ni ventas
+    // Si el turno no está abierto, contadores estrictamente en cero y sin productos
     $unidadesVendidasHoy = 0;
     $dineroRecaudadoHoy = 0.00;
     $dineroEfectivoHoy = 0.00;
     $dineroQrHoy = 0.00;
     $stockAceptado = false;
-    $productos = [];
-    $totalStockEnviado = 0;
 } else {
-    // Obtener ventas únicamente desde que se abrió este turno
+    $turnoId = (int)$turnoActual['id'];
+    $carritoId = (int)$turnoActual['carrito_id'];
+
+    // Resolver nombre del carrito activo
+    $stNom = $pdo->prepare("SELECT nombre, zona FROM carritos_disponibles WHERE id = ?");
+    $stNom->execute([$carritoId]);
+    $cRow = $stNom->fetch();
+    $nombreCarritoActivo = $cRow ? $cRow['nombre'] . (!empty($cRow['zona']) ? ' ('.$cRow['zona'].')' : '') : 'Carrito #' . $carritoId;
+
+    // Obtener ventas asociadas ESTRICTAMENTE a este turno_id
     $stmtVentas = $pdo->prepare("
         SELECT 
             SUM(cantidad) as total_unidades, 
@@ -267,15 +207,69 @@ if (!$turnoAbierto) {
             SUM(CASE WHEN metodo_pago = 'efectivo' THEN monto ELSE 0 END) as dinero_efectivo,
             SUM(CASE WHEN metodo_pago = 'qr' THEN monto ELSE 0 END) as dinero_qr
         FROM ventas 
-        WHERE fecha_hora >= ?
+        WHERE turno_id = ?
     ");
-    $stmtVentas->execute([$turnoActual['abierto_at']]);
+    $stmtVentas->execute([$turnoId]);
     $resVentas = $stmtVentas->fetch();
     $unidadesVendidasHoy = (int)($resVentas['total_unidades'] ?? 0);
     $dineroRecaudadoHoy = (float)($resVentas['total_dinero'] ?? 0.00);
     $dineroEfectivoHoy = (float)($resVentas['dinero_efectivo'] ?? 0.00);
     $dineroQrHoy = (float)($resVentas['dinero_qr'] ?? 0.00);
+
+    // Obtener stock_diario aceptado ESTRICTAMENTE para este turno_id
+    $stmtStock = $pdo->prepare("
+        SELECT s.*, p.nombre as producto_nombre, p.precio 
+        FROM stock_diario s 
+        JOIN productos p ON s.producto_id = p.id 
+        WHERE s.turno_id = ? AND s.aceptado = 1
+        ORDER BY p.nombre
+    ");
+    $stmtStock->execute([$turnoId]);
+    $stockAceptadoRows = $stmtStock->fetchAll();
+    $stockAceptado = (count($stockAceptadoRows) > 0);
+
+    if ($stockAceptado) {
+        foreach ($stockAceptadoRows as $st) {
+            $totalStockEnviado += (int)$st['cantidad_enviada'];
+            $productos[] = [
+                'id' => $st['producto_id'],
+                'nombre' => $st['producto_nombre'],
+                'precio' => ($st['precio'] !== null && $st['precio'] !== '') ? (float)$st['precio'] : null
+            ];
+        }
+        $stockRestante = max(0, $totalStockEnviado - $unidadesVendidasHoy);
+    } else {
+        // Stock no aceptado aún: los contadores inician en CERO y se consulta el despacho pendiente desde Central
+        $stockRestante = 0;
+        $totalStockEnviado = 0;
+
+        if ($carritoId) {
+            $chD = curl_init("https://saltenas.alloggibolivia.com/api/v1/despachos/hoy?carrito_id={$carritoId}");
+            curl_setopt($chD, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($chD, CURLOPT_TIMEOUT, 4);
+            curl_setopt($chD, CURLOPT_HTTPHEADER, [
+                'Accept: application/json',
+                'X-POS-Api-Key: pos_saltenas_secret_key_2026'
+            ]);
+            curl_setopt($chD, CURLOPT_SSL_VERIFYPEER, false);
+            $resD = curl_exec($chD);
+            curl_close($chD);
+            if ($resD) {
+                $jsonD = json_decode($resD, true);
+                if (!empty($jsonD['success']) && !empty($jsonD['despacho'])) {
+                    $despachoPendienteId = $jsonD['despacho']['id'] ?? null;
+                    $detallesPendientes = $jsonD['despacho']['detalles'] ?? [];
+                    foreach ($detallesPendientes as $dp) {
+                        $totalPendiente += (int)($dp['cantidad_enviada'] ?? 0);
+                    }
+                }
+            }
+        }
+    }
 }
+
+// Promociones reales activas
+$promociones = $pdo->query("SELECT * FROM promociones WHERE activo = 1 AND nombre NOT LIKE 'Combo 3%' AND nombre NOT LIKE 'Promo 5%' ORDER BY nombre")->fetchAll();
 
 $cierreHoy = !$turnoAbierto;
 ?>
@@ -346,76 +340,79 @@ $cierreHoy = !$turnoAbierto;
         .miniletrero-badge {
             font-size: 0.65rem;
             font-weight: 800;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
-            padding: 3px 8px;
-            border-radius: 6px;
+            padding: 2px 6px;
+            border-radius: 4px;
             display: inline-block;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
+        .miniletrero-vendidas { background: #dcfce7; color: #15803d; }
+        .miniletrero-restantes { background: #dbeafe; color: #1d4ed8; }
+        .miniletrero-efectivo { background: #fef3c7; color: #b45309; }
+        .miniletrero-qr { background: #f3e8ff; color: #7e22ce; }
 
-        .miniletrero-vendidas { background: rgba(22, 163, 74, 0.12); color: #16a34a; border: 1px solid rgba(22, 163, 74, 0.25); }
-        .miniletrero-restantes { background: rgba(37, 99, 235, 0.12); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.25); }
-        .miniletrero-efectivo { background: rgba(217, 119, 6, 0.12); color: #d97706; border: 1px solid rgba(217, 119, 6, 0.25); }
-        .miniletrero-qr { background: rgba(147, 51, 234, 0.12); color: #9333ea; border: 1px solid rgba(147, 51, 234, 0.25); }
+        html.theme-dark .miniletrero-vendidas { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        html.theme-dark .miniletrero-restantes { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        html.theme-dark .miniletrero-efectivo { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+        html.theme-dark .miniletrero-qr { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
 
         .btn-touch-product {
-            background: var(--btn-product-bg);
             border: 2px solid var(--btn-product-border);
-            border-radius: 18px;
-            padding: 18px 14px;
-            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            background-color: var(--btn-product-bg);
+            color: var(--text-main);
+            border-radius: 20px;
+            padding: 16px 12px;
             text-align: left;
+            position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            transition: all 0.15s ease-in-out;
             width: 100%;
         }
-
         .btn-touch-product:active {
-            transform: scale(0.94);
-            border-color: var(--accent-primary);
-            background: rgba(37, 99, 235, 0.08);
+            transform: scale(0.96);
+            border-color: var(--accent-warning);
         }
 
         .btn-touch-promo {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
-            border: none;
-            border-radius: 18px;
-            padding: 16px;
-            color: #ffffff;
-            box-shadow: 0 4px 14px rgba(4, 120, 87, 0.25);
-            width: 100%;
-            text-align: left;
-        }
-
-        .btn-touch-promo:active {
-            transform: scale(0.95);
-        }
-
-        .order-cart-card {
-            background: var(--card-bg);
-            border: 2px solid var(--card-border);
+            border: 2px solid #b45309;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
             border-radius: 20px;
-            padding: 18px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            padding: 16px;
+            text-align: left;
+            box-shadow: 0 8px 16px -2px rgba(217, 119, 6, 0.25);
+            transition: all 0.15s ease-in-out;
+            width: 100%;
+        }
+        .btn-touch-promo:active {
+            transform: scale(0.96);
+        }
+
+        /* CARRITO DE LA ORDEN ACTUAL */
+        .order-cart-card {
+            background-color: var(--card-bg);
+            border: 2px solid var(--accent-primary);
+            border-radius: 20px;
+            padding: 14px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.15);
         }
 
         .cart-item-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 0;
+            padding: 8px 0;
             border-bottom: 1px dashed var(--card-border);
         }
-
         .cart-item-row:last-child {
             border-bottom: none;
         }
 
         .btn-qty-control {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
             border: 1px solid var(--card-border);
             background: var(--bg-main);
             color: var(--text-main);
@@ -423,28 +420,20 @@ $cierreHoy = !$turnoAbierto;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
-        }
-
-        .btn-qty-control:active {
-            transform: scale(0.9);
-            background: var(--accent-primary);
-            color: white;
         }
 
         .btn-vender-main {
-            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-            color: #ffffff;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
             border: none;
-            border-radius: 16px;
-            padding: 16px;
+            color: #ffffff;
             font-weight: 800;
-            font-size: 1.1rem;
-            box-shadow: 0 4px 16px rgba(22, 163, 74, 0.35);
-            transition: all 0.15s ease;
+            font-size: 1.15rem;
+            border-radius: 16px;
+            padding: 14px;
             width: 100%;
+            box-shadow: 0 8px 20px rgba(22, 163, 74, 0.35);
+            transition: all 0.15s ease;
         }
-
         .btn-vender-main:active {
             transform: scale(0.97);
         }
@@ -454,16 +443,20 @@ $cierreHoy = !$turnoAbierto;
             bottom: 0;
             left: 0;
             right: 0;
-            background: var(--header-bg);
-            backdrop-filter: blur(12px);
-            border-top: 1px solid var(--header-border);
             padding: 12px 16px;
-            z-index: 999;
+            background: var(--header-bg);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--header-border);
+            z-index: 990;
         }
 
-        /* CAMPANA DE NOTIFICACIONES ESTILO FACEBOOK */
+        .fw-extrabold { font-weight: 800; }
+        .extra-small { font-size: 0.72rem; }
+
+        /* CAMPANA NOTIFICACIONES ESTILO FACEBOOK */
         .fb-bell-container {
             position: relative;
+            display: inline-block;
         }
         .fb-bell-btn {
             position: relative;
@@ -533,7 +526,9 @@ $cierreHoy = !$turnoAbierto;
     <div class="header-counter py-2 px-3">
         <div class="d-flex align-items-center justify-content-between mb-2">
             <span class="fw-extrabold fs-6 text-gradient d-flex align-items-center" style="color: var(--text-main);">
-                <i class="bi bi-shop me-2 text-warning fs-5"></i><?= htmlspecialchars($nombreCarritoActivo) ?>
+                <?php if ($turnoAbierto && !empty($nombreCarritoActivo)): ?>
+                    <i class="bi bi-shop me-2 text-warning fs-5"></i><?= htmlspecialchars($nombreCarritoActivo) ?>
+                <?php endif; ?>
             </span>
             <div class="d-flex align-items-center gap-2">
                 <?php if ($turnoAbierto): ?>
@@ -579,7 +574,6 @@ $cierreHoy = !$turnoAbierto;
             <div class="col-3">
                 <div class="p-1 rounded-3" style="background: var(--card-bg); border: 1px solid var(--card-border);">
                     <span class="miniletrero-badge miniletrero-restantes">RESTANTES</span>
-                    <?php $stockRestante = max(0, $totalStockEnviado - $unidadesVendidasHoy); ?>
                     <div class="fs-5 fw-extrabold text-primary" id="counter-stock"><?= $stockAceptado ? $stockRestante : 0 ?> u.</div>
                 </div>
             </div>
@@ -630,26 +624,26 @@ $cierreHoy = !$turnoAbierto;
                 <p class="text-muted small mb-4">Verifica las variantes enviadas desde Administración Central:</p>
 
                 <div class="card border-0 rounded-4 p-3 mb-4 text-start shadow-sm" style="background-color: var(--card-bg); border: 1px solid var(--card-border);">
-                    <?php if (count($stockHoy) === 0): ?>
+                    <?php if (empty($detallesPendientes)): ?>
                         <div class="text-center py-3 text-muted small">
                             <i class="bi bi-hourglass-split me-1"></i> Esperando asignación de despacho desde el Sistema Central...
                         </div>
                     <?php else: ?>
-                        <?php foreach ($stockHoy as $st): ?>
+                        <?php foreach ($detallesPendientes as $dp): ?>
                             <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                                <span class="fw-bold fs-6" style="color: var(--text-main);"><?= htmlspecialchars($st['producto_nombre']) ?></span>
-                                <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fs-6"><?= $st['cantidad_enviada'] ?> unidades</span>
+                                <span class="fw-bold fs-6" style="color: var(--text-main);"><?= htmlspecialchars($dp['variante_nombre'] ?? ($dp['nombre'] ?? 'Salteña')) ?></span>
+                                <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fs-6"><?= (int)($dp['cantidad_enviada'] ?? 0) ?> unidades</span>
                             </div>
                         <?php endforeach; ?>
                         <div class="d-flex justify-content-between align-items-center pt-3">
                             <span class="fw-bold text-uppercase text-muted small">Total Despachado:</span>
-                            <span class="fs-5 fw-extrabold text-warning"><?= $totalStockEnviado ?> u.</span>
+                            <span class="fs-5 fw-extrabold text-warning"><?= $totalPendiente ?> u.</span>
                         </div>
                     <?php endif; ?>
                 </div>
 
-                <?php if (count($stockHoy) > 0): ?>
-                    <button type="button" onclick="aceptarStock()" class="btn btn-warning btn-lg w-100 py-3 rounded-4 fw-bold shadow-lg text-dark">
+                <?php if (!empty($detallesPendientes)): ?>
+                    <button type="button" onclick="aceptarStock(<?= $despachoPendienteId ? (int)$despachoPendienteId : 'null' ?>)" class="btn btn-warning btn-lg w-100 py-3 rounded-4 fw-bold shadow-lg text-dark">
                         <i class="bi bi-check-lg me-2"></i> ACEPTAR STOCK E INICIAR VENTA
                     </button>
                 <?php else: ?>
@@ -707,27 +701,16 @@ $cierreHoy = !$turnoAbierto;
                     </div>
 
                     <div id="hibrido-fields" style="display:none;" class="mb-3">
-
                         <div class="row g-2">
-
                             <div class="col-6">
-
                                 <label class="small text-muted fw-bold">En Efectivo (Bs.)</label>
-
                                 <input type="number" id="hibrido-efectivo" class="form-control" step="0.50" min="0" placeholder="0.00">
-
                             </div>
-
                             <div class="col-6">
-
                                 <label class="small text-muted fw-bold">En QR (Bs.)</label>
-
                                 <input type="number" id="hibrido-qr" class="form-control" step="0.50" min="0" placeholder="0.00">
-
                             </div>
-
                         </div>
-
                     </div>
 
                     <button type="button" onclick="procesarCobroOrden()" class="btn-vender-main">
@@ -735,7 +718,6 @@ $cierreHoy = !$turnoAbierto;
                     </button>
                 </div>
             </div>
-
 
             <div class="row g-3 mb-4">
                 <?php foreach ($productos as $prod): ?>
@@ -990,9 +972,12 @@ $cierreHoy = !$turnoAbierto;
 
             vaciarCarrito();
             // Ocultar campos híbridos y resetear
-            document.getElementById('hibrido-fields').style.display = 'none';
-            document.getElementById('hibrido-efectivo').value = '';
-            document.getElementById('hibrido-qr').value = '';
+            const hibridoContainer = document.getElementById('hibrido-fields');
+            if (hibridoContainer) hibridoContainer.style.display = 'none';
+            const inputEf = document.getElementById('hibrido-efectivo');
+            if (inputEf) inputEf.value = '';
+            const inputQr = document.getElementById('hibrido-qr');
+            if (inputQr) inputQr.value = '';
 
             fetch('api.php?accion=registrar_venta', {
                 method: 'POST',
@@ -1008,29 +993,45 @@ $cierreHoy = !$turnoAbierto;
 
         function actualizarIndicadores() {
             let totalDinero = dineroEfectivo + dineroQr;
-            document.getElementById('counter-vendidas').innerText = unidadesVendidas + ' u.';
-            document.getElementById('counter-efectivo').innerText = 'Bs. ' + dineroEfectivo.toFixed(0);
-            document.getElementById('counter-qr').innerText = 'Bs. ' + dineroQr.toFixed(0);
+            const elVendidas = document.getElementById('counter-vendidas');
+            if (elVendidas) elVendidas.innerText = unidadesVendidas + ' u.';
+            const elEfectivo = document.getElementById('counter-efectivo');
+            if (elEfectivo) elEfectivo.innerText = 'Bs. ' + dineroEfectivo.toFixed(0);
+            const elQr = document.getElementById('counter-qr');
+            if (elQr) elQr.innerText = 'Bs. ' + dineroQr.toFixed(0);
             let sobrante = Math.max(0, totalStockEnviado - unidadesVendidas);
-            document.getElementById('counter-stock').innerText = sobrante + ' u.';
+            const elStock = document.getElementById('counter-stock');
+            if (elStock) elStock.innerText = sobrante + ' u.';
 
-            document.getElementById('modal-total-vendidas').innerText = unidadesVendidas + ' u.';
-            document.getElementById('modal-total-sobrantes').innerText = sobrante + ' u.';
-            document.getElementById('modal-dinero-efectivo').innerText = 'Bs. ' + dineroEfectivo.toFixed(2);
-            document.getElementById('modal-dinero-qr').innerText = 'Bs. ' + dineroQr.toFixed(2);
-            document.getElementById('modal-total-dinero').innerText = 'Bs. ' + totalDinero.toFixed(2);
+            const mVend = document.getElementById('modal-total-vendidas');
+            if (mVend) mVend.innerText = unidadesVendidas + ' u.';
+            const mSobr = document.getElementById('modal-total-sobrantes');
+            if (mSobr) mSobr.innerText = sobrante + ' u.';
+            const mEf = document.getElementById('modal-dinero-efectivo');
+            if (mEf) mEf.innerText = 'Bs. ' + dineroEfectivo.toFixed(2);
+            const mQr = document.getElementById('modal-dinero-qr');
+            if (mQr) mQr.innerText = 'Bs. ' + dineroQr.toFixed(2);
+            const mTot = document.getElementById('modal-total-dinero');
+            if (mTot) mTot.innerText = 'Bs. ' + totalDinero.toFixed(2);
         }
 
-        function aceptarStock() {
-            fetch('api.php?accion=aceptar_stock')
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.error);
-                    }
-                });
+        function aceptarStock(despachoId) {
+            if (navigator.vibrate) navigator.vibrate(50);
+            const payload = despachoId ? { despacho_id: despachoId } : {};
+            fetch('api.php?accion=aceptar_stock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.error || 'No se pudo aceptar el stock'));
+                }
+            })
+            .catch(() => alert('Error de red al aceptar el stock'));
         }
 
         function confirmarCierreTurno() {
@@ -1055,20 +1056,22 @@ $cierreHoy = !$turnoAbierto;
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert('Error al cerrar turno: ' + data.error);
+                    alert('Error al cerrar turno: ' + (data.error || ''));
                 }
-            });
+            })
+            .catch(() => alert('Error de red al cerrar turno'));
         }
 
         // Mostrar/ocultar campos de pago híbrido
-
-        document.getElementById('select-metodo-pago').addEventListener('change', function() {
-
-            document.getElementById('hibrido-fields').style.display = this.value === 'hibrido' ? 'block' : 'none';
-
-        });
-
-
+        const selMetodo = document.getElementById('select-metodo-pago');
+        if (selMetodo) {
+            selMetodo.addEventListener('change', function() {
+                const hFields = document.getElementById('hibrido-fields');
+                if (hFields) {
+                    hFields.style.display = this.value === 'hibrido' ? 'block' : 'none';
+                }
+            });
+        }
 
         // ── CAMPANA DE NOTIFICACIONES ESTILO FACEBOOK ─────────────────────────
         let ultimoDespachoData = null;
@@ -1117,17 +1120,15 @@ $cierreHoy = !$turnoAbierto;
                         if (notifContent) {
                             notifContent.innerHTML = `
                                 <div class="mb-2">
-                                    <div class="d-flex align-items-center gap-2 mb-2">
-                                        <span class="badge bg-warning text-dark fw-extrabold px-2 py-1">EN CAMINO</span>
-                                        <small class="text-muted">${data.despacho.fecha || 'Hoy'}</small>
+                                    <span class="small text-muted d-block mb-1">Administración Central te ha enviado:</span>
+                                    ${detallesHtml}
+                                    <div class="d-flex justify-content-between align-items-center pt-2 fw-bold small">
+                                        <span>Total:</span>
+                                        <span class="text-warning">${totalUnidadesRecibidas} u.</span>
                                     </div>
-                                    <p class="small fw-bold mb-2" style="color: var(--text-main);">
-                                        📦 Central ha despachado <span class="text-primary">${totalUnidadesRecibidas} salteñas</span>:
-                                    </p>
-                                    <div class="bg-body-secondary p-2 rounded-3 mb-3">
-                                        ${detallesHtml || '<div class="small text-muted">Detalles en proceso...</div>'}
-                                    </div>
-                                    <button type="button" onclick="aceptarDespachoRecibido()" class="btn btn-success btn-sm w-100 fw-bold py-2 rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                                </div>
+                                <div class="pt-2 border-top">
+                                    <button type="button" onclick="aceptarDespachoRecibido()" class="btn btn-warning btn-sm w-100 fw-bold py-2 rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2">
                                         <i class="bi bi-check-circle-fill"></i> Aceptar y Recibir Stock
                                     </button>
                                 </div>
@@ -1196,6 +1197,11 @@ $cierreHoy = !$turnoAbierto;
             if (navigator.vibrate) navigator.vibrate(50);
             const sel = document.getElementById('select-carrito');
             const carritoId = sel ? sel.value : null;
+
+            if (!carritoId) {
+                alert('Por favor selecciona un carrito');
+                return;
+            }
 
             fetch('api.php?accion=abrir_turno', {
                 method: 'POST',

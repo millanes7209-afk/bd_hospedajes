@@ -21,27 +21,21 @@ class DespachoApiController extends Controller
         $carritoId = $request->get('carrito_id');
 
         if (!$carritoId) {
-            // Intentar resolver por header de origen
             $referer = $request->header('Referer') ?? $request->header('Origin') ?? '';
-            $carrito = null;
-
             if ($referer) {
                 $host = parse_url($referer, PHP_URL_HOST);
                 $carrito = Carrito::where('subdominio', $host)->where('activo', true)->first();
+                if ($carrito) {
+                    $carritoId = $carrito->id;
+                }
             }
+        }
 
-            if (!$carrito) {
-                $carrito = Carrito::where('activo', true)->first();
-            }
-
-            if (!$carrito) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'No se encontró ningún carrito activo configurado en Central.',
-                ], 422);
-            }
-
-            $carritoId = $carrito->id;
+        if (!$carritoId) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Debes especificar el carrito_id para consultar el despacho.',
+            ], 422);
         }
 
         // Priorizar cualquier despacho que esté pendiente hoy para notificar al carrito

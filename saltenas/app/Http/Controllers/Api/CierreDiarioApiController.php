@@ -26,21 +26,16 @@ class CierreDiarioApiController extends Controller
     {
         $input = $request->all();
 
-        // Auto-resolver carrito_id por subdominio o tomar el primero activo
+        // Auto-resolver carrito_id por subdominio si no viene explícito
         if (empty($input['carrito_id'])) {
             $referer = $request->header('Referer') ?? $request->header('Origin') ?? '';
-            $carrito = null;
-
             if ($referer) {
                 $host = parse_url($referer, PHP_URL_HOST);
                 $carrito = Carrito::where('subdominio', $host)->where('activo', true)->first();
+                if ($carrito) {
+                    $input['carrito_id'] = $carrito->id;
+                }
             }
-
-            if (!$carrito) {
-                $carrito = Carrito::where('activo', true)->first();
-            }
-
-            $input['carrito_id'] = $carrito ? $carrito->id : null;
         }
 
         $validator = Validator::make($input, [

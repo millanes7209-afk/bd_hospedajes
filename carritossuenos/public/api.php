@@ -41,35 +41,55 @@ if ($accion === 'abrir_turno') {
     $input = json_decode(file_get_contents('php://input'), true) ?? [];
     $carritoId = $input['carrito_id'] ?? ($_REQUEST['carrito_id'] ?? null);
 
+    if (!$carritoId) {
+        echo json_encode(['success' => false, 'error' => 'Debes seleccionar un carrito para abrir turno.']);
+        exit;
+    }
+
     try {
         // Cerrar cualquier turno abierto previo
         $pdo->exec("UPDATE turnos SET estado = 'cerrado', cerrado_at = NOW() WHERE estado = 'abierto'");
+
         // Abrir nuevo turno limpio asociado al carrito seleccionado
         $st = $pdo->prepare("INSERT INTO turnos (carrito_id, fecha, estado, abierto_at) VALUES (?, ?, 'abierto', NOW())");
-        $st->execute([$carritoId, $hoy]);
-        echo json_encode(['success' => true, 'mensaje' => 'Turno abierto con éxito']);
+        $st->execute([(int)$carritoId, $hoy]);
+        $nuevoTurnoId = $pdo->lastInsertId();
+
+        echo json_encode([
+            'success' => true,
+            'mensaje' => 'Turno abierto con éxito',
+            'turno_id' => $nuevoTurnoId,
+            'carrito_id' => (int)$carritoId
+        ]);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
     exit;
 }
 
-// ── VERIFICAR DESPACHO DESDE CENTRAL (Detección dinámica) ─────────────────────
+// ── VERIFICAR DESPACHO DESDE CENTRAL ──────────────────────────────────────────
 if ($accion === 'verificar_despacho') {
     try {
-        // 1. Estado local de stock_diario
-        $stmtStk = $pdo->prepare("SELECT COUNT(*) as total, SUM(CASE WHEN aceptado = 1 THEN 1 ELSE 0 END) as aceptados FROM stock_diario WHERE fecha = ?");
-        $stmtStk->execute([$hoy]);
+        // Resolver turno actual y carrito_id
+        $stTurnoActual = $pdo->query("SELECT id, carrito_id FROM turnos WHERE estado = 'abierto' ORDER BY id DESC LIMIT 1");
+        $turnoActualRow = $stTurnoActual->fetch();
+        if (!$turnoActualRow) {
+            echo json_encode(['success' => false, 'error' => 'No hay turno abierto']);
+            exit;
+        }
+
+        $curTurnoId = (int)$turnoActualRow['id'];
+        $cid = (int)$turnoActualRow['carrito_id'];
+
+        // Estado local de stock_diario para ESTE turno
+        $stmtStk = $pdo->prepare("SELECT COUNT(*) as total, SUM(CASE WHEN aceptado = 1 THEN 1 ELSE 0 END) as aceptados FROM stock_diario WHERE turno_id = ?");
+        $stmtStk->execute([$curTurnoId]);
         $stkLocal = $stmtStk->fetch();
         $hayStockLocal = ($stkLocal['total'] ?? 0) > 0;
         $yaAceptadoLocal = $hayStockLocal && (($stkLocal['aceptados'] ?? 0) > 0);
 
-        // 2. Consultar a Salteñas Central (sin ID estático quemado)
-        // Resolver carrito_id del turno actualmente abierto
-        $stTurnoActual = $pdo->query("SELECT id, carrito_id FROM turnos WHERE estado = 'abierto' ORDER BY id DESC LIMIT 1");
-        $turnoActualRow = $stTurnoActual->fetch();
-        $cid = $turnoActualRow ? $turnoActualRow['carrito_id'] : null;
-        $urlDespacho = 'https://saltenas.alloggibolivia.com/api/v1/despachos/hoy' . ($cid ? "?carrito_id={$cid}" : '');
+        // Consultar Salteñas Central con el carrito_id específico de este turno
+        $urlDespacho = "https://saltenas.alloggibolivia.com/api/v1/despachos/hoy?carrito_id={$cid}";
         $ch = curl_init($urlDespacho);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 4);
@@ -99,6 +119,7 @@ if ($accion === 'verificar_despacho') {
                 $yaAceptadoLocalmente = (bool) $stCheck->fetch();
             }
             $esAceptado = ($despachoCentral['estado'] === 'aceptado') || $yaAceptadoLocalmente;
+
             echo json_encode([
                 'success' => true,
                 'hay_despacho' => true,
@@ -113,7 +134,7 @@ if ($accion === 'verificar_despacho') {
                 'despacho' => [
                     'id' => null,
                     'fecha' => $hoy,
-                    'estado' => $yaAceptadoLocal ? 'aceptado' : 'enviado',
+                    'estado' => $yaAceptadoLocal ? 'aceptado' : 'pendiente',
                     'detalles' => []
                 ]
             ]);
@@ -122,7 +143,7 @@ if ($accion === 'verificar_despacho') {
                 'success' => true,
                 'hay_despacho' => false,
                 'aceptado' => false,
-                'mensaje' => 'No hay despacho registrado para hoy en Central.'
+                'mensaje' => 'No hay despacho registrado para hoy en Central para este carrito.'
             ]);
         }
     } catch (Exception $e) {
@@ -131,23 +152,29 @@ if ($accion === 'verificar_despacho') {
     exit;
 }
 
-// ── ACEPTAR STOCK / RECIBIR DESPACHO (Con precios reales de Central y acumulación) ───
+// ── ACEPTAR STOCK / RECIBIR DESPACHO ──────────────────────────────────────────
 if ($accion === 'aceptar_stock') {
     $input = json_decode(file_get_contents('php://input'), true) ?? [];
     $despachoId = $input['despacho_id'] ?? ($_REQUEST['despacho_id'] ?? null);
     $detalles = $input['detalles'] ?? [];
 
     try {
-        $pdo->beginTransaction();
-
-        // Si no vienen detalles por POST, obtenerlos de Central
-        if (empty($detalles)) {
-            // Resolver carrito_id del turno actualmente abierto
         $stTurnoActual = $pdo->query("SELECT id, carrito_id FROM turnos WHERE estado = 'abierto' ORDER BY id DESC LIMIT 1");
         $turnoActualRow = $stTurnoActual->fetch();
-        $cid = $turnoActualRow ? $turnoActualRow['carrito_id'] : null;
-        $urlDespacho = 'https://saltenas.alloggibolivia.com/api/v1/despachos/hoy' . ($cid ? "?carrito_id={$cid}" : '');
-        $ch = curl_init($urlDespacho);
+        if (!$turnoActualRow) {
+            echo json_encode(['success' => false, 'error' => 'No hay turno abierto para aceptar stock']);
+            exit;
+        }
+
+        $curTurnoId = (int)$turnoActualRow['id'];
+        $cid = (int)$turnoActualRow['carrito_id'];
+
+        $pdo->beginTransaction();
+
+        // Si no vienen detalles por POST, obtenerlos de Central para este carrito
+        if (empty($detalles)) {
+            $urlDespacho = "https://saltenas.alloggibolivia.com/api/v1/despachos/hoy?carrito_id={$cid}";
+            $ch = curl_init($urlDespacho);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_TIMEOUT, 4);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -176,7 +203,7 @@ if ($accion === 'aceptar_stock') {
             }
         }
 
-        // 2. Si no ha sido procesado, procesar detalles y sumar al stock acumulado del día
+        // 2. Si no ha sido procesado, procesar detalles y registrar en stock_diario con turno_id
         if (!$yaProcesado && !empty($detalles) && is_array($detalles)) {
             foreach ($detalles as $det) {
                 $nombre = $det['variante_nombre'] ?? ($det['nombre'] ?? '');
@@ -194,18 +221,13 @@ if ($accion === 'aceptar_stock') {
                     $prodId = (int) $pdo->lastInsertId();
                 } else {
                     $prodId = (int) $prod['id'];
-                    // Actualizar precio real solo si viene un precio válido desde Central (sin valor por defecto)
                     if ($precio !== null) {
                         $stUpP = $pdo->prepare("UPDATE productos SET precio = ?, activo = 1 WHERE id = ?");
                         $stUpP->execute([$precio, $prodId]);
                     }
                 }
 
-                // Sumar al stock diario de hoy (permite múltiples despachos en el día)
-                // Asociar al turno_id abierto actual
-                $stTurnoNow = $pdo->query("SELECT id FROM turnos WHERE estado = 'abierto' ORDER BY id DESC LIMIT 1");
-                $curTurnoId = $stTurnoNow->fetchColumn() ?: null;
-
+                // Guardar stock asignado exclusivamente a este turno_id
                 $stS = $pdo->prepare("SELECT id, cantidad_enviada FROM stock_diario WHERE turno_id = ? AND producto_id = ?");
                 $stS->execute([$curTurnoId, $prodId]);
                 $rowStock = $stS->fetch();
@@ -225,9 +247,9 @@ if ($accion === 'aceptar_stock') {
             }
         }
 
-        // Marcar todo el stock de hoy como aceptado
-        $stmt = $pdo->prepare("UPDATE stock_diario SET aceptado = 1 WHERE fecha = ?");
-        $stmt->execute([$hoy]);
+        // Marcar el stock de este turno como aceptado
+        $stmt = $pdo->prepare("UPDATE stock_diario SET aceptado = 1 WHERE turno_id = ?");
+        $stmt->execute([$curTurnoId]);
 
         $pdo->commit();
 
@@ -265,44 +287,58 @@ if ($accion === 'aceptar_stock') {
     exit;
 }
 
-// ── REGISTRAR VENTA (Con soporte para Pago Híbrido: Efectivo + QR) ─────────────
+// ── REGISTRAR VENTA ──────────────────────────────────────────────────────────
 if ($accion === 'registrar_venta') {
     $input = json_decode(file_get_contents('php://input'), true);
-    $metodoPago = in_array(($input['metodo_pago'] ?? 'efectivo'), ['efectivo', 'qr', 'hibrido']) ? $input['metodo_pago'] : 'efectivo';
+
+    $items = $input['items'] ?? [];
+    $metodoPago = $input['metodo_pago'] ?? 'efectivo';
     $montoEfectivo = (float) ($input['monto_efectivo'] ?? 0.00);
     $montoQr = (float) ($input['monto_qr'] ?? 0.00);
 
-    $items = [];
-    if (isset($input['items']) && is_array($input['items'])) {
-        $items = $input['items'];
-    } else {
-        $items[] = [
-            'tipo' => $input['tipo'] ?? 'individual',
-            'producto_id' => $input['producto_id'] ?? null,
-            'promocion_id' => $input['promocion_id'] ?? null,
-            'cantidad' => (int) ($input['cantidad'] ?? 1),
-            'monto' => (float) ($input['monto'] ?? 0.00)
-        ];
+    if (empty($items) || !is_array($items)) {
+        echo json_encode(['success' => false, 'error' => 'No hay productos en el pedido']);
+        exit;
     }
 
     try {
-        $pdo->beginTransaction();
-        $stTId = $pdo->query("SELECT id FROM turnos WHERE estado = 'abierto' ORDER BY id DESC LIMIT 1");
-        $activoTurnoId = $stTId->fetchColumn() ?: null;
-        $stmt = $pdo->prepare("INSERT INTO ventas (turno_id, fecha_hora, producto_id, promocion_id, cantidad, monto, metodo_pago, monto_efectivo, monto_qr) VALUES (?, NOW(), ?, ?, ?, ?, ?, ?, ?)");
+        $stTurnoActual = $pdo->query("SELECT id FROM turnos WHERE estado = 'abierto' ORDER BY id DESC LIMIT 1");
+        $tRow = $stTurnoActual->fetch();
+        if (!$tRow) {
+            echo json_encode(['success' => false, 'error' => 'No hay ningún turno abierto para registrar ventas']);
+            exit;
+        }
+        $activoTurnoId = (int)$tRow['id'];
 
-        $totalItems = count($items);
-        foreach ($items as $idx => $item) {
-            $pId = $item['producto_id'] ?? null;
-            $prId = $item['promocion_id'] ?? null;
+        $pdo->beginTransaction();
+
+        $stmt = $pdo->prepare("
+            INSERT INTO ventas (turno_id, fecha_hora, producto_id, promocion_id, cantidad, monto, metodo_pago, monto_efectivo, monto_qr) 
+            VALUES (?, NOW(), ?, ?, ?, ?, ?, ?, ?)
+        ");
+
+        $totalItemsMonto = 0;
+        foreach ($items as $item) {
+            $totalItemsMonto += (float) ($item['monto'] ?? 0);
+        }
+
+        foreach ($items as $item) {
+            $pId = !empty($item['producto_id']) ? (int) $item['producto_id'] : null;
+            $prId = !empty($item['promocion_id']) ? (int) $item['promocion_id'] : null;
             $cant = (int) ($item['cantidad'] ?? 1);
             $monto = (float) ($item['monto'] ?? 0.00);
 
-            // Si es híbrido, registrar el desglose en el primer item o proporcional
-            $itemEf = ($idx === 0) ? $montoEfectivo : 0.00;
-            $itemQr = ($idx === 0) ? $montoQr : 0.00;
-            if ($metodoPago === 'efectivo') $itemEf = $monto;
-            if ($metodoPago === 'qr') $itemQr = $monto;
+            $itemEf = 0.00;
+            $itemQr = 0.00;
+            if ($metodoPago === 'efectivo') {
+                $itemEf = $monto;
+            } elseif ($metodoPago === 'qr') {
+                $itemQr = $monto;
+            } elseif ($metodoPago === 'hibrido') {
+                $prop = ($totalItemsMonto > 0) ? ($monto / $totalItemsMonto) : 0;
+                $itemEf = round($montoEfectivo * $prop, 2);
+                $itemQr = round($montoQr * $prop, 2);
+            }
 
             $stmt->execute([$activoTurnoId, $pId, $prId, $cant, $monto, $metodoPago, $itemEf, $itemQr]);
         }
@@ -318,7 +354,7 @@ if ($accion === 'registrar_venta') {
     exit;
 }
 
-// ── CERRAR TURNO (Dinámico: sin IDs fijos quemados) ───────────────────────────
+// ── CERRAR TURNO ─────────────────────────────────────────────────────────────
 if ($accion === 'cerrar_turno') {
     $input = json_decode(file_get_contents('php://input'), true);
     $totalVendidas = (int) ($input['total_vendidas'] ?? 0);
@@ -329,19 +365,24 @@ if ($accion === 'cerrar_turno') {
     $observaciones = trim($input['observaciones'] ?? '');
 
     try {
-        // 1. Resolver turno actual y carrito_id
+        // Resolver turno actual y carrito_id
         $stTCierre = $pdo->query("SELECT id, carrito_id FROM turnos WHERE estado = 'abierto' ORDER BY id DESC LIMIT 1");
         $tCierreRow = $stTCierre->fetch();
-        $closingTurnoId = $tCierreRow ? (int)$tCierreRow['id'] : null;
-        $closingCarritoId = $tCierreRow ? $tCierreRow['carrito_id'] : null;
+        if (!$tCierreRow) {
+            echo json_encode(['success' => false, 'error' => 'No hay turno abierto para cerrar']);
+            exit;
+        }
+        $closingTurnoId = (int)$tCierreRow['id'];
+        $closingCarritoId = (int)$tCierreRow['carrito_id'];
 
         // Guardado Local
         $stmt = $pdo->prepare("INSERT INTO cierres (turno_id, fecha, total_vendidas, total_sobrantes, dinero_cobrado, dinero_efectivo, dinero_qr, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$closingTurnoId, $hoy, $totalVendidas, $totalSobrantes, $dineroCobrado, $dineroEfectivo, $dineroQr, $observaciones]);
-        // Marcar turno como cerrado
-        $pdo->exec("UPDATE turnos SET estado = 'cerrado', cerrado_at = NOW() WHERE estado = 'abierto'");
 
-        // 2. Obtener desglose dinámico de salteñas vendidas y sobrantes del turno cerrado
+        // Marcar turno como cerrado
+        $pdo->prepare("UPDATE turnos SET estado = 'cerrado', cerrado_at = NOW() WHERE id = ?")->execute([$closingTurnoId]);
+
+        // Obtener desglose dinámico de salteñas vendidas y sobrantes del turno cerrado
         $stmtDetalles = $pdo->prepare("
             SELECT s.producto_id as variante_id, s.cantidad_enviada,
                    COALESCE(SUM(v.cantidad), 0) as cantidad_vendida
@@ -366,11 +407,7 @@ if ($accion === 'cerrar_turno') {
             ];
         }
 
-        if (empty($detallesCierre)) {
-            $detallesCierre = [];
-        }
-
-        // 3. Sincronización Automática con Sistema Central (sin forzar ID quemado)
+        // Sincronización Automática con Sistema Central
         $centralApiUrl = 'https://saltenas.alloggibolivia.com/api/v1/cierres/sincronizar';
         $apiKey = 'pos_saltenas_secret_key_2026';
 
