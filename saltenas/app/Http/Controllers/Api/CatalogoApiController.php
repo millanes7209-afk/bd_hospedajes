@@ -34,25 +34,32 @@ class CatalogoApiController extends Controller
             ->orderBy('nombre')
             ->get();
 
-        // 3. Despacho del día registrado en Central para este carrito
-        $despachoHoy = [];
-        $despacho = DespachoDiario::with(['detalles.variante'])
+        // 3. Despachos del día registrados en Central para este carrito (acumula múltiples despachos de hoy)
+        $despachosHoy = DespachoDiario::with(['detalles.variante'])
             ->where('carrito_id', $carritoId)
             ->where('fecha', $hoy)
-            ->first();
+            ->where('estado', '!=', 'cancelado')
+            ->get();
 
-        if ($despacho && $despacho->detalles) {
-            foreach ($despacho->detalles as $det) {
+        $despachoHoy = [];
+        $variantesTotales = [];
+        foreach ($despachosHoy as $desp) {
+            foreach ($desp->detalles as $det) {
                 if ($det->variante) {
-                    $despachoHoy[] = [
-                        'variante_id' => $det->variante_id,
-                        'nombre' => $det->variante->nombre,
-                        'precio' => (float) $det->variante->precio_venta,
-                        'cantidad_enviada' => (int) $det->cantidad_enviada
-                    ];
+                    $vid = $det->variante_id;
+                    if (!isset($variantesTotales[$vid])) {
+                        $variantesTotales[$vid] = [
+                            'variante_id' => $vid,
+                            'nombre' => $det->variante->nombre,
+                            'precio' => ($det->variante->precio_venta !== null) ? (float) $det->variante->precio_venta : null,
+                            'cantidad_enviada' => 0
+                        ];
+                    }
+                    $variantesTotales[$vid]['cantidad_enviada'] += (int) $det->cantidad_enviada;
                 }
             }
         }
+        $despachoHoy = array_values($variantesTotales);
 
         return response()->json([
             'success' => true,

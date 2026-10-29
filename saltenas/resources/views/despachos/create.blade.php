@@ -87,6 +87,8 @@
                                     <td class="px-4 py-3">
                                         <input type="number" name="detalles[{{ $i }}][cantidad_enviada]" min="0"
                                             value="{{ old("detalles.$i.cantidad_enviada", 0) }}"
+                                            onfocus="this.select()"
+                                            onclick="this.select()"
                                             class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm font-black text-center px-2 py-1.5 focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
                                     </td>
                                 </tr>

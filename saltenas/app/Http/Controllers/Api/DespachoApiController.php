@@ -44,9 +44,19 @@ class DespachoApiController extends Controller
             $carritoId = $carrito->id;
         }
 
-        $despacho = DespachoDiario::with(['detalles.variante', 'carrito'])
+        // Priorizar cualquier despacho que esté pendiente hoy para notificar al carrito
+        $despachoPendiente = DespachoDiario::with(['detalles.variante', 'carrito'])
             ->where('carrito_id', $carritoId)
             ->whereDate('fecha', now()->toDateString())
+            ->where('estado', 'pendiente')
+            ->latest('id')
+            ->first();
+
+        // Si no hay pendiente, tomar el último despacho registrado hoy
+        $despacho = $despachoPendiente ?: DespachoDiario::with(['detalles.variante', 'carrito'])
+            ->where('carrito_id', $carritoId)
+            ->whereDate('fecha', now()->toDateString())
+            ->latest('id')
             ->first();
 
         if (!$despacho) {
@@ -68,7 +78,7 @@ class DespachoApiController extends Controller
                     'id' => $d->id,
                     'variante_id' => $d->variante_id,
                     'variante_nombre' => $d->variante->nombre ?? '—',
-                    'precio' => (float) ($d->variante->precio_venta ?? 10.00),
+                    'precio' => ($d->variante && $d->variante->precio_venta !== null) ? (float) $d->variante->precio_venta : null,
                     'cantidad_enviada' => $d->cantidad_enviada,
                 ]),
             ],

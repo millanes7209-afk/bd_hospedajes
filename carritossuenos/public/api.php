@@ -7,8 +7,13 @@ $pdo = getDBConnection();
 $accion = $_REQUEST['accion'] ?? '';
 $hoy = date('Y-m-d');
 
-// Asegurar soporte de pago híbrido en la tabla de ventas
+// Asegurar soporte de tabla despachos_recibidos y pago híbrido
 try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `despachos_recibidos` (
+        `despacho_id` INT PRIMARY KEY,
+        `fecha` DATE NOT NULL,
+        `recibido_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
     $pdo->exec("ALTER TABLE ventas MODIFY COLUMN metodo_pago VARCHAR(20) NOT NULL DEFAULT 'efectivo'");
     $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_efectivo DECIMAL(10,2) NOT NULL DEFAULT 0.00");
     $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_qr DECIMAL(10,2) NOT NULL DEFAULT 0.00");
@@ -46,7 +51,14 @@ if ($accion === 'verificar_despacho') {
         }
 
         if ($despachoCentral) {
-            $esAceptado = ($despachoCentral['estado'] === 'aceptado') || $yaAceptadoLocal;
+            $despachoId = (int) ($despachoCentral['id'] ?? 0);
+            $yaAceptadoLocalmente = false;
+            if ($despachoId > 0) {
+                $stCheck = $pdo->prepare("SELECT despacho_id FROM despachos_recibidos WHERE despacho_id = ?");
+                $stCheck->execute([$despachoId]);
+                $yaAceptadoLocalmente = (bool) $stCheck->fetch();
+            }
+            $esAceptado = ($despachoCentral['estado'] === 'aceptado') || $yaAceptadoLocalmente;
             echo json_encode([
                 'success' => true,
                 'hay_despacho' => true,
@@ -79,7 +91,7 @@ if ($accion === 'verificar_despacho') {
     exit;
 }
 
-// ── ACEPTAR STOCK / RECIBIR DESPACHO (Con precios reales de Central) ───────────
+// ── ACEPTAR STOCK / RECIBIR DESPACHO (Con precios reales de Central y acumulación) ───
 if ($accion === 'aceptar_stock') {
     $input = json_decode(file_get_contents('php://input'), true) ?? [];
     $despachoId = $input['despacho_id'] ?? ($_REQUEST['despacho_id'] ?? null);
@@ -88,12 +100,43 @@ if ($accion === 'aceptar_stock') {
     try {
         $pdo->beginTransaction();
 
-        // Sincronizar variantes, precios reales y stock en BD local
-        if (!empty($detalles) && is_array($detalles)) {
+        // Si no vienen detalles por POST, obtenerlos de Central
+        if (empty($detalles)) {
+            $ch = curl_init('https://saltenas.alloggibolivia.com/api/v1/despachos/hoy');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Accept: application/json',
+                'X-POS-Api-Key: pos_saltenas_secret_key_2026'
+            ]);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            $res = curl_exec($ch);
+            curl_close($ch);
+            if ($res) {
+                $j = json_decode($res, true);
+                if (!empty($j['despacho'])) {
+                    $despachoId = $despachoId ?: ($j['despacho']['id'] ?? null);
+                    $detalles = $j['despacho']['detalles'] ?? [];
+                }
+            }
+        }
+
+        // 1. Verificar si este despacho ya fue procesado localmente
+        $yaProcesado = false;
+        if ($despachoId) {
+            $stCheck = $pdo->prepare("SELECT despacho_id FROM despachos_recibidos WHERE despacho_id = ?");
+            $stCheck->execute([$despachoId]);
+            if ($stCheck->fetch()) {
+                $yaProcesado = true;
+            }
+        }
+
+        // 2. Si no ha sido procesado, procesar detalles y sumar al stock acumulado del día
+        if (!$yaProcesado && !empty($detalles) && is_array($detalles)) {
             foreach ($detalles as $det) {
                 $nombre = $det['variante_nombre'] ?? ($det['nombre'] ?? '');
                 $cant = (int) ($det['cantidad_enviada'] ?? 0);
-                $precio = (float) ($det['precio'] ?? 10.00);
+                $precio = (isset($det['precio']) && $det['precio'] !== null && $det['precio'] !== '') ? (float) $det['precio'] : null;
                 if (empty($nombre)) continue;
 
                 $stP = $pdo->prepare("SELECT id FROM productos WHERE nombre = ? LIMIT 1");
@@ -106,20 +149,30 @@ if ($accion === 'aceptar_stock') {
                     $prodId = (int) $pdo->lastInsertId();
                 } else {
                     $prodId = (int) $prod['id'];
-                    // Actualizar siempre al precio real proveniente de Central
-                    $stUpP = $pdo->prepare("UPDATE productos SET precio = ?, activo = 1 WHERE id = ?");
-                    $stUpP->execute([$precio, $prodId]);
+                    // Actualizar precio real solo si viene un precio válido desde Central (sin valor por defecto)
+                    if ($precio !== null) {
+                        $stUpP = $pdo->prepare("UPDATE productos SET precio = ?, activo = 1 WHERE id = ?");
+                        $stUpP->execute([$precio, $prodId]);
+                    }
                 }
 
-                $stS = $pdo->prepare("SELECT id FROM stock_diario WHERE fecha = ? AND producto_id = ?");
+                // Sumar al stock diario de hoy (permite múltiples despachos en el día)
+                $stS = $pdo->prepare("SELECT id, cantidad_enviada FROM stock_diario WHERE fecha = ? AND producto_id = ?");
                 $stS->execute([$hoy, $prodId]);
-                if ($stS->fetch()) {
-                    $stUp = $pdo->prepare("UPDATE stock_diario SET cantidad_enviada = ?, aceptado = 1 WHERE fecha = ? AND producto_id = ?");
-                    $stUp->execute([$cant, $hoy, $prodId]);
+                $rowStock = $stS->fetch();
+
+                if ($rowStock) {
+                    $stUp = $pdo->prepare("UPDATE stock_diario SET cantidad_enviada = cantidad_enviada + ?, aceptado = 1 WHERE id = ?");
+                    $stUp->execute([$cant, $rowStock['id']]);
                 } else {
                     $stInS = $pdo->prepare("INSERT INTO stock_diario (fecha, producto_id, cantidad_enviada, aceptado) VALUES (?, ?, ?, 1)");
                     $stInS->execute([$hoy, $prodId, $cant]);
                 }
+            }
+
+            if ($despachoId) {
+                $stRec = $pdo->prepare("INSERT IGNORE INTO despachos_recibidos (despacho_id, fecha) VALUES (?, ?)");
+                $stRec->execute([$despachoId, $hoy]);
             }
         }
 

@@ -54,19 +54,13 @@ class DespachoController extends Controller
             'observaciones' => 'nullable|string|max:1000',
             'detalles' => 'required|array|min:1',
             'detalles.*.variante_id' => 'required|exists:variantes_saltena,id',
-            'detalles.*.cantidad_enviada' => 'required|integer|min:1',
+            'detalles.*.cantidad_enviada' => 'required|integer|min:0',
         ]);
 
-        // Verificar que no exista ya un despacho para ese carrito y fecha
-        $existe = DespachoDiario::where('carrito_id', $request->carrito_id)
-            ->where('fecha', $request->fecha)
-            ->exists();
-
-        if ($existe) {
-            return back()
-                ->withInput()
-                ->with('warning', 'Ya existe un despacho para ese carrito y fecha. Solo se permite uno por día.');
-        }
+        // Asegurar que la restricción unique esté eliminada de la base de datos para permitir múltiples despachos
+        try {
+            DB::statement("ALTER TABLE `despachos_diarios` DROP INDEX `despachos_diarios_carrito_id_fecha_unique`");
+        } catch (\Throwable $e) {}
 
         DB::transaction(function () use ($request) {
             $despacho = DespachoDiario::create([

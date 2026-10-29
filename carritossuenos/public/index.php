@@ -54,6 +54,12 @@ try {
         `observaciones` TEXT NULL,
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+    CREATE TABLE IF NOT EXISTS `despachos_recibidos` (
+        `despacho_id` INT PRIMARY KEY,
+        `fecha` DATE NOT NULL,
+        `recibido_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
 
     try { $pdo->exec("ALTER TABLE `ventas` ADD COLUMN `metodo_pago` ENUM('efectivo', 'qr') NOT NULL DEFAULT 'efectivo';"); } catch (Exception $e) {}
@@ -69,9 +75,9 @@ try {
     $pdo->exec("DELETE FROM promociones WHERE nombre LIKE 'Combo 3%' OR nombre LIKE 'Promo 5%'");
 } catch (Exception $e) {}
 
-// --- SINCRONIZACIÓN EN VIVO DEL DESPACHO REAL DE CENTRAL ---
+// --- SINCRONIZACIÓN EN VIVO DEL CATÁLOGO Y PRECIOS REALES DESDE CENTRAL ---
 try {
-    $ch = curl_init('https://saltenas.alloggibolivia.com/api/v1/despachos/hoy');
+    $ch = curl_init('https://saltenas.alloggibolivia.com/api/v1/catalogo');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 4);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -85,19 +91,16 @@ try {
 
     if ($res && $httpCode === 200) {
         $json = json_decode($res, true);
-        if (!empty($json['success']) && !empty($json['despacho'])) {
-            $desp = $json['despacho'];
-            $fechaDesp = $desp['fecha'] ?? $hoy;
-            $estaAceptado = ($desp['estado'] === 'aceptado');
+        if (!empty($json['success']) && !empty($json['data'])) {
+            $data = $json['data'];
 
-            if (!empty($desp['detalles']) && is_array($desp['detalles'])) {
-                foreach ($desp['detalles'] as $det) {
-                    $nombre = $det['variante_nombre'] ?? ($det['nombre'] ?? '');
-                    $cant = (int) ($det['cantidad_enviada'] ?? 0);
-                    $precio = (float) ($det['precio'] ?? 10.00);
+            // 1. Sincronizar variantes con precios reales (sin defaults)
+            if (!empty($data['variantes']) && is_array($data['variantes'])) {
+                foreach ($data['variantes'] as $v) {
+                    $nombre = $v['nombre'] ?? '';
+                    $precio = (isset($v['precio_venta']) && $v['precio_venta'] !== null && $v['precio_venta'] !== '') ? (float) $v['precio_venta'] : null;
                     if (empty($nombre)) continue;
 
-                    // Crear o actualizar producto real recibido
                     $stP = $pdo->prepare("SELECT id FROM productos WHERE nombre = ? LIMIT 1");
                     $stP->execute([$nombre]);
                     $prod = $stP->fetch();
@@ -105,24 +108,61 @@ try {
                     if (!$prod) {
                         $stIns = $pdo->prepare("INSERT INTO productos (nombre, precio, activo) VALUES (?, ?, 1)");
                         $stIns->execute([$nombre, $precio]);
-                        $prodId = (int) $pdo->lastInsertId();
                     } else {
-                        $prodId = (int) $prod['id'];
+                        // Actualizar siempre el precio oficial de Central (si es null, guarda null)
+                        $stUpP = $pdo->prepare("UPDATE productos SET precio = ?, activo = 1 WHERE id = ?");
+                        $stUpP->execute([$precio, $prod['id']]);
                     }
+                }
+            }
 
-                    // Sincronizar stock_diario para la fecha
-                    $stS = $pdo->prepare("SELECT id, aceptado FROM stock_diario WHERE fecha = ? AND producto_id = ?");
-                    $stS->execute([$fechaDesp, $prodId]);
+            // 2. Sincronizar promociones oficiales
+            if (!empty($data['promociones']) && is_array($data['promociones'])) {
+                foreach ($data['promociones'] as $pr) {
+                    $pNom = $pr['nombre'] ?? '';
+                    $pUni = (int) ($pr['unidades_por_paquete'] ?? 1);
+                    $pPre = (float) ($pr['precio_paquete'] ?? 0.00);
+                    if (empty($pNom)) continue;
+
+                    $stPr = $pdo->prepare("SELECT id FROM promociones WHERE nombre = ? LIMIT 1");
+                    $stPr->execute([$pNom]);
+                    $rowPr = $stPr->fetch();
+
+                    if (!$rowPr) {
+                        $stInsPr = $pdo->prepare("INSERT INTO promociones (nombre, unidades, precio, activo) VALUES (?, ?, ?, 1)");
+                        $stInsPr->execute([$pNom, $pUni, $pPre]);
+                    } else {
+                        $stUpPr = $pdo->prepare("UPDATE promociones SET unidades = ?, precio = ?, activo = 1 WHERE id = ?");
+                        $stUpPr->execute([$pUni, $pPre, $rowPr['id']]);
+                    }
+                }
+            }
+
+            // 3. Sincronizar stock del día si Central registra despacho
+            if (!empty($data['despacho_hoy']) && is_array($data['despacho_hoy'])) {
+                foreach ($data['despacho_hoy'] as $det) {
+                    $nombre = $det['nombre'] ?? '';
+                    $cant = (int) ($det['cantidad_enviada'] ?? 0);
+                    if (empty($nombre)) continue;
+
+                    $stP = $pdo->prepare("SELECT id FROM productos WHERE nombre = ? LIMIT 1");
+                    $stP->execute([$nombre]);
+                    $prod = $stP->fetch();
+                    if (!$prod) continue;
+                    $prodId = (int) $prod['id'];
+
+                    $stS = $pdo->prepare("SELECT id, cantidad_enviada FROM stock_diario WHERE fecha = ? AND producto_id = ?");
+                    $stS->execute([$hoy, $prodId]);
                     $rowS = $stS->fetch();
 
-                    $acpVal = ($estaAceptado || ($rowS && $rowS['aceptado'] == 1)) ? 1 : 0;
-
                     if ($rowS) {
-                        $stUp = $pdo->prepare("UPDATE stock_diario SET cantidad_enviada = ?, aceptado = ? WHERE id = ?");
-                        $stUp->execute([$cant, $acpVal, $rowS['id']]);
+                        if ($cant > (int)$rowS['cantidad_enviada']) {
+                            $stUp = $pdo->prepare("UPDATE stock_diario SET cantidad_enviada = ? WHERE id = ?");
+                            $stUp->execute([$cant, $rowS['id']]);
+                        }
                     } else {
-                        $stInS = $pdo->prepare("INSERT INTO stock_diario (fecha, producto_id, cantidad_enviada, aceptado) VALUES (?, ?, ?, ?)");
-                        $stInS->execute([$fechaDesp, $prodId, $cant, $acpVal]);
+                        $stInS = $pdo->prepare("INSERT INTO stock_diario (fecha, producto_id, cantidad_enviada, aceptado) VALUES (?, ?, ?, 0)");
+                        $stInS->execute([$hoy, $prodId, $cant]);
                     }
                 }
             }
@@ -166,7 +206,7 @@ foreach ($stockHoy as $st) {
     $productos[] = [
         'id' => $st['producto_id'],
         'nombre' => $st['producto_nombre'],
-        'precio' => $st['precio'] ?? 10.00
+        'precio' => ($st['precio'] !== null && $st['precio'] !== '') ? (float)$st['precio'] : null
     ];
 }
 
@@ -638,18 +678,30 @@ $cierreHoy = $stmtCierre->fetch();
                         </select>
                     </div>
 
-                    <div id="hibrido-fields" style="display:none;" class="mb-3">
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <label class="small text-muted fw-bold">En Efectivo (Bs.)</label>
-                                <input type="number" id="hibrido-efectivo" class="form-control" step="0.50" min="0" placeholder="0.00">
-                            </div>
-                            <div class="col-6">
-                                <label class="small text-muted fw-bold">En QR (Bs.)</label>
-                                <input type="number" id="hibrido-qr" class="form-control" step="0.50" min="0" placeholder="0.00">
-                            </div>
-                        </div>
-                    </div>
+                    <div id="hibrido-fields" style="display:none;" class="mb-3">
+
+                        <div class="row g-2">
+
+                            <div class="col-6">
+
+                                <label class="small text-muted fw-bold">En Efectivo (Bs.)</label>
+
+                                <input type="number" id="hibrido-efectivo" class="form-control" step="0.50" min="0" placeholder="0.00">
+
+                            </div>
+
+                            <div class="col-6">
+
+                                <label class="small text-muted fw-bold">En QR (Bs.)</label>
+
+                                <input type="number" id="hibrido-qr" class="form-control" step="0.50" min="0" placeholder="0.00">
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
                     <button type="button" onclick="procesarCobroOrden()" class="btn-vender-main">
                         <i class="bi bi-check2-circle me-1"></i> CONFIRMAR Y REGISTRAR VENTA
                     </button>
@@ -663,7 +715,9 @@ $cierreHoy = $stmtCierre->fetch();
                         <button type="button" onclick="agregarAlCarrito('individual', <?= $prod['id'] ?>, '<?= addslashes($prod['nombre']) ?>', <?= $prod['precio'] ?>, 1)" class="btn-touch-product">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="fw-extrabold fs-5" style="color: var(--text-main);"><?= htmlspecialchars($prod['nombre']) ?></span>
-                                <span class="badge bg-warning text-dark rounded-pill fw-extrabold px-2 py-1">Bs. <?= number_format($prod['precio'], 0) ?></span>
+                                <?php if ($prod['precio'] !== null): ?>
+                                    <span class="badge bg-warning text-dark rounded-pill fw-extrabold px-2 py-1">Bs. <?= number_format($prod['precio'], 2) ?></span>
+                                <?php endif; ?>
                             </div>
                             <div class="text-muted extra-small fw-semibold">+ Añadir a la Venta</div>
                         </button>
@@ -856,7 +910,7 @@ $cierreHoy = $stmtCierre->fetch();
                             <button type="button" class="btn-qty-control" onclick="cambiarCantidadItem('${item.key}', -1)">-</button>
                             <span class="fw-extrabold px-1 fs-6" style="color: var(--text-main);">${item.cantidad}</span>
                             <button type="button" class="btn-qty-control" onclick="cambiarCantidadItem('${item.key}', 1)">+</button>
-                            <span class="fw-bold text-success ms-2" style="min-width: 60px; text-align: right;">Bs. ${subtotal.toFixed(0)}</span>
+                            <span class="fw-bold text-success ms-2" style="min-width: 60px; text-align: right;">Bs. ${subtotal.toFixed(2)}</span>
                         </div>
                     </div>
                 `;
@@ -978,11 +1032,16 @@ $cierreHoy = $stmtCierre->fetch();
             });
         }
 
-        // Mostrar/ocultar campos de pago híbrido
-        document.getElementById('select-metodo-pago').addEventListener('change', function() {
-            document.getElementById('hibrido-fields').style.display = this.value === 'hibrido' ? 'block' : 'none';
-        });
-
+        // Mostrar/ocultar campos de pago híbrido
+
+        document.getElementById('select-metodo-pago').addEventListener('change', function() {
+
+            document.getElementById('hibrido-fields').style.display = this.value === 'hibrido' ? 'block' : 'none';
+
+        });
+
+
+
         // ── CAMPANA DE NOTIFICACIONES ESTILO FACEBOOK ─────────────────────────
         let ultimoDespachoData = null;
 
