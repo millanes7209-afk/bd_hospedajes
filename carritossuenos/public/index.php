@@ -349,6 +349,71 @@ $cierreHoy = $stmtCierre->fetch();
             padding: 12px 16px;
             z-index: 999;
         }
+
+        /* CAMPANA DE NOTIFICACIONES ESTILO FACEBOOK */
+        .fb-bell-container {
+            position: relative;
+        }
+        .fb-bell-btn {
+            position: relative;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .fb-bell-btn:active {
+            transform: scale(0.92);
+        }
+        .fb-bell-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #ef4444;
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 800;
+            min-width: 19px;
+            height: 19px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--card-bg);
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            animation: bell-pulse 1.8s infinite;
+        }
+        @keyframes bell-pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .bell-shake {
+            display: inline-block;
+            animation: bell-shake 0.8s ease-in-out infinite alternate;
+        }
+        @keyframes bell-shake {
+            0% { transform: rotate(-14deg); }
+            100% { transform: rotate(14deg); }
+        }
+        .notif-dropdown-menu {
+            width: 320px;
+            max-width: 90vw;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+            color: var(--text-main);
+            padding: 0;
+            overflow: hidden;
+            z-index: 1050;
+        }
     </style>
 </head>
 <body>
@@ -359,10 +424,34 @@ $cierreHoy = $stmtCierre->fetch();
             <span class="fw-extrabold fs-6 text-gradient d-flex align-items-center" style="color: var(--text-main);">
                 <i class="bi bi-shop me-2 text-warning fs-5"></i>Carrito Sueños
             </span>
-            <!-- Botón Cambiar Modo Claro / Oscuro -->
-            <button type="button" onclick="toggleTheme()" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-bold" style="font-size: 0.75rem;">
-                <span id="theme-icon"><i class="bi bi-moon-stars-fill me-1"></i> Modo Oscuro</span>
-            </button>
+            <div class="d-flex align-items-center gap-2">
+                <!-- Campana de Notificaciones Estilo Facebook -->
+                <div class="dropdown fb-bell-container">
+                    <button class="fb-bell-btn" type="button" id="bellNotifBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Notificaciones de Despacho">
+                        <i class="bi bi-bell-fill fs-5" id="bellIcon"></i>
+                        <span class="fb-bell-badge d-none" id="bellBadge">1</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end notif-dropdown-menu p-0 mt-2" aria-labelledby="bellNotifBtn">
+                        <div class="p-3 border-bottom d-flex align-items-center justify-content-between" style="border-color: var(--card-border) !important;">
+                            <h6 class="mb-0 fw-bold d-flex align-items-center" style="color: var(--text-main);">
+                                <i class="bi bi-bell me-2 text-primary"></i>Despachos Central
+                            </h6>
+                            <span class="badge bg-secondary-subtle text-muted fw-semibold px-2 py-1" style="font-size: 0.65rem;" id="notifStatusTag">Sin novedades</span>
+                        </div>
+                        <div class="p-3" id="notifDropdownContent">
+                            <div class="text-center py-3 text-muted small">
+                                <i class="bi bi-inbox fs-2 d-block mb-1 opacity-50"></i>
+                                No hay despachos registrados para hoy en Central.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón Cambiar Modo Claro / Oscuro -->
+                <button type="button" onclick="toggleTheme()" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-bold" style="font-size: 0.75rem;">
+                    <span id="theme-icon"><i class="bi bi-moon-stars-fill me-1"></i> Modo Oscuro</span>
+                </button>
+            </div>
         </div>
 
         <!-- LETREROS DE CONTADORES DESTACADOS -->
@@ -838,6 +927,132 @@ $cierreHoy = $stmtCierre->fetch();
                 }
             });
         }
+
+        // ── CAMPANA DE NOTIFICACIONES ESTILO FACEBOOK ─────────────────────────
+        let ultimoDespachoData = null;
+
+        function verificarDespachoCentral() {
+            fetch('api.php?accion=verificar_despacho')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) return;
+
+                    const bellBadge = document.getElementById('bellBadge');
+                    const bellIcon = document.getElementById('bellIcon');
+                    const notifStatusTag = document.getElementById('notifStatusTag');
+                    const notifContent = document.getElementById('notifDropdownContent');
+
+                    if (data.hay_despacho && !data.aceptado) {
+                        ultimoDespachoData = data.despacho;
+                        // Activar campana estilo Facebook
+                        if (bellBadge) {
+                            bellBadge.classList.remove('d-none');
+                            bellBadge.innerText = '1';
+                        }
+                        if (bellIcon) {
+                            bellIcon.classList.add('bell-shake', 'text-warning');
+                        }
+                        if (notifStatusTag) {
+                            notifStatusTag.className = 'badge bg-danger text-white fw-bold px-2 py-1';
+                            notifStatusTag.innerText = '¡Nuevo Despacho!';
+                        }
+
+                        let detallesHtml = '';
+                        let totalUnidadesRecibidas = 0;
+                        if (data.despacho && data.despacho.detalles) {
+                            data.despacho.detalles.forEach(d => {
+                                let cant = parseInt(d.cantidad_enviada || 0);
+                                totalUnidadesRecibidas += cant;
+                                detallesHtml += `
+                                    <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light">
+                                        <span class="small fw-semibold"><i class="bi bi-box-seam me-1 text-primary"></i>${d.variante_nombre || 'Salteña'}</span>
+                                        <span class="badge bg-secondary-subtle text-dark fw-bold">${cant} u.</span>
+                                    </div>
+                                `;
+                            });
+                        }
+
+                        if (notifContent) {
+                            notifContent.innerHTML = `
+                                <div class="mb-2">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="badge bg-warning text-dark fw-extrabold px-2 py-1">EN CAMINO</span>
+                                        <small class="text-muted">${data.despacho.fecha || 'Hoy'}</small>
+                                    </div>
+                                    <p class="small fw-bold mb-2" style="color: var(--text-main);">
+                                        📦 Central ha despachado <span class="text-primary">${totalUnidadesRecibidas} salteñas</span>:
+                                    </p>
+                                    <div class="bg-body-secondary p-2 rounded-3 mb-3">
+                                        ${detallesHtml || '<div class="small text-muted">Detalles en proceso...</div>'}
+                                    </div>
+                                    <button type="button" onclick="aceptarDespachoRecibido()" class="btn btn-success btn-sm w-100 fw-bold py-2 rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                                        <i class="bi bi-check-circle-fill"></i> Aceptar y Recibir Stock
+                                    </button>
+                                </div>
+                            `;
+                        }
+                    } else if (data.hay_despacho && data.aceptado) {
+                        if (bellBadge) bellBadge.classList.add('d-none');
+                        if (bellIcon) bellIcon.classList.remove('bell-shake', 'text-warning');
+                        if (notifStatusTag) {
+                            notifStatusTag.className = 'badge bg-success-subtle text-success fw-semibold px-2 py-1';
+                            notifStatusTag.innerText = 'Recibido';
+                        }
+                        if (notifContent) {
+                            notifContent.innerHTML = `
+                                <div class="text-center py-2">
+                                    <i class="bi bi-check-circle-fill text-success fs-3 d-block mb-1"></i>
+                                    <div class="small fw-bold text-success">Despacho de hoy aceptado</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">El stock ya está listo y habilitado para ventas.</div>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        if (bellBadge) bellBadge.classList.add('d-none');
+                        if (bellIcon) bellIcon.classList.remove('bell-shake', 'text-warning');
+                        if (notifStatusTag) {
+                            notifStatusTag.className = 'badge bg-secondary-subtle text-muted fw-semibold px-2 py-1';
+                            notifStatusTag.innerText = 'Sin novedades';
+                        }
+                        if (notifContent) {
+                            notifContent.innerHTML = `
+                                <div class="text-center py-3 text-muted small">
+                                    <i class="bi bi-inbox fs-2 d-block mb-1 opacity-50"></i>
+                                    No hay despachos registrados para hoy en Central.
+                                </div>
+                            `;
+                        }
+                    }
+                })
+                .catch(() => {});
+        }
+
+        function aceptarDespachoRecibido() {
+            if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+            const payload = {
+                despacho_id: ultimoDespachoData ? ultimoDespachoData.id : null,
+                detalles: ultimoDespachoData ? ultimoDespachoData.detalles : []
+            };
+
+            fetch('api.php?accion=aceptar_stock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.error || 'No se pudo aceptar el stock'));
+                }
+            })
+            .catch(() => alert('Error de red al aceptar el stock.'));
+        }
+
+        // Consultar de inmediato y luego cada 15 segundos
+        verificarDespachoCentral();
+        setInterval(verificarDespachoCentral, 15000);
     </script>
 </body>
 </html>
