@@ -28,7 +28,7 @@ class CatalogoApiController extends Controller
 
         // Carrito principal activo
         $carrito = Carrito::where('activo', true)->first();
-        $carritoId = $carrito ? $carrito->id : 1;
+        $carritoId = $carrito ? $carrito->id : null;
 
         // 1. Variantes de Salteñas activas
         $variantes = VarianteSaltena::where('activo', true)

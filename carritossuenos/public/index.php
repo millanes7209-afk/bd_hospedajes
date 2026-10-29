@@ -55,6 +55,14 @@ try {
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+    CREATE TABLE IF NOT EXISTS `turnos` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `fecha` DATE NOT NULL,
+        `abierto_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        `cerrado_at` TIMESTAMP NULL DEFAULT NULL,
+        `estado` ENUM('abierto', 'cerrado') NOT NULL DEFAULT 'abierto'
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
     CREATE TABLE IF NOT EXISTS `despachos_recibidos` (
         `despacho_id` INT PRIMARY KEY,
         `fecha` DATE NOT NULL,
@@ -205,23 +213,13 @@ foreach ($stockHoy as $st) {
 // 3. Promociones reales (excluyendo combos ficticios de prueba)
 $promociones = $pdo->query("SELECT * FROM promociones WHERE activo = 1 AND nombre NOT LIKE 'Combo 3%' AND nombre NOT LIKE 'Promo 5%' ORDER BY nombre")->fetchAll();
 
-// 4. Control de Turnos: verificar si el turno fue cerrado y si llegó nuevo despacho tras el cierre
-$stmtUltimoCierre = $pdo->prepare("SELECT created_at FROM cierres WHERE fecha = ? ORDER BY id DESC LIMIT 1");
-$stmtUltimoCierre->execute([$hoy]);
-$ultimoCierreAt = $stmtUltimoCierre->fetchColumn();
+// 4. Control de Turno: verificar si el turno está abierto actualmente
+$stmtTurno = $pdo->query("SELECT * FROM turnos WHERE estado = 'abierto' ORDER BY id DESC LIMIT 1");
+$turnoActual = $stmtTurno->fetch();
+$turnoAbierto = (bool) $turnoActual;
 
-$hayDespachoNuevoTrasCierre = false;
-if ($ultimoCierreAt) {
-    $stNuevo = $pdo->prepare("SELECT COUNT(*) FROM despachos_recibidos WHERE fecha = ? AND recibido_at > ?");
-    $stNuevo->execute([$hoy, $ultimoCierreAt]);
-    $hayDespachoNuevoTrasCierre = ((int) $stNuevo->fetchColumn() > 0);
-}
-
-// Si se cerró el turno y aún no hay un nuevo despacho aceptado, el turno está finalizado
-$turnoFinalizado = ($ultimoCierreAt && !$hayDespachoNuevoTrasCierre);
-
-if ($turnoFinalizado) {
-    // Al cerrar el turno ya no se ve nada de ventas y se espera nuevo despacho
+if (!$turnoAbierto) {
+    // Si el turno no está abierto, la pantalla principal no muestra nada de contadores ni ventas
     $unidadesVendidasHoy = 0;
     $dineroRecaudadoHoy = 0.00;
     $dineroEfectivoHoy = 0.00;
@@ -230,30 +228,17 @@ if ($turnoFinalizado) {
     $productos = [];
     $totalStockEnviado = 0;
 } else {
-    // Obtener ventas únicamente del turno activo (posteriores al último cierre si hubo uno hoy)
-    if ($ultimoCierreAt) {
-        $stmtVentas = $pdo->prepare("
-            SELECT 
-                SUM(cantidad) as total_unidades, 
-                SUM(monto) as total_dinero,
-                SUM(CASE WHEN metodo_pago = 'efectivo' THEN monto ELSE 0 END) as dinero_efectivo,
-                SUM(CASE WHEN metodo_pago = 'qr' THEN monto ELSE 0 END) as dinero_qr
-            FROM ventas 
-            WHERE fecha_hora > ?
-        ");
-        $stmtVentas->execute([$ultimoCierreAt]);
-    } else {
-        $stmtVentas = $pdo->prepare("
-            SELECT 
-                SUM(cantidad) as total_unidades, 
-                SUM(monto) as total_dinero,
-                SUM(CASE WHEN metodo_pago = 'efectivo' THEN monto ELSE 0 END) as dinero_efectivo,
-                SUM(CASE WHEN metodo_pago = 'qr' THEN monto ELSE 0 END) as dinero_qr
-            FROM ventas 
-            WHERE DATE(fecha_hora) = ?
-        ");
-        $stmtVentas->execute([$hoy]);
-    }
+    // Obtener ventas únicamente desde que se abrió este turno
+    $stmtVentas = $pdo->prepare("
+        SELECT 
+            SUM(cantidad) as total_unidades, 
+            SUM(monto) as total_dinero,
+            SUM(CASE WHEN metodo_pago = 'efectivo' THEN monto ELSE 0 END) as dinero_efectivo,
+            SUM(CASE WHEN metodo_pago = 'qr' THEN monto ELSE 0 END) as dinero_qr
+        FROM ventas 
+        WHERE fecha_hora >= ?
+    ");
+    $stmtVentas->execute([$turnoActual['abierto_at']]);
     $resVentas = $stmtVentas->fetch();
     $unidadesVendidasHoy = (int)($resVentas['total_unidades'] ?? 0);
     $dineroRecaudadoHoy = (float)($resVentas['total_dinero'] ?? 0.00);
@@ -261,7 +246,7 @@ if ($turnoFinalizado) {
     $dineroQrHoy = (float)($resVentas['dinero_qr'] ?? 0.00);
 }
 
-$cierreHoy = $turnoFinalizado ? true : null;
+$cierreHoy = !$turnoAbierto;
 ?>
 <!DOCTYPE html>
 <html lang="es" class="theme-light">
@@ -520,7 +505,8 @@ $cierreHoy = $turnoFinalizado ? true : null;
                 <i class="bi bi-shop me-2 text-warning fs-5"></i>Carrito Sueños
             </span>
             <div class="d-flex align-items-center gap-2">
-                <!-- Campana de Notificaciones Estilo Facebook -->
+                <?php if ($turnoAbierto): ?>
+                <!-- Campana de Notificaciones Estilo Facebook (Visible solo al abrir turno) -->
                 <div class="dropdown fb-bell-container">
                     <button class="fb-bell-btn" type="button" id="bellNotifBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Notificaciones de Despacho">
                         <i class="bi bi-bell-fill fs-5" id="bellIcon"></i>
@@ -541,6 +527,7 @@ $cierreHoy = $turnoFinalizado ? true : null;
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
 
                 <!-- Botón Cambiar Modo Claro / Oscuro -->
                 <button type="button" onclick="toggleTheme()" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-bold" style="font-size: 0.75rem;">
@@ -549,7 +536,8 @@ $cierreHoy = $turnoFinalizado ? true : null;
             </div>
         </div>
 
-        <!-- LETREROS DE CONTADORES DESTACADOS -->
+        <?php if ($turnoAbierto): ?>
+        <!-- LETREROS DE CONTADORES DESTACADOS (Solo visibles una vez abierto el turno) -->
         <div class="row g-2 text-center">
             <div class="col-3">
                 <div class="p-1 rounded-3" style="background: var(--card-bg); border: 1px solid var(--card-border);">
@@ -577,23 +565,24 @@ $cierreHoy = $turnoFinalizado ? true : null;
                 </div>
             </div>
         </div>
+        <?php endif; ?>
     </div>
 
     <div class="container-fluid pt-3 px-3">
 
-        <?php if ($turnoFinalizado): ?>
-            <!-- TURNO FINALIZADO: ESPERANDO NUEVO DESPACHO -->
+        <?php if (!$turnoAbierto): ?>
+            <!-- PANTALLA INICIAL: TURNO CERRADO - SOLO BOTÓN ABRIR TURNO -->
             <div class="text-center py-5">
-                <div class="mb-3">
-                    <i class="bi bi-hourglass-split text-warning" style="font-size: 3.5rem;"></i>
+                <div class="mb-4">
+                    <i class="bi bi-shop text-warning" style="font-size: 4.5rem;"></i>
                 </div>
-                <h4 class="fw-bold">Turno Finalizado</h4>
-                <p class="text-muted small">El turno ha sido cerrado. Esperando nuevo despacho desde Central para el carrito.</p>
-                <div class="mt-4">
-                    <button type="button" onclick="location.reload()" class="btn btn-outline-primary px-4 py-2 rounded-pill fw-bold">
-                        <i class="bi bi-arrow-clockwise me-1"></i> Comprobar nuevo despacho
-                    </button>
-                </div>
+                <h3 class="fw-extrabold mb-2" style="color: var(--text-main);">Punto de Venta Carrito</h3>
+                <p class="text-muted small mb-4" style="max-width: 360px; margin: 0 auto;">
+                    No hay ningún turno abierto actualmente. Presiona el botón para abrir turno e iniciar la jornada.
+                </p>
+                <button type="button" onclick="abrirTurno()" class="btn btn-warning btn-lg px-5 py-3 rounded-pill fw-extrabold shadow-lg text-dark">
+                    <i class="bi bi-box-arrow-in-right me-2 fs-5"></i> ABRIR TURNO
+                </button>
             </div>
 
         <?php elseif (!$stockAceptado): ?>
@@ -757,7 +746,7 @@ $cierreHoy = $turnoFinalizado ? true : null;
 
     </div>
 
-    <?php if ($stockAceptado && !$cierreHoy): ?>
+    <?php if ($turnoAbierto && $stockAceptado): ?>
         <!-- BOTÓN FIJO INFERIOR: CERRAR TURNO -->
         <div class="floating-footer">
             <button type="button" class="btn btn-outline-danger w-100 py-3 rounded-4 fw-bold" data-bs-toggle="modal" data-bs-target="#modalCierre">
@@ -1168,9 +1157,25 @@ $cierreHoy = $turnoFinalizado ? true : null;
             .catch(() => alert('Error de red al aceptar el stock.'));
         }
 
-        // Consultar de inmediato y luego cada 15 segundos
+        function abrirTurno() {
+            if (navigator.vibrate) navigator.vibrate(50);
+            fetch('api.php?accion=abrir_turno')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error al abrir turno: ' + (data.error || ''));
+                    }
+                })
+                .catch(() => alert('Error de red al abrir turno'));
+        }
+
+        <?php if ($turnoAbierto): ?>
+        // Consultar despacho de inmediato y luego cada 15 segundos (solo con turno abierto)
         verificarDespachoCentral();
         setInterval(verificarDespachoCentral, 15000);
+        <?php endif; ?>
     </script>
 </body>
 </html>

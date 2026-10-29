@@ -7,8 +7,15 @@ $pdo = getDBConnection();
 $accion = $_REQUEST['accion'] ?? '';
 $hoy = date('Y-m-d');
 
-// Asegurar soporte de tabla despachos_recibidos y pago híbrido
+// Asegurar soporte de tablas turnos, despachos_recibidos y pago híbrido
 try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `turnos` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `fecha` DATE NOT NULL,
+        `abierto_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        `cerrado_at` TIMESTAMP NULL DEFAULT NULL,
+        `estado` ENUM('abierto', 'cerrado') NOT NULL DEFAULT 'abierto'
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
     $pdo->exec("CREATE TABLE IF NOT EXISTS `despachos_recibidos` (
         `despacho_id` INT PRIMARY KEY,
         `fecha` DATE NOT NULL,
@@ -18,6 +25,19 @@ try {
     $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_efectivo DECIMAL(10,2) NOT NULL DEFAULT 0.00");
     $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_qr DECIMAL(10,2) NOT NULL DEFAULT 0.00");
 } catch (Exception $e) {}
+
+// ── ABRIR TURNO ─────────────────────────────────────────────────────────────
+if ($accion === 'abrir_turno') {
+    try {
+        $pdo->exec("UPDATE turnos SET estado = 'cerrado', cerrado_at = NOW() WHERE estado = 'abierto'");
+        $st = $pdo->prepare("INSERT INTO turnos (fecha, estado) VALUES (?, 'abierto')");
+        $st->execute([$hoy]);
+        echo json_encode(['success' => true, 'mensaje' => 'Turno abierto con éxito']);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+    exit;
+}
 
 // ── VERIFICAR DESPACHO DESDE CENTRAL (Detección dinámica) ─────────────────────
 if ($accion === 'verificar_despacho') {
@@ -278,9 +298,10 @@ if ($accion === 'cerrar_turno') {
     $observaciones = trim($input['observaciones'] ?? '');
 
     try {
-        // 1. Guardado Local
+        // 1. Guardado Local y Marcar Turno Cerrado
         $stmt = $pdo->prepare("INSERT INTO cierres (fecha, total_vendidas, total_sobrantes, dinero_cobrado, dinero_efectivo, dinero_qr, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$hoy, $totalVendidas, $totalSobrantes, $dineroCobrado, $dineroEfectivo, $dineroQr, $observaciones]);
+        $pdo->exec("UPDATE turnos SET estado = 'cerrado', cerrado_at = NOW() WHERE estado = 'abierto'");
 
         // 2. Obtener desglose dinámico de salteñas vendidas y sobrantes por variante
         $stmtDetalles = $pdo->prepare("
@@ -308,12 +329,7 @@ if ($accion === 'cerrar_turno') {
         }
 
         if (empty($detallesCierre)) {
-            $detallesCierre[] = [
-                'variante_id' => 1,
-                'cantidad_entregada' => $totalVendidas + $totalSobrantes,
-                'cantidad_vendida_normal' => $totalVendidas,
-                'cantidad_sobrante' => $totalSobrantes
-            ];
+            $detallesCierre = [];
         }
 
         // 3. Sincronización Automática con Sistema Central (sin forzar ID quemado)

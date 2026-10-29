@@ -40,7 +40,7 @@ class CierreDiarioApiController extends Controller
                 $carrito = Carrito::where('activo', true)->first();
             }
 
-            $input['carrito_id'] = $carrito ? $carrito->id : 1;
+            $input['carrito_id'] = $carrito ? $carrito->id : null;
         }
 
         $validator = Validator::make($input, [
