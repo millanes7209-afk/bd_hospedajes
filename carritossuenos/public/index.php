@@ -38,7 +38,7 @@ try {
         `promocion_id` INT NULL,
         `cantidad` INT NOT NULL DEFAULT 1,
         `monto` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-        `metodo_pago` ENUM('efectivo', 'qr') NOT NULL DEFAULT 'efectivo',
+        `metodo_pago` ENUM('efectivo', 'qr', 'hibrido') NOT NULL DEFAULT 'efectivo',
         FOREIGN KEY (`producto_id`) REFERENCES `productos`(`id`) ON DELETE SET NULL,
         FOREIGN KEY (`promocion_id`) REFERENCES `promociones`(`id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -61,16 +61,7 @@ try {
     try { $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_qr` DECIMAL(10,2) NOT NULL DEFAULT 0.00;"); } catch (Exception $e) {}
 } catch (Exception $e) {}
 
-// --- LIMPIEZA DE DATOS DE PRUEBA SI SE SOLICITA O AUTOMÁTICO ---
-if (isset($_GET['limpiar']) || isset($_GET['reset'])) {
-    $pdo->exec("DELETE FROM ventas");
-    $pdo->exec("DELETE FROM cierres");
-    $pdo->exec("DELETE FROM stock_diario");
-    $pdo->exec("DELETE FROM productos WHERE nombre IN ('Pollo', 'Carne', 'Fricasé', 'Veggie')");
-    $pdo->exec("DELETE FROM promociones WHERE nombre LIKE 'Combo 3%' OR nombre LIKE 'Promo 5%'");
-    header("Location: index.php");
-    exit;
-}
+
 
 // Limpiar productos y promociones ficticias
 try {
@@ -80,7 +71,7 @@ try {
 
 // --- SINCRONIZACIÓN EN VIVO DEL DESPACHO REAL DE CENTRAL ---
 try {
-    $ch = curl_init('https://saltenas.alloggibolivia.com/api/v1/despachos/hoy?carrito_id=1');
+    $ch = curl_init('https://saltenas.alloggibolivia.com/api/v1/despachos/hoy');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 4);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -643,19 +634,28 @@ $cierreHoy = $stmtCierre->fetch();
                         <select id="select-metodo-pago" class="form-select form-select-lg fw-bold rounded-3" style="border: 2px solid var(--card-border); background-color: var(--bg-main); color: var(--text-main);">
                             <option value="efectivo" selected>💵 Efectivo</option>
                             <option value="qr">📱 Pago por QR</option>
+                            <option value="hibrido">💸 Pago Híbrido (Efectivo + QR)</option>
                         </select>
                     </div>
 
+                    <div id="hibrido-fields" style="display:none;" class="mb-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="small text-muted fw-bold">En Efectivo (Bs.)</label>
+                                <input type="number" id="hibrido-efectivo" class="form-control" step="0.50" min="0" placeholder="0.00">
+                            </div>
+                            <div class="col-6">
+                                <label class="small text-muted fw-bold">En QR (Bs.)</label>
+                                <input type="number" id="hibrido-qr" class="form-control" step="0.50" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
                     <button type="button" onclick="procesarCobroOrden()" class="btn-vender-main">
                         <i class="bi bi-check2-circle me-1"></i> CONFIRMAR Y REGISTRAR VENTA
                     </button>
                 </div>
             </div>
 
-            <!-- TARJETAS DINÁMICAS SINCRO DESDE CENTRAL -->
-            <div class="mb-2 d-flex justify-content-between align-items-center">
-                <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-grid-fill me-1"></i> Salteñas Sincronizadas desde Central</span>
-            </div>
 
             <div class="row g-3 mb-4">
                 <?php foreach ($productos as $prod): ?>
@@ -891,22 +891,35 @@ $cierreHoy = $stmtCierre->fetch();
                 });
             });
 
-            unidadesVendidas += totalSalteñasVendidas;
+            let montoEfectivo = 0, montoQr = 0;
             if (metodo === 'efectivo') {
-                dineroEfectivo += totalCobrado;
-            } else {
-                dineroQr += totalCobrado;
+                montoEfectivo = totalCobrado;
+            } else if (metodo === 'qr') {
+                montoQr = totalCobrado;
+            } else if (metodo === 'hibrido') {
+                montoEfectivo = parseFloat(document.getElementById('hibrido-efectivo').value || 0);
+                montoQr = parseFloat(document.getElementById('hibrido-qr').value || 0);
             }
+
+            unidadesVendidas += totalSalteñasVendidas;
+            dineroEfectivo += montoEfectivo;
+            dineroQr += montoQr;
             actualizarIndicadores();
 
             vaciarCarrito();
+            // Ocultar campos híbridos y resetear
+            document.getElementById('hibrido-fields').style.display = 'none';
+            document.getElementById('hibrido-efectivo').value = '';
+            document.getElementById('hibrido-qr').value = '';
 
             fetch('api.php?accion=registrar_venta', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     items: payloadItems,
-                    metodo_pago: metodo
+                    metodo_pago: metodo,
+                    monto_efectivo: montoEfectivo,
+                    monto_qr: montoQr
                 })
             });
         }
@@ -965,6 +978,11 @@ $cierreHoy = $stmtCierre->fetch();
             });
         }
 
+        // Mostrar/ocultar campos de pago híbrido
+        document.getElementById('select-metodo-pago').addEventListener('change', function() {
+            document.getElementById('hibrido-fields').style.display = this.value === 'hibrido' ? 'block' : 'none';
+        });
+
         // ── CAMPANA DE NOTIFICACIONES ESTILO FACEBOOK ─────────────────────────
         let ultimoDespachoData = null;
 

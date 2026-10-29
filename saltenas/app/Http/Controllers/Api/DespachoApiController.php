@@ -31,9 +31,13 @@ class DespachoApiController extends Controller
             }
 
             if (!$carrito) {
+                $carrito = Carrito::where('activo', true)->first();
+            }
+
+            if (!$carrito) {
                 return response()->json([
                     'success' => false,
-                    'error' => 'Se requiere carrito_id o un header Origin reconocido.',
+                    'error' => 'No se encontró ningún carrito activo configurado en Central.',
                 ], 422);
             }
 
@@ -64,6 +68,7 @@ class DespachoApiController extends Controller
                     'id' => $d->id,
                     'variante_id' => $d->variante_id,
                     'variante_nombre' => $d->variante->nombre ?? '—',
+                    'precio' => (float) ($d->variante->precio_venta ?? 10.00),
                     'cantidad_enviada' => $d->cantidad_enviada,
                 ]),
             ],

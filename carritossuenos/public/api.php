@@ -7,7 +7,14 @@ $pdo = getDBConnection();
 $accion = $_REQUEST['accion'] ?? '';
 $hoy = date('Y-m-d');
 
-// ── VERIFICAR DESPACHO DESDE CENTRAL ──────────────────────────────────────────
+// Asegurar soporte de pago híbrido en la tabla de ventas
+try {
+    $pdo->exec("ALTER TABLE ventas MODIFY COLUMN metodo_pago VARCHAR(20) NOT NULL DEFAULT 'efectivo'");
+    $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_efectivo DECIMAL(10,2) NOT NULL DEFAULT 0.00");
+    $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_qr DECIMAL(10,2) NOT NULL DEFAULT 0.00");
+} catch (Exception $e) {}
+
+// ── VERIFICAR DESPACHO DESDE CENTRAL (Detección dinámica) ─────────────────────
 if ($accion === 'verificar_despacho') {
     try {
         // 1. Estado local de stock_diario
@@ -17,8 +24,8 @@ if ($accion === 'verificar_despacho') {
         $hayStockLocal = ($stkLocal['total'] ?? 0) > 0;
         $yaAceptadoLocal = $hayStockLocal && (($stkLocal['aceptados'] ?? 0) > 0);
 
-        // 2. Consultar a Salteñas Central (Carrito ID = 1)
-        $ch = curl_init('https://saltenas.alloggibolivia.com/api/v1/despachos/hoy?carrito_id=1');
+        // 2. Consultar a Salteñas Central (sin ID estático quemado)
+        $ch = curl_init('https://saltenas.alloggibolivia.com/api/v1/despachos/hoy');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 4);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -72,7 +79,7 @@ if ($accion === 'verificar_despacho') {
     exit;
 }
 
-// ── ACEPTAR STOCK / RECIBIR DESPACHO ──────────────────────────────────────────
+// ── ACEPTAR STOCK / RECIBIR DESPACHO (Con precios reales de Central) ───────────
 if ($accion === 'aceptar_stock') {
     $input = json_decode(file_get_contents('php://input'), true) ?? [];
     $despachoId = $input['despacho_id'] ?? ($_REQUEST['despacho_id'] ?? null);
@@ -81,11 +88,12 @@ if ($accion === 'aceptar_stock') {
     try {
         $pdo->beginTransaction();
 
-        // Sincronizar variantes y stock en BD local si se enviaron detalles
+        // Sincronizar variantes, precios reales y stock en BD local
         if (!empty($detalles) && is_array($detalles)) {
             foreach ($detalles as $det) {
                 $nombre = $det['variante_nombre'] ?? ($det['nombre'] ?? '');
                 $cant = (int) ($det['cantidad_enviada'] ?? 0);
+                $precio = (float) ($det['precio'] ?? 10.00);
                 if (empty($nombre)) continue;
 
                 $stP = $pdo->prepare("SELECT id FROM productos WHERE nombre = ? LIMIT 1");
@@ -93,11 +101,14 @@ if ($accion === 'aceptar_stock') {
                 $prod = $stP->fetch();
 
                 if (!$prod) {
-                    $stIns = $pdo->prepare("INSERT INTO productos (nombre, precio, activo) VALUES (?, 10.00, 1)");
-                    $stIns->execute([$nombre]);
+                    $stIns = $pdo->prepare("INSERT INTO productos (nombre, precio, activo) VALUES (?, ?, 1)");
+                    $stIns->execute([$nombre, $precio]);
                     $prodId = (int) $pdo->lastInsertId();
                 } else {
                     $prodId = (int) $prod['id'];
+                    // Actualizar siempre al precio real proveniente de Central
+                    $stUpP = $pdo->prepare("UPDATE productos SET precio = ?, activo = 1 WHERE id = ?");
+                    $stUpP->execute([$precio, $prodId]);
                 }
 
                 $stS = $pdo->prepare("SELECT id FROM stock_diario WHERE fecha = ? AND producto_id = ?");
@@ -118,7 +129,7 @@ if ($accion === 'aceptar_stock') {
 
         $pdo->commit();
 
-        // Notificar a Salteñas Central si tenemos el despacho_id
+        // Notificar a Salteñas Central el despacho aceptado
         $notificado = false;
         if ($despachoId) {
             $ch = curl_init("https://saltenas.alloggibolivia.com/api/v1/despachos/{$despachoId}/aceptar");
@@ -152,10 +163,12 @@ if ($accion === 'aceptar_stock') {
     exit;
 }
 
-// ── REGISTRAR VENTA ───────────────────────────────────────────────────────────
+// ── REGISTRAR VENTA (Con soporte para Pago Híbrido: Efectivo + QR) ─────────────
 if ($accion === 'registrar_venta') {
     $input = json_decode(file_get_contents('php://input'), true);
-    $metodoPago = in_array(($input['metodo_pago'] ?? 'efectivo'), ['efectivo', 'qr']) ? $input['metodo_pago'] : 'efectivo';
+    $metodoPago = in_array(($input['metodo_pago'] ?? 'efectivo'), ['efectivo', 'qr', 'hibrido']) ? $input['metodo_pago'] : 'efectivo';
+    $montoEfectivo = (float) ($input['monto_efectivo'] ?? 0.00);
+    $montoQr = (float) ($input['monto_qr'] ?? 0.00);
 
     $items = [];
     if (isset($input['items']) && is_array($input['items'])) {
@@ -172,15 +185,22 @@ if ($accion === 'registrar_venta') {
 
     try {
         $pdo->beginTransaction();
-        $stmt = $pdo->prepare("INSERT INTO ventas (fecha_hora, producto_id, promocion_id, cantidad, monto, metodo_pago) VALUES (NOW(), ?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO ventas (fecha_hora, producto_id, promocion_id, cantidad, monto, metodo_pago, monto_efectivo, monto_qr) VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?)");
 
-        foreach ($items as $item) {
+        $totalItems = count($items);
+        foreach ($items as $idx => $item) {
             $pId = $item['producto_id'] ?? null;
             $prId = $item['promocion_id'] ?? null;
             $cant = (int) ($item['cantidad'] ?? 1);
             $monto = (float) ($item['monto'] ?? 0.00);
 
-            $stmt->execute([$pId, $prId, $cant, $monto, $metodoPago]);
+            // Si es híbrido, registrar el desglose en el primer item o proporcional
+            $itemEf = ($idx === 0) ? $montoEfectivo : 0.00;
+            $itemQr = ($idx === 0) ? $montoQr : 0.00;
+            if ($metodoPago === 'efectivo') $itemEf = $monto;
+            if ($metodoPago === 'qr') $itemQr = $monto;
+
+            $stmt->execute([$pId, $prId, $cant, $monto, $metodoPago, $itemEf, $itemQr]);
         }
         $pdo->commit();
 
@@ -194,7 +214,7 @@ if ($accion === 'registrar_venta') {
     exit;
 }
 
-// ── CERRAR TURNO ───────────────────────────────────────────────────────────────
+// ── CERRAR TURNO (Dinámico: sin IDs fijos quemados) ───────────────────────────
 if ($accion === 'cerrar_turno') {
     $input = json_decode(file_get_contents('php://input'), true);
     $totalVendidas = (int) ($input['total_vendidas'] ?? 0);
@@ -209,22 +229,51 @@ if ($accion === 'cerrar_turno') {
         $stmt = $pdo->prepare("INSERT INTO cierres (fecha, total_vendidas, total_sobrantes, dinero_cobrado, dinero_efectivo, dinero_qr, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$hoy, $totalVendidas, $totalSobrantes, $dineroCobrado, $dineroEfectivo, $dineroQr, $observaciones]);
 
-        // 2. Sincronización Automática con Sistema Central (saltenas.alloggibolivia.com)
+        // 2. Obtener desglose dinámico de salteñas vendidas y sobrantes por variante
+        $stmtDetalles = $pdo->prepare("
+            SELECT s.producto_id as variante_id, s.cantidad_enviada,
+                   COALESCE(SUM(v.cantidad), 0) as cantidad_vendida
+            FROM stock_diario s
+            LEFT JOIN ventas v ON s.producto_id = v.producto_id AND DATE(v.fecha_hora) = s.fecha
+            WHERE s.fecha = ?
+            GROUP BY s.producto_id, s.cantidad_enviada
+        ");
+        $stmtDetalles->execute([$hoy]);
+        $filas = $stmtDetalles->fetchAll();
+        $detallesCierre = [];
+
+        foreach ($filas as $f) {
+            $vend = (int) $f['cantidad_vendida'];
+            $total = (int) $f['cantidad_enviada'];
+            $sobr = max(0, $total - $vend);
+            $detallesCierre[] = [
+                'variante_id' => (int) $f['variante_id'],
+                'cantidad_entregada' => $total,
+                'cantidad_vendida_normal' => $vend,
+                'cantidad_sobrante' => $sobr
+            ];
+        }
+
+        if (empty($detallesCierre)) {
+            $detallesCierre[] = [
+                'variante_id' => 1,
+                'cantidad_entregada' => $totalVendidas + $totalSobrantes,
+                'cantidad_vendida_normal' => $totalVendidas,
+                'cantidad_sobrante' => $totalSobrantes
+            ];
+        }
+
+        // 3. Sincronización Automática con Sistema Central (sin forzar ID quemado)
         $centralApiUrl = 'https://saltenas.alloggibolivia.com/api/v1/cierres/sincronizar';
         $apiKey = 'pos_saltenas_secret_key_2026';
 
         $payloadCentral = [
             'fecha' => $hoy,
             'monto_real' => $dineroCobrado,
+            'dinero_efectivo' => $dineroEfectivo,
+            'dinero_qr' => $dineroQr,
             'observaciones' => "Efectivo: Bs. $dineroEfectivo | QR: Bs. $dineroQr | " . $observaciones,
-            'detalles' => [
-                [
-                    'variante_id' => 1,
-                    'cantidad_entregada' => $totalVendidas + $totalSobrantes,
-                    'cantidad_vendida_normal' => $totalVendidas,
-                    'cantidad_sobrante' => $totalSobrantes
-                ]
-            ]
+            'detalles' => $detallesCierre
         ];
 
         $ch = curl_init($centralApiUrl);
