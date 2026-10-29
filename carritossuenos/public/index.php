@@ -147,7 +147,6 @@ try {
                     }
                 }
             }
-            // NO se inserta stock automáticamente aquí; el stock se acepta explícitamente en el turno
         }
     }
 } catch (Exception $e) {}
@@ -160,6 +159,7 @@ $turnoAbierto = (bool) $turnoActual;
 $productos = [];
 $totalStockEnviado = 0;
 $stockRestante = 0;
+$desgloseStock = [];
 $detallesPendientes = [];
 $totalPendiente = 0;
 $despachoPendienteId = null;
@@ -211,10 +211,22 @@ if (!$turnoAbierto) {
                 'nombre' => $st['producto_nombre'],
                 'precio' => ($st['precio'] !== null && $st['precio'] !== '') ? (float)$st['precio'] : null
             ];
+
+            // Cantidad vendida de esta variante en este turno específico
+            $stVend = $pdo->prepare("SELECT COALESCE(SUM(cantidad), 0) FROM ventas WHERE turno_id = ? AND producto_id = ?");
+            $stVend->execute([$turnoId, $st['producto_id']]);
+            $cantVend = (int)$stVend->fetchColumn();
+            $cantRest = max(0, (int)$st['cantidad_enviada'] - $cantVend);
+
+            $desgloseStock[] = [
+                'id' => (int)$st['producto_id'],
+                'nombre' => $st['producto_nombre'],
+                'restante' => $cantRest
+            ];
         }
         $stockRestante = max(0, $totalStockEnviado - $unidadesVendidasHoy);
     } else {
-        // Stock aún no aceptado: los contadores inician en CERO y se consulta el despacho pendiente desde Central
+        // Stock aún no aceptado: contadores en CERO y se consulta el despacho pendiente desde Central
         $stockRestante = 0;
         $totalStockEnviado = 0;
 
@@ -537,7 +549,7 @@ $cierreHoy = !$turnoAbierto;
 
         <?php if ($turnoAbierto): ?>
         <!-- LETREROS DE CONTADORES DESTACADOS (Solo visibles al abrir turno) -->
-        <div class="row g-2 text-center">
+        <div class="row g-2 text-center align-items-start">
             <div class="col-3">
                 <div class="p-1 rounded-3" style="background: var(--card-bg); border: 1px solid var(--card-border);">
                     <span class="miniletrero-badge miniletrero-vendidas">VENDIDAS</span>
@@ -548,18 +560,25 @@ $cierreHoy = !$turnoAbierto;
                 <div class="p-1 rounded-3" style="background: var(--card-bg); border: 1px solid var(--card-border);">
                     <span class="miniletrero-badge miniletrero-restantes">RESTANTES</span>
                     <div class="fs-5 fw-extrabold text-primary" id="counter-stock"><?= $stockAceptado ? $stockRestante : 0 ?> u.</div>
+                    <div id="stock-breakdown" style="font-size: 0.65rem; line-height: 1.2;" class="fw-bold text-muted mt-1">
+                        <?php if ($stockAceptado && !empty($desgloseStock)): ?>
+                            <?php foreach ($desgloseStock as $ds): ?>
+                                <div><?= htmlspecialchars($ds['nombre']) ?>: <span class="text-primary fw-extrabold" id="stock-prod-<?= $ds['id'] ?>"><?= $ds['restante'] ?></span></div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
             <div class="col-3">
                 <div class="p-1 rounded-3" style="background: var(--card-bg); border: 1px solid var(--card-border);">
                     <span class="miniletrero-badge miniletrero-efectivo">EFECTIVO</span>
-                    <div class="fs-6 fw-extrabold text-warning" id="counter-efectivo">Bs. <?= number_format($dineroEfectivoHoy, 0) ?></div>
+                    <div class="fs-6 fw-extrabold text-warning" id="counter-efectivo">Bs. <?= number_format($dineroEfectivoHoy, 2) ?></div>
                 </div>
             </div>
             <div class="col-3">
                 <div class="p-1 rounded-3" style="background: var(--card-bg); border: 1px solid var(--card-border);">
                     <span class="miniletrero-badge miniletrero-qr">PAGO QR</span>
-                    <div class="fs-6 fw-extrabold" style="color: #9333ea;" id="counter-qr">Bs. <?= number_format($dineroQrHoy, 0) ?></div>
+                    <div class="fs-6 fw-extrabold" style="color: #9333ea;" id="counter-qr">Bs. <?= number_format($dineroQrHoy, 2) ?></div>
                 </div>
             </div>
         </div>
@@ -579,11 +598,7 @@ $cierreHoy = !$turnoAbierto;
         <?php elseif (!$stockAceptado): ?>
             <!-- PANTALLA 1: RECEPCIÓN Y ACEPTACIÓN DE STOCK DE CENTRAL -->
             <div class="text-center py-3">
-                <div class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold mb-2">
-                    <i class="bi bi-box-seam me-1"></i> Stock Despachado por Central Hoy
-                </div>
-                <h4 class="fw-bold mb-1">Confirmar Recepción</h4>
-                <p class="text-muted small mb-4">Verifica las variantes enviadas desde Administración Central:</p>
+                <h4 class="fw-bold mb-3">Confirmar Recepción</h4>
 
                 <div class="card border-0 rounded-4 p-3 mb-4 text-start shadow-sm" style="background-color: var(--card-bg); border: 1px solid var(--card-border);">
                     <?php if (empty($detallesPendientes)): ?>
@@ -606,7 +621,7 @@ $cierreHoy = !$turnoAbierto;
 
                 <?php if (!empty($detallesPendientes)): ?>
                     <button type="button" onclick="aceptarStock(<?= $despachoPendienteId ? (int)$despachoPendienteId : 'null' ?>)" class="btn btn-warning btn-lg w-100 py-3 rounded-4 fw-bold shadow-lg text-dark">
-                        <i class="bi bi-check-lg me-2"></i> ACEPTAR STOCK E INICIAR VENTA
+                        ACEPTA
                     </button>
                 <?php else: ?>
                     <button type="button" onclick="location.reload()" class="btn btn-outline-primary w-100 py-3 rounded-4 fw-bold">
@@ -656,7 +671,8 @@ $cierreHoy = !$turnoAbierto;
                             <i class="bi bi-credit-card me-1"></i> Método de Pago:
                         </label>
                         <select id="select-metodo-pago" class="form-select form-select-lg fw-bold rounded-3" style="border: 2px solid var(--card-border); background-color: var(--bg-main); color: var(--text-main);">
-                            <option value="efectivo" selected>💵 Efectivo</option>
+                            <option value="" selected disabled>— Seleccione la opción —</option>
+                            <option value="efectivo">💵 Efectivo</option>
                             <option value="qr">📱 Pago por QR</option>
                             <option value="hibrido">💸 Pago Híbrido (Efectivo + QR)</option>
                         </select>
@@ -789,6 +805,7 @@ $cierreHoy = !$turnoAbierto;
         let dineroEfectivo = <?= $dineroEfectivoHoy ?>;
         let dineroQr = <?= $dineroQrHoy ?>;
         let totalStockEnviado = <?= $totalStockEnviado ?>;
+        let stockPorProducto = <?= json_encode($desgloseStock) ?>;
 
         let carrito = [];
 
@@ -842,6 +859,16 @@ $cierreHoy = !$turnoAbierto;
 
         function vaciarCarrito() {
             carrito = [];
+            const selMetodo = document.getElementById('select-metodo-pago');
+            if (selMetodo) {
+                selMetodo.value = '';
+            }
+            const hibridoContainer = document.getElementById('hibrido-fields');
+            if (hibridoContainer) hibridoContainer.style.display = 'none';
+            const inputEf = document.getElementById('hibrido-efectivo');
+            if (inputEf) inputEf.value = '';
+            const inputQr = document.getElementById('hibrido-qr');
+            if (inputQr) inputQr.value = '';
             renderizarCarrito();
         }
 
@@ -897,7 +924,14 @@ $cierreHoy = !$turnoAbierto;
             if (carrito.length === 0) return;
             if (navigator.vibrate) navigator.vibrate(60);
 
-            const metodo = document.getElementById('select-metodo-pago').value;
+            const metodoSel = document.getElementById('select-metodo-pago');
+            const metodo = metodoSel ? metodoSel.value : '';
+
+            if (!metodo) {
+                alert('Por favor seleccione una opción de método de pago.');
+                return;
+            }
+
             let payloadItems = [];
             let totalCobrado = 0;
             let totalSalteñasVendidas = 0;
@@ -907,6 +941,14 @@ $cierreHoy = !$turnoAbierto;
                 let uCount = i.unidadesPorPack * i.cantidad;
                 totalCobrado += subtotal;
                 totalSalteñasVendidas += uCount;
+
+                // Descontar del stock individual por variante
+                if (i.tipo === 'individual' && stockPorProducto) {
+                    let prodStock = stockPorProducto.find(p => p.id == i.id);
+                    if (prodStock) {
+                        prodStock.restante = Math.max(0, prodStock.restante - uCount);
+                    }
+                }
 
                 payloadItems.push({
                     tipo: i.tipo,
@@ -933,13 +975,6 @@ $cierreHoy = !$turnoAbierto;
             actualizarIndicadores();
 
             vaciarCarrito();
-            // Ocultar campos híbridos y resetear
-            const hibridoContainer = document.getElementById('hibrido-fields');
-            if (hibridoContainer) hibridoContainer.style.display = 'none';
-            const inputEf = document.getElementById('hibrido-efectivo');
-            if (inputEf) inputEf.value = '';
-            const inputQr = document.getElementById('hibrido-qr');
-            if (inputQr) inputQr.value = '';
 
             fetch('api.php?accion=registrar_venta', {
                 method: 'POST',
@@ -958,12 +993,22 @@ $cierreHoy = !$turnoAbierto;
             const elVendidas = document.getElementById('counter-vendidas');
             if (elVendidas) elVendidas.innerText = unidadesVendidas + ' u.';
             const elEfectivo = document.getElementById('counter-efectivo');
-            if (elEfectivo) elEfectivo.innerText = 'Bs. ' + dineroEfectivo.toFixed(0);
+            if (elEfectivo) elEfectivo.innerText = 'Bs. ' + dineroEfectivo.toFixed(2);
             const elQr = document.getElementById('counter-qr');
-            if (elQr) elQr.innerText = 'Bs. ' + dineroQr.toFixed(0);
+            if (elQr) elQr.innerText = 'Bs. ' + dineroQr.toFixed(2);
             let sobrante = Math.max(0, totalStockEnviado - unidadesVendidas);
             const elStock = document.getElementById('counter-stock');
             if (elStock) elStock.innerText = sobrante + ' u.';
+
+            // Desglose por tipo en el card de restantes
+            const elBreakdown = document.getElementById('stock-breakdown');
+            if (elBreakdown && stockPorProducto && stockPorProducto.length > 0) {
+                let bHtml = '';
+                stockPorProducto.forEach(sp => {
+                    bHtml += `<div>${sp.nombre}: <span class="text-primary fw-extrabold" id="stock-prod-${sp.id}">${sp.restante}</span></div>`;
+                });
+                elBreakdown.innerHTML = bHtml;
+            }
 
             const mVend = document.getElementById('modal-total-vendidas');
             if (mVend) mVend.innerText = unidadesVendidas + ' u.';
@@ -1024,7 +1069,7 @@ $cierreHoy = !$turnoAbierto;
             .catch(() => alert('Error de red al cerrar turno'));
         }
 
-        // Mostrar/ocultar campos de pago híbrido
+        // Listener selector de método de pago
         const selMetodo = document.getElementById('select-metodo-pago');
         if (selMetodo) {
             selMetodo.addEventListener('change', function() {

@@ -393,6 +393,8 @@ if ($accion === 'cerrar_turno') {
             'monto_real' => $dineroCobrado,
             'dinero_efectivo' => $dineroEfectivo,
             'dinero_qr' => $dineroQr,
+            'total_vendidas' => $totalVendidas,
+            'total_sobrantes' => $totalSobrantes,
             'observaciones' => "Efectivo: Bs. $dineroEfectivo | QR: Bs. $dineroQr | " . $observaciones,
             'detalles' => $detallesCierre
         ];
