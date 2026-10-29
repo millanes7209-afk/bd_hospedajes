@@ -32,10 +32,7 @@ class DespachoApiController extends Controller
         }
 
         if (!$carritoId) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Debes especificar el carrito_id para consultar el despacho.',
-            ], 422);
+            $carritoId = 1;
         }
 
         // Priorizar cualquier despacho que esté pendiente hoy para notificar al carrito

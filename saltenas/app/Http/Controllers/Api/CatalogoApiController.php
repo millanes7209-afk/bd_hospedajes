@@ -27,8 +27,8 @@ class CatalogoApiController extends Controller
             \Illuminate\Support\Facades\DB::statement("ALTER TABLE `despachos_diarios` DROP INDEX `despachos_diarios_carrito_id_fecha_unique`");
         } catch (\Throwable $e) {}
 
-        // Carrito consultado estrictamente sin defaults
-        $carritoId = $request->get('carrito_id');
+        // Carrito consultado (directo a Carrito 1 por defecto)
+        $carritoId = $request->get('carrito_id') ?: 1;
 
         // Listado de todos los carritos registrados activos
         $listaCarritos = Carrito::where('activo', true)->select('id', 'nombre', 'zona')->orderBy('nombre')->get();

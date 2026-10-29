@@ -4,7 +4,7 @@ require_once __DIR__ . '/db.php';
 $pdo = getDBConnection();
 $hoy = date('Y-m-d');
 
-// --- AUTO-MIGRACIÓN DE TABLAS (SIN DATOS HARDCODEADOS DE PRUEBA) ---
+// --- AUTO-MIGRACIÓN DE TABLAS ---
 try {
     $pdo->exec("
     CREATE TABLE IF NOT EXISTS `productos` (
@@ -57,17 +57,11 @@ try {
 
     CREATE TABLE IF NOT EXISTS `turnos` (
         `id` INT AUTO_INCREMENT PRIMARY KEY,
-        `carrito_id` INT NULL,
+        `carrito_id` INT NULL DEFAULT 1,
         `fecha` DATE NOT NULL,
         `abierto_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         `cerrado_at` TIMESTAMP NULL DEFAULT NULL,
         `estado` ENUM('abierto', 'cerrado') NOT NULL DEFAULT 'abierto'
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-    CREATE TABLE IF NOT EXISTS `carritos_disponibles` (
-        `id` INT PRIMARY KEY,
-        `nombre` VARCHAR(100) NOT NULL,
-        `zona` VARCHAR(100) NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
     CREATE TABLE IF NOT EXISTS `despachos_recibidos` (
@@ -77,7 +71,7 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
 
-    try { $pdo->exec("ALTER TABLE turnos ADD COLUMN IF NOT EXISTS carrito_id INT NULL;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE turnos ADD COLUMN IF NOT EXISTS carrito_id INT NULL DEFAULT 1;"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE stock_diario ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE cierres ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
@@ -92,9 +86,9 @@ try {
     $pdo->exec("DELETE FROM promociones WHERE nombre LIKE 'Combo 3%' OR nombre LIKE 'Promo 5%'");
 } catch (Exception $e) {}
 
-// --- SINCRONIZACIÓN EN VIVO DEL CATÁLOGO Y CARRIZOS DESDE CENTRAL ---
+// --- SINCRONIZACIÓN EN VIVO DEL CATÁLOGO DESDE CENTRAL (Precios oficiales y promociones) ---
 try {
-    $ch = curl_init('https://saltenas.alloggibolivia.com/api/v1/catalogo');
+    $ch = curl_init('https://saltenas.alloggibolivia.com/api/v1/catalogo?carrito_id=1');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 4);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -111,15 +105,7 @@ try {
         if (!empty($json['success']) && !empty($json['data'])) {
             $data = $json['data'];
 
-            // Sincronizar lista de carritos registrados en Central
-            if (!empty($data['carritos']) && is_array($data['carritos'])) {
-                foreach ($data['carritos'] as $car) {
-                    $stC = $pdo->prepare("INSERT INTO carritos_disponibles (id, nombre, zona) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), zona = VALUES(zona)");
-                    $stC->execute([$car['id'], $car['nombre'], $car['zona'] ?? null]);
-                }
-            }
-
-            // 1. Sincronizar variantes con precios reales (sin defaults)
+            // 1. Sincronizar variantes con precios reales oficiales (sin defaults)
             if (!empty($data['variantes']) && is_array($data['variantes'])) {
                 foreach ($data['variantes'] as $v) {
                     $nombre = $v['nombre'] ?? '';
@@ -161,13 +147,10 @@ try {
                     }
                 }
             }
-            // NOTA: NO insertamos stock automáticamente aquí; el stock se acepta explícitamente en el turno
+            // NO se inserta stock automáticamente aquí; el stock se acepta explícitamente en el turno
         }
     }
 } catch (Exception $e) {}
-
-// Carritos disponibles para selección
-$listaCarritos = $pdo->query("SELECT * FROM carritos_disponibles ORDER BY nombre")->fetchAll();
 
 // Control de Turno: verificar si el turno está abierto actualmente
 $stmtTurno = $pdo->query("SELECT * FROM turnos WHERE estado = 'abierto' ORDER BY id DESC LIMIT 1");
@@ -180,10 +163,9 @@ $stockRestante = 0;
 $detallesPendientes = [];
 $totalPendiente = 0;
 $despachoPendienteId = null;
-$nombreCarritoActivo = '';
 
 if (!$turnoAbierto) {
-    // Si el turno no está abierto, contadores estrictamente en cero y sin productos
+    // Si el turno no está abierto, contadores en cero
     $unidadesVendidasHoy = 0;
     $dineroRecaudadoHoy = 0.00;
     $dineroEfectivoHoy = 0.00;
@@ -191,15 +173,8 @@ if (!$turnoAbierto) {
     $stockAceptado = false;
 } else {
     $turnoId = (int)$turnoActual['id'];
-    $carritoId = (int)$turnoActual['carrito_id'];
 
-    // Resolver nombre del carrito activo
-    $stNom = $pdo->prepare("SELECT nombre, zona FROM carritos_disponibles WHERE id = ?");
-    $stNom->execute([$carritoId]);
-    $cRow = $stNom->fetch();
-    $nombreCarritoActivo = $cRow ? $cRow['nombre'] . (!empty($cRow['zona']) ? ' ('.$cRow['zona'].')' : '') : 'Carrito #' . $carritoId;
-
-    // Obtener ventas asociadas ESTRICTAMENTE a este turno_id
+    // Ventas estrictamente de este turno_id
     $stmtVentas = $pdo->prepare("
         SELECT 
             SUM(cantidad) as total_unidades, 
@@ -216,7 +191,7 @@ if (!$turnoAbierto) {
     $dineroEfectivoHoy = (float)($resVentas['dinero_efectivo'] ?? 0.00);
     $dineroQrHoy = (float)($resVentas['dinero_qr'] ?? 0.00);
 
-    // Obtener stock_diario aceptado ESTRICTAMENTE para este turno_id
+    // Stock aceptado estrictamente para este turno_id
     $stmtStock = $pdo->prepare("
         SELECT s.*, p.nombre as producto_nombre, p.precio 
         FROM stock_diario s 
@@ -239,36 +214,34 @@ if (!$turnoAbierto) {
         }
         $stockRestante = max(0, $totalStockEnviado - $unidadesVendidasHoy);
     } else {
-        // Stock no aceptado aún: los contadores inician en CERO y se consulta el despacho pendiente desde Central
+        // Stock aún no aceptado: los contadores inician en CERO y se consulta el despacho pendiente desde Central
         $stockRestante = 0;
         $totalStockEnviado = 0;
 
-        if ($carritoId) {
-            $chD = curl_init("https://saltenas.alloggibolivia.com/api/v1/despachos/hoy?carrito_id={$carritoId}");
-            curl_setopt($chD, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($chD, CURLOPT_TIMEOUT, 4);
-            curl_setopt($chD, CURLOPT_HTTPHEADER, [
-                'Accept: application/json',
-                'X-POS-Api-Key: pos_saltenas_secret_key_2026'
-            ]);
-            curl_setopt($chD, CURLOPT_SSL_VERIFYPEER, false);
-            $resD = curl_exec($chD);
-            curl_close($chD);
-            if ($resD) {
-                $jsonD = json_decode($resD, true);
-                if (!empty($jsonD['success']) && !empty($jsonD['despacho'])) {
-                    $despachoPendienteId = $jsonD['despacho']['id'] ?? null;
-                    $detallesPendientes = $jsonD['despacho']['detalles'] ?? [];
-                    foreach ($detallesPendientes as $dp) {
-                        $totalPendiente += (int)($dp['cantidad_enviada'] ?? 0);
-                    }
+        $chD = curl_init("https://saltenas.alloggibolivia.com/api/v1/despachos/hoy?carrito_id=1");
+        curl_setopt($chD, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($chD, CURLOPT_TIMEOUT, 4);
+        curl_setopt($chD, CURLOPT_HTTPHEADER, [
+            'Accept: application/json',
+            'X-POS-Api-Key: pos_saltenas_secret_key_2026'
+        ]);
+        curl_setopt($chD, CURLOPT_SSL_VERIFYPEER, false);
+        $resD = curl_exec($chD);
+        curl_close($chD);
+        if ($resD) {
+            $jsonD = json_decode($resD, true);
+            if (!empty($jsonD['success']) && !empty($jsonD['despacho'])) {
+                $despachoPendienteId = $jsonD['despacho']['id'] ?? null;
+                $detallesPendientes = $jsonD['despacho']['detalles'] ?? [];
+                foreach ($detallesPendientes as $dp) {
+                    $totalPendiente += (int)($dp['cantidad_enviada'] ?? 0);
                 }
             }
         }
     }
 }
 
-// Promociones reales activas
+// Promociones reales
 $promociones = $pdo->query("SELECT * FROM promociones WHERE activo = 1 AND nombre NOT LIKE 'Combo 3%' AND nombre NOT LIKE 'Promo 5%' ORDER BY nombre")->fetchAll();
 
 $cierreHoy = !$turnoAbierto;
@@ -526,8 +499,8 @@ $cierreHoy = !$turnoAbierto;
     <div class="header-counter py-2 px-3">
         <div class="d-flex align-items-center justify-content-between mb-2">
             <span class="fw-extrabold fs-6 text-gradient d-flex align-items-center" style="color: var(--text-main);">
-                <?php if ($turnoAbierto && !empty($nombreCarritoActivo)): ?>
-                    <i class="bi bi-shop me-2 text-warning fs-5"></i><?= htmlspecialchars($nombreCarritoActivo) ?>
+                <?php if ($turnoAbierto): ?>
+                    <i class="bi bi-shop me-2 text-warning fs-5"></i>Carrito Sueños
                 <?php endif; ?>
             </span>
             <div class="d-flex align-items-center gap-2">
@@ -563,7 +536,7 @@ $cierreHoy = !$turnoAbierto;
         </div>
 
         <?php if ($turnoAbierto): ?>
-        <!-- LETREROS DE CONTADORES DESTACADOS (Solo visibles una vez abierto el turno) -->
+        <!-- LETREROS DE CONTADORES DESTACADOS (Solo visibles al abrir turno) -->
         <div class="row g-2 text-center">
             <div class="col-3">
                 <div class="p-1 rounded-3" style="background: var(--card-bg); border: 1px solid var(--card-border);">
@@ -596,19 +569,8 @@ $cierreHoy = !$turnoAbierto;
     <div class="container-fluid pt-3 px-3">
 
         <?php if (!$turnoAbierto): ?>
-            <!-- PANTALLA INICIAL: TURNO CERRADO - SOLO SELECTOR Y BOTÓN ABRIR TURNO -->
+            <!-- PANTALLA INICIAL: TURNO CERRADO - SOLO BOTÓN ABRIR TURNO -->
             <div class="text-center py-5">
-                <?php if (!empty($listaCarritos) && count($listaCarritos) > 0): ?>
-                    <div class="mb-4" style="max-width: 280px; margin: 0 auto;">
-                        <label class="small text-muted fw-bold mb-1.5 d-block text-center">Seleccionar Carrito:</label>
-                        <select id="select-carrito" class="form-select text-center fw-extrabold rounded-pill" style="border: 2px solid var(--accent-primary); background-color: var(--card-bg); color: var(--text-main);">
-                            <?php foreach ($listaCarritos as $carr): ?>
-                                <option value="<?= $carr['id'] ?>">🛒 <?= htmlspecialchars($carr['nombre']) ?> <?= !empty($carr['zona']) ? '('.htmlspecialchars($carr['zona']).')' : '' ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                <?php endif; ?>
-
                 <button type="button" onclick="abrirTurno()" class="btn btn-warning btn-lg px-5 py-3 rounded-pill fw-extrabold shadow-lg text-dark">
                     <i class="bi bi-box-arrow-in-right me-2 fs-5"></i> ABRIR TURNO
                 </button>
@@ -1195,28 +1157,16 @@ $cierreHoy = !$turnoAbierto;
 
         function abrirTurno() {
             if (navigator.vibrate) navigator.vibrate(50);
-            const sel = document.getElementById('select-carrito');
-            const carritoId = sel ? sel.value : null;
-
-            if (!carritoId) {
-                alert('Por favor selecciona un carrito');
-                return;
-            }
-
-            fetch('api.php?accion=abrir_turno', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ carrito_id: carritoId })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('Error al abrir turno: ' + (data.error || ''));
-                }
-            })
-            .catch(() => alert('Error de red al abrir turno'));
+            fetch('api.php?accion=abrir_turno')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error al abrir turno: ' + (data.error || ''));
+                    }
+                })
+                .catch(() => alert('Error de red al abrir turno'));
         }
 
         <?php if ($turnoAbierto): ?>
