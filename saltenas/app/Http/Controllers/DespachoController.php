@@ -59,6 +59,12 @@ class DespachoController extends Controller
 
         // Asegurar que la restricción unique esté eliminada de la base de datos para permitir múltiples despachos
         try {
+            // 1. MySQL requiere un índice no-único en carrito_id para sostener la foreign key
+            try {
+                DB::statement("CREATE INDEX `despachos_diarios_carrito_id_fk_idx` ON `despachos_diarios` (`carrito_id`)");
+            } catch (\Throwable $eIdx) {}
+
+            // 2. Ahora sí MySQL permite eliminar el índice unique compuesto
             DB::statement("ALTER TABLE `despachos_diarios` DROP INDEX `despachos_diarios_carrito_id_fecha_unique`");
         } catch (\Throwable $e) {}
 

@@ -13,6 +13,29 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Endpoint de verificación de salud de la API (Ping)
+// Endpoint temporal para asegurar la eliminación de la restricción unique en BD de producción
+Route::get('/v1/fix-despachos-db', function () {
+    $msg = [];
+    try {
+        \Illuminate\Support\Facades\DB::statement("CREATE INDEX `despachos_diarios_carrito_id_fk_idx` ON `despachos_diarios` (`carrito_id`)");
+        $msg[] = 'Índice de foreign key creado.';
+    } catch (\Throwable $e) {
+        $msg[] = 'Índice fk ya existía o ignorado: ' . $e->getMessage();
+    }
+
+    try {
+        \Illuminate\Support\Facades\DB::statement("ALTER TABLE `despachos_diarios` DROP INDEX `despachos_diarios_carrito_id_fecha_unique`");
+        $msg[] = 'Índice unique eliminado con éxito. Múltiples despachos habilitados.';
+    } catch (\Throwable $e) {
+        $msg[] = 'Drop unique: ' . $e->getMessage();
+    }
+
+    return response()->json([
+        'success' => true,
+        'mensajes' => $msg
+    ]);
+});
+
 Route::get('/v1/ping', function () {
     return response()->json([
         'status' => 'online',

@@ -181,15 +181,7 @@ $stmtStock = $pdo->prepare("
 $stmtStock->execute([$hoy]);
 $stockHoy = $stmtStock->fetchAll();
 
-// Si stockHoy está vacío para $hoy, verificar si la fecha del despacho en Central fue la más reciente
-if (empty($stockHoy)) {
-    $stRec = $pdo->query("SELECT DISTINCT fecha FROM stock_diario ORDER BY fecha DESC LIMIT 1")->fetchColumn();
-    if ($stRec) {
-        $stmtStock->execute([$stRec]);
-        $stockHoy = $stmtStock->fetchAll();
-        $hoy = $stRec;
-    }
-}
+
 
 $stockAceptado = false;
 $totalStockEnviado = 0;
@@ -213,28 +205,63 @@ foreach ($stockHoy as $st) {
 // 3. Promociones reales (excluyendo combos ficticios de prueba)
 $promociones = $pdo->query("SELECT * FROM promociones WHERE activo = 1 AND nombre NOT LIKE 'Combo 3%' AND nombre NOT LIKE 'Promo 5%' ORDER BY nombre")->fetchAll();
 
-// 4. Obtener ventas registradas hoy con desglose Efectivo vs QR
-$stmtVentas = $pdo->prepare("
-    SELECT 
-        SUM(cantidad) as total_unidades, 
-        SUM(monto) as total_dinero,
-        SUM(CASE WHEN metodo_pago = 'efectivo' THEN monto ELSE 0 END) as dinero_efectivo,
-        SUM(CASE WHEN metodo_pago = 'qr' THEN monto ELSE 0 END) as dinero_qr
-    FROM ventas 
-    WHERE DATE(fecha_hora) = ?
-");
-$stmtVentas->execute([$hoy]);
-$resVentas = $stmtVentas->fetch();
+// 4. Control de Turnos: verificar si el turno fue cerrado y si llegó nuevo despacho tras el cierre
+$stmtUltimoCierre = $pdo->prepare("SELECT created_at FROM cierres WHERE fecha = ? ORDER BY id DESC LIMIT 1");
+$stmtUltimoCierre->execute([$hoy]);
+$ultimoCierreAt = $stmtUltimoCierre->fetchColumn();
 
-$unidadesVendidasHoy = (int)($resVentas['total_unidades'] ?? 0);
-$dineroRecaudadoHoy = (float)($resVentas['total_dinero'] ?? 0.00);
-$dineroEfectivoHoy = (float)($resVentas['dinero_efectivo'] ?? 0.00);
-$dineroQrHoy = (float)($resVentas['dinero_qr'] ?? 0.00);
+$hayDespachoNuevoTrasCierre = false;
+if ($ultimoCierreAt) {
+    $stNuevo = $pdo->prepare("SELECT COUNT(*) FROM despachos_recibidos WHERE fecha = ? AND recibido_at > ?");
+    $stNuevo->execute([$hoy, $ultimoCierreAt]);
+    $hayDespachoNuevoTrasCierre = ((int) $stNuevo->fetchColumn() > 0);
+}
 
-// 5. Verificar si el turno ya fue cerrado hoy
-$stmtCierre = $pdo->prepare("SELECT * FROM cierres WHERE fecha = ?");
-$stmtCierre->execute([$hoy]);
-$cierreHoy = $stmtCierre->fetch();
+// Si se cerró el turno y aún no hay un nuevo despacho aceptado, el turno está finalizado
+$turnoFinalizado = ($ultimoCierreAt && !$hayDespachoNuevoTrasCierre);
+
+if ($turnoFinalizado) {
+    // Al cerrar el turno ya no se ve nada de ventas y se espera nuevo despacho
+    $unidadesVendidasHoy = 0;
+    $dineroRecaudadoHoy = 0.00;
+    $dineroEfectivoHoy = 0.00;
+    $dineroQrHoy = 0.00;
+    $stockAceptado = false;
+    $productos = [];
+    $totalStockEnviado = 0;
+} else {
+    // Obtener ventas únicamente del turno activo (posteriores al último cierre si hubo uno hoy)
+    if ($ultimoCierreAt) {
+        $stmtVentas = $pdo->prepare("
+            SELECT 
+                SUM(cantidad) as total_unidades, 
+                SUM(monto) as total_dinero,
+                SUM(CASE WHEN metodo_pago = 'efectivo' THEN monto ELSE 0 END) as dinero_efectivo,
+                SUM(CASE WHEN metodo_pago = 'qr' THEN monto ELSE 0 END) as dinero_qr
+            FROM ventas 
+            WHERE fecha_hora > ?
+        ");
+        $stmtVentas->execute([$ultimoCierreAt]);
+    } else {
+        $stmtVentas = $pdo->prepare("
+            SELECT 
+                SUM(cantidad) as total_unidades, 
+                SUM(monto) as total_dinero,
+                SUM(CASE WHEN metodo_pago = 'efectivo' THEN monto ELSE 0 END) as dinero_efectivo,
+                SUM(CASE WHEN metodo_pago = 'qr' THEN monto ELSE 0 END) as dinero_qr
+            FROM ventas 
+            WHERE DATE(fecha_hora) = ?
+        ");
+        $stmtVentas->execute([$hoy]);
+    }
+    $resVentas = $stmtVentas->fetch();
+    $unidadesVendidasHoy = (int)($resVentas['total_unidades'] ?? 0);
+    $dineroRecaudadoHoy = (float)($resVentas['total_dinero'] ?? 0.00);
+    $dineroEfectivoHoy = (float)($resVentas['dinero_efectivo'] ?? 0.00);
+    $dineroQrHoy = (float)($resVentas['dinero_qr'] ?? 0.00);
+}
+
+$cierreHoy = $turnoFinalizado ? true : null;
 ?>
 <!DOCTYPE html>
 <html lang="es" class="theme-light">
@@ -554,41 +581,18 @@ $cierreHoy = $stmtCierre->fetch();
 
     <div class="container-fluid pt-3 px-3">
 
-        <?php if ($cierreHoy): ?>
-            <!-- TURNO CERRADO -->
+        <?php if ($turnoFinalizado): ?>
+            <!-- TURNO FINALIZADO: ESPERANDO NUEVO DESPACHO -->
             <div class="text-center py-5">
                 <div class="mb-3">
-                    <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                    <i class="bi bi-hourglass-split text-warning" style="font-size: 3.5rem;"></i>
                 </div>
-                <h4 class="fw-bold">¡Turno Cerrado!</h4>
-                <p class="text-muted small">Has finalizado la jornada de hoy (<?= date('d/m/Y') ?>).</p>
-                <div class="card border-0 rounded-4 p-3 text-start mx-auto mt-4 shadow-sm" style="max-width: 400px; background-color: var(--card-bg); border: 1px solid var(--card-border);">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Salteñas Vendidas:</span>
-                        <span class="fw-bold text-success"><?= $cierreHoy['total_vendidas'] ?> u.</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Stock Sobrante:</span>
-                        <span class="fw-bold text-primary"><?= $cierreHoy['total_sobrantes'] ?> u.</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Cobrado en Efectivo:</span>
-                        <span class="fw-bold text-warning">Bs. <?= number_format($cierreHoy['dinero_efectivo'] ?? $cierreHoy['dinero_cobrado'], 2) ?></span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Cobrado en QR:</span>
-                        <span class="fw-bold" style="color: #9333ea;">Bs. <?= number_format($cierreHoy['dinero_qr'] ?? 0, 2) ?></span>
-                    </div>
-                    <div class="d-flex justify-content-between pt-2 border-top">
-                        <span class="fw-bold">Total General:</span>
-                        <span class="fw-bold text-dark fs-5">Bs. <?= number_format($cierreHoy['dinero_cobrado'], 2) ?></span>
-                    </div>
-                    <?php if (!empty($cierreHoy['observaciones'])): ?>
-                        <div class="mt-2 pt-2 border-top">
-                            <span class="text-muted extra-small d-block fw-bold">Observaciones / Salteñas dañadas:</span>
-                            <span class="small"><?= htmlspecialchars($cierreHoy['observaciones']) ?></span>
-                        </div>
-                    <?php endif; ?>
+                <h4 class="fw-bold">Turno Finalizado</h4>
+                <p class="text-muted small">El turno ha sido cerrado. Esperando nuevo despacho desde Central para el carrito.</p>
+                <div class="mt-4">
+                    <button type="button" onclick="location.reload()" class="btn btn-outline-primary px-4 py-2 rounded-pill fw-bold">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Comprobar nuevo despacho
+                    </button>
                 </div>
             </div>
 

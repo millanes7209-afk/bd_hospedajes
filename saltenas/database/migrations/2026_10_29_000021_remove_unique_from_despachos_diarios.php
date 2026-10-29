@@ -11,6 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('despachos_diarios', function (Blueprint $table) {
+            $table->index('carrito_id', 'despachos_diarios_carrito_id_fk_idx');
             $table->dropUnique('despachos_diarios_carrito_id_fecha_unique');
         });
     }
