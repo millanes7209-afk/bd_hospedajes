@@ -8,13 +8,14 @@ use App\Models\Promocion;
 use App\Models\VarianteSaltena;
 use App\Models\DespachoDiario;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class CatalogoApiController extends Controller
 {
     /**
      * Retorna el catálogo completo y el despacho del día para el carrito que consulta.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $hoy = date('Y-m-d');
 
@@ -26,9 +27,15 @@ class CatalogoApiController extends Controller
             \Illuminate\Support\Facades\DB::statement("ALTER TABLE `despachos_diarios` DROP INDEX `despachos_diarios_carrito_id_fecha_unique`");
         } catch (\Throwable $e) {}
 
-        // Carrito principal activo
-        $carrito = Carrito::where('activo', true)->first();
-        $carritoId = $carrito ? $carrito->id : null;
+        // Carrito consultado o primer carrito activo
+        $carritoId = $request->get('carrito_id');
+        if (!$carritoId) {
+            $carrito = Carrito::where('activo', true)->first();
+            $carritoId = $carrito ? $carrito->id : null;
+        }
+
+        // Listado de todos los carritos registrados activos
+        $listaCarritos = Carrito::where('activo', true)->select('id', 'nombre', 'zona')->orderBy('nombre')->get();
 
         // 1. Variantes de Salteñas activas
         $variantes = VarianteSaltena::where('activo', true)
@@ -74,6 +81,7 @@ class CatalogoApiController extends Controller
             'timestamp' => now()->toIso8601String(),
             'data' => [
                 'carrito_id' => $carritoId,
+                'carritos' => $listaCarritos,
                 'variantes' => $variantes,
                 'promociones' => $promociones,
                 'despacho_hoy' => $despachoHoy,

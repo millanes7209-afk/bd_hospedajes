@@ -57,10 +57,17 @@ try {
 
     CREATE TABLE IF NOT EXISTS `turnos` (
         `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `carrito_id` INT NULL,
         `fecha` DATE NOT NULL,
         `abierto_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         `cerrado_at` TIMESTAMP NULL DEFAULT NULL,
         `estado` ENUM('abierto', 'cerrado') NOT NULL DEFAULT 'abierto'
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+    CREATE TABLE IF NOT EXISTS `carritos_disponibles` (
+        `id` INT PRIMARY KEY,
+        `nombre` VARCHAR(100) NOT NULL,
+        `zona` VARCHAR(100) NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
     CREATE TABLE IF NOT EXISTS `despachos_recibidos` (
@@ -70,6 +77,14 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
 
+    try { $pdo->exec("ALTER TABLE turnos ADD COLUMN IF NOT EXISTS carrito_id INT NULL;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE stock_diario ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE cierres ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE turnos ADD COLUMN IF NOT EXISTS carrito_id INT NULL;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE stock_diario ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE cierres ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE `ventas` ADD COLUMN `metodo_pago` ENUM('efectivo', 'qr') NOT NULL DEFAULT 'efectivo';"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_efectivo` DECIMAL(10,2) NOT NULL DEFAULT 0.00;"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE `cierres` ADD COLUMN `dinero_qr` DECIMAL(10,2) NOT NULL DEFAULT 0.00;"); } catch (Exception $e) {}
@@ -102,6 +117,22 @@ try {
         if (!empty($json['success']) && !empty($json['data'])) {
             $data = $json['data'];
 
+            // Sincronizar lista de carritos registrados en Central
+            if (!empty($data['carritos']) && is_array($data['carritos'])) {
+                foreach ($data['carritos'] as $car) {
+                    $stC = $pdo->prepare("INSERT INTO carritos_disponibles (id, nombre, zona) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), zona = VALUES(zona)");
+                    $stC->execute([$car['id'], $car['nombre'], $car['zona'] ?? null]);
+                }
+            }
+
+            // Sincronizar lista de carritos registrados en Central
+            if (!empty($data['carritos']) && is_array($data['carritos'])) {
+                foreach ($data['carritos'] as $car) {
+                    $stC = $pdo->prepare("INSERT INTO carritos_disponibles (id, nombre, zona) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), zona = VALUES(zona)");
+                    $stC->execute([$car['id'], $car['nombre'], $car['zona'] ?? null]);
+                }
+            }
+
             // 1. Sincronizar variantes con precios reales (sin defaults)
             if (!empty($data['variantes']) && is_array($data['variantes'])) {
                 foreach ($data['variantes'] as $v) {
@@ -502,7 +533,7 @@ $cierreHoy = !$turnoAbierto;
     <div class="header-counter py-2 px-3">
         <div class="d-flex align-items-center justify-content-between mb-2">
             <span class="fw-extrabold fs-6 text-gradient d-flex align-items-center" style="color: var(--text-main);">
-                <i class="bi bi-shop me-2 text-warning fs-5"></i>Carrito Sueños
+                <i class="bi bi-shop me-2 text-warning fs-5"></i><?= htmlspecialchars($nombreCarritoActivo) ?>
             </span>
             <div class="d-flex align-items-center gap-2">
                 <?php if ($turnoAbierto): ?>
@@ -571,15 +602,19 @@ $cierreHoy = !$turnoAbierto;
     <div class="container-fluid pt-3 px-3">
 
         <?php if (!$turnoAbierto): ?>
-            <!-- PANTALLA INICIAL: TURNO CERRADO - SOLO BOTÓN ABRIR TURNO -->
+            <!-- PANTALLA INICIAL: TURNO CERRADO - SOLO SELECTOR Y BOTÓN ABRIR TURNO -->
             <div class="text-center py-5">
-                <div class="mb-4">
-                    <i class="bi bi-shop text-warning" style="font-size: 4.5rem;"></i>
-                </div>
-                <h3 class="fw-extrabold mb-2" style="color: var(--text-main);">Punto de Venta Carrito</h3>
-                <p class="text-muted small mb-4" style="max-width: 360px; margin: 0 auto;">
-                    No hay ningún turno abierto actualmente. Presiona el botón para abrir turno e iniciar la jornada.
-                </p>
+                <?php if (!empty($listaCarritos) && count($listaCarritos) > 0): ?>
+                    <div class="mb-4" style="max-width: 280px; margin: 0 auto;">
+                        <label class="small text-muted fw-bold mb-1.5 d-block text-center">Seleccionar Carrito:</label>
+                        <select id="select-carrito" class="form-select text-center fw-extrabold rounded-pill" style="border: 2px solid var(--accent-primary); background-color: var(--card-bg); color: var(--text-main);">
+                            <?php foreach ($listaCarritos as $carr): ?>
+                                <option value="<?= $carr['id'] ?>">🛒 <?= htmlspecialchars($carr['nombre']) ?> <?= !empty($carr['zona']) ? '('.htmlspecialchars($carr['zona']).')' : '' ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                <?php endif; ?>
+
                 <button type="button" onclick="abrirTurno()" class="btn btn-warning btn-lg px-5 py-3 rounded-pill fw-extrabold shadow-lg text-dark">
                     <i class="bi bi-box-arrow-in-right me-2 fs-5"></i> ABRIR TURNO
                 </button>
@@ -1159,16 +1194,23 @@ $cierreHoy = !$turnoAbierto;
 
         function abrirTurno() {
             if (navigator.vibrate) navigator.vibrate(50);
-            fetch('api.php?accion=abrir_turno')
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert('Error al abrir turno: ' + (data.error || ''));
-                    }
-                })
-                .catch(() => alert('Error de red al abrir turno'));
+            const sel = document.getElementById('select-carrito');
+            const carritoId = sel ? sel.value : null;
+
+            fetch('api.php?accion=abrir_turno', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ carrito_id: carritoId })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error al abrir turno: ' + (data.error || ''));
+                }
+            })
+            .catch(() => alert('Error de red al abrir turno'));
         }
 
         <?php if ($turnoAbierto): ?>
