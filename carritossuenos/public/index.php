@@ -11,7 +11,7 @@ if (function_exists('mysqli_report')) {
 // ---------- Configuración de conexión ----------
 $host = 'sdb-65.hosting.stackcp.net';
 $db   = 'carrito_suenos-353033395dd3';
-$user = 'millanes7209@gmail.com';
+$user = 'carrito_suenos-353033395dd3';
 $pass = 'SCARYmovie1.'; // contraseña original
 
 // ---------- Variables de depuración ----------

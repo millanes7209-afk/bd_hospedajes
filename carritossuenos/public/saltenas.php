@@ -6,7 +6,7 @@ error_reporting(E_ALL);
 // Datos de conexión a la base Saltenas (según .env)
 $host = 'shareddb-g.hosting.stackcp.net';
 $db   = 'saltenas-3731dbba';
-$user = 'millanes7209@gmail.com';
+$user = 'saltenas-3731dbba';
 $pass = 'SCARYmovie1.'; // contraseña original
 
 $connectionError = '';
