@@ -18,6 +18,14 @@ class CatalogoApiController extends Controller
     {
         $hoy = date('Y-m-d');
 
+        // Eliminar restricción unique en BD de producción si aún existe
+        try {
+            try {
+                \Illuminate\Support\Facades\DB::statement("CREATE INDEX `despachos_diarios_carrito_id_fk_idx` ON `despachos_diarios` (`carrito_id`)");
+            } catch (\Throwable $eIdx) {}
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE `despachos_diarios` DROP INDEX `despachos_diarios_carrito_id_fecha_unique`");
+        } catch (\Throwable $e) {}
+
         // Carrito principal activo
         $carrito = Carrito::where('activo', true)->first();
         $carritoId = $carrito ? $carrito->id : 1;

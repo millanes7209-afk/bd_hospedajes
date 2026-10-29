@@ -40,6 +40,13 @@ class DespachoController extends Controller
 
     public function create()
     {
+        try {
+            try {
+                DB::statement("CREATE INDEX `despachos_diarios_carrito_id_fk_idx` ON `despachos_diarios` (`carrito_id`)");
+            } catch (\Throwable $eIdx) {}
+            DB::statement("ALTER TABLE `despachos_diarios` DROP INDEX `despachos_diarios_carrito_id_fecha_unique`");
+        } catch (\Throwable $e) {}
+
         $carritos = Carrito::where('activo', true)->orderBy('nombre')->get();
         $variantes = VarianteSaltena::where('activo', true)->orderBy('nombre')->get();
 
