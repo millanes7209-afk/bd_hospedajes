@@ -70,15 +70,28 @@ class CierreDiarioApiController extends Controller
         }
 
         try {
-            // Construir detalles mínimos para el servicio
-            $data['detalles'] = [
-                [
-                    'variante_id' => 1,
-                    'cantidad_entregada' => (int) ($data['total_vendidas'] ?? 0) + (int) ($data['total_sobrantes'] ?? 0),
-                    'cantidad_vendida_normal' => (int) ($data['total_vendidas'] ?? 0),
-                    'cantidad_sobrante' => (int) ($data['total_sobrantes'] ?? 0),
-                ]
-            ];
+            // Construir detalles por variante recibidos desde el POS
+            $detallesInput = $request->input('detalles');
+            if (!empty($detallesInput) && is_array($detallesInput)) {
+                $data['detalles'] = [];
+                foreach ($detallesInput as $d) {
+                    $data['detalles'][] = [
+                        'variante_id' => (int) ($d['variante_id'] ?? 1),
+                        'cantidad_entregada' => (int) ($d['cantidad_entregada'] ?? 0),
+                        'cantidad_vendida_normal' => (int) ($d['cantidad_vendida_normal'] ?? 0),
+                        'cantidad_sobrante' => (int) ($d['cantidad_sobrante'] ?? 0),
+                    ];
+                }
+            } else {
+                $data['detalles'] = [
+                    [
+                        'variante_id' => 1,
+                        'cantidad_entregada' => (int) ($data['total_vendidas'] ?? 0) + (int) ($data['total_sobrantes'] ?? 0),
+                        'cantidad_vendida_normal' => (int) ($data['total_vendidas'] ?? 0),
+                        'cantidad_sobrante' => (int) ($data['total_sobrantes'] ?? 0),
+                    ]
+                ];
+            }
 
             // Guardar como PENDIENTE (requiere aprobación del dueño en Central)
             $data['estado'] = 'pendiente';

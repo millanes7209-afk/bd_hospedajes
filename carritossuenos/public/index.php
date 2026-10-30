@@ -4,18 +4,19 @@ require_once __DIR__ . '/db.php';
 $pdo = getDBConnection();
 $hoy = date('Y-m-d');
 
-// --- AUTO-MIGRACIÓN DE TABLAS ---
+// --- AUTO-MIGRACIÓN DE TABLAS (Heredando IDs oficiales de Central) ---
 try {
     $pdo->exec("
     CREATE TABLE IF NOT EXISTS `productos` (
-        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `id` INT PRIMARY KEY,
         `nombre` VARCHAR(100) NOT NULL,
-        `precio` DECIMAL(10,2) NOT NULL,
+        `precio` DECIMAL(10,2) NULL,
         `activo` TINYINT(1) DEFAULT 1
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
     CREATE TABLE IF NOT EXISTS `promociones` (
-        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `id` INT PRIMARY KEY,
+        `variante_id` INT NOT NULL,
         `nombre` VARCHAR(100) NOT NULL,
         `unidades` INT NOT NULL,
         `precio` DECIMAL(10,2) NOT NULL,
@@ -24,6 +25,7 @@ try {
 
     CREATE TABLE IF NOT EXISTS `stock_diario` (
         `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `turno_id` INT NULL,
         `fecha` DATE NOT NULL,
         `producto_id` INT NOT NULL,
         `cantidad_enviada` INT NOT NULL DEFAULT 0,
@@ -33,18 +35,22 @@ try {
 
     CREATE TABLE IF NOT EXISTS `ventas` (
         `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `turno_id` INT NULL,
         `fecha_hora` DATETIME NOT NULL,
         `producto_id` INT NULL,
         `promocion_id` INT NULL,
         `cantidad` INT NOT NULL DEFAULT 1,
         `monto` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `metodo_pago` ENUM('efectivo', 'qr', 'hibrido') NOT NULL DEFAULT 'efectivo',
+        `monto_efectivo` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        `monto_qr` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         FOREIGN KEY (`producto_id`) REFERENCES `productos`(`id`) ON DELETE SET NULL,
         FOREIGN KEY (`promocion_id`) REFERENCES `promociones`(`id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
     CREATE TABLE IF NOT EXISTS `cierres` (
         `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `turno_id` INT NULL,
         `fecha` DATE NOT NULL,
         `total_vendidas` INT NOT NULL DEFAULT 0,
         `total_sobrantes` INT NOT NULL DEFAULT 0,
@@ -66,6 +72,7 @@ try {
 
     CREATE TABLE IF NOT EXISTS `despachos_recibidos` (
         `despacho_id` INT PRIMARY KEY,
+        `turno_id` INT NULL,
         `fecha` DATE NOT NULL,
         `recibido_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -78,26 +85,11 @@ try {
     try { $pdo->exec("ALTER TABLE ventas MODIFY COLUMN metodo_pago VARCHAR(20) NOT NULL DEFAULT 'efectivo'"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_efectivo DECIMAL(10,2) NOT NULL DEFAULT 0.00"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_qr DECIMAL(10,2) NOT NULL DEFAULT 0.00"); } catch (Exception $e) {}
-    try { $pdo->exec("ALTER TABLE promociones ADD COLUMN IF NOT EXISTS variante_id INT NULL;"); } catch (Exception $e) {}
-    try { $pdo->exec("ALTER TABLE promociones ADD COLUMN IF NOT EXISTS producto_id INT NULL;"); } catch (Exception $e) {}
-    try {
-        // Encontrar el ID real de 'mixtas' en la tabla productos local
-        $stMixtas = $pdo->query("SELECT id FROM productos WHERE LOWER(nombre) LIKE '%mixta%' LIMIT 1");
-        $idRealMixtas = $stMixtas ? (int)$stMixtas->fetchColumn() : 0;
-        if ($idRealMixtas > 0) {
-            $pdo->exec("UPDATE promociones SET producto_id = $idRealMixtas WHERE nombre LIKE '%3x10%' OR producto_id IS NULL OR producto_id != $idRealMixtas");
-            $pdo->exec("UPDATE ventas SET producto_id = $idRealMixtas WHERE promocion_id IS NOT NULL AND (producto_id IS NULL OR producto_id != $idRealMixtas)");
-        }
-    } catch (Exception $eFix) {}
+    try { $pdo->exec("ALTER TABLE promociones ADD COLUMN IF NOT EXISTS variante_id INT NOT NULL DEFAULT 1;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE despachos_recibidos ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
 } catch (Exception $e) {}
 
-// Limpiar productos y promociones ficticias
-try {
-    $pdo->exec("DELETE FROM productos WHERE nombre IN ('Pollo', 'Carne', 'Fricasé', 'Veggie') AND id NOT IN (SELECT producto_id FROM stock_diario WHERE fecha = '$hoy')");
-    $pdo->exec("DELETE FROM promociones WHERE nombre LIKE 'Combo 3%' OR nombre LIKE 'Promo 5%'");
-} catch (Exception $e) {}
-
-// --- SINCRONIZACIÓN EN VIVO DEL CATÁLOGO DESDE CENTRAL (Precios oficiales y promociones) ---
+// --- SINCRONIZACIÓN EN VIVO DEL CATÁLOGO DESDE CENTRAL (Heredando IDs oficiales) ---
 try {
     $ch = curl_init('https://saltenas.alloggibolivia.com/api/v1/catalogo?carrito_id=1');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -116,61 +108,49 @@ try {
         if (!empty($json['success']) && !empty($json['data'])) {
             $data = $json['data'];
 
-            // 1. Sincronizar variantes con precios reales oficiales (sin defaults)
+            // 1. Sincronizar variantes heredando exactamente el ID oficial de Central
             if (!empty($data['variantes']) && is_array($data['variantes'])) {
+                $stInsVar = $pdo->prepare("
+                    INSERT INTO productos (id, nombre, precio, activo) 
+                    VALUES (?, ?, ?, 1)
+                    ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), precio = VALUES(precio), activo = 1
+                ");
+                $idsVars = [];
                 foreach ($data['variantes'] as $v) {
+                    $vId = (int) ($v['id'] ?? 0);
                     $nombre = $v['nombre'] ?? '';
                     $precio = (isset($v['precio_venta']) && $v['precio_venta'] !== null && $v['precio_venta'] !== '') ? (float) $v['precio_venta'] : null;
-                    if (empty($nombre)) continue;
-
-                    $stP = $pdo->prepare("SELECT id FROM productos WHERE nombre = ? LIMIT 1");
-                    $stP->execute([$nombre]);
-                    $prod = $stP->fetch();
-
-                    if (!$prod) {
-                        $stIns = $pdo->prepare("INSERT INTO productos (nombre, precio, activo) VALUES (?, ?, 1)");
-                        $stIns->execute([$nombre, $precio]);
-                    } else {
-                        $stUpP = $pdo->prepare("UPDATE productos SET precio = ?, activo = 1 WHERE id = ?");
-                        $stUpP->execute([$precio, $prod['id']]);
-                    }
+                    if ($vId <= 0 || empty($nombre)) continue;
+                    $stInsVar->execute([$vId, $nombre, $precio]);
+                    $idsVars[] = $vId;
+                }
+                if (!empty($idsVars)) {
+                    $inVars = implode(',', $idsVars);
+                    $pdo->exec("UPDATE productos SET activo = 0 WHERE id NOT IN ($inVars)");
                 }
             }
 
-            // 2. Sincronizar promociones oficiales (vinculando al producto_id real local para descontar stock)
+            // 2. Sincronizar promociones heredando exactamente el ID y variante_id oficial de Central
             if (!empty($data['promociones']) && is_array($data['promociones'])) {
+                $stInsPromo = $pdo->prepare("
+                    INSERT INTO promociones (id, variante_id, nombre, unidades, precio, activo) 
+                    VALUES (?, ?, ?, ?, ?, 1)
+                    ON DUPLICATE KEY UPDATE variante_id = VALUES(variante_id), nombre = VALUES(nombre), unidades = VALUES(unidades), precio = VALUES(precio), activo = 1
+                ");
+                $idsPromos = [];
                 foreach ($data['promociones'] as $pr) {
+                    $prId = (int) ($pr['id'] ?? 0);
+                    $pVarId = (int) ($pr['variante_id'] ?? 0);
                     $pNom = $pr['nombre'] ?? '';
-                    $pVarId = !empty($pr['variante_id']) ? (int)$pr['variante_id'] : 1;
-                    $pVarNom = $pr['variante_nombre'] ?? '';
                     $pUni = (int) ($pr['unidades_por_paquete'] ?? 1);
                     $pPre = (float) ($pr['precio_paquete'] ?? 0.00);
-                    if (empty($pNom)) continue;
-
-                    // Buscar el ID real del producto local según el nombre de la variante o por 'mixta'
-                    $localProdId = null;
-                    if (!empty($pVarNom)) {
-                        $stPReal = $pdo->prepare("SELECT id FROM productos WHERE LOWER(nombre) = LOWER(?) LIMIT 1");
-                        $stPReal->execute([$pVarNom]);
-                        $localProdId = $stPReal->fetchColumn();
-                    }
-                    if (!$localProdId) {
-                        $stPReal = $pdo->query("SELECT id FROM productos WHERE LOWER(nombre) LIKE '%mixta%' LIMIT 1");
-                        $localProdId = $stPReal ? $stPReal->fetchColumn() : null;
-                    }
-                    $localProdId = (int)$localProdId ?: 1;
-
-                    $stPr = $pdo->prepare("SELECT id FROM promociones WHERE nombre = ? LIMIT 1");
-                    $stPr->execute([$pNom]);
-                    $rowPr = $stPr->fetch();
-
-                    if (!$rowPr) {
-                        $stInsPr = $pdo->prepare("INSERT INTO promociones (variante_id, producto_id, nombre, unidades, precio, activo) VALUES (?, ?, ?, ?, ?, 1)");
-                        $stInsPr->execute([$pVarId, $localProdId, $pNom, $pUni, $pPre]);
-                    } else {
-                        $stUpPr = $pdo->prepare("UPDATE promociones SET variante_id = ?, producto_id = ?, unidades = ?, precio = ?, activo = 1 WHERE id = ?");
-                        $stUpPr->execute([$pVarId, $localProdId, $pUni, $pPre, $rowPr['id']]);
-                    }
+                    if ($prId <= 0 || $pVarId <= 0 || empty($pNom)) continue;
+                    $stInsPromo->execute([$prId, $pVarId, $pNom, $pUni, $pPre]);
+                    $idsPromos[] = $prId;
+                }
+                if (!empty($idsPromos)) {
+                    $inPromos = implode(',', $idsPromos);
+                    $pdo->exec("UPDATE promociones SET activo = 0 WHERE id NOT IN ($inPromos)");
                 }
             }
         }
@@ -288,19 +268,8 @@ if (!$turnoAbierto) {
     }
 }
 
-// Promociones reales con producto_id real para descuento de stock
-$promociones = $pdo->query("
-    SELECT pr.*, 
-           COALESCE(
-               pr.producto_id, 
-               (SELECT id FROM productos WHERE LOWER(nombre) LIKE '%mixta%' LIMIT 1),
-               pr.variante_id, 
-               1
-           ) as prod_id 
-    FROM promociones pr 
-    WHERE pr.activo = 1 AND pr.nombre NOT LIKE 'Combo 3%' AND pr.nombre NOT LIKE 'Promo 5%' 
-    ORDER BY pr.nombre
-")->fetchAll();
+// Promociones oficiales heredadas de Central
+$promociones = $pdo->query("SELECT * FROM promociones WHERE activo = 1 ORDER BY nombre")->fetchAll();
 
 $cierreHoy = !$turnoAbierto;
 ?>
@@ -774,7 +743,7 @@ $cierreHoy = !$turnoAbierto;
                 <div class="row g-3 mb-4">
                     <?php foreach ($promociones as $promo): ?>
                         <div class="col-12">
-                            <button type="button" onclick="agregarAlCarrito('promocion', <?= $promo['id'] ?>, '<?= addslashes($promo['nombre']) ?>', <?= $promo['precio'] ?>, <?= $promo['unidades'] ?>, <?= (int)$promo['prod_id'] ?>)" class="btn-touch-promo">
+                            <button type="button" onclick="agregarAlCarrito('promocion', <?= (int)$promo['id'] ?>, '<?= addslashes($promo['nombre']) ?>', <?= (float)$promo['precio'] ?>, <?= (int)$promo['unidades'] ?>, <?= (int)$promo['variante_id'] ?>)" class="btn-touch-promo">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <span class="fw-extrabold fs-6 d-block text-warning mb-1"><i class="bi bi-tag-fill me-1"></i><?= htmlspecialchars($promo['nombre']) ?></span>
@@ -912,7 +881,7 @@ $cierreHoy = !$turnoAbierto;
             }
         }
 
-        function agregarAlCarrito(tipo, id, nombre, precio, unidadesPorPack, productoId = null) {
+        function agregarAlCarrito(tipo, id, nombre, precio, unidadesPorPack, varianteId = null) {
             if (navigator.vibrate) navigator.vibrate(35);
 
             let key = tipo + '_' + id;
@@ -924,8 +893,8 @@ $cierreHoy = !$turnoAbierto;
                 carrito.push({
                     key: key,
                     tipo: tipo,
-                    id: id,
-                    producto_id: (tipo === 'individual' ? id : (productoId || 1)),
+                    id: parseInt(id),
+                    producto_id: (tipo === 'individual' ? parseInt(id) : parseInt(varianteId)),
                     nombre: nombre,
                     precio: parseFloat(precio),
                     unidadesPorPack: parseInt(unidadesPorPack),
@@ -1032,26 +1001,8 @@ $cierreHoy = !$turnoAbierto;
                 totalCobrado += subtotal;
                 totalSalteñasVendidas += uCount;
 
-                // Descontar del stock por variante (tanto ventas individuales como promociones)
-                let targetProdId = null;
-
-                if (i.tipo === 'individual') {
-                    targetProdId = i.id;
-                } else {
-                    // Para promociones: buscar coincidencia directa o buscar 'mixtas' en stockPorProducto
-                    let pEncontrado = null;
-                    if (i.producto_id) {
-                        pEncontrado = stockPorProducto.find(p => p.id == i.producto_id);
-                    }
-                    if (!pEncontrado) {
-                        pEncontrado = stockPorProducto.find(p => p.nombre.toLowerCase().includes('mixta'));
-                    }
-                    if (!pEncontrado && stockPorProducto.length > 0) {
-                        pEncontrado = stockPorProducto[0];
-                    }
-                    targetProdId = pEncontrado ? pEncontrado.id : i.producto_id;
-                }
-
+                // Descontar del stock individual por su ID oficial directo de Central
+                let targetProdId = i.producto_id;
                 if (targetProdId && stockPorProducto) {
                     let prodStock = stockPorProducto.find(p => p.id == targetProdId);
                     if (prodStock) {
@@ -1062,8 +1013,8 @@ $cierreHoy = !$turnoAbierto;
 
                 payloadItems.push({
                     tipo: i.tipo,
-                    producto_id: targetProdId, // ¡Siempre se envía el producto_id real para descontar de BD!
-                    promocion_id: i.tipo === 'promocion' ? i.id : null,
+                    producto_id: targetProdId,
+                    promocion_id: (i.tipo === 'promocion' ? i.id : null),
                     cantidad: uCount,
                     monto: subtotal
                 });

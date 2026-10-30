@@ -197,25 +197,20 @@ if ($accion === 'aceptar_stock') {
                 $precio = (isset($det['precio']) && $det['precio'] !== null && $det['precio'] !== '') ? (float) $det['precio'] : null;
                 if (empty($nombre)) continue;
 
-                $stP = $pdo->prepare("SELECT id FROM productos WHERE nombre = ? LIMIT 1");
-                $stP->execute([$nombre]);
-                $prod = $stP->fetch();
+                $varId = (int) ($det['variante_id'] ?? ($det['id'] ?? 0));
+                if ($varId <= 0) continue;
 
-                if (!$prod) {
-                    $stIns = $pdo->prepare("INSERT INTO productos (nombre, precio, activo) VALUES (?, ?, 1)");
-                    $stIns->execute([$nombre, $precio]);
-                    $prodId = (int) $pdo->lastInsertId();
-                } else {
-                    $prodId = (int) $prod['id'];
-                    if ($precio !== null) {
-                        $stUpP = $pdo->prepare("UPDATE productos SET precio = ?, activo = 1 WHERE id = ?");
-                        $stUpP->execute([$precio, $prodId]);
-                    }
-                }
+                // Guardar/actualizar producto con el ID oficial exacto de Central
+                $stP = $pdo->prepare("
+                    INSERT INTO productos (id, nombre, precio, activo) 
+                    VALUES (?, ?, ?, 1)
+                    ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), precio = VALUES(precio), activo = 1
+                ");
+                $stP->execute([$varId, $nombre, $precio]);
 
-                // Guardar stock asignado exclusivamente a este turno_id
+                // Guardar stock asignado exclusivamente a este turno_id usando el variante_id exacto
                 $stS = $pdo->prepare("SELECT id, cantidad_enviada FROM stock_diario WHERE turno_id = ? AND producto_id = ?");
-                $stS->execute([$curTurnoId, $prodId]);
+                $stS->execute([$curTurnoId, $varId]);
                 $rowStock = $stS->fetch();
 
                 if ($rowStock) {
@@ -223,7 +218,7 @@ if ($accion === 'aceptar_stock') {
                     $stUp->execute([$cant, $rowStock['id']]);
                 } else {
                     $stInS = $pdo->prepare("INSERT INTO stock_diario (turno_id, fecha, producto_id, cantidad_enviada, aceptado) VALUES (?, ?, ?, ?, 1)");
-                    $stInS->execute([$curTurnoId, $hoy, $prodId, $cant]);
+                    $stInS->execute([$curTurnoId, $hoy, $varId, $cant]);
                 }
             }
 
@@ -313,22 +308,11 @@ if ($accion === 'registrar_venta') {
             $cant = (int) ($item['cantidad'] ?? 1);
             $monto = (float) ($item['monto'] ?? 0.00);
 
-            // Si es promoción y no vino producto_id o vino inválido, resolverlo con el ID real de 'mixtas' en productos
-            if (!$pId || $pId <= 0) {
-                if ($prId) {
-                    try {
-                        $stPrV = $pdo->prepare("SELECT producto_id FROM promociones WHERE id = ?");
-                        $stPrV->execute([$prId]);
-                        $pId = (int)$stPrV->fetchColumn();
-                    } catch (Exception $eP) {}
-                }
-                if (!$pId || $pId <= 0) {
-                    try {
-                        $stDef = $pdo->query("SELECT id FROM productos WHERE LOWER(nombre) LIKE '%mixta%' LIMIT 1");
-                        $pId = (int)$stDef->fetchColumn();
-                    } catch (Exception $eDef) {}
-                }
-                $pId = $pId ?: 1;
+            // Si es promoción y no vino producto_id, resolver su variante_id directamente de promociones
+            if (!$pId && $prId) {
+                $stPrV = $pdo->prepare("SELECT variante_id FROM promociones WHERE id = ?");
+                $stPrV->execute([$prId]);
+                $pId = (int)$stPrV->fetchColumn() ?: null;
             }
 
             $itemEf = 0.00;
