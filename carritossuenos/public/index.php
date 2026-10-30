@@ -800,7 +800,15 @@ $cierreHoy = !$turnoAbierto;
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php foreach ($desgloseStock as $ds): ?>
+                                            <?php 
+                                            $totRecibidas = 0;
+                                            $totVendidas = 0;
+                                            $totSobrantes = 0;
+                                            foreach ($desgloseStock as $ds): 
+                                                $totRecibidas += (int)$ds['enviada'];
+                                                $totVendidas += (int)$ds['vendida'];
+                                                $totSobrantes += (int)$ds['restante'];
+                                            ?>
                                                 <tr>
                                                     <td class="fw-bold"><?= htmlspecialchars($ds['nombre']) ?></td>
                                                     <td class="text-center text-muted"><?= $ds['enviada'] ?></td>
@@ -809,6 +817,14 @@ $cierreHoy = !$turnoAbierto;
                                                 </tr>
                                             <?php endforeach; ?>
                                         </tbody>
+                                        <tfoot class="border-top" style="border-top: 2px solid var(--card-border) !important;">
+                                            <tr class="fw-extrabold">
+                                                <td class="text-uppercase" style="color: var(--text-main);">TOTAL</td>
+                                                <td class="text-center text-muted"><?= $totRecibidas ?></td>
+                                                <td class="text-center text-success"><?= $totVendidas ?></td>
+                                                <td class="text-end text-primary"><?= $totSobrantes ?></td>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 </div>
                             <?php else: ?>
@@ -1079,13 +1095,20 @@ $cierreHoy = !$turnoAbierto;
             const elModalDesglose = document.getElementById('modal-desglose-variantes');
             if (elModalDesglose && stockPorProducto && stockPorProducto.length > 0) {
                 let mRows = '';
+                let tRecibidas = 0, tVendidas = 0, tSobrantes = 0;
                 stockPorProducto.forEach(sp => {
+                    let r = parseInt(sp.enviada || 0);
+                    let v = parseInt(sp.vendida || 0);
+                    let s = sp.restante !== undefined ? parseInt(sp.restante) : Math.max(0, r - v);
+                    tRecibidas += r;
+                    tVendidas += v;
+                    tSobrantes += s;
                     mRows += `
                         <tr>
                             <td class="fw-bold">${sp.nombre}</td>
-                            <td class="text-center text-muted">${sp.enviada}</td>
-                            <td class="text-center fw-bold text-success">${sp.vendida || 0}</td>
-                            <td class="text-end fw-extrabold text-primary">${sp.restante}</td>
+                            <td class="text-center text-muted">${r}</td>
+                            <td class="text-center fw-bold text-success">${v}</td>
+                            <td class="text-end fw-extrabold text-primary">${s}</td>
                         </tr>
                     `;
                 });
@@ -1101,6 +1124,14 @@ $cierreHoy = !$turnoAbierto;
                                 </tr>
                             </thead>
                             <tbody>${mRows}</tbody>
+                            <tfoot class="border-top" style="border-top: 2px solid var(--card-border) !important;">
+                                <tr class="fw-extrabold">
+                                    <td class="text-uppercase" style="color: var(--text-main);">TOTAL</td>
+                                    <td class="text-center text-muted">${tRecibidas}</td>
+                                    <td class="text-center text-success">${tVendidas}</td>
+                                    <td class="text-end text-primary">${tSobrantes}</td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 `;
@@ -1239,14 +1270,24 @@ $cierreHoy = !$turnoAbierto;
                             `;
                         }
 
-                        // Mostrar banner visible en pantalla POS
+                        // Mostrar banner visible en pantalla POS con desglose detallado por variedad
                         const bannerEl = document.getElementById('banner-nuevo-despacho');
                         const bannerDesc = document.getElementById('banner-despacho-desc');
                         if (bannerEl) {
                             bannerEl.classList.remove('d-none');
                             bannerEl.classList.add('d-flex');
                             if (bannerDesc) {
-                                bannerDesc.innerText = totalUnidadesRecibidas + ' salteñas adicionales listas para incorporarse a este turno.';
+                                let descParts = [];
+                                if (data.despacho && data.despacho.detalles) {
+                                    data.despacho.detalles.forEach(d => {
+                                        let cant = parseInt(d.cantidad_enviada || 0);
+                                        if (cant > 0) {
+                                            descParts.push(`<span class="fw-extrabold text-dark">${d.variante_nombre || 'Salteña'}: ${cant}</span>`);
+                                        }
+                                    });
+                                }
+                                let breakdownHtml = descParts.length > 0 ? descParts.join(' &bull; ') : `${totalUnidadesRecibidas} u.`;
+                                bannerDesc.innerHTML = `<span class="badge bg-dark text-warning px-2 py-1 me-1 font-monospace">${totalUnidadesRecibidas} u. total</span> &mdash; ${breakdownHtml}`;
                             }
                         }
                     } else if (data.hay_despacho && data.aceptado) {

@@ -27,10 +27,10 @@
              Aparece solo cuando algún carrito ha enviado su cierre del día
              ===================================================================== --}}
         @php
-            $cierresPendientes = \App\Models\CierreDiario::with('carrito')
+            $cierresPendientes = \App\Models\CierreDiario::with(['carrito', 'detalles.variante'])
                 ->where('estado', 'pendiente')
                 ->where('origen', 'remoto')
-                ->orderByDesc('fecha')
+                ->orderByDesc('id')
                 ->get();
         @endphp
 
@@ -62,8 +62,22 @@
                         <tbody class="divide-y divide-amber-100 dark:divide-amber-500/10">
                             @foreach($cierresPendientes as $cp)
                                 <tr class="hover:bg-amber-50/50 dark:hover:bg-amber-500/5 transition-colors" id="cierre-row-{{ $cp->id }}">
-                                    <td class="py-3 px-4 font-black text-purple-700 dark:text-purple-400 uppercase">
-                                        {{ strtoupper($cp->carrito->nombre ?? '—') }}
+                                    <td class="py-3 px-4">
+                                        <div class="font-black text-purple-700 dark:text-purple-400 uppercase">
+                                            {{ strtoupper($cp->carrito->nombre ?? '—') }}
+                                        </div>
+                                        @if($cp->detalles && $cp->detalles->isNotEmpty())
+                                            <div class="mt-1 flex flex-wrap gap-1">
+                                                @foreach($cp->detalles as $det)
+                                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-700 dark:text-slate-300 font-semibold">
+                                                        <span class="font-extrabold text-slate-900 dark:text-white">{{ $det->variante->nombre ?? 'Salteña' }}:</span>
+                                                        <span class="text-emerald-600 dark:text-emerald-400 font-bold">{{ $det->cantidad_vendida_normal }} vend.</span>
+                                                        <span class="text-slate-300 dark:text-slate-600">/</span>
+                                                        <span class="text-primary font-bold">{{ $det->cantidad_sobrante }} sobr.</span>
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="py-3 px-4 font-bold text-slate-900 dark:text-white">
                                         {{ \Carbon\Carbon::parse($cp->fecha)->format('d/m/Y') }}

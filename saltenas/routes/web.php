@@ -68,6 +68,33 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/cierres', [CierreDiarioController::class, 'store'])->name('cierres.store');
     Route::get('/cierres/eliminar/{id}', [CierreDiarioController::class, 'destroy'])->name('cierres.destroy');
 
+    // Notificaciones de Cierres Remotos Pendientes en tiempo real
+    Route::get('/api/notificaciones/pendientes', function () {
+        $cierres = \App\Models\CierreDiario::with(['carrito', 'detalles.variante'])
+            ->where('estado', 'pendiente')
+            ->where('origen', 'remoto')
+            ->orderByDesc('id')
+            ->get();
+
+        return response()->json([
+            'count' => $cierres->count(),
+            'cierres' => $cierres->map(fn($c) => [
+                'id' => $c->id,
+                'carrito' => $c->carrito->nombre ?? 'Carrito',
+                'fecha' => \Carbon\Carbon::parse($c->fecha)->format('d/m/Y'),
+                'total' => number_format($c->monto_real, 2),
+                'efectivo' => number_format($c->dinero_efectivo, 2),
+                'qr' => number_format($c->dinero_qr, 2),
+                'observaciones' => $c->observaciones,
+                'variantes' => $c->detalles->map(fn($d) => [
+                    'nombre' => $d->variante->nombre ?? 'Salteña',
+                    'vendidas' => (int)$d->cantidad_vendida_normal,
+                    'sobrantes' => (int)$d->cantidad_sobrante,
+                ]),
+            ])
+        ]);
+    })->name('notificaciones.pendientes');
+
     // Despachos Diarios (Central → Carritos)
     Route::get('/despachos', [DespachoController::class, 'index'])->name('despachos.index');
     Route::get('/despachos/crear', [DespachoController::class, 'create'])->name('despachos.create');

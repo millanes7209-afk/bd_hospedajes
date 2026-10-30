@@ -52,21 +52,15 @@ class CierreDiarioApiController extends Controller
 
         $data = $validator->validated();
 
-        // Idempotencia: si ya existe un cierre para esta fecha+carrito, retornar el existente
-        $cierreExistente = CierreDiario::where('carrito_id', $data['carrito_id'])
+        // Si ya existe un cierre PENDIENTE para este carrito en esta fecha, reemplazarlo para reflejar el último cierre enviado
+        $cierrePendientePrevio = CierreDiario::where('carrito_id', $data['carrito_id'])
             ->where('fecha', $data['fecha'])
+            ->where('estado', 'pendiente')
             ->first();
 
-        if ($cierreExistente) {
-            return response()->json([
-                'success' => true,
-                'mensaje' => 'El cierre ya estaba registrado en Central.',
-                'data' => [
-                    'cierre_id' => $cierreExistente->id,
-                    'estado' => $cierreExistente->estado,
-                    'fecha' => $cierreExistente->fecha,
-                ]
-            ], 200);
+        if ($cierrePendientePrevio) {
+            $cierrePendientePrevio->detalles()->delete();
+            $cierrePendientePrevio->delete();
         }
 
         try {

@@ -78,6 +78,12 @@
                         class="px-2.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('cierres.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-amber-600 dark:hover:text-amber-400' }}">
                         <i class="fa-solid fa-calendar-check text-emerald-600 dark:text-emerald-400"></i>
                         <span>Cierre Diario</span>
+                        @php
+                            $cierreBadgeCount = \App\Models\CierreDiario::where('estado', 'pendiente')->where('origen', 'remoto')->count();
+                        @endphp
+                        <span id="nav-cierres-badge" class="{{ $cierreBadgeCount > 0 ? '' : 'hidden' }} ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-rose-600 text-white animate-pulse">
+                            {{ $cierreBadgeCount }}
+                        </span>
                     </a>
 
                     <a href="{{ route('compras.index') }}"
@@ -116,8 +122,48 @@
                         <span>Usuarios</span>
                     </a>
 
-                    <!-- User Actions: Theme Toggle & Logout -->
+                    <!-- User Actions: Notification Bell, Theme Toggle & Logout -->
                     <div class="ml-2 pl-2 border-l border-slate-200 dark:border-slate-800 flex items-center gap-1">
+                        <!-- Campana de Notificaciones de Cierres de Carritos -->
+                        <div class="relative" x-data="{ openNotifs: false }">
+                            <button @click="openNotifs = !openNotifs" type="button" title="Cierres de Carritos Pendientes"
+                                class="relative p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-xs flex items-center">
+                                <i class="fa-solid fa-bell text-sm {{ $cierreBadgeCount > 0 ? 'text-amber-500 animate-pulse' : '' }}" id="global-bell-icon"></i>
+                                <span id="global-bell-badge" class="{{ $cierreBadgeCount > 0 ? '' : 'hidden' }} absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-rose-600 text-white animate-bounce">
+                                    {{ $cierreBadgeCount }}
+                                </span>
+                            </button>
+
+                            <!-- Dropdown Flotante de Cierres Pendientes -->
+                            <div x-show="openNotifs" @click.away="openNotifs = false" x-cloak
+                                class="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                                <div class="px-4 py-3 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                                    <span class="text-xs font-black uppercase text-slate-900 dark:text-white flex items-center gap-1.5">
+                                        <i class="fa-solid fa-bell text-amber-500"></i> Cierres Remotos
+                                    </span>
+                                    <span id="notif-count-label" class="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase">
+                                        {{ $cierreBadgeCount }} pendiente(s)
+                                    </span>
+                                </div>
+                                <div id="notif-dropdown-list" class="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                                    @if($cierreBadgeCount > 0)
+                                        <div class="p-3 bg-amber-50/50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-300 font-bold text-center">
+                                            ¡Tienes cierres de turnos recibidos esperando tu aprobación!
+                                        </div>
+                                    @else
+                                        <div class="p-4 text-center text-slate-400 font-semibold text-xs">
+                                            No hay cierres pendientes por aprobar
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="p-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+                                    <a href="{{ route('cierres.index') }}" class="block text-center py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase transition-all shadow-sm">
+                                        Revisar y Aprobar en Cierres
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
                         <button type="button" id="theme-toggle" title="Cambiar Modo Claro/Oscuro"
                             class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-xs flex items-center gap-1">
                             <i id="theme-toggle-dark-icon" class="fa-solid fa-moon hidden"></i>
@@ -179,8 +225,12 @@
 
             <a href="{{ route('cierres.index') }}" @click="mobileMenuOpen = false"
                 class="px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('cierres.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
-                <span class="flex items-center gap-3"><i
-                        class="fa-solid fa-calendar-check text-emerald-600 text-sm"></i> Cierre Diario</span>
+                <span class="flex items-center gap-3">
+                    <i class="fa-solid fa-calendar-check text-emerald-600 text-sm"></i> Cierre Diario
+                    <span id="mobile-cierres-badge" class="{{ $cierreBadgeCount > 0 ? '' : 'hidden' }} ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-600 text-white">
+                        {{ $cierreBadgeCount }} pendiente(s)
+                    </span>
+                </span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
             </a>
 
@@ -325,6 +375,74 @@
                 localStorage.setItem('theme', 'dark');
             }
         });
+
+        // Polling en tiempo real para notificar de nuevos cierres recibidos desde Carritos
+        function verificarCierresPendientesCentral() {
+            fetch('{{ route("notificaciones.pendientes") }}')
+                .then(r => r.json())
+                .then(data => {
+                    const count = data.count || 0;
+                    const bellIcon = document.getElementById('global-bell-icon');
+                    const bellBadge = document.getElementById('global-bell-badge');
+                    const navBadge = document.getElementById('nav-cierres-badge');
+                    const mobBadge = document.getElementById('mobile-cierres-badge');
+                    const countLabel = document.getElementById('notif-count-label');
+                    const listContainer = document.getElementById('notif-dropdown-list');
+
+                    if (count > 0) {
+                        if (bellIcon) bellIcon.classList.add('text-amber-500', 'animate-pulse');
+                        if (bellBadge) {
+                            bellBadge.innerText = count;
+                            bellBadge.classList.remove('hidden');
+                        }
+                        if (navBadge) {
+                            navBadge.innerText = count;
+                            navBadge.classList.remove('hidden');
+                        }
+                        if (mobBadge) {
+                            mobBadge.innerText = count + ' pendiente(s)';
+                            mobBadge.classList.remove('hidden');
+                        }
+                        if (countLabel) countLabel.innerText = count + ' pendiente(s)';
+
+                        if (listContainer && data.cierres && data.cierres.length > 0) {
+                            let itemsHtml = '';
+                            data.cierres.forEach(c => {
+                                itemsHtml += `
+                                    <div class="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="font-black text-purple-700 dark:text-purple-400 uppercase text-[11px]">${c.carrito}</span>
+                                            <span class="text-slate-400 text-[10px]">${c.fecha}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-[11px]">
+                                            <span class="text-slate-600 dark:text-slate-300">Total Cobrado:</span>
+                                            <span class="font-extrabold text-emerald-600 dark:text-emerald-400">Bs. ${c.total}</span>
+                                        </div>
+                                        <div class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                            Ef: Bs. ${c.efectivo} | QR: Bs. ${c.qr}
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            listContainer.innerHTML = itemsHtml;
+                        }
+                    } else {
+                        if (bellIcon) bellIcon.classList.remove('text-amber-500', 'animate-pulse');
+                        if (bellBadge) bellBadge.classList.add('hidden');
+                        if (navBadge) navBadge.classList.add('hidden');
+                        if (mobBadge) mobBadge.classList.add('hidden');
+                        if (countLabel) countLabel.innerText = '0 pendientes';
+                        if (listContainer) {
+                            listContainer.innerHTML = '<div class="p-4 text-center text-slate-400 font-semibold text-xs">No hay cierres pendientes por aprobar</div>';
+                        }
+                    }
+                })
+                .catch(() => {});
+        }
+
+        // Consultar de inmediato y luego cada 15 segundos
+        verificarCierresPendientesCentral();
+        setInterval(verificarCierresPendientesCentral, 15000);
     </script>
     @stack('scripts')
 </body>
