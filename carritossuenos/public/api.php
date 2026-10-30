@@ -29,6 +29,7 @@ try {
     try { $pdo->exec("ALTER TABLE ventas MODIFY COLUMN metodo_pago VARCHAR(20) NOT NULL DEFAULT 'efectivo'"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_efectivo DECIMAL(10,2) NOT NULL DEFAULT 0.00"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_qr DECIMAL(10,2) NOT NULL DEFAULT 0.00"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE despachos_recibidos ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
 } catch (Exception $e) {}
 
 // ── ABRIR TURNO (Directo a Carrito 1) ─────────────────────────────────────────
@@ -177,11 +178,11 @@ if ($accion === 'aceptar_stock') {
             }
         }
 
-        // 1. Verificar si este despacho ya fue procesado localmente
+        // 1. Verificar si este despacho ya fue procesado localmente en este turno
         $yaProcesado = false;
         if ($despachoId) {
-            $stCheck = $pdo->prepare("SELECT despacho_id FROM despachos_recibidos WHERE despacho_id = ?");
-            $stCheck->execute([$despachoId]);
+            $stCheck = $pdo->prepare("SELECT despacho_id FROM despachos_recibidos WHERE despacho_id = ? AND turno_id = ?");
+            $stCheck->execute([$despachoId, $curTurnoId]);
             if ($stCheck->fetch()) {
                 $yaProcesado = true;
             }
@@ -226,8 +227,13 @@ if ($accion === 'aceptar_stock') {
             }
 
             if ($despachoId) {
-                $stRec = $pdo->prepare("INSERT IGNORE INTO despachos_recibidos (despacho_id, fecha) VALUES (?, ?)");
-                $stRec->execute([$despachoId, $hoy]);
+                try {
+                    $stRec = $pdo->prepare("INSERT INTO despachos_recibidos (despacho_id, turno_id, fecha) VALUES (?, ?, ?)");
+                    $stRec->execute([$despachoId, $curTurnoId, $hoy]);
+                } catch (Exception $eRec) {
+                    $stRec = $pdo->prepare("INSERT IGNORE INTO despachos_recibidos (despacho_id, fecha) VALUES (?, ?)");
+                    $stRec->execute([$despachoId, $hoy]);
+                }
             }
         }
 
@@ -358,29 +364,45 @@ if ($accion === 'cerrar_turno') {
         // Marcar turno como cerrado
         $pdo->prepare("UPDATE turnos SET estado = 'cerrado', cerrado_at = NOW() WHERE id = ?")->execute([$closingTurnoId]);
 
-        // Obtener desglose de salteñas vendidas y sobrantes del turno cerrado
-        $stmtDetalles = $pdo->prepare("
-            SELECT s.producto_id as variante_id, s.cantidad_enviada,
-                   COALESCE(SUM(v.cantidad), 0) as cantidad_vendida
-            FROM stock_diario s
-            LEFT JOIN ventas v ON s.producto_id = v.producto_id AND v.turno_id = s.turno_id
-            WHERE s.turno_id = ?
-            GROUP BY s.producto_id, s.cantidad_enviada
-        ");
-        $stmtDetalles->execute([$closingTurnoId]);
-        $filas = $stmtDetalles->fetchAll();
+        // Dinero cobrado exactamente igual a la suma de efectivo + qr
+        $dineroCobrado = $dineroEfectivo + $dineroQr;
+
+        // Desglose de salteñas vendidas y sobrantes del turno cerrado
+        $detallesInput = $input['detalles'] ?? [];
         $detallesCierre = [];
 
-        foreach ($filas as $f) {
-            $vend = (int) $f['cantidad_vendida'];
-            $total = (int) $f['cantidad_enviada'];
-            $sobr = max(0, $total - $vend);
-            $detallesCierre[] = [
-                'variante_id' => (int) $f['variante_id'],
-                'cantidad_entregada' => $total,
-                'cantidad_vendida_normal' => $vend,
-                'cantidad_sobrante' => $sobr
-            ];
+        if (!empty($detallesInput) && is_array($detallesInput)) {
+            foreach ($detallesInput as $di) {
+                $detallesCierre[] = [
+                    'variante_id' => (int) ($di['id'] ?? 0),
+                    'cantidad_entregada' => (int) ($di['enviada'] ?? ($di['cantidad_entregada'] ?? 0)),
+                    'cantidad_vendida_normal' => (int) ($di['vendida'] ?? ($di['cantidad_vendida_normal'] ?? 0)),
+                    'cantidad_sobrante' => (int) ($di['restante'] ?? ($di['cantidad_sobrante'] ?? 0))
+                ];
+            }
+        } else {
+            $stmtDetalles = $pdo->prepare("
+                SELECT s.producto_id as variante_id, s.cantidad_enviada,
+                       COALESCE(SUM(v.cantidad), 0) as cantidad_vendida
+                FROM stock_diario s
+                LEFT JOIN ventas v ON s.producto_id = v.producto_id AND v.turno_id = s.turno_id
+                WHERE s.turno_id = ?
+                GROUP BY s.producto_id, s.cantidad_enviada
+            ");
+            $stmtDetalles->execute([$closingTurnoId]);
+            $filas = $stmtDetalles->fetchAll();
+
+            foreach ($filas as $f) {
+                $vend = (int) $f['cantidad_vendida'];
+                $total = (int) $f['cantidad_enviada'];
+                $sobr = max(0, $total - $vend);
+                $detallesCierre[] = [
+                    'variante_id' => (int) $f['variante_id'],
+                    'cantidad_entregada' => $total,
+                    'cantidad_vendida_normal' => $vend,
+                    'cantidad_sobrante' => $sobr
+                ];
+            }
         }
 
         // Sincronización Automática con Sistema Central (Carrito 1)

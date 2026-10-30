@@ -35,18 +35,17 @@ class DespachoApiController extends Controller
             $carritoId = 1;
         }
 
-        // Priorizar cualquier despacho que esté pendiente hoy para notificar al carrito
+        // Priorizar cualquier despacho que esté pendiente para notificar al carrito (sin desfase horario UTC vs Bolivia)
         $despachoPendiente = DespachoDiario::with(['detalles.variante', 'carrito'])
             ->where('carrito_id', $carritoId)
-            ->whereDate('fecha', now()->toDateString())
             ->where('estado', 'pendiente')
             ->latest('id')
             ->first();
 
-        // Si no hay pendiente, tomar el último despacho registrado hoy
+        // Si no hay pendiente, tomar el último despacho registrado recientemente
         $despacho = $despachoPendiente ?: DespachoDiario::with(['detalles.variante', 'carrito'])
             ->where('carrito_id', $carritoId)
-            ->whereDate('fecha', now()->toDateString())
+            ->whereDate('fecha', '>=', now()->subDays(1)->toDateString())
             ->latest('id')
             ->first();
 

@@ -174,22 +174,29 @@ if (!$turnoAbierto) {
 } else {
     $turnoId = (int)$turnoActual['id'];
 
-    // Ventas estrictamente de este turno_id
+    // Ventas estrictamente de este turno_id (considerando efectivo, qr e hibrido sin mezclar ni omitir)
     $stmtVentas = $pdo->prepare("
         SELECT 
-            SUM(cantidad) as total_unidades, 
-            SUM(monto) as total_dinero,
-            SUM(CASE WHEN metodo_pago = 'efectivo' THEN monto ELSE 0 END) as dinero_efectivo,
-            SUM(CASE WHEN metodo_pago = 'qr' THEN monto ELSE 0 END) as dinero_qr
+            COALESCE(SUM(cantidad), 0) as total_unidades, 
+            COALESCE(SUM(CASE 
+                WHEN metodo_pago = 'efectivo' THEN monto 
+                WHEN metodo_pago = 'hibrido' THEN monto_efectivo 
+                ELSE COALESCE(monto_efectivo, 0)
+            END), 0) as dinero_efectivo,
+            COALESCE(SUM(CASE 
+                WHEN metodo_pago = 'qr' THEN monto 
+                WHEN metodo_pago = 'hibrido' THEN monto_qr 
+                ELSE COALESCE(monto_qr, 0)
+            END), 0) as dinero_qr
         FROM ventas 
         WHERE turno_id = ?
     ");
     $stmtVentas->execute([$turnoId]);
     $resVentas = $stmtVentas->fetch();
     $unidadesVendidasHoy = (int)($resVentas['total_unidades'] ?? 0);
-    $dineroRecaudadoHoy = (float)($resVentas['total_dinero'] ?? 0.00);
     $dineroEfectivoHoy = (float)($resVentas['dinero_efectivo'] ?? 0.00);
     $dineroQrHoy = (float)($resVentas['dinero_qr'] ?? 0.00);
+    $dineroRecaudadoHoy = $dineroEfectivoHoy + $dineroQrHoy;
 
     // Stock aceptado estrictamente para este turno_id
     $stmtStock = $pdo->prepare("
@@ -221,6 +228,8 @@ if (!$turnoAbierto) {
             $desgloseStock[] = [
                 'id' => (int)$st['producto_id'],
                 'nombre' => $st['producto_nombre'],
+                'enviada' => (int)$st['cantidad_enviada'],
+                'vendida' => $cantVend,
                 'restante' => $cantRest
             ];
         }
@@ -762,13 +771,49 @@ $cierreHoy = !$turnoAbierto;
                     <p class="text-muted small">Revisa el resumen final de tu jornada antes de enviar a Central:</p>
 
                     <div class="p-3 rounded-3 mb-3" style="background: rgba(0,0,0,0.04); border: 1px solid var(--card-border);">
+                        <div class="fw-bold small text-muted text-uppercase mb-2 pb-1 border-bottom d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-pie-chart-fill me-1 text-primary"></i> Detalle por Variedad</span>
+                        </div>
+                        <div id="modal-desglose-variantes" class="mb-3">
+                            <?php if (!empty($desgloseStock)): ?>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-borderless mb-0 align-middle" style="font-size: 0.85rem;">
+                                        <thead>
+                                            <tr class="text-muted border-bottom" style="font-size: 0.75rem;">
+                                                <th>Variedad</th>
+                                                <th class="text-center">Enviadas</th>
+                                                <th class="text-center">Vendidas</th>
+                                                <th class="text-end">Sobrantes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($desgloseStock as $ds): ?>
+                                                <tr>
+                                                    <td class="fw-bold"><?= htmlspecialchars($ds['nombre']) ?></td>
+                                                    <td class="text-center text-muted"><?= $ds['enviada'] ?></td>
+                                                    <td class="text-center fw-bold text-success"><?= $ds['vendida'] ?></td>
+                                                    <td class="text-end fw-extrabold text-primary"><?= $ds['restante'] ?></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php else: ?>
+                                <div class="text-muted small text-center py-1">Sin variedades registradas</div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="fw-bold small text-muted text-uppercase mb-2 pb-1 border-bottom">
+                            <i class="bi bi-cash-stack me-1 text-success"></i> Totales de la Jornada
+                        </div>
+
                         <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Salteñas Vendidas:</span>
-                            <span class="fw-bold text-success" id="modal-total-vendidas"><?= $unidadesVendidasHoy ?> u.</span>
+                            <span class="text-muted fw-bold">Total Salteñas Vendidas:</span>
+                            <span class="fw-extrabold text-success fs-6" id="modal-total-vendidas"><?= $unidadesVendidasHoy ?> u.</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Stock Sobrante Estimado:</span>
-                            <span class="fw-bold text-primary" id="modal-total-sobrantes"><?= $stockRestante ?> u.</span>
+                            <span class="text-muted fw-bold">Total Salteñas Sobrantes:</span>
+                            <span class="fw-extrabold text-primary fs-6" id="modal-total-sobrantes"><?= $stockRestante ?> u.</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Recaudado en Efectivo:</span>
@@ -779,7 +824,7 @@ $cierreHoy = !$turnoAbierto;
                             <span class="fw-bold" style="color: #9333ea;" id="modal-dinero-qr">Bs. <?= number_format($dineroQrHoy, 2) ?></span>
                         </div>
                         <div class="d-flex justify-content-between pt-2 border-top">
-                            <span class="fw-bold text-dark">Total Dinero General:</span>
+                            <span class="fw-bold text-dark">Total Dinero:</span>
                             <span class="fw-bold text-dark fs-5" id="modal-total-dinero">Bs. <?= number_format($dineroRecaudadoHoy, 2) ?></span>
                         </div>
                     </div>
@@ -942,10 +987,11 @@ $cierreHoy = !$turnoAbierto;
                 totalCobrado += subtotal;
                 totalSalteñasVendidas += uCount;
 
-                // Descontar del stock individual por variante
+                // Descontar del stock individual por variante y registrar vendidas
                 if (i.tipo === 'individual' && stockPorProducto) {
                     let prodStock = stockPorProducto.find(p => p.id == i.id);
                     if (prodStock) {
+                        prodStock.vendida = (prodStock.vendida || 0) + uCount;
                         prodStock.restante = Math.max(0, prodStock.restante - uCount);
                     }
                 }
@@ -1010,6 +1056,37 @@ $cierreHoy = !$turnoAbierto;
                 elBreakdown.innerHTML = bHtml;
             }
 
+            // Actualizar tabla detallada en modal de cierre
+            const elModalDesglose = document.getElementById('modal-desglose-variantes');
+            if (elModalDesglose && stockPorProducto && stockPorProducto.length > 0) {
+                let mRows = '';
+                stockPorProducto.forEach(sp => {
+                    mRows += `
+                        <tr>
+                            <td class="fw-bold">${sp.nombre}</td>
+                            <td class="text-center text-muted">${sp.enviada}</td>
+                            <td class="text-center fw-bold text-success">${sp.vendida || 0}</td>
+                            <td class="text-end fw-extrabold text-primary">${sp.restante}</td>
+                        </tr>
+                    `;
+                });
+                elModalDesglose.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-sm table-borderless mb-0 align-middle" style="font-size: 0.85rem;">
+                            <thead>
+                                <tr class="text-muted border-bottom" style="font-size: 0.75rem;">
+                                    <th>Variedad</th>
+                                    <th class="text-center">Enviadas</th>
+                                    <th class="text-center">Vendidas</th>
+                                    <th class="text-end">Sobrantes</th>
+                                </tr>
+                            </thead>
+                            <tbody>${mRows}</tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
             const mVend = document.getElementById('modal-total-vendidas');
             if (mVend) mVend.innerText = unidadesVendidas + ' u.';
             const mSobr = document.getElementById('modal-total-sobrantes');
@@ -1055,7 +1132,8 @@ $cierreHoy = !$turnoAbierto;
                     dinero_cobrado: totalDinero,
                     dinero_efectivo: dineroEfectivo,
                     dinero_qr: dineroQr,
-                    observaciones: obs
+                    observaciones: obs,
+                    detalles: stockPorProducto
                 })
             })
             .then(r => r.json())
