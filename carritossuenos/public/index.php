@@ -642,6 +642,17 @@ $cierreHoy = !$turnoAbierto;
         <?php else: ?>
             <!-- PANTALLA 2: VENTA RÁPIDA CON CARRITO MULTI-PRODUCTO -->
 
+            <!-- BANNER DE NUEVO DESPACHO RECIBIDO DURANTE ESTE MISMO TURNO -->
+            <div id="banner-nuevo-despacho" class="alert alert-warning border-0 shadow-sm rounded-4 mb-3 d-none align-items-center justify-content-between p-3" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1px solid #f59e0b !important;">
+                <div>
+                    <div class="fw-extrabold text-dark fs-6"><i class="bi bi-box-seam-fill me-2 text-warning fs-5"></i> ¡Nuevo despacho enviado desde Central!</div>
+                    <div class="small text-dark opacity-90 fw-semibold" id="banner-despacho-desc">Hay stock adicional listo para incorporar a este turno.</div>
+                </div>
+                <button type="button" onclick="aceptarDespachoRecibido()" class="btn btn-warning fw-extrabold px-4 py-2 rounded-3 text-dark shadow-sm">
+                    ACEPTA
+                </button>
+            </div>
+
             <!-- CARRITO DEL PEDIDO ACTUAL -->
             <div class="order-cart-card">
                 <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
@@ -1013,6 +1024,10 @@ $cierreHoy = !$turnoAbierto;
             } else if (metodo === 'hibrido') {
                 montoEfectivo = parseFloat(document.getElementById('hibrido-efectivo').value || 0);
                 montoQr = parseFloat(document.getElementById('hibrido-qr').value || 0);
+                if (Math.abs((montoEfectivo + montoQr) - totalCobrado) > 0.05) {
+                    alert('La suma de Efectivo (Bs. ' + montoEfectivo.toFixed(2) + ') y QR (Bs. ' + montoQr.toFixed(2) + ') debe coincidir exactamente con el total de la venta: Bs. ' + totalCobrado.toFixed(2));
+                    return;
+                }
             }
 
             unidadesVendidas += totalSalteñasVendidas;
@@ -1147,13 +1162,50 @@ $cierreHoy = !$turnoAbierto;
             .catch(() => alert('Error de red al cerrar turno'));
         }
 
-        // Listener selector de método de pago
+        // Configuración y cálculo inteligente de Pago Híbrido (Efectivo + QR)
         const selMetodo = document.getElementById('select-metodo-pago');
+        const inputEf = document.getElementById('hibrido-efectivo');
+        const inputQr = document.getElementById('hibrido-qr');
+        const hFields = document.getElementById('hibrido-fields');
+
+        function recalcularHibrido(origen) {
+            let totalCobrado = 0;
+            carrito.forEach(i => {
+                totalCobrado += i.precio * i.cantidad;
+            });
+
+            if (origen === 'init') {
+                if (inputEf) inputEf.value = totalCobrado.toFixed(2);
+                if (inputQr) inputQr.value = '0.00';
+            } else if (origen === 'efectivo') {
+                let valEf = parseFloat(inputEf.value || 0);
+                if (valEf > totalCobrado) {
+                    valEf = totalCobrado;
+                    inputEf.value = valEf.toFixed(2);
+                }
+                let valQr = Math.max(0, totalCobrado - valEf);
+                if (inputQr) inputQr.value = valQr.toFixed(2);
+            } else if (origen === 'qr') {
+                let valQr = parseFloat(inputQr.value || 0);
+                if (valQr > totalCobrado) {
+                    valQr = totalCobrado;
+                    inputQr.value = valQr.toFixed(2);
+                }
+                let valEf = Math.max(0, totalCobrado - valQr);
+                if (inputEf) inputEf.value = valEf.toFixed(2);
+            }
+        }
+
+        if (inputEf) inputEf.addEventListener('input', () => recalcularHibrido('efectivo'));
+        if (inputQr) inputQr.addEventListener('input', () => recalcularHibrido('qr'));
+
         if (selMetodo) {
             selMetodo.addEventListener('change', function() {
-                const hFields = document.getElementById('hibrido-fields');
                 if (hFields) {
                     hFields.style.display = this.value === 'hibrido' ? 'block' : 'none';
+                    if (this.value === 'hibrido') {
+                        recalcularHibrido('init');
+                    }
                 }
             });
         }
@@ -1219,7 +1271,23 @@ $cierreHoy = !$turnoAbierto;
                                 </div>
                             `;
                         }
+
+                        // Mostrar banner visible en pantalla POS
+                        const bannerEl = document.getElementById('banner-nuevo-despacho');
+                        const bannerDesc = document.getElementById('banner-despacho-desc');
+                        if (bannerEl) {
+                            bannerEl.classList.remove('d-none');
+                            bannerEl.classList.add('d-flex');
+                            if (bannerDesc) {
+                                bannerDesc.innerText = totalUnidadesRecibidas + ' salteñas adicionales listas para incorporarse a este turno.';
+                            }
+                        }
                     } else if (data.hay_despacho && data.aceptado) {
+                        const bannerEl = document.getElementById('banner-nuevo-despacho');
+                        if (bannerEl) {
+                            bannerEl.classList.add('d-none');
+                            bannerEl.classList.remove('d-flex');
+                        }
                         if (bellBadge) bellBadge.classList.add('d-none');
                         if (bellIcon) bellIcon.classList.remove('bell-shake', 'text-warning');
                         if (notifStatusTag) {

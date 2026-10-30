@@ -100,11 +100,12 @@ if ($accion === 'verificar_despacho') {
             $despachoId = (int) ($despachoCentral['id'] ?? 0);
             $yaAceptadoLocalmente = false;
             if ($despachoId > 0) {
-                $stCheck = $pdo->prepare("SELECT despacho_id FROM despachos_recibidos WHERE despacho_id = ?");
-                $stCheck->execute([$despachoId]);
+                $stCheck = $pdo->prepare("SELECT despacho_id FROM despachos_recibidos WHERE despacho_id = ? AND turno_id = ?");
+                $stCheck->execute([$despachoId, $curTurnoId]);
                 $yaAceptadoLocalmente = (bool) $stCheck->fetch();
             }
-            $esAceptado = ($despachoCentral['estado'] === 'aceptado') || $yaAceptadoLocalmente;
+            // Aceptado en este turno solo si ya fue registrado localmente en este turno_id
+            $esAceptado = $yaAceptadoLocalmente;
 
             echo json_encode([
                 'success' => true,
