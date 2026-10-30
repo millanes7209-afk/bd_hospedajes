@@ -313,15 +313,22 @@ if ($accion === 'registrar_venta') {
             $cant = (int) ($item['cantidad'] ?? 1);
             $monto = (float) ($item['monto'] ?? 0.00);
 
-            // Si es promoción y no vino producto_id, resolverlo desde promociones para descontar stock exacto
-            if (!$pId && $prId) {
-                try {
-                    $stPrV = $pdo->prepare("SELECT COALESCE(producto_id, variante_id, 1) FROM promociones WHERE id = ?");
-                    $stPrV->execute([$prId]);
-                    $pId = (int)$stPrV->fetchColumn() ?: 1;
-                } catch (Exception $eP) {
-                    $pId = 1;
+            // Si es promoción y no vino producto_id o vino inválido, resolverlo con el ID real de 'mixtas' en productos
+            if (!$pId || $pId <= 0) {
+                if ($prId) {
+                    try {
+                        $stPrV = $pdo->prepare("SELECT producto_id FROM promociones WHERE id = ?");
+                        $stPrV->execute([$prId]);
+                        $pId = (int)$stPrV->fetchColumn();
+                    } catch (Exception $eP) {}
                 }
+                if (!$pId || $pId <= 0) {
+                    try {
+                        $stDef = $pdo->query("SELECT id FROM productos WHERE LOWER(nombre) LIKE '%mixta%' LIMIT 1");
+                        $pId = (int)$stDef->fetchColumn();
+                    } catch (Exception $eDef) {}
+                }
+                $pId = $pId ?: 1;
             }
 
             $itemEf = 0.00;

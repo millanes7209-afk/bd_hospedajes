@@ -39,11 +39,18 @@ class CatalogoApiController extends Controller
             ->orderBy('nombre')
             ->get();
 
-        // 2. Promociones activas (incluyendo variante_id para asociar stock en POS)
-        $promociones = Promocion::where('activo', true)
-            ->select('id', 'variante_id', 'nombre', 'unidades_por_paquete', 'precio_paquete')
-            ->orderBy('nombre')
-            ->get();
+        // 2. Promociones activas (con variante_id y variante_nombre para asociar stock exacto en POS)
+        $promociones = Promocion::with('variante')
+            ->where('activo', true)
+            ->get()
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'variante_id' => $p->variante_id,
+                'variante_nombre' => $p->variante ? $p->variante->nombre : 'mixtas',
+                'nombre' => $p->nombre,
+                'unidades_por_paquete' => (int) $p->unidades_por_paquete,
+                'precio_paquete' => (float) $p->precio_paquete,
+            ]);
 
         // 3. Despachos del día registrados en Central para este carrito (acumula múltiples despachos de hoy)
         $despachosHoy = DespachoDiario::with(['detalles.variante'])

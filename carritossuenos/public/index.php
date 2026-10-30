@@ -81,8 +81,13 @@ try {
     try { $pdo->exec("ALTER TABLE promociones ADD COLUMN IF NOT EXISTS variante_id INT NULL;"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE promociones ADD COLUMN IF NOT EXISTS producto_id INT NULL;"); } catch (Exception $e) {}
     try {
-        $pdo->exec("UPDATE promociones SET producto_id = 1, variante_id = 1 WHERE (producto_id IS NULL OR variante_id IS NULL) AND nombre LIKE '%3x10%'");
-        $pdo->exec("UPDATE ventas v JOIN promociones pr ON v.promocion_id = pr.id SET v.producto_id = COALESCE(pr.producto_id, pr.variante_id, 1) WHERE (v.producto_id IS NULL OR v.producto_id = 0) AND v.promocion_id IS NOT NULL");
+        // Encontrar el ID real de 'mixtas' en la tabla productos local
+        $stMixtas = $pdo->query("SELECT id FROM productos WHERE LOWER(nombre) LIKE '%mixta%' LIMIT 1");
+        $idRealMixtas = $stMixtas ? (int)$stMixtas->fetchColumn() : 0;
+        if ($idRealMixtas > 0) {
+            $pdo->exec("UPDATE promociones SET producto_id = $idRealMixtas WHERE nombre LIKE '%3x10%' OR producto_id IS NULL OR producto_id != $idRealMixtas");
+            $pdo->exec("UPDATE ventas SET producto_id = $idRealMixtas WHERE promocion_id IS NOT NULL AND (producto_id IS NULL OR producto_id != $idRealMixtas)");
+        }
     } catch (Exception $eFix) {}
 } catch (Exception $e) {}
 
@@ -132,14 +137,28 @@ try {
                 }
             }
 
-            // 2. Sincronizar promociones oficiales (con variante_id/producto_id para descontar stock)
+            // 2. Sincronizar promociones oficiales (vinculando al producto_id real local para descontar stock)
             if (!empty($data['promociones']) && is_array($data['promociones'])) {
                 foreach ($data['promociones'] as $pr) {
                     $pNom = $pr['nombre'] ?? '';
                     $pVarId = !empty($pr['variante_id']) ? (int)$pr['variante_id'] : 1;
+                    $pVarNom = $pr['variante_nombre'] ?? '';
                     $pUni = (int) ($pr['unidades_por_paquete'] ?? 1);
                     $pPre = (float) ($pr['precio_paquete'] ?? 0.00);
                     if (empty($pNom)) continue;
+
+                    // Buscar el ID real del producto local según el nombre de la variante o por 'mixta'
+                    $localProdId = null;
+                    if (!empty($pVarNom)) {
+                        $stPReal = $pdo->prepare("SELECT id FROM productos WHERE LOWER(nombre) = LOWER(?) LIMIT 1");
+                        $stPReal->execute([$pVarNom]);
+                        $localProdId = $stPReal->fetchColumn();
+                    }
+                    if (!$localProdId) {
+                        $stPReal = $pdo->query("SELECT id FROM productos WHERE LOWER(nombre) LIKE '%mixta%' LIMIT 1");
+                        $localProdId = $stPReal ? $stPReal->fetchColumn() : null;
+                    }
+                    $localProdId = (int)$localProdId ?: 1;
 
                     $stPr = $pdo->prepare("SELECT id FROM promociones WHERE nombre = ? LIMIT 1");
                     $stPr->execute([$pNom]);
@@ -147,10 +166,10 @@ try {
 
                     if (!$rowPr) {
                         $stInsPr = $pdo->prepare("INSERT INTO promociones (variante_id, producto_id, nombre, unidades, precio, activo) VALUES (?, ?, ?, ?, ?, 1)");
-                        $stInsPr->execute([$pVarId, $pVarId, $pNom, $pUni, $pPre]);
+                        $stInsPr->execute([$pVarId, $localProdId, $pNom, $pUni, $pPre]);
                     } else {
                         $stUpPr = $pdo->prepare("UPDATE promociones SET variante_id = ?, producto_id = ?, unidades = ?, precio = ?, activo = 1 WHERE id = ?");
-                        $stUpPr->execute([$pVarId, $pVarId, $pUni, $pPre, $rowPr['id']]);
+                        $stUpPr->execute([$pVarId, $localProdId, $pUni, $pPre, $rowPr['id']]);
                     }
                 }
             }
@@ -269,9 +288,15 @@ if (!$turnoAbierto) {
     }
 }
 
-// Promociones reales con producto_id asociado para descuento de stock
+// Promociones reales con producto_id real para descuento de stock
 $promociones = $pdo->query("
-    SELECT pr.*, COALESCE(pr.producto_id, pr.variante_id, 1) as prod_id 
+    SELECT pr.*, 
+           COALESCE(
+               pr.producto_id, 
+               (SELECT id FROM productos WHERE LOWER(nombre) LIKE '%mixta%' LIMIT 1),
+               pr.variante_id, 
+               1
+           ) as prod_id 
     FROM promociones pr 
     WHERE pr.activo = 1 AND pr.nombre NOT LIKE 'Combo 3%' AND pr.nombre NOT LIKE 'Promo 5%' 
     ORDER BY pr.nombre
@@ -1008,18 +1033,36 @@ $cierreHoy = !$turnoAbierto;
                 totalSalteñasVendidas += uCount;
 
                 // Descontar del stock por variante (tanto ventas individuales como promociones)
-                let targetProdId = (i.tipo === 'individual') ? i.id : (i.producto_id || 1);
+                let targetProdId = null;
+
+                if (i.tipo === 'individual') {
+                    targetProdId = i.id;
+                } else {
+                    // Para promociones: buscar coincidencia directa o buscar 'mixtas' en stockPorProducto
+                    let pEncontrado = null;
+                    if (i.producto_id) {
+                        pEncontrado = stockPorProducto.find(p => p.id == i.producto_id);
+                    }
+                    if (!pEncontrado) {
+                        pEncontrado = stockPorProducto.find(p => p.nombre.toLowerCase().includes('mixta'));
+                    }
+                    if (!pEncontrado && stockPorProducto.length > 0) {
+                        pEncontrado = stockPorProducto[0];
+                    }
+                    targetProdId = pEncontrado ? pEncontrado.id : i.producto_id;
+                }
+
                 if (targetProdId && stockPorProducto) {
                     let prodStock = stockPorProducto.find(p => p.id == targetProdId);
                     if (prodStock) {
                         prodStock.vendida = (prodStock.vendida || 0) + uCount;
-                        prodStock.restante = Math.max(0, prodStock.restante - uCount);
+                        prodStock.restante = Math.max(0, prodStock.enviada - prodStock.vendida);
                     }
                 }
 
                 payloadItems.push({
                     tipo: i.tipo,
-                    producto_id: targetProdId, // ¡Siempre se envía el producto_id para descontar de BD!
+                    producto_id: targetProdId, // ¡Siempre se envía el producto_id real para descontar de BD!
                     promocion_id: i.tipo === 'promocion' ? i.id : null,
                     cantidad: uCount,
                     monto: subtotal
