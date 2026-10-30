@@ -39,9 +39,9 @@ class CatalogoApiController extends Controller
             ->orderBy('nombre')
             ->get();
 
-        // 2. Promociones activas
+        // 2. Promociones activas (incluyendo variante_id para asociar stock en POS)
         $promociones = Promocion::where('activo', true)
-            ->select('id', 'nombre', 'unidades_por_paquete', 'precio_paquete')
+            ->select('id', 'variante_id', 'nombre', 'unidades_por_paquete', 'precio_paquete')
             ->orderBy('nombre')
             ->get();
 

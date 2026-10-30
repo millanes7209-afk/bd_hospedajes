@@ -313,6 +313,17 @@ if ($accion === 'registrar_venta') {
             $cant = (int) ($item['cantidad'] ?? 1);
             $monto = (float) ($item['monto'] ?? 0.00);
 
+            // Si es promoción y no vino producto_id, resolverlo desde promociones para descontar stock exacto
+            if (!$pId && $prId) {
+                try {
+                    $stPrV = $pdo->prepare("SELECT COALESCE(producto_id, variante_id, 1) FROM promociones WHERE id = ?");
+                    $stPrV->execute([$prId]);
+                    $pId = (int)$stPrV->fetchColumn() ?: 1;
+                } catch (Exception $eP) {
+                    $pId = 1;
+                }
+            }
+
             $itemEf = 0.00;
             $itemQr = 0.00;
             if ($metodoPago === 'efectivo') {

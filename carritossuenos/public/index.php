@@ -78,6 +78,12 @@ try {
     try { $pdo->exec("ALTER TABLE ventas MODIFY COLUMN metodo_pago VARCHAR(20) NOT NULL DEFAULT 'efectivo'"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_efectivo DECIMAL(10,2) NOT NULL DEFAULT 0.00"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_qr DECIMAL(10,2) NOT NULL DEFAULT 0.00"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE promociones ADD COLUMN IF NOT EXISTS variante_id INT NULL;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE promociones ADD COLUMN IF NOT EXISTS producto_id INT NULL;"); } catch (Exception $e) {}
+    try {
+        $pdo->exec("UPDATE promociones SET producto_id = 1, variante_id = 1 WHERE (producto_id IS NULL OR variante_id IS NULL) AND nombre LIKE '%3x10%'");
+        $pdo->exec("UPDATE ventas v JOIN promociones pr ON v.promocion_id = pr.id SET v.producto_id = COALESCE(pr.producto_id, pr.variante_id, 1) WHERE (v.producto_id IS NULL OR v.producto_id = 0) AND v.promocion_id IS NOT NULL");
+    } catch (Exception $eFix) {}
 } catch (Exception $e) {}
 
 // Limpiar productos y promociones ficticias
@@ -126,10 +132,11 @@ try {
                 }
             }
 
-            // 2. Sincronizar promociones oficiales
+            // 2. Sincronizar promociones oficiales (con variante_id/producto_id para descontar stock)
             if (!empty($data['promociones']) && is_array($data['promociones'])) {
                 foreach ($data['promociones'] as $pr) {
                     $pNom = $pr['nombre'] ?? '';
+                    $pVarId = !empty($pr['variante_id']) ? (int)$pr['variante_id'] : 1;
                     $pUni = (int) ($pr['unidades_por_paquete'] ?? 1);
                     $pPre = (float) ($pr['precio_paquete'] ?? 0.00);
                     if (empty($pNom)) continue;
@@ -139,11 +146,11 @@ try {
                     $rowPr = $stPr->fetch();
 
                     if (!$rowPr) {
-                        $stInsPr = $pdo->prepare("INSERT INTO promociones (nombre, unidades, precio, activo) VALUES (?, ?, ?, 1)");
-                        $stInsPr->execute([$pNom, $pUni, $pPre]);
+                        $stInsPr = $pdo->prepare("INSERT INTO promociones (variante_id, producto_id, nombre, unidades, precio, activo) VALUES (?, ?, ?, ?, ?, 1)");
+                        $stInsPr->execute([$pVarId, $pVarId, $pNom, $pUni, $pPre]);
                     } else {
-                        $stUpPr = $pdo->prepare("UPDATE promociones SET unidades = ?, precio = ?, activo = 1 WHERE id = ?");
-                        $stUpPr->execute([$pUni, $pPre, $rowPr['id']]);
+                        $stUpPr = $pdo->prepare("UPDATE promociones SET variante_id = ?, producto_id = ?, unidades = ?, precio = ?, activo = 1 WHERE id = ?");
+                        $stUpPr->execute([$pVarId, $pVarId, $pUni, $pPre, $rowPr['id']]);
                     }
                 }
             }
@@ -262,8 +269,13 @@ if (!$turnoAbierto) {
     }
 }
 
-// Promociones reales
-$promociones = $pdo->query("SELECT * FROM promociones WHERE activo = 1 AND nombre NOT LIKE 'Combo 3%' AND nombre NOT LIKE 'Promo 5%' ORDER BY nombre")->fetchAll();
+// Promociones reales con producto_id asociado para descuento de stock
+$promociones = $pdo->query("
+    SELECT pr.*, COALESCE(pr.producto_id, pr.variante_id, 1) as prod_id 
+    FROM promociones pr 
+    WHERE pr.activo = 1 AND pr.nombre NOT LIKE 'Combo 3%' AND pr.nombre NOT LIKE 'Promo 5%' 
+    ORDER BY pr.nombre
+")->fetchAll();
 
 $cierreHoy = !$turnoAbierto;
 ?>
@@ -632,10 +644,6 @@ $cierreHoy = !$turnoAbierto;
                     <button type="button" onclick="aceptarStock(<?= $despachoPendienteId ? (int)$despachoPendienteId : 'null' ?>)" class="btn btn-warning btn-lg w-100 py-3 rounded-4 fw-bold shadow-lg text-dark">
                         ACEPTA
                     </button>
-                <?php else: ?>
-                    <button type="button" onclick="location.reload()" class="btn btn-outline-primary w-100 py-3 rounded-4 fw-bold">
-                        <i class="bi bi-arrow-clockwise me-1"></i> ACTUALIZAR DESPACHO DESDE CENTRAL
-                    </button>
                 <?php endif; ?>
             </div>
 
@@ -741,7 +749,7 @@ $cierreHoy = !$turnoAbierto;
                 <div class="row g-3 mb-4">
                     <?php foreach ($promociones as $promo): ?>
                         <div class="col-12">
-                            <button type="button" onclick="agregarAlCarrito('promocion', <?= $promo['id'] ?>, '<?= addslashes($promo['nombre']) ?>', <?= $promo['precio'] ?>, <?= $promo['unidades'] ?>)" class="btn-touch-promo">
+                            <button type="button" onclick="agregarAlCarrito('promocion', <?= $promo['id'] ?>, '<?= addslashes($promo['nombre']) ?>', <?= $promo['precio'] ?>, <?= $promo['unidades'] ?>, <?= (int)$promo['prod_id'] ?>)" class="btn-touch-promo">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <span class="fw-extrabold fs-6 d-block text-warning mb-1"><i class="bi bi-tag-fill me-1"></i><?= htmlspecialchars($promo['nombre']) ?></span>
@@ -792,7 +800,7 @@ $cierreHoy = !$turnoAbierto;
                                         <thead>
                                             <tr class="text-muted border-bottom" style="font-size: 0.75rem;">
                                                 <th>Variedad</th>
-                                                <th class="text-center">Enviadas</th>
+                                                <th class="text-center">Recibidas</th>
                                                 <th class="text-center">Vendidas</th>
                                                 <th class="text-end">Sobrantes</th>
                                             </tr>
@@ -879,7 +887,7 @@ $cierreHoy = !$turnoAbierto;
             }
         }
 
-        function agregarAlCarrito(tipo, id, nombre, precio, unidadesPorPack) {
+        function agregarAlCarrito(tipo, id, nombre, precio, unidadesPorPack, productoId = null) {
             if (navigator.vibrate) navigator.vibrate(35);
 
             let key = tipo + '_' + id;
@@ -892,6 +900,7 @@ $cierreHoy = !$turnoAbierto;
                     key: key,
                     tipo: tipo,
                     id: id,
+                    producto_id: (tipo === 'individual' ? id : (productoId || 1)),
                     nombre: nombre,
                     precio: parseFloat(precio),
                     unidadesPorPack: parseInt(unidadesPorPack),
@@ -998,9 +1007,10 @@ $cierreHoy = !$turnoAbierto;
                 totalCobrado += subtotal;
                 totalSalteñasVendidas += uCount;
 
-                // Descontar del stock individual por variante y registrar vendidas
-                if (i.tipo === 'individual' && stockPorProducto) {
-                    let prodStock = stockPorProducto.find(p => p.id == i.id);
+                // Descontar del stock por variante (tanto ventas individuales como promociones)
+                let targetProdId = (i.tipo === 'individual') ? i.id : (i.producto_id || 1);
+                if (targetProdId && stockPorProducto) {
+                    let prodStock = stockPorProducto.find(p => p.id == targetProdId);
                     if (prodStock) {
                         prodStock.vendida = (prodStock.vendida || 0) + uCount;
                         prodStock.restante = Math.max(0, prodStock.restante - uCount);
@@ -1009,7 +1019,7 @@ $cierreHoy = !$turnoAbierto;
 
                 payloadItems.push({
                     tipo: i.tipo,
-                    producto_id: i.tipo === 'individual' ? i.id : null,
+                    producto_id: targetProdId, // ¡Siempre se envía el producto_id para descontar de BD!
                     promocion_id: i.tipo === 'promocion' ? i.id : null,
                     cantidad: uCount,
                     monto: subtotal
@@ -1091,7 +1101,7 @@ $cierreHoy = !$turnoAbierto;
                             <thead>
                                 <tr class="text-muted border-bottom" style="font-size: 0.75rem;">
                                     <th>Variedad</th>
-                                    <th class="text-center">Enviadas</th>
+                                    <th class="text-center">Recibidas</th>
                                     <th class="text-center">Vendidas</th>
                                     <th class="text-end">Sobrantes</th>
                                 </tr>
@@ -1162,50 +1172,13 @@ $cierreHoy = !$turnoAbierto;
             .catch(() => alert('Error de red al cerrar turno'));
         }
 
-        // Configuración y cálculo inteligente de Pago Híbrido (Efectivo + QR)
+        // Configuración manual de Pago Híbrido (sin auto-cálculo)
         const selMetodo = document.getElementById('select-metodo-pago');
-        const inputEf = document.getElementById('hibrido-efectivo');
-        const inputQr = document.getElementById('hibrido-qr');
         const hFields = document.getElementById('hibrido-fields');
-
-        function recalcularHibrido(origen) {
-            let totalCobrado = 0;
-            carrito.forEach(i => {
-                totalCobrado += i.precio * i.cantidad;
-            });
-
-            if (origen === 'init') {
-                if (inputEf) inputEf.value = totalCobrado.toFixed(2);
-                if (inputQr) inputQr.value = '0.00';
-            } else if (origen === 'efectivo') {
-                let valEf = parseFloat(inputEf.value || 0);
-                if (valEf > totalCobrado) {
-                    valEf = totalCobrado;
-                    inputEf.value = valEf.toFixed(2);
-                }
-                let valQr = Math.max(0, totalCobrado - valEf);
-                if (inputQr) inputQr.value = valQr.toFixed(2);
-            } else if (origen === 'qr') {
-                let valQr = parseFloat(inputQr.value || 0);
-                if (valQr > totalCobrado) {
-                    valQr = totalCobrado;
-                    inputQr.value = valQr.toFixed(2);
-                }
-                let valEf = Math.max(0, totalCobrado - valQr);
-                if (inputEf) inputEf.value = valEf.toFixed(2);
-            }
-        }
-
-        if (inputEf) inputEf.addEventListener('input', () => recalcularHibrido('efectivo'));
-        if (inputQr) inputQr.addEventListener('input', () => recalcularHibrido('qr'));
-
         if (selMetodo) {
             selMetodo.addEventListener('change', function() {
                 if (hFields) {
                     hFields.style.display = this.value === 'hibrido' ? 'block' : 'none';
-                    if (this.value === 'hibrido') {
-                        recalcularHibrido('init');
-                    }
                 }
             });
         }
