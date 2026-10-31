@@ -17,6 +17,22 @@ class BovedaService
         return $ingresos - $egresos;
     }
 
+    public function getSaldoEfectivoActual()
+    {
+        $ingresosEfectivo = BovedaMovimiento::where('tipo', 'ingreso')
+            ->selectRaw("SUM(CASE WHEN (dinero_efectivo = 0 AND dinero_qr = 0) THEN monto ELSE dinero_efectivo END) as total")
+            ->value('total') ?? 0;
+
+        $egresos = BovedaMovimiento::where('tipo', 'egreso')->sum('monto');
+
+        return $ingresosEfectivo - $egresos;
+    }
+
+    public function getSaldoQrActual()
+    {
+        return BovedaMovimiento::where('tipo', 'ingreso')->sum('dinero_qr') ?? 0;
+    }
+
     public function registrarIngresoPorCierre(CierreDiario $cierre)
     {
         return BovedaMovimiento::create([
@@ -35,6 +51,8 @@ class BovedaService
         return BovedaMovimiento::create([
             'tipo' => 'egreso',
             'monto' => $compra->monto_total,
+            'dinero_efectivo' => $compra->monto_total,
+            'dinero_qr' => 0,
             'fecha' => $compra->fecha,
             'cierre_diario_id' => null,
             'compra_id' => $compra->id,

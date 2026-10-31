@@ -25,6 +25,14 @@ class CierreDiarioController extends Controller
         $fechaFin = $request->get('fecha_fin');
         $perPage = $request->get('per_page', 15);
 
+        // Cierres remotos de carritos pendientes de aprobación del dueño
+        $cierresPendientes = CierreDiario::with(['carrito', 'detalles.variante'])
+            ->where('estado', 'pendiente')
+            ->where('origen', 'remoto')
+            ->orderByDesc('id')
+            ->get();
+
+        // Historial general de cierres
         $query = CierreDiario::with(['carrito', 'detalles.variante', 'detalles.promocionesDetalle.promocion']);
 
         if ($carritoId) {
@@ -53,7 +61,7 @@ class CierreDiarioController extends Controller
             }
         ])->where('activo', true)->orderBy('nombre')->get();
 
-        return view('cierres.index', compact('cierres', 'carritos', 'variantes', 'carritoId', 'fechaInicio', 'fechaFin', 'perPage'));
+        return view('cierres.index', compact('cierresPendientes', 'cierres', 'carritos', 'variantes', 'carritoId', 'fechaInicio', 'fechaFin', 'perPage'));
     }
 
     public function store(Request $request)
@@ -64,6 +72,8 @@ class CierreDiarioController extends Controller
             'temp_min' => 'nullable|numeric',
             'temp_max' => 'nullable|numeric',
             'monto_real' => 'required|numeric|min:0',
+            'dinero_efectivo' => 'nullable|numeric|min:0',
+            'dinero_qr' => 'nullable|numeric|min:0',
             'detalles' => 'required|array|min:1',
             'detalles.*.variante_id' => 'required|exists:variantes_saltena,id',
             'detalles.*.cantidad_entregada' => 'required|integer|min:0',
@@ -79,6 +89,30 @@ class CierreDiarioController extends Controller
         }
 
         return redirect()->route('cierres.index')->with('success', 'Cierre Diario registrado exitosamente. El ingreso a Bóveda Central se generó automáticamente.');
+    }
+
+    public function aprobar($id)
+    {
+        $cierre = CierreDiario::findOrFail($id);
+
+        if ($cierre->estado === 'pendiente') {
+            $this->cierreService->aprobarCierre($cierre);
+            return redirect()->route('cierres.index')->with('success', '¡Cierre de ' . ($cierre->carrito->nombre ?? 'Carrito') . ' APROBADO con éxito! El dinero ha ingresado a la Bóveda Central (Total: Bs. ' . number_format($cierre->monto_real, 2) . ' | Efectivo: Bs. ' . number_format($cierre->dinero_efectivo, 2) . ' | QR: Bs. ' . number_format($cierre->dinero_qr, 2) . ').');
+        }
+
+        return redirect()->route('cierres.index')->with('info', 'Este cierre ya fue procesado anteriormente.');
+    }
+
+    public function rechazar($id)
+    {
+        $cierre = CierreDiario::findOrFail($id);
+
+        if ($cierre->estado === 'pendiente') {
+            $cierre->update(['estado' => 'rechazado']);
+            return redirect()->route('cierres.index')->with('warning', 'El cierre de ' . ($cierre->carrito->nombre ?? 'Carrito') . ' fue marcado como RECHAZADO / OBSERVADO.');
+        }
+
+        return redirect()->route('cierres.index')->with('info', 'Este cierre ya fue procesado anteriormente.');
     }
 
     public function destroy($id)

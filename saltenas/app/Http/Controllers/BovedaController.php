@@ -18,11 +18,14 @@ class BovedaController extends Controller
     public function index()
     {
         $saldoActual = $this->bovedaService->getSaldoActual();
+        $saldoEfectivo = $this->bovedaService->getSaldoEfectivoActual();
+        $saldoQr = $this->bovedaService->getSaldoQrActual();
+
         $movimientos = BovedaMovimiento::with(['cierreDiario.carrito', 'compra.detalles.insumo'])
             ->orderBy('fecha', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(15);
 
-        return view('boveda.index', compact('saldoActual', 'movimientos'));
+        return view('boveda.index', compact('saldoActual', 'saldoEfectivo', 'saldoQr', 'movimientos'));
     }
 }

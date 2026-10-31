@@ -66,6 +66,8 @@ Route::middleware(['auth'])->group(function () {
     // Cierres Diarios & Validación de Inconsistencias
     Route::get('/cierres', [CierreDiarioController::class, 'index'])->name('cierres.index');
     Route::post('/cierres', [CierreDiarioController::class, 'store'])->name('cierres.store');
+    Route::post('/cierres/{id}/aprobar', [CierreDiarioController::class, 'aprobar'])->name('cierres.aprobar');
+    Route::post('/cierres/{id}/rechazar', [CierreDiarioController::class, 'rechazar'])->name('cierres.rechazar');
     Route::get('/cierres/eliminar/{id}', [CierreDiarioController::class, 'destroy'])->name('cierres.destroy');
 
     // Notificaciones de Cierres Remotos Pendientes en tiempo real
@@ -104,7 +106,4 @@ Route::middleware(['auth'])->group(function () {
     // Usuarios del Sistema & Cambio de Contraseña Propia
     Route::get('/usuarios', [UserController::class, 'index'])->name('usuarios.index');
     Route::post('/usuarios/password', [UserController::class, 'updatePassword'])->name('usuarios.password.update');
-
-
 });
-
