@@ -29,7 +29,11 @@ try {
     try { $pdo->exec("ALTER TABLE ventas MODIFY COLUMN metodo_pago VARCHAR(20) NOT NULL DEFAULT 'efectivo'"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_efectivo DECIMAL(10,2) NOT NULL DEFAULT 0.00"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_qr DECIMAL(10,2) NOT NULL DEFAULT 0.00"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE promociones ADD COLUMN IF NOT EXISTS variante_id INT NOT NULL DEFAULT 1;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE promociones ADD COLUMN IF NOT EXISTS variante_nombre VARCHAR(100) NULL;"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE despachos_recibidos ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE cierres ADD COLUMN IF NOT EXISTS sincronizado_central TINYINT(1) NOT NULL DEFAULT 1;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE cierres ADD COLUMN IF NOT EXISTS payload_central MEDIUMTEXT NULL;"); } catch (Exception $e) {}
 } catch (Exception $e) {}
 
 // ── ABRIR TURNO (Directo a Carrito 1) ─────────────────────────────────────────
@@ -373,8 +377,9 @@ if ($accion === 'cerrar_turno') {
         }
 
         // Guardado Local definitivo del cierre
-        $stmt = $pdo->prepare("INSERT INTO cierres (turno_id, fecha, total_vendidas, total_sobrantes, dinero_cobrado, dinero_efectivo, dinero_qr, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO cierres (turno_id, fecha, total_vendidas, total_sobrantes, dinero_cobrado, dinero_efectivo, dinero_qr, observaciones, sincronizado_central) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)");
         $stmt->execute([$closingTurnoId, $hoy, $totalVendidas, $totalSobrantes, $dineroCobrado, $dineroEfectivo, $dineroQr, $observaciones]);
+        $closingCierreId = (int)$pdo->lastInsertId();
 
         $pdo->commit();
 
@@ -431,25 +436,102 @@ if ($accion === 'cerrar_turno') {
             'observaciones' => "Efectivo: Bs. $dineroEfectivo | QR: Bs. $dineroQr | " . $observaciones,
             'detalles' => $detallesCierre
         ];
+        $payloadJson = json_encode($payloadCentral);
+
+        try {
+            $pdo->prepare("UPDATE cierres SET payload_central = ? WHERE id = ?")->execute([$payloadJson, $closingCierreId]);
+        } catch (Exception $ePay) {}
 
         $ch = curl_init($centralApiUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payloadCentral));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payloadJson);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json',
+            'Accept: application/json',
             'X-POS-Api-Key: ' . $apiKey
         ]);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 6);
-        curl_exec($ch);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+        $resCentral = curl_exec($ch);
+        $curlErr = curl_error($ch);
+        $httpCodeCentral = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        echo json_encode(['success' => true, 'message' => 'Cierre de turno completado y sincronizado con Central']);
+        $jsonCentral = $resCentral ? json_decode($resCentral, true) : null;
+        $sincronizadoOk = (!$curlErr && $httpCodeCentral >= 200 && $httpCodeCentral < 300 && !empty($jsonCentral['success']));
+
+        if ($sincronizadoOk) {
+            try {
+                $pdo->prepare("UPDATE cierres SET sincronizado_central = 1 WHERE id = ?")->execute([$closingCierreId]);
+            } catch (Exception $eUp) {}
+            echo json_encode([
+                'success' => true,
+                'sincronizado_central' => true,
+                'message' => 'Cierre de turno completado y sincronizado con Central'
+            ]);
+        } else {
+            $syncErr = $curlErr ?: ($jsonCentral['error'] ?? $jsonCentral['message'] ?? ("HTTP " . $httpCodeCentral));
+            echo json_encode([
+                'success' => true,
+                'sincronizado_central' => false,
+                'central_http' => $httpCodeCentral,
+                'sync_error' => $syncErr,
+                'message' => 'Turno cerrado localmente, pendiente de sincronizar con Central.'
+            ]);
+        }
     } catch (Exception $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+    exit;
+}
+
+// ── REINTENTAR ENVÍO DE CIERRES PENDIENTES DE SINCRONIZAR CON CENTRAL ────────
+if ($accion === 'reintentar_cierres') {
+    try {
+        $pendientes = $pdo->query("SELECT id, payload_central FROM cierres WHERE sincronizado_central = 0 AND payload_central IS NOT NULL ORDER BY id ASC")->fetchAll();
+        $enviados = 0;
+        $ultimoError = null;
+        $centralApiUrl = 'https://saltenas.alloggibolivia.com/api/v1/cierres/sincronizar';
+        $apiKey = 'pos_saltenas_secret_key_2026';
+
+        foreach ($pendientes as $p) {
+            $ch = curl_init($centralApiUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $p['payload_central']);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Accept: application/json',
+                'X-POS-Api-Key: ' . $apiKey
+            ]);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+            $resCentral = curl_exec($ch);
+            $curlErr = curl_error($ch);
+            $httpCodeCentral = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            $jsonCentral = $resCentral ? json_decode($resCentral, true) : null;
+            if (!$curlErr && $httpCodeCentral >= 200 && $httpCodeCentral < 300 && !empty($jsonCentral['success'])) {
+                $pdo->prepare("UPDATE cierres SET sincronizado_central = 1 WHERE id = ?")->execute([$p['id']]);
+                $enviados++;
+            } else {
+                $ultimoError = $curlErr ?: ($jsonCentral['error'] ?? $jsonCentral['message'] ?? ("HTTP " . $httpCodeCentral));
+            }
+        }
+
+        $restantes = (int) $pdo->query("SELECT COUNT(*) FROM cierres WHERE sincronizado_central = 0 AND payload_central IS NOT NULL")->fetchColumn();
+        echo json_encode([
+            'success' => $restantes === 0,
+            'enviados' => $enviados,
+            'restantes' => $restantes,
+            'error' => $ultimoError
+        ]);
+    } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
     exit;

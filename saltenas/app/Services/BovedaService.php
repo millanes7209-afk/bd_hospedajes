@@ -19,8 +19,10 @@ class BovedaService
 
     public function getSaldoEfectivoActual()
     {
+        SchemaSyncService::ensureUpdatedColumns();
+
         $ingresosEfectivo = BovedaMovimiento::where('tipo', 'ingreso')
-            ->selectRaw("SUM(CASE WHEN (dinero_efectivo = 0 AND dinero_qr = 0) THEN monto ELSE dinero_efectivo END) as total")
+            ->selectRaw("SUM(CASE WHEN (COALESCE(dinero_efectivo, 0) = 0 AND COALESCE(dinero_qr, 0) = 0) THEN monto ELSE COALESCE(dinero_efectivo, 0) END) as total")
             ->value('total') ?? 0;
 
         $egresos = BovedaMovimiento::where('tipo', 'egreso')->sum('monto');
@@ -30,11 +32,17 @@ class BovedaService
 
     public function getSaldoQrActual()
     {
-        return BovedaMovimiento::where('tipo', 'ingreso')->sum('dinero_qr') ?? 0;
+        SchemaSyncService::ensureUpdatedColumns();
+
+        return BovedaMovimiento::where('tipo', 'ingreso')
+            ->selectRaw("SUM(COALESCE(dinero_qr, 0)) as total")
+            ->value('total') ?? 0;
     }
 
     public function registrarIngresoPorCierre(CierreDiario $cierre)
     {
+        SchemaSyncService::ensureUpdatedColumns();
+
         return BovedaMovimiento::create([
             'tipo' => 'ingreso',
             'monto' => $cierre->monto_real,
@@ -48,6 +56,8 @@ class BovedaService
 
     public function registrarEgresoPorCompra(Compra $compra)
     {
+        SchemaSyncService::ensureUpdatedColumns();
+
         return BovedaMovimiento::create([
             'tipo' => 'egreso',
             'monto' => $compra->monto_total,

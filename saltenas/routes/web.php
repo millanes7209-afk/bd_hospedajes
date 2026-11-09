@@ -72,6 +72,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Notificaciones de Cierres Remotos Pendientes en tiempo real
     Route::get('/api/notificaciones/pendientes', function () {
+        \App\Services\SchemaSyncService::ensureUpdatedColumns();
+
         $cierres = \App\Models\CierreDiario::with(['carrito', 'detalles.variante'])
             ->where('estado', 'pendiente')
             ->where('origen', 'remoto')

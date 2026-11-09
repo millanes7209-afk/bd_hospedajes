@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             \App\Http\Middleware\NormalizeDecimalInputs::class,
+            \App\Http\Middleware\EnsureUpdatedSchema::class,
+        ]);
+        $middleware->api(prepend: [
+            \App\Http\Middleware\EnsureUpdatedSchema::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -7,6 +7,7 @@ use App\Models\CierreDiario;
 use App\Models\Promocion;
 use App\Models\VarianteSaltena;
 use App\Services\CierreValidationService;
+use App\Services\SchemaSyncService;
 use Illuminate\Http\Request;
 
 class CierreDiarioController extends Controller
@@ -20,6 +21,7 @@ class CierreDiarioController extends Controller
 
     public function index(Request $request)
     {
+        SchemaSyncService::ensureUpdatedColumns();
         $carritoId = $request->get('carrito_id');
         $fechaInicio = $request->get('fecha_inicio');
         $fechaFin = $request->get('fecha_fin');

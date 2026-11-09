@@ -20,6 +20,8 @@ class CierreValidationService
 
     public function guardarCierre(array $data)
     {
+        SchemaSyncService::ensureUpdatedColumns();
+
         return DB::transaction(function () use ($data) {
             $montoEstimadoTotal = 0;
             $hayInconsistenciaGlobal = false;
@@ -45,7 +47,9 @@ class CierreValidationService
 
             // 2. Procesar cada detalle por Variante de Salteña
             foreach ($data['detalles'] as $det) {
-                $variante = VarianteSaltena::findOrFail($det['variante_id']);
+                $variante = VarianteSaltena::find($det['variante_id'])
+                    ?? VarianteSaltena::where('activo', true)->first()
+                    ?? VarianteSaltena::firstOrFail();
                 $precioUnitario = $variante->precio_venta;
 
                 $cantEntregada = (int) $det['cantidad_entregada'];
@@ -135,6 +139,8 @@ class CierreValidationService
      */
     public function aprobarCierre(CierreDiario $cierre): CierreDiario
     {
+        SchemaSyncService::ensureUpdatedColumns();
+
         return DB::transaction(function () use ($cierre) {
             $cierre->update(['estado' => 'aprobado']);
             $this->bovedaService->registrarIngresoPorCierre($cierre);

@@ -7,6 +7,7 @@ use App\Models\CierreDiario;
 use App\Models\Compra;
 use App\Services\BovedaService;
 use App\Services\ProyeccionVentasService;
+use App\Services\SchemaSyncService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -23,6 +24,8 @@ class DashboardController extends Controller
 
     public function index(Request $request)
     {
+        SchemaSyncService::ensureUpdatedColumns();
+
         $fechaProyeccion = $request->get('fecha_proyeccion', Carbon::tomorrow()->format('Y-m-d'));
         $carritoId = $request->get('carrito_id');
         $tempMin = $request->get('temp_min');

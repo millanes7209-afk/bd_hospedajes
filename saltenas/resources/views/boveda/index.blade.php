@@ -129,12 +129,16 @@
 
                                 <td class="py-3 px-4 text-center">
                                     @if($mov->tipo === 'ingreso')
+                                        @php
+                                            $movEf = ((float)$mov->dinero_efectivo == 0 && (float)$mov->dinero_qr == 0) ? (float)$mov->monto : (float)$mov->dinero_efectivo;
+                                            $movQr = (float)$mov->dinero_qr;
+                                        @endphp
                                         <div class="inline-flex items-center gap-1 text-[11px] font-bold">
                                             <span class="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
-                                                💵 Ef: Bs. {{ number_format($mov->dinero_efectivo, 2) }}
+                                                💵 Ef: Bs. {{ number_format($movEf, 2) }}
                                             </span>
                                             <span class="px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20">
-                                                📱 QR: Bs. {{ number_format($mov->dinero_qr, 2) }}
+                                                📱 QR: Bs. {{ number_format($movQr, 2) }}
                                             </span>
                                         </div>
                                     @else

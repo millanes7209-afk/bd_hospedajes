@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CierreDiario;
 use App\Models\Carrito;
 use App\Services\CierreValidationService;
+use App\Services\SchemaSyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -24,6 +25,8 @@ class CierreDiarioApiController extends Controller
      */
     public function sincronizar(Request $request): JsonResponse
     {
+        SchemaSyncService::ensureUpdatedColumns();
+
         $input = $request->all();
 
         // Asignar Carrito 1 por defecto si no viene explícito
@@ -80,7 +83,7 @@ class CierreDiarioApiController extends Controller
                 $data['detalles'] = [];
                 foreach ($detallesInput as $d) {
                     $data['detalles'][] = [
-                        'variante_id' => (int) ($d['variante_id'] ?? 1),
+                        'variante_id' => (int) ($d['variante_id'] ?? ($d['id'] ?? 1)),
                         'cantidad_entregada' => (int) ($d['cantidad_entregada'] ?? 0),
                         'cantidad_vendida_normal' => (int) ($d['cantidad_vendida_normal'] ?? 0),
                         'cantidad_sobrante' => (int) ($d['cantidad_sobrante'] ?? 0),

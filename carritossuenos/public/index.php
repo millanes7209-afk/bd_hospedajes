@@ -17,6 +17,7 @@ try {
     CREATE TABLE IF NOT EXISTS `promociones` (
         `id` INT PRIMARY KEY,
         `variante_id` INT NOT NULL,
+        `variante_nombre` VARCHAR(100) NULL,
         `nombre` VARCHAR(100) NOT NULL,
         `unidades` INT NOT NULL,
         `precio` DECIMAL(10,2) NOT NULL,
@@ -58,6 +59,8 @@ try {
         `dinero_efectivo` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `dinero_qr` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         `observaciones` TEXT NULL,
+        `sincronizado_central` TINYINT(1) NOT NULL DEFAULT 1,
+        `payload_central` MEDIUMTEXT NULL,
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -86,7 +89,10 @@ try {
     try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_efectivo DECIMAL(10,2) NOT NULL DEFAULT 0.00"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE ventas ADD COLUMN IF NOT EXISTS monto_qr DECIMAL(10,2) NOT NULL DEFAULT 0.00"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE promociones ADD COLUMN IF NOT EXISTS variante_id INT NOT NULL DEFAULT 1;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE promociones ADD COLUMN IF NOT EXISTS variante_nombre VARCHAR(100) NULL;"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE despachos_recibidos ADD COLUMN IF NOT EXISTS turno_id INT NULL;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE cierres ADD COLUMN IF NOT EXISTS sincronizado_central TINYINT(1) NOT NULL DEFAULT 1;"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE cierres ADD COLUMN IF NOT EXISTS payload_central MEDIUMTEXT NULL;"); } catch (Exception $e) {}
 } catch (Exception $e) {}
 
 // --- SINCRONIZACIÓN EN VIVO DEL CATÁLOGO DESDE CENTRAL (Heredando IDs oficiales) ---
@@ -130,22 +136,23 @@ try {
                 }
             }
 
-            // 2. Sincronizar promociones heredando exactamente el ID y variante_id oficial de Central
+            // 2. Sincronizar promociones heredando exactamente el ID, variante_id y variante_nombre oficial de Central
             if (!empty($data['promociones']) && is_array($data['promociones'])) {
                 $stInsPromo = $pdo->prepare("
-                    INSERT INTO promociones (id, variante_id, nombre, unidades, precio, activo) 
-                    VALUES (?, ?, ?, ?, ?, 1)
-                    ON DUPLICATE KEY UPDATE variante_id = VALUES(variante_id), nombre = VALUES(nombre), unidades = VALUES(unidades), precio = VALUES(precio), activo = 1
+                    INSERT INTO promociones (id, variante_id, variante_nombre, nombre, unidades, precio, activo) 
+                    VALUES (?, ?, ?, ?, ?, ?, 1)
+                    ON DUPLICATE KEY UPDATE variante_id = VALUES(variante_id), variante_nombre = VALUES(variante_nombre), nombre = VALUES(nombre), unidades = VALUES(unidades), precio = VALUES(precio), activo = 1
                 ");
                 $idsPromos = [];
                 foreach ($data['promociones'] as $pr) {
                     $prId = (int) ($pr['id'] ?? 0);
                     $pVarId = (int) ($pr['variante_id'] ?? 0);
+                    $pVarNom = trim((string) ($pr['variante_nombre'] ?? ''));
                     $pNom = $pr['nombre'] ?? '';
                     $pUni = (int) ($pr['unidades_por_paquete'] ?? 1);
                     $pPre = (float) ($pr['precio_paquete'] ?? 0.00);
                     if ($prId <= 0 || $pVarId <= 0 || empty($pNom)) continue;
-                    $stInsPromo->execute([$prId, $pVarId, $pNom, $pUni, $pPre]);
+                    $stInsPromo->execute([$prId, $pVarId, $pVarNom, $pNom, $pUni, $pPre]);
                     $idsPromos[] = $prId;
                 }
                 if (!empty($idsPromos)) {
@@ -156,6 +163,34 @@ try {
         }
     }
 } catch (Exception $e) {}
+
+// Reintentar sincronización automática de cierres pendientes si hubo fallo previo de red o servidor
+$pendientesSyncCount = 0;
+try {
+    $cierresPendSync = $pdo->query("SELECT id, payload_central FROM cierres WHERE sincronizado_central = 0 AND payload_central IS NOT NULL ORDER BY id ASC LIMIT 5")->fetchAll();
+    foreach ($cierresPendSync as $cpRow) {
+        $chSync = curl_init('https://saltenas.alloggibolivia.com/api/v1/cierres/sincronizar');
+        curl_setopt($chSync, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($chSync, CURLOPT_POST, true);
+        curl_setopt($chSync, CURLOPT_POSTFIELDS, $cpRow['payload_central']);
+        curl_setopt($chSync, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Accept: application/json',
+            'X-POS-Api-Key: pos_saltenas_secret_key_2026'
+        ]);
+        curl_setopt($chSync, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($chSync, CURLOPT_CONNECTTIMEOUT, 3);
+        curl_setopt($chSync, CURLOPT_TIMEOUT, 4);
+        $resSync = curl_exec($chSync);
+        $httpSync = (int) curl_getinfo($chSync, CURLINFO_HTTP_CODE);
+        curl_close($chSync);
+        $jsonSync = $resSync ? json_decode($resSync, true) : null;
+        if ($httpSync >= 200 && $httpSync < 300 && !empty($jsonSync['success'])) {
+            $pdo->prepare("UPDATE cierres SET sincronizado_central = 1 WHERE id = ?")->execute([$cpRow['id']]);
+        }
+    }
+    $pendientesSyncCount = (int) $pdo->query("SELECT COUNT(*) FROM cierres WHERE sincronizado_central = 0 AND payload_central IS NOT NULL")->fetchColumn();
+} catch (Exception $eSync) {}
 
 // Control de Turno: verificar si el turno está abierto actualmente
 $stmtTurno = $pdo->query("SELECT * FROM turnos WHERE estado = 'abierto' ORDER BY id DESC LIMIT 1");
@@ -199,17 +234,36 @@ if (!$turnoAbierto) {
     ");
     $stmtVentas->execute([$turnoId]);
     $resVentas = $stmtVentas->fetch();
-    $unidadesVendidasHoy = (int)($resVentas['total_unidades'] ?? 0);
     $dineroEfectivoHoy = (float)($resVentas['dinero_efectivo'] ?? 0.00);
     $dineroQrHoy = (float)($resVentas['dinero_qr'] ?? 0.00);
     $dineroRecaudadoHoy = $dineroEfectivoHoy + $dineroQrHoy;
 
-    // Stock aceptado estrictamente para este turno_id
+    // Ventas agrupadas por producto_id para que subtotales y totales sean siempre 100% consistentes
+    $stmtVendPorProd = $pdo->prepare("
+        SELECT v.producto_id, COALESCE(p.nombre, CONCAT('Variedad #', v.producto_id)) AS prod_nombre, COALESCE(SUM(v.cantidad), 0) AS cant_vendida
+        FROM ventas v
+        LEFT JOIN productos p ON v.producto_id = p.id
+        WHERE v.turno_id = ?
+        GROUP BY v.producto_id, p.nombre
+    ");
+    $stmtVendPorProd->execute([$turnoId]);
+    $ventasPorProd = [];
+    foreach ($stmtVendPorProd->fetchAll() as $vp) {
+        if ($vp['producto_id'] !== null) {
+            $ventasPorProd[(int)$vp['producto_id']] = [
+                'nombre' => $vp['prod_nombre'],
+                'vendida' => (int)$vp['cant_vendida'],
+            ];
+        }
+    }
+
+    // Stock aceptado estrictamente para este turno_id (agrupado por producto_id para evitar duplicados)
     $stmtStock = $pdo->prepare("
-        SELECT s.*, p.nombre as producto_nombre, p.precio 
+        SELECT s.producto_id, SUM(s.cantidad_enviada) AS cantidad_enviada, p.nombre AS producto_nombre, p.precio 
         FROM stock_diario s 
         JOIN productos p ON s.producto_id = p.id 
         WHERE s.turno_id = ? AND s.aceptado = 1
+        GROUP BY s.producto_id, p.nombre, p.precio
         ORDER BY p.nombre
     ");
     $stmtStock->execute([$turnoId]);
@@ -217,31 +271,54 @@ if (!$turnoAbierto) {
     $stockAceptado = (count($stockAceptadoRows) > 0);
 
     if ($stockAceptado) {
+        $idsEnDesglose = [];
         foreach ($stockAceptadoRows as $st) {
-            $totalStockEnviado += (int)$st['cantidad_enviada'];
+            $pId = (int)$st['producto_id'];
+            $idsEnDesglose[$pId] = true;
+            $enviada = (int)$st['cantidad_enviada'];
+            $cantVend = $ventasPorProd[$pId]['vendida'] ?? 0;
+            $cantRest = max(0, $enviada - $cantVend);
+
             $productos[] = [
-                'id' => $st['producto_id'],
+                'id' => $pId,
                 'nombre' => $st['producto_nombre'],
                 'precio' => ($st['precio'] !== null && $st['precio'] !== '') ? (float)$st['precio'] : null
             ];
 
-            // Cantidad vendida de esta variante en este turno específico
-            $stVend = $pdo->prepare("SELECT COALESCE(SUM(cantidad), 0) FROM ventas WHERE turno_id = ? AND producto_id = ?");
-            $stVend->execute([$turnoId, $st['producto_id']]);
-            $cantVend = (int)$stVend->fetchColumn();
-            $cantRest = max(0, (int)$st['cantidad_enviada'] - $cantVend);
-
             $desgloseStock[] = [
-                'id' => (int)$st['producto_id'],
+                'id' => $pId,
                 'nombre' => $st['producto_nombre'],
-                'enviada' => (int)$st['cantidad_enviada'],
+                'enviada' => $enviada,
                 'vendida' => $cantVend,
                 'restante' => $cantRest
             ];
         }
-        $stockRestante = max(0, $totalStockEnviado - $unidadesVendidasHoy);
+
+        // Incluir ventas de promociones cuya variedad no tuviera registro previo en stock_diario
+        foreach ($ventasPorProd as $pId => $vpInfo) {
+            if (!isset($idsEnDesglose[$pId])) {
+                $desgloseStock[] = [
+                    'id' => $pId,
+                    'nombre' => $vpInfo['nombre'],
+                    'enviada' => 0,
+                    'vendida' => $vpInfo['vendida'],
+                    'restante' => 0
+                ];
+            }
+        }
+
+        // Totales globales calculados DIRECTAMENTE como suma exacta de los subtotales
+        $totalStockEnviado = 0;
+        $unidadesVendidasHoy = 0;
+        $stockRestante = 0;
+        foreach ($desgloseStock as $ds) {
+            $totalStockEnviado += $ds['enviada'];
+            $unidadesVendidasHoy += $ds['vendida'];
+            $stockRestante += $ds['restante'];
+        }
     } else {
         // Stock aún no aceptado: contadores en CERO y se consulta el despacho pendiente desde Central
+        $unidadesVendidasHoy = 0;
         $stockRestante = 0;
         $totalStockEnviado = 0;
 
@@ -268,8 +345,14 @@ if (!$turnoAbierto) {
     }
 }
 
-// Promociones oficiales heredadas de Central
-$promociones = $pdo->query("SELECT * FROM promociones WHERE activo = 1 ORDER BY nombre")->fetchAll();
+// Promociones oficiales heredadas de Central con nombre de su variedad
+$promociones = $pdo->query("
+    SELECT p.*, COALESCE(NULLIF(v.nombre, ''), NULLIF(p.variante_nombre, ''), 'Variedad') AS variante_nombre
+    FROM promociones p
+    LEFT JOIN productos v ON p.variante_id = v.id
+    WHERE p.activo = 1
+    ORDER BY p.nombre
+")->fetchAll();
 
 $cierreHoy = !$turnoAbierto;
 ?>
@@ -674,6 +757,16 @@ $cierreHoy = !$turnoAbierto;
                 <button type="button" onclick="abrirTurno()" class="btn btn-warning btn-lg px-5 py-3 rounded-pill fw-extrabold shadow-lg text-dark">
                     <i class="bi bi-box-arrow-in-right me-2 fs-5"></i> ABRIR TURNO
                 </button>
+                <?php if ($pendientesSyncCount > 0): ?>
+                    <div id="sync-retry-banner" class="mt-4 mx-auto p-3 rounded-4 border border-warning bg-warning-subtle text-dark" style="max-width: 360px;">
+                        <div class="fw-bold small mb-2">
+                            <i class="bi bi-cloud-upload me-1"></i> <?= $pendientesSyncCount ?> cierre(s) pendiente(s) de enviar a Central
+                        </div>
+                        <button type="button" id="btn-retry-sync" onclick="reintentarEnvioCentral()" class="btn btn-sm btn-warning fw-bold rounded-pill px-3">
+                            <i class="bi bi-arrow-repeat me-1"></i> Reintentar envío ahora
+                        </button>
+                    </div>
+                <?php endif; ?>
             </div>
 
         <?php elseif (!$stockAceptado): ?>
@@ -801,7 +894,7 @@ $cierreHoy = !$turnoAbierto;
             <div class="row g-3 mb-4">
                 <?php foreach ($productos as $prod): ?>
                     <div class="col-6">
-                        <button type="button" onclick="agregarAlCarrito('individual', <?= $prod['id'] ?>, '<?= addslashes($prod['nombre']) ?>', <?= $prod['precio'] ?>, 1)" class="btn-touch-product">
+                        <button type="button" onclick='agregarAlCarrito("individual", <?= (int)$prod['id'] ?>, <?= htmlspecialchars(json_encode($prod['nombre']), ENT_QUOTES, "UTF-8") ?>, <?= (float)($prod['precio'] ?? 0) ?>, 1)' class="btn-touch-product">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="fw-extrabold fs-5" style="color: var(--text-main);"><?= htmlspecialchars($prod['nombre']) ?></span>
                                 <?php if ($prod['precio'] !== null): ?>
@@ -820,16 +913,26 @@ $cierreHoy = !$turnoAbierto;
                     <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-stars me-1 text-warning"></i> Promociones de Central</span>
                 </div>
                 <div class="row g-3 mb-4">
-                    <?php foreach ($promociones as $promo): ?>
+                    <?php foreach ($promociones as $promo):
+                        $promoVarNom = $promo['variante_nombre'] ?? 'Variedad';
+                        $promoPrecioFmt = (fmod((float)$promo['precio'], 1) == 0.0)
+                            ? number_format((float)$promo['precio'], 0)
+                            : number_format((float)$promo['precio'], 2);
+                    ?>
                         <div class="col-12">
-                            <button type="button" onclick="agregarAlCarrito('promocion', <?= (int)$promo['id'] ?>, '<?= addslashes($promo['nombre']) ?>', <?= (float)$promo['precio'] ?>, <?= (int)$promo['unidades'] ?>, <?= (int)$promo['variante_id'] ?>)" class="btn-touch-promo">
-                                <div class="d-flex justify-content-between align-items-center">
+                            <button type="button" onclick='agregarAlCarrito("promocion", <?= (int)$promo['id'] ?>, <?= htmlspecialchars(json_encode($promo['nombre']), ENT_QUOTES, "UTF-8") ?>, <?= (float)$promo['precio'] ?>, <?= (int)$promo['unidades'] ?>, <?= (int)$promo['variante_id'] ?>, <?= htmlspecialchars(json_encode($promoVarNom), ENT_QUOTES, "UTF-8") ?>)' class="btn-touch-promo">
+                                <div class="d-flex justify-content-between align-items-center gap-2">
                                     <div>
-                                        <span class="fw-extrabold fs-6 d-block text-warning mb-1"><i class="bi bi-tag-fill me-1"></i><?= htmlspecialchars($promo['nombre']) ?></span>
-                                        <span class="text-white opacity-90 small">Descuenta <?= $promo['unidades'] ?> salteñas del stock</span>
+                                        <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                            <span class="fw-extrabold fs-6 text-warning"><i class="bi bi-tag-fill me-1"></i><?= htmlspecialchars($promo['nombre']) ?></span>
+                                            <span class="badge bg-warning text-dark rounded-pill fw-extrabold" style="font-size: 0.72rem;">
+                                                <i class="bi bi-bookmark-fill me-1"></i><?= htmlspecialchars($promoVarNom) ?>
+                                            </span>
+                                        </div>
+                                        <span class="text-white opacity-90 small">Descuenta <?= (int)$promo['unidades'] ?> salteñas de <strong><?= htmlspecialchars($promoVarNom) ?></strong></span>
                                     </div>
-                                    <div class="text-end">
-                                        <span class="fs-4 fw-extrabold text-white">Bs. <?= number_format($promo['precio'], 0) ?></span>
+                                    <div class="text-end flex-shrink-0">
+                                        <span class="fs-4 fw-extrabold text-white">Bs. <?= $promoPrecioFmt ?></span>
                                     </div>
                                 </div>
                             </button>
@@ -1092,7 +1195,26 @@ $cierreHoy = !$turnoAbierto;
             }
         }
 
-        function agregarAlCarrito(tipo, id, nombre, precio, unidadesPorPack, varianteId = null) {
+        function recalcularTotalesDesdeDesglose() {
+            let totEnv = 0;
+            let totVend = 0;
+            let totRest = 0;
+            if (Array.isArray(stockPorProducto)) {
+                stockPorProducto.forEach(sp => {
+                    sp.enviada = parseInt(sp.enviada || 0);
+                    sp.vendida = parseInt(sp.vendida || 0);
+                    sp.restante = Math.max(0, sp.enviada - sp.vendida);
+                    totEnv += sp.enviada;
+                    totVend += sp.vendida;
+                    totRest += sp.restante;
+                });
+            }
+            totalStockEnviado = totEnv;
+            unidadesVendidas = totVend;
+            return { totEnv, totVend, totRest };
+        }
+
+        function agregarAlCarrito(tipo, id, nombre, precio, unidadesPorPack, varianteId = null, varianteNombre = null) {
             if (navigator.vibrate) navigator.vibrate(35);
 
             let key = tipo + '_' + id;
@@ -1106,6 +1228,7 @@ $cierreHoy = !$turnoAbierto;
                     tipo: tipo,
                     id: parseInt(id),
                     producto_id: (tipo === 'individual' ? parseInt(id) : parseInt(varianteId)),
+                    varianteNombre: varianteNombre || nombre,
                     nombre: nombre,
                     precio: parseFloat(precio),
                     unidadesPorPack: parseInt(unidadesPorPack),
@@ -1171,11 +1294,15 @@ $cierreHoy = !$turnoAbierto;
                 totalMonto += subtotal;
                 totalUnidades += unidadesItem;
 
+                const detalleVariedadHtml = (item.tipo === 'promocion' && item.varianteNombre)
+                    ? ` &bull; <span class="text-primary fw-bold">${item.varianteNombre}</span> (${item.unidadesPorPack} u.)`
+                    : '';
+
                 html += `
                     <div class="cart-item-row">
                         <div>
                             <span class="fw-extrabold d-block" style="color: var(--text-main); font-size: 0.95rem;">${item.nombre}</span>
-                            <span class="text-muted extra-small">Bs. ${item.precio.toFixed(2)} c/u</span>
+                            <span class="text-muted extra-small">Bs. ${item.precio.toFixed(2)} c/u${detalleVariedadHtml}</span>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <button type="button" class="btn-qty-control" onclick="cambiarCantidadItem('${item.key}', -1)">-</button>
@@ -1261,12 +1388,20 @@ $cierreHoy = !$turnoAbierto;
                 let uCount = i.unidadesPorPack * i.cantidad;
 
                 let targetProdId = i.producto_id;
-                if (targetProdId && stockPorProducto) {
+                if (targetProdId && Array.isArray(stockPorProducto)) {
                     let prodStock = stockPorProducto.find(p => p.id == targetProdId);
-                    if (prodStock) {
-                        prodStock.vendida = (prodStock.vendida || 0) + uCount;
-                        prodStock.restante = Math.max(0, prodStock.enviada - prodStock.vendida);
+                    if (!prodStock) {
+                        prodStock = {
+                            id: parseInt(targetProdId),
+                            nombre: i.varianteNombre || i.nombre || ('Variedad #' + targetProdId),
+                            enviada: 0,
+                            vendida: 0,
+                            restante: 0
+                        };
+                        stockPorProducto.push(prodStock);
                     }
+                    prodStock.vendida = parseInt(prodStock.vendida || 0) + uCount;
+                    prodStock.restante = Math.max(0, parseInt(prodStock.enviada || 0) - prodStock.vendida);
                 }
 
                 payloadItems.push({
@@ -1278,7 +1413,8 @@ $cierreHoy = !$turnoAbierto;
                 });
             });
 
-            unidadesVendidas += totalSalteñasVendidas;
+            // Recalcular totales estrictamente desde stockPorProducto para que subtotales y totales jamás diverjan
+            recalcularTotalesDesdeDesglose();
             dineroEfectivo += montoEfectivo;
             dineroQr += montoQr;
             actualizarIndicadores();
@@ -1308,16 +1444,16 @@ $cierreHoy = !$turnoAbierto;
         }
 
         function actualizarIndicadores() {
+            const { totVend, totRest } = recalcularTotalesDesdeDesglose();
             let totalDinero = dineroEfectivo + dineroQr;
             const elVendidas = document.getElementById('counter-vendidas');
-            if (elVendidas) elVendidas.innerText = unidadesVendidas + ' u.';
+            if (elVendidas) elVendidas.innerText = totVend + ' u.';
             const elEfectivo = document.getElementById('counter-efectivo');
             if (elEfectivo) elEfectivo.innerText = 'Bs. ' + dineroEfectivo.toFixed(2);
             const elQr = document.getElementById('counter-qr');
             if (elQr) elQr.innerText = 'Bs. ' + dineroQr.toFixed(2);
-            let sobrante = Math.max(0, totalStockEnviado - unidadesVendidas);
             const elStock = document.getElementById('counter-stock');
-            if (elStock) elStock.innerText = sobrante + ' u.';
+            if (elStock) elStock.innerText = totRest + ' u.';
 
             // Desglose por tipo en el card de restantes
             const elBreakdown = document.getElementById('stock-breakdown');
@@ -1376,9 +1512,9 @@ $cierreHoy = !$turnoAbierto;
             }
 
             const mVend = document.getElementById('modal-total-vendidas');
-            if (mVend) mVend.innerText = unidadesVendidas + ' u.';
+            if (mVend) mVend.innerText = totVend + ' u.';
             const mSobr = document.getElementById('modal-total-sobrantes');
-            if (mSobr) mSobr.innerText = sobrante + ' u.';
+            if (mSobr) mSobr.innerText = totRest + ' u.';
             const mEf = document.getElementById('modal-dinero-efectivo');
             if (mEf) mEf.innerText = 'Bs. ' + dineroEfectivo.toFixed(2);
             const mQr = document.getElementById('modal-dinero-qr');
@@ -1414,15 +1550,15 @@ $cierreHoy = !$turnoAbierto;
             }
 
             let obs = document.getElementById('observaciones-cierre').value;
-            let sobrantes = Math.max(0, totalStockEnviado - unidadesVendidas);
+            const { totVend, totRest } = recalcularTotalesDesdeDesglose();
             let totalDinero = dineroEfectivo + dineroQr;
 
             fetch('api.php?accion=cerrar_turno', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    total_vendidas: unidadesVendidas,
-                    total_sobrantes: sobrantes,
+                    total_vendidas: totVend,
+                    total_sobrantes: totRest,
                     dinero_cobrado: totalDinero,
                     dinero_efectivo: dineroEfectivo,
                     dinero_qr: dineroQr,
@@ -1433,7 +1569,12 @@ $cierreHoy = !$turnoAbierto;
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    location.reload();
+                    if (data.sincronizado_central === false) {
+                        mostrarToast('Turno cerrado con aviso', 'Central aún no confirmó (' + (data.sync_error || 'sin conexión') + '). Se reintentará automáticamente.', 'warning');
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        location.reload();
+                    }
                 } else {
                     if (btn) {
                         btn.disabled = false;
@@ -1612,6 +1753,35 @@ $cierreHoy = !$turnoAbierto;
                 }
             })
             .catch(() => mostrarToast('Error de red', 'No se pudo aceptar el stock en este momento.', 'danger'));
+        }
+
+        function reintentarEnvioCentral() {
+            const btn = document.getElementById('btn-retry-sync');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Enviando...';
+            }
+            fetch('api.php?accion=reintentar_cierres')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        mostrarToast('¡Sincronizado!', 'El cierre pendiente ya fue enviado a Central.', 'success');
+                        setTimeout(() => location.reload(), 1200);
+                    } else {
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Reintentar envío ahora';
+                        }
+                        mostrarToast('Central no respondió', data.error || 'Intenta nuevamente en unos segundos.', 'warning');
+                    }
+                })
+                .catch(() => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Reintentar envío ahora';
+                    }
+                    mostrarToast('Error de red', 'No se pudo conectar con Central.', 'danger');
+                });
         }
 
         function abrirTurno() {
