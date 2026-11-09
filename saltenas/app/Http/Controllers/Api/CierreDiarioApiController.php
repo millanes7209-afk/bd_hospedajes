@@ -52,19 +52,23 @@ class CierreDiarioApiController extends Controller
 
         $data = $validator->validated();
 
-        // Un carrito cierra su turno una sola vez de forma definitiva. No hay correcciones.
-        $cierreExistente = CierreDiario::where('carrito_id', $data['carrito_id'])
+        // Protección contra doble envío accidental (ej. reintento de red), sin bloquear un segundo turno en el mismo día
+        $cierreReciente = CierreDiario::where('carrito_id', $data['carrito_id'])
             ->where('fecha', $data['fecha'])
+            ->where('monto_real', $data['monto_real'])
+            ->where('dinero_efectivo', $data['dinero_efectivo'] ?? 0)
+            ->where('dinero_qr', $data['dinero_qr'] ?? 0)
+            ->where('created_at', '>=', now()->subSeconds(60))
             ->first();
 
-        if ($cierreExistente) {
+        if ($cierreReciente) {
             return response()->json([
                 'success' => true,
-                'mensaje' => 'El turno de este carrito ya se encuentra cerrado en Central.',
+                'mensaje' => 'El cierre ya fue recibido en Central.',
                 'data' => [
-                    'cierre_id' => $cierreExistente->id,
-                    'estado' => $cierreExistente->estado,
-                    'fecha' => $cierreExistente->fecha,
+                    'cierre_id' => $cierreReciente->id,
+                    'estado' => $cierreReciente->estado,
+                    'fecha' => $cierreReciente->fecha,
                 ]
             ], 200);
         }

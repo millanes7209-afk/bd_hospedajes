@@ -346,29 +346,37 @@ if ($accion === 'cerrar_turno') {
     $input = json_decode(file_get_contents('php://input'), true);
     $totalVendidas = (int) ($input['total_vendidas'] ?? 0);
     $totalSobrantes = (int) ($input['total_sobrantes'] ?? 0);
-    $dineroCobrado = (float) ($input['dinero_cobrado'] ?? 0.00);
     $dineroEfectivo = (float) ($input['dinero_efectivo'] ?? 0.00);
     $dineroQr = (float) ($input['dinero_qr'] ?? 0.00);
+    $dineroCobrado = $dineroEfectivo + $dineroQr;
     $observaciones = trim($input['observaciones'] ?? '');
 
     try {
-        $stTCierre = $pdo->query("SELECT id FROM turnos WHERE estado = 'abierto' ORDER BY id DESC LIMIT 1");
+        $pdo->beginTransaction();
+
+        $stTCierre = $pdo->query("SELECT id FROM turnos WHERE estado = 'abierto' ORDER BY id DESC LIMIT 1 FOR UPDATE");
         $tCierreRow = $stTCierre->fetch();
         if (!$tCierreRow) {
-            echo json_encode(['success' => false, 'error' => 'No hay turno abierto para cerrar']);
+            $pdo->rollBack();
+            echo json_encode(['success' => false, 'error' => 'Este turno ya fue cerrado o no existe un turno abierto.']);
             exit;
         }
         $closingTurnoId = (int)$tCierreRow['id'];
 
-        // Guardado Local del cierre
+        // Marcar turno como cerrado de forma atómica (impide cierres duplicados)
+        $stUpdTurno = $pdo->prepare("UPDATE turnos SET estado = 'cerrado', cerrado_at = NOW() WHERE id = ? AND estado = 'abierto'");
+        $stUpdTurno->execute([$closingTurnoId]);
+        if ($stUpdTurno->rowCount() === 0) {
+            $pdo->rollBack();
+            echo json_encode(['success' => false, 'error' => 'Este turno ya fue cerrado.']);
+            exit;
+        }
+
+        // Guardado Local definitivo del cierre
         $stmt = $pdo->prepare("INSERT INTO cierres (turno_id, fecha, total_vendidas, total_sobrantes, dinero_cobrado, dinero_efectivo, dinero_qr, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$closingTurnoId, $hoy, $totalVendidas, $totalSobrantes, $dineroCobrado, $dineroEfectivo, $dineroQr, $observaciones]);
 
-        // Marcar turno como cerrado
-        $pdo->prepare("UPDATE turnos SET estado = 'cerrado', cerrado_at = NOW() WHERE id = ?")->execute([$closingTurnoId]);
-
-        // Dinero cobrado exactamente igual a la suma de efectivo + qr
-        $dineroCobrado = $dineroEfectivo + $dineroQr;
+        $pdo->commit();
 
         // Desglose de salteñas vendidas y sobrantes del turno cerrado
         $detallesInput = $input['detalles'] ?? [];
@@ -432,12 +440,16 @@ if ($accion === 'cerrar_turno') {
             'Content-Type: application/json',
             'X-POS-Api-Key: ' . $apiKey
         ]);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 6);
         curl_exec($ch);
         curl_close($ch);
 
         echo json_encode(['success' => true, 'message' => 'Cierre de turno completado y sincronizado con Central']);
     } catch (Exception $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
     exit;

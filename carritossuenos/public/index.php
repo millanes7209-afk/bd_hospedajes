@@ -518,9 +518,75 @@ $cierreHoy = !$turnoAbierto;
             overflow: hidden;
             z-index: 1050;
         }
+
+        /* FEEDBACK MODERNO, TOASTS Y VALIDACIONES */
+        @keyframes shake-gentle {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .shake-error {
+            animation: shake-gentle 0.36s ease-in-out;
+        }
+        .field-error-ring {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.22) !important;
+        }
+        .checkout-alert-box {
+            border-radius: 14px;
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            background: rgba(239, 68, 68, 0.09);
+            color: #dc2626;
+        }
+        html.theme-dark .checkout-alert-box {
+            background: rgba(239, 68, 68, 0.16);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.45);
+        }
+        .hibrido-box {
+            background: rgba(148, 163, 184, 0.08);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 12px;
+        }
+        .hibrido-status-pill {
+            border-radius: 10px;
+            padding: 7px 10px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+            transition: all 0.2s ease;
+        }
+        .pos-toast-card {
+            pointer-events: auto;
+            border-radius: 16px;
+            padding: 12px 16px;
+            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.22);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: toast-slide-in 0.25s ease-out;
+        }
+        @keyframes toast-slide-in {
+            from { opacity: 0; transform: translateY(-16px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
     </style>
 </head>
 <body>
+
+    <!-- CONTENEDOR FLOTANTE DE NOTIFICACIONES TOAST -->
+    <div id="pos-toast-container" class="position-fixed top-0 start-50 translate-middle-x p-3 d-flex flex-column gap-2" style="z-index: 2050; width: 100%; max-width: 420px; pointer-events: none;"></div>
 
     <!-- CABECERA DE MONITOR CON MINILETREROS Y TOGGLE TEMA -->
     <div class="header-counter py-2 px-3">
@@ -700,16 +766,29 @@ $cierreHoy = !$turnoAbierto;
                         </select>
                     </div>
 
-                    <div id="hibrido-fields" style="display:none;" class="mb-3">
+                    <div id="hibrido-fields" style="display:none;" class="mb-3 hibrido-box">
                         <div class="row g-2">
                             <div class="col-6">
-                                <label class="small text-muted fw-bold">En Efectivo (Bs.)</label>
-                                <input type="number" id="hibrido-efectivo" class="form-control" step="0.50" min="0" placeholder="0.00">
+                                <label class="small text-muted fw-bold mb-1">💵 Efectivo (Bs.)</label>
+                                <input type="number" id="hibrido-efectivo" class="form-control fw-bold rounded-3" step="0.50" min="0" inputmode="decimal" placeholder="0.00" oninput="actualizarEstadoHibrido()">
                             </div>
                             <div class="col-6">
-                                <label class="small text-muted fw-bold">En QR (Bs.)</label>
-                                <input type="number" id="hibrido-qr" class="form-control" step="0.50" min="0" placeholder="0.00">
+                                <label class="small text-muted fw-bold mb-1">📱 Pago QR (Bs.)</label>
+                                <input type="number" id="hibrido-qr" class="form-control fw-bold rounded-3" step="0.50" min="0" inputmode="decimal" placeholder="0.00" oninput="actualizarEstadoHibrido()">
                             </div>
+                        </div>
+                        <div id="hibrido-live-status" class="hibrido-status-pill bg-secondary-subtle text-muted">
+                            <span>Ingresa los montos a repartir</span>
+                            <span>Bs. 0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- MENSAJE DE VALIDACIÓN MODERNO EN LÍNEA -->
+                    <div id="checkout-error-box" class="checkout-alert-box d-none">
+                        <i class="bi bi-exclamation-circle-fill fs-5 flex-shrink-0"></i>
+                        <div class="lh-sm">
+                            <div class="fw-extrabold" id="checkout-error-title"></div>
+                            <div class="opacity-90 mt-1" id="checkout-error-desc" style="font-size: 0.78rem;"></div>
                         </div>
                     </div>
 
@@ -863,7 +942,7 @@ $cierreHoy = !$turnoAbierto;
                         <textarea id="observaciones-cierre" rows="3" class="form-control rounded-3" placeholder="Ej: Se rompió 1 salteña de pollo al transportar..."></textarea>
                     </div>
 
-                    <button type="button" onclick="confirmarCierreTurno()" class="btn btn-warning w-100 py-3 rounded-3 fw-bold text-dark">
+                    <button type="button" id="btn-confirmar-cierre" onclick="confirmarCierreTurno()" class="btn btn-warning w-100 py-3 rounded-3 fw-bold text-dark">
                         <i class="bi bi-send-check-fill me-1"></i> CONFIRMAR Y FINALIZAR TURNO
                     </button>
                 </div>
@@ -882,6 +961,122 @@ $cierreHoy = !$turnoAbierto;
         let stockPorProducto = <?= json_encode($desgloseStock) ?>;
 
         let carrito = [];
+
+        function mostrarToast(titulo, mensaje, tipo = 'danger') {
+            const container = document.getElementById('pos-toast-container');
+            if (!container) return;
+
+            const estilos = {
+                success: { bg: '#16a34a', icon: 'bi-check-circle-fill' },
+                warning: { bg: '#d97706', icon: 'bi-exclamation-triangle-fill' },
+                danger:  { bg: '#dc2626', icon: 'bi-x-octagon-fill' }
+            };
+            const cfg = estilos[tipo] || estilos.danger;
+
+            const toast = document.createElement('div');
+            toast.className = 'pos-toast-card text-white';
+            toast.style.background = cfg.bg;
+            toast.innerHTML = `
+                <i class="bi ${cfg.icon} fs-4 flex-shrink-0"></i>
+                <div class="flex-grow-1 lh-sm">
+                    <div class="fw-extrabold" style="font-size: 0.9rem;">${titulo}</div>
+                    ${mensaje ? `<div class="opacity-90" style="font-size: 0.78rem;">${mensaje}</div>` : ''}
+                </div>
+                <button type="button" class="btn-close btn-close-white btn-sm flex-shrink-0" onclick="this.parentElement.remove()"></button>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(-10px)';
+                    setTimeout(() => toast.remove(), 260);
+                }
+            }, 3800);
+        }
+
+        function obtenerTotalesCarrito() {
+            let totalCobrado = 0;
+            let totalSalteñasVendidas = 0;
+            carrito.forEach(i => {
+                totalCobrado += i.precio * i.cantidad;
+                totalSalteñasVendidas += i.unidadesPorPack * i.cantidad;
+            });
+            return { totalCobrado, totalSalteñasVendidas };
+        }
+
+        function limpiarErrorCheckout() {
+            const box = document.getElementById('checkout-error-box');
+            if (box) box.classList.add('d-none');
+
+            ['select-metodo-pago', 'hibrido-efectivo', 'hibrido-qr'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('field-error-ring', 'shake-error');
+            });
+        }
+
+        function mostrarErrorCheckout(titulo, desc, elementos = []) {
+            const box = document.getElementById('checkout-error-box');
+            const titleEl = document.getElementById('checkout-error-title');
+            const descEl = document.getElementById('checkout-error-desc');
+
+            if (titleEl) titleEl.innerText = titulo;
+            if (descEl) descEl.innerText = desc;
+            if (box) {
+                box.classList.remove('d-none', 'shake-error');
+                void box.offsetWidth;
+                box.classList.add('shake-error');
+            }
+
+            elementos.forEach(el => {
+                if (el) {
+                    el.classList.remove('shake-error');
+                    void el.offsetWidth;
+                    el.classList.add('field-error-ring', 'shake-error');
+                }
+            });
+        }
+
+        function actualizarEstadoHibrido() {
+            limpiarErrorCheckout();
+            const statusEl = document.getElementById('hibrido-live-status');
+            if (!statusEl) return;
+
+            const { totalCobrado } = obtenerTotalesCarrito();
+            const rawEf = document.getElementById('hibrido-efectivo')?.value ?? '';
+            const rawQr = document.getElementById('hibrido-qr')?.value ?? '';
+            const ef = parseFloat(rawEf || 0);
+            const qr = parseFloat(rawQr || 0);
+
+            if (rawEf === '' && rawQr === '') {
+                statusEl.className = 'hibrido-status-pill bg-secondary-subtle text-muted';
+                statusEl.innerHTML = `<span><i class="bi bi-calculator me-1"></i>Total a repartir</span><span>Bs. ${totalCobrado.toFixed(2)}</span>`;
+                return;
+            }
+
+            if (isNaN(ef) || isNaN(qr) || ef < 0 || qr < 0) {
+                statusEl.className = 'hibrido-status-pill bg-danger-subtle text-danger';
+                statusEl.innerHTML = `<span><i class="bi bi-exclamation-circle-fill me-1"></i>No ingreses valores negativos</span><span>Bs. ${totalCobrado.toFixed(2)}</span>`;
+                return;
+            }
+
+            const totalCents = Math.round(totalCobrado * 100);
+            const sumaCents = Math.round(ef * 100) + Math.round(qr * 100);
+            const diffCents = totalCents - sumaCents;
+            const diff = diffCents / 100;
+
+            if (diffCents === 0) {
+                statusEl.className = 'hibrido-status-pill bg-success-subtle text-success';
+                statusEl.innerHTML = `<span><i class="bi bi-check-circle-fill me-1"></i>¡Monto exacto!</span><span>Bs. ${totalCobrado.toFixed(2)}</span>`;
+            } else if (diffCents > 0) {
+                statusEl.className = 'hibrido-status-pill bg-warning-subtle text-warning-emphasis';
+                statusEl.innerHTML = `<span><i class="bi bi-hourglass-split me-1"></i>Faltan Bs. ${diff.toFixed(2)}</span><span>Total: Bs. ${totalCobrado.toFixed(2)}</span>`;
+            } else {
+                statusEl.className = 'hibrido-status-pill bg-danger-subtle text-danger';
+                statusEl.innerHTML = `<span><i class="bi bi-exclamation-triangle-fill me-1"></i>Sobran Bs. ${Math.abs(diff).toFixed(2)}</span><span>Total: Bs. ${totalCobrado.toFixed(2)}</span>`;
+            }
+        }
 
         function toggleTheme() {
             const html = document.documentElement;
@@ -944,6 +1139,7 @@ $cierreHoy = !$turnoAbierto;
             if (inputEf) inputEf.value = '';
             const inputQr = document.getElementById('hibrido-qr');
             if (inputQr) inputQr.value = '';
+            limpiarErrorCheckout();
             renderizarCarrito();
         }
 
@@ -958,6 +1154,7 @@ $cierreHoy = !$turnoAbierto;
                 checkoutSection.style.display = 'none';
                 document.getElementById('cart-total-monto').innerText = 'Bs. 0.00';
                 document.getElementById('cart-total-unidades').innerText = '0 u.';
+                limpiarErrorCheckout();
                 return;
             }
 
@@ -993,31 +1190,76 @@ $cierreHoy = !$turnoAbierto;
             container.innerHTML = html;
             document.getElementById('cart-total-monto').innerText = 'Bs. ' + totalMonto.toFixed(2);
             document.getElementById('cart-total-unidades').innerText = totalUnidades + ' u.';
+            actualizarEstadoHibrido();
         }
 
         function procesarCobroOrden() {
             if (carrito.length === 0) return;
             if (navigator.vibrate) navigator.vibrate(60);
 
+            limpiarErrorCheckout();
+
             const metodoSel = document.getElementById('select-metodo-pago');
             const metodo = metodoSel ? metodoSel.value : '';
 
+            // 1. Validar método de pago ANTES de tocar cualquier stock
             if (!metodo) {
-                alert('Por favor seleccione una opción de método de pago.');
+                mostrarErrorCheckout(
+                    'Elige un método de pago',
+                    'Selecciona Efectivo, Pago por QR o Pago Híbrido antes de registrar la venta.',
+                    [metodoSel]
+                );
+                if (metodoSel) metodoSel.focus();
                 return;
             }
 
-            let payloadItems = [];
-            let totalCobrado = 0;
-            let totalSalteñasVendidas = 0;
+            // 2. Calcular totales en modo solo lectura (sin mutar stockPorProducto)
+            const { totalCobrado, totalSalteñasVendidas } = obtenerTotalesCarrito();
 
+            // 3. Validar montos según método de pago ANTES de descontar stock
+            let montoEfectivo = 0, montoQr = 0;
+            if (metodo === 'efectivo') {
+                montoEfectivo = totalCobrado;
+            } else if (metodo === 'qr') {
+                montoQr = totalCobrado;
+            } else if (metodo === 'hibrido') {
+                const inputEf = document.getElementById('hibrido-efectivo');
+                const inputQr = document.getElementById('hibrido-qr');
+                montoEfectivo = parseFloat(inputEf?.value || 0);
+                montoQr = parseFloat(inputQr?.value || 0);
+
+                if (isNaN(montoEfectivo) || isNaN(montoQr) || montoEfectivo < 0 || montoQr < 0) {
+                    mostrarErrorCheckout(
+                        'Montos no válidos',
+                        'Ingresa cantidades positivas para Efectivo y QR.',
+                        [inputEf, inputQr]
+                    );
+                    return;
+                }
+
+                const totalCents = Math.round(totalCobrado * 100);
+                const efCents = Math.round(montoEfectivo * 100);
+                const qrCents = Math.round(montoQr * 100);
+                const diffCents = totalCents - (efCents + qrCents);
+                if (diffCents !== 0) {
+                    const diff = diffCents / 100;
+                    const suma = (efCents + qrCents) / 100;
+                    const tituloErr = diffCents > 0
+                        ? `Faltan Bs. ${diff.toFixed(2)} para completar el pago`
+                        : `Excede el total por Bs. ${Math.abs(diff).toFixed(2)}`;
+                    const descErr = `Efectivo (Bs. ${montoEfectivo.toFixed(2)}) + QR (Bs. ${montoQr.toFixed(2)}) = Bs. ${suma.toFixed(2)}. Total a cobrar: Bs. ${totalCobrado.toFixed(2)}.`;
+
+                    mostrarErrorCheckout(tituloErr, descErr, [inputEf, inputQr]);
+                    return;
+                }
+            }
+
+            // 4. Todo validado correctamente: recién ahora armar payload y descontar del stock local una única vez
+            let payloadItems = [];
             carrito.forEach(i => {
                 let subtotal = i.precio * i.cantidad;
                 let uCount = i.unidadesPorPack * i.cantidad;
-                totalCobrado += subtotal;
-                totalSalteñasVendidas += uCount;
 
-                // Descontar del stock individual por su ID oficial directo de Central
                 let targetProdId = i.producto_id;
                 if (targetProdId && stockPorProducto) {
                     let prodStock = stockPorProducto.find(p => p.id == targetProdId);
@@ -1036,26 +1278,13 @@ $cierreHoy = !$turnoAbierto;
                 });
             });
 
-            let montoEfectivo = 0, montoQr = 0;
-            if (metodo === 'efectivo') {
-                montoEfectivo = totalCobrado;
-            } else if (metodo === 'qr') {
-                montoQr = totalCobrado;
-            } else if (metodo === 'hibrido') {
-                montoEfectivo = parseFloat(document.getElementById('hibrido-efectivo').value || 0);
-                montoQr = parseFloat(document.getElementById('hibrido-qr').value || 0);
-                if (Math.abs((montoEfectivo + montoQr) - totalCobrado) > 0.05) {
-                    alert('La suma de Efectivo (Bs. ' + montoEfectivo.toFixed(2) + ') y QR (Bs. ' + montoQr.toFixed(2) + ') debe coincidir exactamente con el total de la venta: Bs. ' + totalCobrado.toFixed(2));
-                    return;
-                }
-            }
-
             unidadesVendidas += totalSalteñasVendidas;
             dineroEfectivo += montoEfectivo;
             dineroQr += montoQr;
             actualizarIndicadores();
 
             vaciarCarrito();
+            mostrarToast('¡Venta registrada!', `Se cobraron Bs. ${totalCobrado.toFixed(2)} (${totalSalteñasVendidas} u.).`, 'success');
 
             fetch('api.php?accion=registrar_venta', {
                 method: 'POST',
@@ -1066,6 +1295,15 @@ $cierreHoy = !$turnoAbierto;
                     monto_efectivo: montoEfectivo,
                     monto_qr: montoQr
                 })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (!res.success) {
+                    mostrarToast('Aviso al guardar venta', res.error || 'No se pudo confirmar en servidor.', 'warning');
+                }
+            })
+            .catch(() => {
+                mostrarToast('Sin conexión', 'No se pudo guardar la venta en la base local.', 'danger');
             });
         }
 
@@ -1162,13 +1400,19 @@ $cierreHoy = !$turnoAbierto;
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert('Error: ' + (data.error || 'No se pudo aceptar el stock'));
+                    mostrarToast('No se pudo aceptar', data.error || 'Error al aceptar el stock.', 'danger');
                 }
             })
-            .catch(() => alert('Error de red al aceptar el stock'));
+            .catch(() => mostrarToast('Error de red', 'No se pudo conectar para aceptar el stock.', 'danger'));
         }
 
         function confirmarCierreTurno() {
+            const btn = document.getElementById('btn-confirmar-cierre');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> CERRANDO TURNO...';
+            }
+
             let obs = document.getElementById('observaciones-cierre').value;
             let sobrantes = Math.max(0, totalStockEnviado - unidadesVendidas);
             let totalDinero = dineroEfectivo + dineroQr;
@@ -1191,10 +1435,20 @@ $cierreHoy = !$turnoAbierto;
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert('Error al cerrar turno: ' + (data.error || ''));
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-send-check-fill me-1"></i> CONFIRMAR Y FINALIZAR TURNO';
+                    }
+                    mostrarToast('Error al cerrar turno', data.error || 'Intenta nuevamente.', 'danger');
                 }
             })
-            .catch(() => alert('Error de red al cerrar turno'));
+            .catch(() => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-send-check-fill me-1"></i> CONFIRMAR Y FINALIZAR TURNO';
+                }
+                mostrarToast('Error de red', 'No se pudo comunicar con el servidor al cerrar turno.', 'danger');
+            });
         }
 
         // Configuración manual de Pago Híbrido (sin auto-cálculo)
@@ -1202,8 +1456,14 @@ $cierreHoy = !$turnoAbierto;
         const hFields = document.getElementById('hibrido-fields');
         if (selMetodo) {
             selMetodo.addEventListener('change', function() {
+                limpiarErrorCheckout();
                 if (hFields) {
                     hFields.style.display = this.value === 'hibrido' ? 'block' : 'none';
+                }
+                if (this.value === 'hibrido') {
+                    actualizarEstadoHibrido();
+                    const inputEf = document.getElementById('hibrido-efectivo');
+                    if (inputEf) setTimeout(() => inputEf.focus(), 60);
                 }
             });
         }
@@ -1348,10 +1608,10 @@ $cierreHoy = !$turnoAbierto;
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert('Error: ' + (data.error || 'No se pudo aceptar el stock'));
+                    mostrarToast('No se pudo aceptar', data.error || 'Error al aceptar el stock.', 'danger');
                 }
             })
-            .catch(() => alert('Error de red al aceptar el stock.'));
+            .catch(() => mostrarToast('Error de red', 'No se pudo aceptar el stock en este momento.', 'danger'));
         }
 
         function abrirTurno() {
@@ -1362,10 +1622,10 @@ $cierreHoy = !$turnoAbierto;
                     if (data.success) {
                         location.reload();
                     } else {
-                        alert('Error al abrir turno: ' + (data.error || ''));
+                        mostrarToast('Error al abrir turno', data.error || 'Intenta nuevamente.', 'danger');
                     }
                 })
-                .catch(() => alert('Error de red al abrir turno'));
+                .catch(() => mostrarToast('Error de red', 'No se pudo conectar para abrir el turno.', 'danger'));
         }
 
         <?php if ($turnoAbierto): ?>
