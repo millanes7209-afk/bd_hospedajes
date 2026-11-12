@@ -2,6 +2,7 @@
 
 header('Content-Type: application/json');
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/sync_vivo.php';
 
 $pdo = getDBConnection();
 $accion = $_REQUEST['accion'] ?? '';
@@ -47,6 +48,9 @@ if ($accion === 'abrir_turno') {
         $st->execute([$hoy]);
         $nuevoTurnoId = $pdo->lastInsertId();
 
+        // Notificar de inmediato a Central que este carrito abrió turno
+        enviarEstadoVivoCentral($pdo, 1);
+
         echo json_encode([
             'success' => true,
             'mensaje' => 'Turno abierto con éxito',
@@ -70,6 +74,9 @@ if ($accion === 'verificar_despacho') {
         }
 
         $curTurnoId = (int)$turnoActualRow['id'];
+
+        // Pulso en vivo hacia Central mientras el turno esté abierto (repara microcortes)
+        enviarEstadoVivoCentral($pdo, 1);
 
         // Estado local de stock_diario para ESTE turno
         $stmtStk = $pdo->prepare("SELECT COUNT(*) as total, SUM(CASE WHEN aceptado = 1 THEN 1 ELSE 0 END) as aceptados FROM stock_diario WHERE turno_id = ?");
@@ -258,6 +265,9 @@ if ($accion === 'aceptar_stock') {
             curl_close($ch);
         }
 
+        // Notificar estado en vivo con el stock inicial ya aceptado
+        enviarEstadoVivoCentral($pdo, 1);
+
         echo json_encode([
             'success' => true,
             'message' => '¡Stock aceptado y recibido con éxito!'
@@ -335,6 +345,9 @@ if ($accion === 'registrar_venta') {
         }
         $pdo->commit();
 
+        // Actualizar stock y recaudación en tiempo real en Central
+        enviarEstadoVivoCentral($pdo, 1);
+
         echo json_encode(['success' => true, 'message' => 'Venta registrada con éxito']);
     } catch (Exception $e) {
         if ($pdo->inTransaction()) {
@@ -382,6 +395,9 @@ if ($accion === 'cerrar_turno') {
         $closingCierreId = (int)$pdo->lastInsertId();
 
         $pdo->commit();
+
+        // Marcar el turno como cerrado en el monitor en vivo de Central inmediatamente
+        enviarEstadoVivoCentral($pdo, 1, $closingTurnoId);
 
         // Desglose de salteñas vendidas y sobrantes del turno cerrado
         $detallesInput = $input['detalles'] ?? [];
@@ -492,7 +508,7 @@ if ($accion === 'cerrar_turno') {
 // ── REINTENTAR ENVÍO DE CIERRES PENDIENTES DE SINCRONIZAR CON CENTRAL ────────
 if ($accion === 'reintentar_cierres') {
     try {
-        $pendientes = $pdo->query("SELECT id, payload_central FROM cierres WHERE sincronizado_central = 0 AND payload_central IS NOT NULL ORDER BY id ASC")->fetchAll();
+        $pendientes = $pdo->query("SELECT id, turno_id, payload_central FROM cierres WHERE sincronizado_central = 0 AND payload_central IS NOT NULL ORDER BY id ASC")->fetchAll();
         $enviados = 0;
         $ultimoError = null;
         $centralApiUrl = 'https://saltenas.alloggibolivia.com/api/v1/cierres/sincronizar';
@@ -518,6 +534,9 @@ if ($accion === 'reintentar_cierres') {
             $jsonCentral = $resCentral ? json_decode($resCentral, true) : null;
             if (!$curlErr && $httpCodeCentral >= 200 && $httpCodeCentral < 300 && !empty($jsonCentral['success'])) {
                 $pdo->prepare("UPDATE cierres SET sincronizado_central = 1 WHERE id = ?")->execute([$p['id']]);
+                if (!empty($p['turno_id'])) {
+                    enviarEstadoVivoCentral($pdo, 1, (int)$p['turno_id']);
+                }
                 $enviados++;
             } else {
                 $ultimoError = $curlErr ?: ($jsonCentral['error'] ?? $jsonCentral['message'] ?? ("HTTP " . $httpCodeCentral));

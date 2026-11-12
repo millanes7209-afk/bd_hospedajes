@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\CarritoEstadoVivoApiController;
 use App\Http\Controllers\Api\CatalogoApiController;
 use App\Http\Controllers\Api\CierreDiarioApiController;
 use App\Http\Controllers\Api\DespachoApiController;
@@ -48,6 +49,9 @@ Route::get('/v1/ping', function () {
 Route::middleware([VerifyApiKey::class])->prefix('v1')->group(function () {
     // Sincronización de catálogo y precios para carritos
     Route::get('/catalogo', [CatalogoApiController::class, 'index']);
+
+    // Estado y stock en tiempo real de carritos con turno abierto
+    Route::post('/carritos/estado-vivo', [CarritoEstadoVivoApiController::class, 'actualizar']);
 
     // Recepción e ingesta de cierres diarios desde POS remotos
     Route::post('/cierres/sincronizar', [CierreDiarioApiController::class, 'sincronizar']);

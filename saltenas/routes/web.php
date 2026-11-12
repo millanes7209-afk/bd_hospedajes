@@ -32,8 +32,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/compras', [CompraController::class, 'index'])->name('compras.index');
     Route::post('/compras', [CompraController::class, 'store'])->name('compras.store');
 
-    // Carritos (Puntos de Venta)
+    // Carritos (Puntos de Venta & Monitor en Vivo)
     Route::get('/carritos', [CarritoController::class, 'index'])->name('carritos.index');
+    Route::get('/carritos/estado-vivo', [CarritoController::class, 'estadoVivo'])->name('carritos.estado_vivo');
     Route::post('/carritos', [CarritoController::class, 'store'])->name('carritos.store');
     Route::get('/carritos/toggle/{id}', [CarritoController::class, 'toggleEstado'])->name('carritos.toggle');
 

@@ -26,4 +26,9 @@ class Carrito extends Model
     {
         return $this->hasMany(CierreDiario::class, 'carrito_id');
     }
+
+    public function turnoVivo()
+    {
+        return $this->hasOne(CarritoTurnoVivo::class, 'carrito_id');
+    }
 }
