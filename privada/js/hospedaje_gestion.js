@@ -31,8 +31,8 @@ function actualizarSalida() {
         var minutosGracia = duracion * 10;
         var precioBase = 30;
 
-        if (empresaID === 2) {
-            // Regla especial Empresa 2:
+        if (empresaID === 2 || empresaID === 3) {
+            // Regla especial Empresa 2 y 3 (pruebas):
             // 2 horas = 40 Bs, 3 horas = 50 Bs (1 hora = 30 Bs)
             // Ante cualquier hora se deben agregar 10 minutos de gracia
             minutosGracia = 10;

@@ -36,7 +36,7 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
     <script>
         window.empresaID = <?php echo (int)($empresaID ?? 0); ?>;
     </script>
-    <script src="../js/hospedaje_gestion.js"></script>
+    <script src="../js/hospedaje_gestion.js?v=<?php echo time(); ?>"></script>
     <script src="../js/hospedaje_buscadores.js"></script>
     <script src="../js/hospedaje_pagos.js"></script>
 
