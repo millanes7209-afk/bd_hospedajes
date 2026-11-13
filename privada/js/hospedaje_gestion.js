@@ -26,12 +26,36 @@ function actualizarSalida() {
         if (contenedorPD) contenedorPD.style.display = 'block'; // Siempre visible
 
         var duracion = parseInt(document.getElementById('duracion').value) || 1;
-        var minutosGracia = duracion * 10;
+        var empresaID = parseInt(document.getElementById('empresaID')?.value || window.empresaID || 0);
 
-        // Precio fijo según horas
+        var minutosGracia = duracion * 10;
         var precioBase = 30;
-        if (duracion == 2) precioBase = 50;
-        else if (duracion == 3) precioBase = 60;
+
+        if (empresaID === 2) {
+            // Regla especial Empresa 2:
+            // 2 horas = 40 Bs, 3 horas = 50 Bs (1 hora = 30 Bs)
+            // Ante cualquier hora se deben agregar 10 minutos de gracia
+            minutosGracia = 10;
+            if (duracion == 2) {
+                precioBase = 40;
+            } else if (duracion == 3) {
+                precioBase = 50;
+            } else {
+                precioBase = 30;
+            }
+        } else {
+            // Regla estándar para las demás empresas:
+            // 2 horas = 50 Bs, 3 horas = 60 Bs (1 hora = 30 Bs)
+            // Gracia = duracion * 10 min
+            minutosGracia = duracion * 10;
+            if (duracion == 2) {
+                precioBase = 50;
+            } else if (duracion == 3) {
+                precioBase = 60;
+            } else {
+                precioBase = 30;
+            }
+        }
 
         // Sincronizar ambos campos
         if (inputMonto) inputMonto.value = precioBase;

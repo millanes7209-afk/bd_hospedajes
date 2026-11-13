@@ -33,6 +33,9 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
 
     <!-- Librerías -->
     <script type='text/javascript' src='../../ajax.js'></script>
+    <script>
+        window.empresaID = <?php echo (int)($empresaID ?? 0); ?>;
+    </script>
     <script src="../js/hospedaje_gestion.js"></script>
     <script src="../js/hospedaje_buscadores.js"></script>
     <script src="../js/hospedaje_pagos.js"></script>
@@ -445,6 +448,7 @@ if (isset($_REQUEST['numero']) && isset($_REQUEST['tipo']) && isset($_REQUEST['p
                                         value="<?php echo $tipo_habitacion; ?>">
                                     <input type="hidden" name="habitacion_numero"
                                         value="<?php echo $habitacion_numero; ?>">
+                                    <input type="hidden" id="empresaID" name="empresaID" value="<?php echo (int)($empresaID ?? 0); ?>">
 
                                     <div class="d-flex justify-content-end gap-3 mt-4">
                                         <button class="btn btn-secondary px-4" type="button"
