@@ -8,7 +8,7 @@ if (!isset($_SESSION['sesion_usuario'])) {
 }
 
 // Parámetros capturados de la URL
-$sucursal_id = $_GET['sucursal_id'] ?? $_SESSION['sucursal_id'] ?? 1;
+$sucursal_id = $_GET['sucursal_id'] ?? $_SESSION['empresaID'] ?? $_SESSION['sucursal_id'] ?? 1;
 $fecha_inicio = $_GET['fecha_inicio'] ?? date('Y-m-d');
 $fecha_fin = $_GET['fecha_fin'] ?? date('Y-m-d');
 
@@ -25,7 +25,7 @@ $sql = "SELECT
             GROUP_CONCAT(c.apellido2 SEPARATOR ' | ') as maternos,
             GROUP_CONCAT(c.nombres SEPARATOR ' | ') as nombres_ind,
             GROUP_CONCAT(c.ci SEPARATOR ', ') as cis,
-            GROUP_CONCAT(c.pais SEPARATOR ' | ') as nacionalidades,
+            GROUP_CONCAT(ps.nombre SEPARATOR ' | ') as nacionalidades,
             GROUP_CONCAT(c.fecha_nacimiento SEPARATOR ' | ') as fechas_nac,
             GROUP_CONCAT(c.estado_civil SEPARATOR ' | ') as estados_civiles,
             GROUP_CONCAT(c.profesion SEPARATOR ' | ') as profesiones,
@@ -34,6 +34,7 @@ $sql = "SELECT
         FROM hospedajes h
         JOIN hospedajes_clientes ch ON h.hospedajeID = ch.hospedajeID
         JOIN clientes c ON ch.clienteID = c.clienteID
+        LEFT JOIN paises ps ON c.paisID = ps.paisID
         JOIN habitaciones hab ON h.habitacionID = hab.habitacionID
         WHERE h._estado <> 'X' AND ch._estado <> 'X' AND c._estado <> 'X'
         AND DATE(h.checkin) BETWEEN ? AND ? 
@@ -67,17 +68,17 @@ if ($rs) {
     foreach ($rs as $fila) {
         echo "<tr>";
         echo "<td>" . date('d/m/Y', strtotime($fila['checkin'])) . "</td>";
-        echo "<td>" . htmlspecialchars($fila['paternos']) . "</td>";
-        echo "<td>" . htmlspecialchars($fila['maternos']) . "</td>";
-        echo "<td>" . htmlspecialchars($fila['nombres_ind']) . "</td>";
-        echo "<td>" . htmlspecialchars($fila['cis']) . "</td>";
+        echo "<td>" . htmlspecialchars($fila['paternos'] ?? '') . "</td>";
+        echo "<td>" . htmlspecialchars($fila['maternos'] ?? '') . "</td>";
+        echo "<td>" . htmlspecialchars($fila['nombres_ind'] ?? '') . "</td>";
+        echo "<td>" . htmlspecialchars($fila['cis'] ?? '') . "</td>";
         echo "<td style='text-align: center;'>" . $fila['habitacion_numero'] . "</td>";
-        echo "<td>" . htmlspecialchars($fila['nacionalidades']) . "</td>";
-        echo "<td>" . htmlspecialchars($fila['fechas_nac']) . "</td>";
-        echo "<td>" . htmlspecialchars($fila['estados_civiles']) . "</td>";
-        echo "<td>" . htmlspecialchars($fila['profesiones']) . "</td>";
-        echo "<td>" . htmlspecialchars($fila['procedencias']) . "</td>";
-        echo "<td>" . ($fila['checkout'] ? date('d/m/Y', strtotime($fila['checkout'])) : '-') . "</td>";
+        echo "<td>" . htmlspecialchars($fila['nacionalidades'] ?? '') . "</td>";
+        echo "<td>" . htmlspecialchars($fila['fechas_nac'] ?? '') . "</td>";
+        echo "<td>" . htmlspecialchars($fila['estados_civiles'] ?? '') . "</td>";
+        echo "<td>" . htmlspecialchars($fila['profesiones'] ?? '') . "</td>";
+        echo "<td>" . htmlspecialchars($fila['procedencias'] ?? '') . "</td>";
+        echo "<td>" . (!empty($fila['checkout']) ? date('d/m/Y', strtotime($fila['checkout'])) : '-') . "</td>";
         echo "</tr>";
     }
 } else {
