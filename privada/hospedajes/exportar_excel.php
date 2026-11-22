@@ -18,19 +18,21 @@ header("Content-Disposition: attachment; filename=Reporte_Camara_Hotelera_" . da
 header("Pragma: no-cache");
 header("Expires: 0");
 
-// Consulta con TODOS los campos de la tabla original
+// Consulta individual por huésped
 $sql = "SELECT 
-            h.checkin, h.checkout,
-            GROUP_CONCAT(c.apellido1 SEPARATOR ' | ') as paternos,
-            GROUP_CONCAT(c.apellido2 SEPARATOR ' | ') as maternos,
-            GROUP_CONCAT(c.nombres SEPARATOR ' | ') as nombres_ind,
-            GROUP_CONCAT(c.ci SEPARATOR ', ') as cis,
-            GROUP_CONCAT(ps.nombre SEPARATOR ' | ') as nacionalidades,
-            GROUP_CONCAT(c.fecha_nacimiento SEPARATOR ' | ') as fechas_nac,
-            GROUP_CONCAT(c.estado_civil SEPARATOR ' | ') as estados_civiles,
-            GROUP_CONCAT(c.profesion SEPARATOR ' | ') as profesiones,
-            GROUP_CONCAT(c.lugar_nacimiento SEPARATOR ' | ') as procedencias,
-            hab.numero AS habitacion_numero
+            h.hospedajeID,
+            h.checkin, 
+            h.checkout,
+            hab.numero AS habitacion_numero,
+            c.apellido1,
+            c.apellido2,
+            c.nombres,
+            c.ci,
+            ps.nombre AS nacionalidad,
+            c.fecha_nacimiento,
+            c.estado_civil,
+            c.profesion,
+            c.lugar_nacimiento
         FROM hospedajes h
         JOIN hospedajes_clientes ch ON h.hospedajeID = ch.hospedajeID
         JOIN clientes c ON ch.clienteID = c.clienteID
@@ -39,10 +41,26 @@ $sql = "SELECT
         WHERE h._estado <> 'X' AND ch._estado <> 'X' AND c._estado <> 'X'
         AND DATE(h.checkin) BETWEEN ? AND ? 
         AND h.empresaID = ?
-        GROUP BY h.hospedajeID
-        ORDER BY h.checkin DESC";
+        ORDER BY h.checkin DESC, h.hospedajeID DESC, ch.hospedajeclienteID ASC";
 
 $rs = $db->obtenerTodo($sql, [$fecha_inicio, $fecha_fin, $sucursal_id]);
+
+// Agrupar huéspedes por hospedaje
+$hospedajes = [];
+if ($rs) {
+    foreach ($rs as $row) {
+        $hid = $row['hospedajeID'];
+        if (!isset($hospedajes[$hid])) {
+            $hospedajes[$hid] = [
+                'checkin'           => $row['checkin'],
+                'checkout'          => $row['checkout'],
+                'habitacion_numero' => $row['habitacion_numero'],
+                'huespedes'         => []
+            ];
+        }
+        $hospedajes[$hid]['huespedes'][] = $row;
+    }
+}
 
 // Construcción de la tabla para Excel
 echo "<table border='1'>";
@@ -64,22 +82,49 @@ echo "<thead>
       </thead>
       <tbody>";
 
-if ($rs) {
-    foreach ($rs as $fila) {
-        echo "<tr>";
-        echo "<td>" . date('d/m/Y', strtotime($fila['checkin'])) . "</td>";
-        echo "<td>" . htmlspecialchars($fila['paternos'] ?? '') . "</td>";
-        echo "<td>" . htmlspecialchars($fila['maternos'] ?? '') . "</td>";
-        echo "<td>" . htmlspecialchars($fila['nombres_ind'] ?? '') . "</td>";
-        echo "<td>" . htmlspecialchars($fila['cis'] ?? '') . "</td>";
-        echo "<td style='text-align: center;'>" . $fila['habitacion_numero'] . "</td>";
-        echo "<td>" . htmlspecialchars($fila['nacionalidades'] ?? '') . "</td>";
-        echo "<td>" . htmlspecialchars($fila['fechas_nac'] ?? '') . "</td>";
-        echo "<td>" . htmlspecialchars($fila['estados_civiles'] ?? '') . "</td>";
-        echo "<td>" . htmlspecialchars($fila['profesiones'] ?? '') . "</td>";
-        echo "<td>" . htmlspecialchars($fila['procedencias'] ?? '') . "</td>";
-        echo "<td>" . (!empty($fila['checkout']) ? date('d/m/Y', strtotime($fila['checkout'])) : '-') . "</td>";
-        echo "</tr>";
+if (!empty($hospedajes)) {
+    foreach ($hospedajes as $hosp) {
+        $huespedes = $hosp['huespedes'];
+        $numHuespedes = count($huespedes);
+        $rowspanAttr = ($numHuespedes > 1) ? " rowspan='{$numHuespedes}'" : "";
+
+        foreach ($huespedes as $index => $huesped) {
+            echo "<tr>";
+
+            // Si es el primer huésped del hospedaje, renderizar columnas comunes con rowspan
+            if ($index === 0) {
+                echo "<td{$rowspanAttr} style='vertical-align: middle; text-align: center;'>" . date('d/m/Y', strtotime($hosp['checkin'])) . "</td>";
+            }
+
+            // Datos del huésped
+            echo "<td>" . htmlspecialchars($huesped['apellido1'] ?? '') . "</td>";
+            echo "<td>" . htmlspecialchars($huesped['apellido2'] ?? '') . "</td>";
+            echo "<td>" . htmlspecialchars($huesped['nombres'] ?? '') . "</td>";
+            echo "<td>" . htmlspecialchars($huesped['ci'] ?? '') . "</td>";
+
+            // Habitación (solo primera fila con rowspan)
+            if ($index === 0) {
+                echo "<td{$rowspanAttr} style='vertical-align: middle; text-align: center;'>" . htmlspecialchars($hosp['habitacion_numero'] ?? '') . "</td>";
+            }
+
+            // Datos del huésped
+            $fNac = (!empty($huesped['fecha_nacimiento']) && $huesped['fecha_nacimiento'] !== '0000-00-00')
+                ? date('d/m/Y', strtotime($huesped['fecha_nacimiento']))
+                : '';
+            echo "<td>" . htmlspecialchars($huesped['nacionalidad'] ?? '') . "</td>";
+            echo "<td style='text-align: center;'>" . $fNac . "</td>";
+            echo "<td>" . htmlspecialchars($huesped['estado_civil'] ?? '') . "</td>";
+            echo "<td>" . htmlspecialchars($huesped['profesion'] ?? '') . "</td>";
+            echo "<td>" . htmlspecialchars($huesped['lugar_nacimiento'] ?? '') . "</td>";
+
+            // Salida (solo primera fila con rowspan)
+            if ($index === 0) {
+                $salida = (!empty($hosp['checkout']) ? date('d/m/Y', strtotime($hosp['checkout'])) : '-');
+                echo "<td{$rowspanAttr} style='vertical-align: middle; text-align: center;'>" . $salida . "</td>";
+            }
+
+            echo "</tr>";
+        }
     }
 } else {
     echo "<tr><td colspan='12'>No hay datos en el rango seleccionado</td></tr>";

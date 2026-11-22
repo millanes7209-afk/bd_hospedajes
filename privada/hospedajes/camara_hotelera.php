@@ -13,17 +13,20 @@ $fecha_fin = $_GET['fecha_fin'] ?? date('Y-m-d');
 
 // Consulta filtrada por el rango de fechas seleccionado
 $sql = "SELECT 
-            h.hospedajeID, h.estado, h.checkin, h.checkout,
-            GROUP_CONCAT(c.apellido1 SEPARATOR '[NEXT]') as paternos,
-            GROUP_CONCAT(c.apellido2 SEPARATOR '[NEXT]') as maternos,
-            GROUP_CONCAT(c.nombres SEPARATOR '[NEXT]') as nombres_ind,
-            GROUP_CONCAT(c.ci SEPARATOR '[NEXT]') as cis,
-            GROUP_CONCAT(ps.nombre SEPARATOR '[NEXT]') as nacionalidades,
-            GROUP_CONCAT(c.fecha_nacimiento SEPARATOR '[NEXT]') as fechas_nac,
-            GROUP_CONCAT(c.estado_civil SEPARATOR '[NEXT]') as estados_civiles,
-            GROUP_CONCAT(c.profesion SEPARATOR '[NEXT]') as profesiones,
-            GROUP_CONCAT(c.lugar_nacimiento SEPARATOR '[NEXT]') as procedencias,
-            hab.numero AS habitacion_numero
+            h.hospedajeID,
+            h.estado,
+            h.checkin, 
+            h.checkout,
+            hab.numero AS habitacion_numero,
+            c.apellido1,
+            c.apellido2,
+            c.nombres,
+            c.ci,
+            ps.nombre AS nacionalidad,
+            c.fecha_nacimiento,
+            c.estado_civil,
+            c.profesion,
+            c.lugar_nacimiento
         FROM hospedajes h
         JOIN hospedajes_clientes ch ON h.hospedajeID = ch.hospedajeID
         JOIN clientes c ON ch.clienteID = c.clienteID
@@ -32,10 +35,26 @@ $sql = "SELECT
         WHERE h._estado <> 'X' AND ch._estado <> 'X' AND c._estado <> 'X'
         AND DATE(h.checkin) BETWEEN ? AND ? 
         AND h.empresaID = ?
-        GROUP BY h.hospedajeID
-        ORDER BY h.checkin DESC";
+        ORDER BY h.checkin DESC, h.hospedajeID DESC, ch.hospedajeclienteID ASC";
 
 $rs = $db->obtenerTodo($sql, [$fecha_inicio, $fecha_fin, $_SESSION['empresaID']]);
+
+// Agrupar huéspedes por hospedaje
+$hospedajes = [];
+if ($rs) {
+    foreach ($rs as $row) {
+        $hid = $row['hospedajeID'];
+        if (!isset($hospedajes[$hid])) {
+            $hospedajes[$hid] = [
+                'checkin'           => $row['checkin'],
+                'checkout'          => $row['checkout'],
+                'habitacion_numero' => $row['habitacion_numero'],
+                'huespedes'         => []
+            ];
+        }
+        $hospedajes[$hid]['huespedes'][] = $row;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -91,22 +110,38 @@ $rs = $db->obtenerTodo($sql, [$fecha_inicio, $fecha_fin, $_SESSION['empresaID']]
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if ($rs) : ?>
-                            <?php foreach ($rs as $fila) : ?>
-                                <tr>
-                                    <td><?= date('d/m/Y', strtotime($fila['checkin'])) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['paternos'] ?? '')) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['maternos'] ?? '')) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['nombres_ind'] ?? '')) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['cis'] ?? '')) ?></td>
-                                    <td style="text-align: center;"><?= $fila['habitacion_numero'] ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['nacionalidades'] ?? '')) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['fechas_nac'] ?? '')) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['estados_civiles'] ?? '')) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['profesiones'] ?? '')) ?></td>
-                                    <td><?= str_replace('[NEXT]', '<br>', htmlspecialchars($fila['procedencias'] ?? '')) ?></td>
-                                    <td><?= $fila['checkout'] ? date('d/m/Y', strtotime($fila['checkout'])) : '-' ?></td>
-                                </tr>
+                        <?php if (!empty($hospedajes)) : ?>
+                            <?php foreach ($hospedajes as $hosp) : 
+                                $huespedes = $hosp['huespedes'];
+                                $numHuespedes = count($huespedes);
+                                $rowspanAttr = ($numHuespedes > 1) ? " rowspan='{$numHuespedes}'" : "";
+                            ?>
+                                <?php foreach ($huespedes as $index => $huesped) : ?>
+                                    <tr>
+                                        <?php if ($index === 0) : ?>
+                                            <td<?= $rowspanAttr ?> style="vertical-align: middle; text-align: center;"><?= date('d/m/Y', strtotime($hosp['checkin'])) ?></td>
+                                        <?php endif; ?>
+                                        <td><?= htmlspecialchars($huesped['apellido1'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($huesped['apellido2'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($huesped['nombres'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($huesped['ci'] ?? '') ?></td>
+                                        <?php if ($index === 0) : ?>
+                                            <td<?= $rowspanAttr ?> style="vertical-align: middle; text-align: center;"><?= htmlspecialchars($hosp['habitacion_numero'] ?? '') ?></td>
+                                        <?php endif; ?>
+                                        <td><?= htmlspecialchars($huesped['nacionalidad'] ?? '') ?></td>
+                                        <td style="text-align: center;">
+                                            <?= (!empty($huesped['fecha_nacimiento']) && $huesped['fecha_nacimiento'] !== '0000-00-00') ? date('d/m/Y', strtotime($huesped['fecha_nacimiento'])) : '' ?>
+                                        </td>
+                                        <td><?= htmlspecialchars($huesped['estado_civil'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($huesped['profesion'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($huesped['lugar_nacimiento'] ?? '') ?></td>
+                                        <?php if ($index === 0) : ?>
+                                            <td<?= $rowspanAttr ?> style="vertical-align: middle; text-align: center;">
+                                                <?= (!empty($hosp['checkout']) ? date('d/m/Y', strtotime($hosp['checkout'])) : '-') ?>
+                                            </td>
+                                        <?php endif; ?>
+                                    </tr>
+                                <?php endforeach; ?>
                             <?php endforeach; ?>
                         <?php else : ?>
                             <tr><td colspan="12" class="text-center">No hay registros en este rango de fechas</td></tr>
