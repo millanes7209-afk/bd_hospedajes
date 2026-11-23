@@ -9,6 +9,7 @@ header('Content-Type: application/json');
 
 $empresaID = $_SESSION['empresaID'] ?? null;
 $usuarioID = $_SESSION['sesion_id_usuario'] ?? null;
+$ahora = date('Y-m-d H:i:s');
 
 if (!$empresaID || !$usuarioID) {
     echo json_encode(['status' => 'error', 'mensaje' => 'No autorizado']);
@@ -42,9 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $monto_total = ($monto_total_front > 0) ? $monto_total_front : $monto_total_items;
 
             // Insertar movimiento de venta
-            $sql_venta = "INSERT INTO movimientos_tienda (empresaID, usuarioID, tipo, monto_total, _estado, _fec_insercion, _usuario)
-                          VALUES (?, ?, 'VENTA', ?, 'A', NOW(), ?)";
-            $db->ejecutar($sql_venta, [$empresaID, $usuarioID, $monto_total, $usuarioID]);
+            $sql_venta = "INSERT INTO movimientos_tienda (empresaID, usuarioID, tipo, monto_total, fecha, _estado, _fec_insercion, _fec_modificacion, _usuario)
+                          VALUES (?, ?, 'VENTA', ?, ?, 'A', ?, ?, ?)";
+            $db->ejecutar($sql_venta, [$empresaID, $usuarioID, $monto_total, $ahora, $ahora, $ahora, $usuarioID]);
             $movimientoID = $db->ultimoInsertId();
 
             // Insertar pagos en tienda_pagos
@@ -105,9 +106,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 SET saldo_efectivo = saldo_efectivo + ?,
                                     saldo_qr = saldo_qr + ?,
                                     saldo_total = saldo_total + ?,
-                                    _fec_modificacion = NOW()
+                                    _fec_modificacion = ?
                                 WHERE empresaID = ? AND _estado = 'A'";
-            $db->ejecutar($sql_update_caja, [$monto_efectivo, $monto_qr, $monto_total, $empresaID]);
+            $db->ejecutar($sql_update_caja, [$monto_efectivo, $monto_qr, $monto_total, $ahora, $empresaID]);
 
             $db->commit();
 

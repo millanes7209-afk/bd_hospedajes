@@ -36,11 +36,11 @@ if ($accion === 'listar') {
             $params[] = $tipo;
         }
         if (!empty($desde)) {
-            $where[] = "DATE(m._fec_insercion) >= ?";
+            $where[] = "DATE(COALESCE(m.fecha, m._fec_insercion)) >= ?";
             $params[] = $desde;
         }
         if (!empty($hasta)) {
-            $where[] = "DATE(m._fec_insercion) <= ?";
+            $where[] = "DATE(COALESCE(m.fecha, m._fec_insercion)) <= ?";
             $params[] = $hasta;
         }
 
@@ -50,9 +50,9 @@ if ($accion === 'listar') {
                     m.movimientoID,
                     m.tipo,
                     m.monto_total,
-                    DATE_FORMAT(m._fec_insercion, '%Y-%m-%d') AS fecha,
-                    DATE_FORMAT(m._fec_insercion, '%H:%i:%s') AS hora,
-                    m._fec_insercion,
+                    DATE_FORMAT(COALESCE(m.fecha, m._fec_insercion), '%Y-%m-%d') AS fecha,
+                    DATE_FORMAT(COALESCE(m.fecha, m._fec_insercion), '%H:%i:%s') AS hora,
+                    COALESCE(m.fecha, m._fec_insercion) AS _fec_insercion,
                     COALESCE(CONCAT(e.nombres, ' ', e.apellidos), u.usuario, 'N/A') AS usuario_nombre,
                     '' AS motivo,
                     0 AS es_retiro
@@ -60,7 +60,7 @@ if ($accion === 'listar') {
                 LEFT JOIN usuarios u ON u.usuarioID = m.usuarioID
                 LEFT JOIN empleados e ON e.empleadoID = u.empleadoID
                 WHERE $whereClause
-                ORDER BY m._fec_insercion DESC";
+                ORDER BY COALESCE(m.fecha, m._fec_insercion) DESC";
 
         $resMov = $db->obtenerTodo($sqlMov, $params);
         if (is_array($resMov)) {
@@ -101,11 +101,11 @@ if ($accion === 'listar') {
         $paramsRet = [$empresaID];
 
         if (!empty($desde)) {
-            $whereRet[] = "DATE(r._fec_insercion) >= ?";
+            $whereRet[] = "DATE(COALESCE(r.fecha, r._fec_insercion)) >= ?";
             $paramsRet[] = $desde;
         }
         if (!empty($hasta)) {
-            $whereRet[] = "DATE(r._fec_insercion) <= ?";
+            $whereRet[] = "DATE(COALESCE(r.fecha, r._fec_insercion)) <= ?";
             $paramsRet[] = $hasta;
         }
 
@@ -118,16 +118,16 @@ if ($accion === 'listar') {
                     r.monto_efectivo,
                     r.monto_qr,
                     r.motivo,
-                    DATE_FORMAT(r._fec_insercion, '%Y-%m-%d') AS fecha,
-                    DATE_FORMAT(r._fec_insercion, '%H:%i:%s') AS hora,
-                    r._fec_insercion,
+                    DATE_FORMAT(COALESCE(r.fecha, r._fec_insercion), '%Y-%m-%d') AS fecha,
+                    DATE_FORMAT(COALESCE(r.fecha, r._fec_insercion), '%H:%i:%s') AS hora,
+                    COALESCE(r.fecha, r._fec_insercion) AS _fec_insercion,
                     COALESCE(CONCAT(e.nombres, ' ', e.apellidos), u.usuario, 'N/A') AS usuario_nombre,
                     1 AS es_retiro
                 FROM tienda_retiros r
                 LEFT JOIN usuarios u ON u.usuarioID = r.usuarioID
                 LEFT JOIN empleados e ON e.empleadoID = u.empleadoID
                 WHERE $whereClauseRet
-                ORDER BY r._fec_insercion DESC";
+                ORDER BY COALESCE(r.fecha, r._fec_insercion) DESC";
 
         $resRet = $db->obtenerTodo($sqlRet, $paramsRet);
         if (is_array($resRet)) {

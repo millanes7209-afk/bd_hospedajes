@@ -7,6 +7,7 @@ header('Content-Type: application/json');
 $accion = $_GET['accion'] ?? '';
 $empresaID = $_SESSION['empresaID'] ?? null;
 $usuarioID = $_SESSION['sesion_id_usuario'] ?? null;
+$ahora = date('Y-m-d H:i:s');
 
 if (!$empresaID || !$usuarioID) {
     echo json_encode(['status' => 'error', 'mensaje' => "No autorizado (empresaID: " . json_encode($empresaID) . ", usuarioID: " . json_encode($usuarioID) . ")"]);
@@ -45,9 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         try {
-            $sql = "INSERT INTO productos (empresaID, nombre, medida, stock, precio_venta, imagen, _estado, _fec_insercion, _usuario)
-                    VALUES (?, ?, ?, ?, ?, ?, 'A', NOW(), ?)";
-            $db->ejecutar($sql, [$empresaID, $nombre, $medida, $stock, $precio_venta, $imagen, $usuarioID]);
+            $sql = "INSERT INTO productos (empresaID, nombre, medida, stock, precio_venta, imagen, _estado, _fec_insercion, _fec_modificacion, _usuario)
+                    VALUES (?, ?, ?, ?, ?, ?, 'A', ?, ?, ?)";
+            $db->ejecutar($sql, [$empresaID, $nombre, $medida, $stock, $precio_venta, $imagen, $ahora, $ahora, $usuarioID]);
 
             echo json_encode(['status' => 'ok', 'mensaje' => 'Producto creado exitosamente']);
         } catch (Exception $e) {

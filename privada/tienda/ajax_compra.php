@@ -9,6 +9,7 @@ header('Content-Type: application/json');
 
 $empresaID = $_SESSION['empresaID'] ?? null;
 $usuarioID = $_SESSION['sesion_id_usuario'] ?? null;
+$ahora = date('Y-m-d H:i:s');
 
 if (!$empresaID || !$usuarioID) {
     echo json_encode(['status' => 'error', 'mensaje' => 'No autorizado']);
@@ -39,9 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $monto_total = ($monto_total_front > 0) ? $monto_total_front : $monto_total_items;
 
             // Insertar movimiento de compra
-            $sql_compra = "INSERT INTO movimientos_tienda (empresaID, usuarioID, tipo, monto_total, _estado, _fec_insercion, _usuario)
-                           VALUES (?, ?, 'COMPRA', ?, 'A', NOW(), ?)";
-            $db->ejecutar($sql_compra, [$empresaID, $usuarioID, $monto_total, $usuarioID]);
+            $sql_compra = "INSERT INTO movimientos_tienda (empresaID, usuarioID, tipo, monto_total, fecha, _estado, _fec_insercion, _fec_modificacion, _usuario)
+                           VALUES (?, ?, 'COMPRA', ?, ?, 'A', ?, ?, ?)";
+            $db->ejecutar($sql_compra, [$empresaID, $usuarioID, $monto_total, $ahora, $ahora, $ahora, $usuarioID]);
             $movimientoID = $db->ultimoInsertId();
 
             // Insertar detalles de compra y actualizar stock de cada producto
@@ -62,18 +63,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $sql_update = "UPDATE productos 
                                SET stock = stock + ?, 
                                    precio_costo = ?,
-                                   _fec_modificacion = NOW()
+                                   _fec_modificacion = ?
                                WHERE productoID = ? AND empresaID = ?";
-                $db->ejecutar($sql_update, [$cantidad, $costo, $productoID, $empresaID]);
+                $db->ejecutar($sql_update, [$cantidad, $costo, $ahora, $productoID, $empresaID]);
             }
 
             // Actualizar caja_tienda (restar monto de compras)
             $sql_update_caja = "UPDATE caja_tienda 
                                 SET saldo_efectivo = saldo_efectivo - ?,
                                     saldo_total = saldo_total - ?,
-                                    _fec_modificacion = NOW()
+                                    _fec_modificacion = ?
                                 WHERE empresaID = ? AND _estado = 'A'";
-            $db->ejecutar($sql_update_caja, [$monto_total, $monto_total, $empresaID]);
+            $db->ejecutar($sql_update_caja, [$monto_total, $monto_total, $ahora, $empresaID]);
 
             $db->commit();
 

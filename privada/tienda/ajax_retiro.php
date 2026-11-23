@@ -10,6 +10,7 @@ header('Content-Type: application/json');
 $empresaID = $_SESSION['empresaID'] ?? 1;
 $usuarioID = $_SESSION['sesion_id_usuario'] ?? $_SESSION['usuarioID'] ?? null;
 $rol = strtoupper($_SESSION['sesion_rol'] ?? $_SESSION['rol'] ?? $_SESSION['sesion_cargo'] ?? '');
+$ahora = date('Y-m-d H:i:s');
 
 // Verificar sesión
 if (!$usuarioID) {
@@ -68,18 +69,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Registrar retiro
             $sql_retiro = "INSERT INTO tienda_retiros
-                               (empresaID, usuarioID, monto_efectivo, monto_qr, monto_total, motivo, _estado, _fec_insercion)
-                           VALUES (?, ?, ?, ?, ?, ?, 'A', NOW())";
-            $db->ejecutar($sql_retiro, [$empresaID, $usuarioID, $monto_efectivo, $monto_qr, $monto_total, $motivo]);
+                               (empresaID, usuarioID, monto_efectivo, monto_qr, monto_total, motivo, fecha, _estado, _fec_insercion)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, 'A', ?)";
+            $db->ejecutar($sql_retiro, [$empresaID, $usuarioID, $monto_efectivo, $monto_qr, $monto_total, $motivo, $ahora, $ahora]);
 
             // Descontar caja
             $sql_update_caja = "UPDATE caja_tienda
                                  SET saldo_efectivo = saldo_efectivo - ?,
                                      saldo_qr       = saldo_qr       - ?,
                                      saldo_total    = saldo_total    - ?,
-                                     _fec_modificacion = NOW()
+                                     _fec_modificacion = ?
                                  WHERE empresaID = ? AND _estado = 'A'";
-            $db->ejecutar($sql_update_caja, [$monto_efectivo, $monto_qr, $monto_total, $empresaID]);
+            $db->ejecutar($sql_update_caja, [$monto_efectivo, $monto_qr, $monto_total, $ahora, $empresaID]);
 
             $db->commit();
 
