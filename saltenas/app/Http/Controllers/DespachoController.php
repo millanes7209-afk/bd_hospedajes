@@ -57,7 +57,7 @@ class DespachoController extends Controller
     {
         $request->validate([
             'carrito_id' => 'required|exists:carritos,id',
-            'fecha' => 'required|date',
+            'fecha' => 'nullable|date',
             'observaciones' => 'nullable|string|max:1000',
             'detalles' => 'required|array|min:1',
             'detalles.*.variante_id' => 'required|exists:variantes_saltena,id',
@@ -75,10 +75,12 @@ class DespachoController extends Controller
             DB::statement("ALTER TABLE `despachos_diarios` DROP INDEX `despachos_diarios_carrito_id_fecha_unique`");
         } catch (\Throwable $e) {}
 
-        DB::transaction(function () use ($request) {
+        $fechaDespacho = $request->input('fecha') ?: now()->toDateString();
+
+        DB::transaction(function () use ($request, $fechaDespacho) {
             $despacho = DespachoDiario::create([
                 'carrito_id' => $request->carrito_id,
-                'fecha' => $request->fecha,
+                'fecha' => $fechaDespacho,
                 'estado' => 'pendiente',
                 'user_id' => Auth::id(),
                 'observaciones' => $request->observaciones,

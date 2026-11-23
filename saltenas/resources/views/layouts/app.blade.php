@@ -444,6 +444,66 @@
         verificarCierresPendientesCentral();
         setInterval(verificarCierresPendientesCentral, 15000);
     </script>
+
+    <!-- Global Anti-Double-Click Protection for all forms and action buttons in Saltenas -->
+    <script>
+        (function() {
+            // Prevenir doble envio en todos los formularios
+            document.addEventListener('submit', function(e) {
+                const form = e.target;
+                if (!form || form.tagName !== 'FORM') return;
+
+                // Si ya se esta enviando, bloquear inmediatamente
+                if (form.dataset.submitting === 'true') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+
+                // Marcar formulario como en proceso de envio
+                form.dataset.submitting = 'true';
+
+                // Buscar boton de submit dentro o asociado al formulario
+                const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('opacity-70', 'cursor-not-allowed', 'pointer-events-none');
+                    
+                    if (submitBtn.tagName === 'BUTTON') {
+                        submitBtn.dataset.originalContent = submitBtn.innerHTML;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-2"></i> Procesando...';
+                    }
+                }
+
+                // Temporizador de seguridad: si la validacion falla o tarda mas de 8s, restaurar
+                setTimeout(function() {
+                    form.dataset.submitting = 'false';
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('opacity-70', 'cursor-not-allowed', 'pointer-events-none');
+                        if (submitBtn.tagName === 'BUTTON' && submitBtn.dataset.originalContent) {
+                            submitBtn.innerHTML = submitBtn.dataset.originalContent;
+                        }
+                    }
+                }, 8000);
+            }, true);
+
+            // Prevenir doble clic rapido en botones o enlaces de accion
+            let ultimoClicAccion = 0;
+            document.addEventListener('click', function(e) {
+                const btnAccion = e.target.closest('a[data-action], button[data-action], .btn-action');
+                if (btnAccion) {
+                    const ahora = Date.now();
+                    if (ahora - ultimoClicAccion < 1200) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        return false;
+                    }
+                    ultimoClicAccion = ahora;
+                }
+            }, true);
+        })();
+    </script>
     @stack('scripts')
 </body>
 

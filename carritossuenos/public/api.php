@@ -190,18 +190,36 @@ if ($accion === 'aceptar_stock') {
             }
         }
 
-        // 1. Verificar si este despacho ya fue procesado localmente en este turno
+        // 1. Verificacion atomica contra doble clic / doble aceptacion
         $yaProcesado = false;
         if ($despachoId) {
             $stCheck = $pdo->prepare("SELECT despacho_id FROM despachos_recibidos WHERE despacho_id = ? AND turno_id = ?");
             $stCheck->execute([$despachoId, $curTurnoId]);
             if ($stCheck->fetch()) {
-                $yaProcesado = true;
+                $pdo->rollBack();
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Este despacho ya fue aceptado previamente.'
+                ]);
+                exit;
+            }
+
+            // Registrar de inmediato en despachos_recibidos para bloquear concurrencia en la BD
+            try {
+                $stRec = $pdo->prepare("INSERT INTO despachos_recibidos (despacho_id, turno_id, fecha) VALUES (?, ?, ?)");
+                $stRec->execute([$despachoId, $curTurnoId, $hoy]);
+            } catch (Exception $eRec) {
+                $pdo->rollBack();
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Este despacho ya esta siendo procesado.'
+                ]);
+                exit;
             }
         }
 
-        // 2. Si no ha sido procesado, procesar detalles y registrar en stock_diario para este turno
-        if (!$yaProcesado && !empty($detalles) && is_array($detalles)) {
+        // 2. Procesar detalles y registrar en stock_diario para este turno
+        if (!empty($detalles) && is_array($detalles)) {
             foreach ($detalles as $det) {
                 $nombre = $det['variante_nombre'] ?? ($det['nombre'] ?? '');
                 $cant = (int) ($det['cantidad_enviada'] ?? 0);
@@ -230,16 +248,6 @@ if ($accion === 'aceptar_stock') {
                 } else {
                     $stInS = $pdo->prepare("INSERT INTO stock_diario (turno_id, fecha, producto_id, cantidad_enviada, aceptado) VALUES (?, ?, ?, ?, 1)");
                     $stInS->execute([$curTurnoId, $hoy, $varId, $cant]);
-                }
-            }
-
-            if ($despachoId) {
-                try {
-                    $stRec = $pdo->prepare("INSERT INTO despachos_recibidos (despacho_id, turno_id, fecha) VALUES (?, ?, ?)");
-                    $stRec->execute([$despachoId, $curTurnoId, $hoy]);
-                } catch (Exception $eRec) {
-                    $stRec = $pdo->prepare("INSERT IGNORE INTO despachos_recibidos (despacho_id, fecha) VALUES (?, ?)");
-                    $stRec->execute([$despachoId, $hoy]);
                 }
             }
         }
@@ -305,6 +313,53 @@ if ($accion === 'registrar_venta') {
         $activoTurnoId = (int)$tRow['id'];
 
         $pdo->beginTransaction();
+
+        // 1. Agrupar cantidades por producto_id para validar stock fisico disponible antes de registrar
+        $cantidadesRequeridas = [];
+        foreach ($items as $item) {
+            $pId = !empty($item['producto_id']) ? (int) $item['producto_id'] : null;
+            $prId = !empty($item['promocion_id']) ? (int) $item['promocion_id'] : null;
+            $cant = (int) ($item['cantidad'] ?? 1);
+
+            if (!$pId && $prId) {
+                $stPrV = $pdo->prepare("SELECT variante_id FROM promociones WHERE id = ?");
+                $stPrV->execute([$prId]);
+                $pId = (int)$stPrV->fetchColumn() ?: null;
+            }
+
+            if ($pId) {
+                if (!isset($cantidadesRequeridas[$pId])) {
+                    $cantidadesRequeridas[$pId] = 0;
+                }
+                $cantidadesRequeridas[$pId] += $cant;
+            }
+        }
+
+        // 2. Comprobar que ninguna variedad solicitada supere el stock fisico no vendido
+        foreach ($cantidadesRequeridas as $pId => $cantReq) {
+            $stStockEnv = $pdo->prepare("SELECT COALESCE(SUM(cantidad_enviada), 0) FROM stock_diario WHERE turno_id = ? AND producto_id = ? AND aceptado = 1");
+            $stStockEnv->execute([$activoTurnoId, $pId]);
+            $totalEnviado = (int) $stStockEnv->fetchColumn();
+
+            $stStockVend = $pdo->prepare("SELECT COALESCE(SUM(cantidad), 0) FROM ventas WHERE turno_id = ? AND producto_id = ?");
+            $stStockVend->execute([$activoTurnoId, $pId]);
+            $totalVendido = (int) $stStockVend->fetchColumn();
+
+            $disponible = max(0, $totalEnviado - $totalVendido);
+
+            if ($cantReq > $disponible) {
+                $stNom = $pdo->prepare("SELECT nombre FROM productos WHERE id = ?");
+                $stNom->execute([$pId]);
+                $nomProd = $stNom->fetchColumn() ?: "Producto #$pId";
+
+                $pdo->rollBack();
+                echo json_encode([
+                    'success' => false,
+                    'error' => "Stock agotado o insuficiente para \"$nomProd\". Quedan $disponible disponibles (se intento vender $cantReq)."
+                ]);
+                exit;
+            }
+        }
 
         $stmt = $pdo->prepare("
             INSERT INTO ventas (turno_id, fecha_hora, producto_id, promocion_id, cantidad, monto, metodo_pago, monto_efectivo, monto_qr) 

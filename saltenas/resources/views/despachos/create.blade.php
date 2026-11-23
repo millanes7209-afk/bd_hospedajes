@@ -44,10 +44,18 @@
                 </div>
                 <div>
                     <label class="block text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1.5">
-                        Fecha del Despacho <span class="text-rose-500">*</span>
+                        Fecha del Despacho <span class="text-emerald-500 font-bold">(Automática)</span>
                     </label>
-                    <input type="date" name="fecha" required value="{{ old('fecha', now()->toDateString()) }}"
-                        class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm font-bold px-3 py-2.5 focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
+                    <input type="hidden" name="fecha" value="{{ now()->toDateString() }}">
+                    <div class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 text-sm font-bold px-3 py-2.5 flex items-center justify-between">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-check text-emerald-500"></i>
+                            Hoy, {{ now()->format('d/m/Y') }}
+                        </span>
+                        <span class="text-[10px] uppercase font-black px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+                            Auto
+                        </span>
+                    </div>
                 </div>
             </div>
 

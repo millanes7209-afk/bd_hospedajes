@@ -754,7 +754,7 @@ $cierreHoy = !$turnoAbierto;
         <?php if (!$turnoAbierto): ?>
             <!-- PANTALLA INICIAL: TURNO CERRADO - SOLO BOTÓN ABRIR TURNO -->
             <div class="text-center py-5">
-                <button type="button" onclick="abrirTurno()" class="btn btn-warning btn-lg px-5 py-3 rounded-pill fw-extrabold shadow-lg text-dark">
+                <button type="button" id="btn-abrir-turno-main" onclick="abrirTurno(this)" class="btn btn-warning btn-lg px-5 py-3 rounded-pill fw-extrabold shadow-lg text-dark">
                     <i class="bi bi-box-arrow-in-right me-2 fs-5"></i> ABRIR TURNO
                 </button>
                 <?php if ($pendientesSyncCount > 0): ?>
@@ -794,7 +794,7 @@ $cierreHoy = !$turnoAbierto;
                 </div>
 
                 <?php if (!empty($detallesPendientes)): ?>
-                    <button type="button" onclick="aceptarStock(<?= $despachoPendienteId ? (int)$despachoPendienteId : 'null' ?>)" class="btn btn-warning btn-lg w-100 py-3 rounded-4 fw-bold shadow-lg text-dark">
+                    <button type="button" id="btn-aceptar-stock-init" onclick="aceptarStock(<?= $despachoPendienteId ? (int)$despachoPendienteId : 'null' ?>, this)" class="btn btn-warning btn-lg w-100 py-3 rounded-4 fw-bold shadow-lg text-dark">
                         ACEPTA
                     </button>
                 <?php endif; ?>
@@ -809,7 +809,7 @@ $cierreHoy = !$turnoAbierto;
                     <div class="fw-extrabold text-dark fs-6"><i class="bi bi-box-seam-fill me-2 text-warning fs-5"></i> ¡Nuevo despacho enviado desde Central!</div>
                     <div class="small text-dark opacity-90 fw-semibold" id="banner-despacho-desc">Hay stock adicional listo para incorporar a este turno.</div>
                 </div>
-                <button type="button" onclick="aceptarDespachoRecibido()" class="btn btn-warning fw-extrabold px-4 py-2 rounded-3 text-dark shadow-sm">
+                <button type="button" id="btn-aceptar-stock-banner" onclick="aceptarDespachoRecibido(this)" class="btn btn-warning fw-extrabold px-4 py-2 rounded-3 text-dark shadow-sm">
                     ACEPTA
                 </button>
             </div>
@@ -894,14 +894,21 @@ $cierreHoy = !$turnoAbierto;
             <div class="row g-3 mb-4">
                 <?php foreach ($productos as $prod): ?>
                     <div class="col-6">
-                        <button type="button" onclick='agregarAlCarrito("individual", <?= (int)$prod['id'] ?>, <?= htmlspecialchars(json_encode($prod['nombre']), ENT_QUOTES, "UTF-8") ?>, <?= (float)($prod['precio'] ?? 0) ?>, 1)' class="btn-touch-product">
+                        <button type="button" 
+                                id="btn-prod-<?= (int)$prod['id'] ?>"
+                                data-prod-id="<?= (int)$prod['id'] ?>"
+                                onclick='agregarAlCarrito("individual", <?= (int)$prod['id'] ?>, <?= htmlspecialchars(json_encode($prod['nombre']), ENT_QUOTES, "UTF-8") ?>, <?= (float)($prod['precio'] ?? 0) ?>, 1)' 
+                                class="btn-touch-product">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="fw-extrabold fs-5" style="color: var(--text-main);"><?= htmlspecialchars($prod['nombre']) ?></span>
+                                <span class="fw-extrabold fs-5 text-truncate" style="color: var(--text-main);"><?= htmlspecialchars($prod['nombre']) ?></span>
                                 <?php if ($prod['precio'] !== null): ?>
                                     <span class="badge bg-warning text-dark rounded-pill fw-extrabold px-2 py-1">Bs. <?= number_format($prod['precio'], 2) ?></span>
                                 <?php endif; ?>
                             </div>
-                            <div class="text-muted extra-small fw-semibold">+ Añadir a la Venta</div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span id="badge-stock-prod-<?= (int)$prod['id'] ?>" class="badge rounded-pill extra-small fw-bold"></span>
+                                <span class="text-muted extra-small fw-semibold">+ Añadir</span>
+                            </div>
                         </button>
                     </div>
                 <?php endforeach; ?>
@@ -920,7 +927,13 @@ $cierreHoy = !$turnoAbierto;
                             : number_format((float)$promo['precio'], 2);
                     ?>
                         <div class="col-12">
-                            <button type="button" onclick='agregarAlCarrito("promocion", <?= (int)$promo['id'] ?>, <?= htmlspecialchars(json_encode($promo['nombre']), ENT_QUOTES, "UTF-8") ?>, <?= (float)$promo['precio'] ?>, <?= (int)$promo['unidades'] ?>, <?= (int)$promo['variante_id'] ?>, <?= htmlspecialchars(json_encode($promoVarNom), ENT_QUOTES, "UTF-8") ?>)' class="btn-touch-promo">
+                            <button type="button" 
+                                    id="btn-promo-<?= (int)$promo['id'] ?>"
+                                    data-promo-id="<?= (int)$promo['id'] ?>"
+                                    data-variante-id="<?= (int)$promo['variante_id'] ?>"
+                                    data-unidades="<?= (int)$promo['unidades'] ?>"
+                                    onclick='agregarAlCarrito("promocion", <?= (int)$promo['id'] ?>, <?= htmlspecialchars(json_encode($promo['nombre']), ENT_QUOTES, "UTF-8") ?>, <?= (float)$promo['precio'] ?>, <?= (int)$promo['unidades'] ?>, <?= (int)$promo['variante_id'] ?>, <?= htmlspecialchars(json_encode($promoVarNom), ENT_QUOTES, "UTF-8") ?>)' 
+                                    class="btn-touch-promo">
                                 <div class="d-flex justify-content-between align-items-center gap-2">
                                     <div>
                                         <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
@@ -928,6 +941,7 @@ $cierreHoy = !$turnoAbierto;
                                             <span class="badge bg-warning text-dark rounded-pill fw-extrabold" style="font-size: 0.72rem;">
                                                 <i class="bi bi-bookmark-fill me-1"></i><?= htmlspecialchars($promoVarNom) ?>
                                             </span>
+                                            <span id="badge-stock-promo-<?= (int)$promo['id'] ?>" class="badge rounded-pill extra-small fw-bold"></span>
                                         </div>
                                         <span class="text-white opacity-90 small">Descuenta <?= (int)$promo['unidades'] ?> salteñas de <strong><?= htmlspecialchars($promoVarNom) ?></strong></span>
                                     </div>
@@ -1214,7 +1228,89 @@ $cierreHoy = !$turnoAbierto;
             return { totEnv, totVend, totRest };
         }
 
+        function obtenerStockDisponibleReal(productoId) {
+            if (!productoId || !Array.isArray(stockPorProducto)) return 0;
+            const prod = stockPorProducto.find(p => p.id == productoId);
+            if (!prod) return 0;
+
+            let restanteFisico = parseInt(prod.restante !== undefined ? prod.restante : Math.max(0, parseInt(prod.enviada || 0) - parseInt(prod.vendida || 0)));
+
+            // Descontar unidades ya reservadas en el carrito actual
+            let enCarrito = 0;
+            carrito.forEach(item => {
+                if (item.producto_id == productoId) {
+                    enCarrito += (parseInt(item.unidadesPorPack || 1) * parseInt(item.cantidad || 1));
+                }
+            });
+
+            return Math.max(0, restanteFisico - enCarrito);
+        }
+
+        function actualizarBotonesCatalogo() {
+            if (!Array.isArray(stockPorProducto)) return;
+
+            document.querySelectorAll('[data-prod-id]').forEach(btn => {
+                const pId = parseInt(btn.getAttribute('data-prod-id'));
+                const disp = obtenerStockDisponibleReal(pId);
+                const badge = document.getElementById(`badge-stock-prod-${pId}`);
+
+                if (disp <= 0) {
+                    btn.classList.add('disabled-exhausted');
+                    btn.style.opacity = '0.55';
+                    if (badge) {
+                        badge.className = 'badge bg-danger text-white rounded-pill extra-small fw-bold';
+                        badge.innerText = 'Agotado (0 disp.)';
+                    }
+                } else {
+                    btn.classList.remove('disabled-exhausted');
+                    btn.style.opacity = '1';
+                    if (badge) {
+                        badge.className = 'badge bg-success-subtle text-success border border-success-subtle rounded-pill extra-small fw-bold';
+                        badge.innerText = `${disp} disp.`;
+                    }
+                }
+            });
+
+            document.querySelectorAll('[data-promo-id]').forEach(btn => {
+                const vId = parseInt(btn.getAttribute('data-variante-id'));
+                const uReq = parseInt(btn.getAttribute('data-unidades') || 1);
+                const pId = btn.getAttribute('data-promo-id');
+                const disp = obtenerStockDisponibleReal(vId);
+                const badge = document.getElementById(`badge-stock-promo-${pId}`);
+
+                if (disp < uReq) {
+                    btn.classList.add('disabled-exhausted');
+                    btn.style.opacity = '0.55';
+                    if (badge) {
+                        badge.className = 'badge bg-danger text-white rounded-pill extra-small fw-bold';
+                        badge.innerText = disp <= 0 ? 'Agotado' : `Insuficiente (${disp} disp.)`;
+                    }
+                } else {
+                    btn.classList.remove('disabled-exhausted');
+                    btn.style.opacity = '1';
+                    if (badge) {
+                        badge.className = 'badge bg-dark text-warning border border-warning rounded-pill extra-small fw-bold';
+                        badge.innerText = `${disp} disp.`;
+                    }
+                }
+            });
+        }
+
         function agregarAlCarrito(tipo, id, nombre, precio, unidadesPorPack, varianteId = null, varianteNombre = null) {
+            const targetProdId = (tipo === 'individual' ? parseInt(id) : parseInt(varianteId));
+            const unidadesRequeridas = parseInt(unidadesPorPack || 1);
+
+            const disponible = obtenerStockDisponibleReal(targetProdId);
+            if (disponible < unidadesRequeridas) {
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                if (disponible <= 0) {
+                    mostrarToast('Stock Agotado', `No quedan unidades disponibles de "${varianteNombre || nombre}". Stock en cero.`, 'warning');
+                } else {
+                    mostrarToast('Stock Insuficiente', `Solo quedan ${disponible} disponibles de "${varianteNombre || nombre}". No alcanza para ${unidadesRequeridas} unidades.`, 'warning');
+                }
+                return;
+            }
+
             if (navigator.vibrate) navigator.vibrate(35);
 
             let key = tipo + '_' + id;
@@ -1227,27 +1323,39 @@ $cierreHoy = !$turnoAbierto;
                     key: key,
                     tipo: tipo,
                     id: parseInt(id),
-                    producto_id: (tipo === 'individual' ? parseInt(id) : parseInt(varianteId)),
+                    producto_id: targetProdId,
                     varianteNombre: varianteNombre || nombre,
                     nombre: nombre,
                     precio: parseFloat(precio),
-                    unidadesPorPack: parseInt(unidadesPorPack),
+                    unidadesPorPack: unidadesRequeridas,
                     cantidad: 1
                 });
             }
 
             renderizarCarrito();
+            actualizarBotonesCatalogo();
         }
 
         function cambiarCantidadItem(key, delta) {
             let item = carrito.find(i => i.key === key);
-            if (item) {
-                item.cantidad += delta;
+            if (!item) return;
+
+            if (delta > 0) {
+                const disponible = obtenerStockDisponibleReal(item.producto_id);
+                if (disponible < item.unidadesPorPack) {
+                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                    mostrarToast('Límite de Stock', `No puedes agregar más. Solo quedan ${disponible} unidades disponibles de "${item.varianteNombre || item.nombre}".`, 'warning');
+                    return;
+                }
+                item.cantidad += 1;
+            } else {
+                item.cantidad -= 1;
                 if (item.cantidad <= 0) {
                     carrito = carrito.filter(i => i.key !== key);
                 }
             }
             renderizarCarrito();
+            actualizarBotonesCatalogo();
         }
 
         function vaciarCarrito() {
@@ -1264,6 +1372,7 @@ $cierreHoy = !$turnoAbierto;
             if (inputQr) inputQr.value = '';
             limpiarErrorCheckout();
             renderizarCarrito();
+            actualizarBotonesCatalogo();
         }
 
         function renderizarCarrito() {
@@ -1318,13 +1427,31 @@ $cierreHoy = !$turnoAbierto;
             document.getElementById('cart-total-monto').innerText = 'Bs. ' + totalMonto.toFixed(2);
             document.getElementById('cart-total-unidades').innerText = totalUnidades + ' u.';
             actualizarEstadoHibrido();
+            actualizarBotonesCatalogo();
         }
 
+        let cobrandoOrden = false;
+
         function procesarCobroOrden() {
+            if (cobrandoOrden) return;
             if (carrito.length === 0) return;
-            if (navigator.vibrate) navigator.vibrate(60);
 
             limpiarErrorCheckout();
+
+            // Validar stock físico de cada ítem en el pedido antes de proceder
+            for (let item of carrito) {
+                let prodStock = Array.isArray(stockPorProducto) ? stockPorProducto.find(p => p.id == item.producto_id) : null;
+                let totalReq = item.unidadesPorPack * item.cantidad;
+                let restanteFisico = prodStock ? parseInt(prodStock.restante || 0) : 0;
+                if (totalReq > restanteFisico) {
+                    mostrarErrorCheckout(
+                        'Stock Insuficiente',
+                        `El stock para "${item.varianteNombre || item.nombre}" es insuficiente. Quedan ${restanteFisico} disponibles y el pedido solicita ${totalReq}.`,
+                        []
+                    );
+                    return;
+                }
+            }
 
             const metodoSel = document.getElementById('select-metodo-pago');
             const metodo = metodoSel ? metodoSel.value : '';
@@ -1381,7 +1508,18 @@ $cierreHoy = !$turnoAbierto;
                 }
             }
 
-            // 4. Todo validado correctamente: recién ahora armar payload y descontar del stock local una única vez
+            // 4. Todo validado correctamente: bloquear botón y registrar venta
+            cobrandoOrden = true;
+            const btnVender = document.querySelector('.btn-vender-main');
+            let originalVenderHtml = '';
+            if (btnVender) {
+                btnVender.disabled = true;
+                originalVenderHtml = btnVender.innerHTML;
+                btnVender.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> REGISTRANDO VENTA...';
+            }
+
+            if (navigator.vibrate) navigator.vibrate(60);
+
             let payloadItems = [];
             carrito.forEach(i => {
                 let subtotal = i.precio * i.cantidad;
@@ -1413,14 +1551,14 @@ $cierreHoy = !$turnoAbierto;
                 });
             });
 
-            // Recalcular totales estrictamente desde stockPorProducto para que subtotales y totales jamás diverjan
+            // Recalcular totales estrictamente desde stockPorProducto
             recalcularTotalesDesdeDesglose();
             dineroEfectivo += montoEfectivo;
             dineroQr += montoQr;
             actualizarIndicadores();
 
             vaciarCarrito();
-            mostrarToast('¡Venta registrada!', `Se cobraron Bs. ${totalCobrado.toFixed(2)} (${totalSalteñasVendidas} u.).`, 'success');
+            mostrarToast('¡Venta registrada!', `Se cobraron Bs. ${totalCobrado.toFixed(2)}.`, 'success');
 
             fetch('api.php?accion=registrar_venta', {
                 method: 'POST',
@@ -1435,11 +1573,20 @@ $cierreHoy = !$turnoAbierto;
             .then(r => r.json())
             .then(res => {
                 if (!res.success) {
-                    mostrarToast('Aviso al guardar venta', res.error || 'No se pudo confirmar en servidor.', 'warning');
+                    mostrarToast('Aviso al guardar venta', res.error || 'No se pudo confirmar en servidor.', 'danger');
+                    setTimeout(() => location.reload(), 2000);
                 }
             })
             .catch(() => {
                 mostrarToast('Sin conexión', 'No se pudo guardar la venta en la base local.', 'danger');
+            })
+            .finally(() => {
+                cobrandoOrden = false;
+                if (btnVender) {
+                    btnVender.disabled = false;
+                    btnVender.innerHTML = originalVenderHtml || '<i class="bi bi-check2-circle me-1"></i> CONFIRMAR Y REGISTRAR VENTA';
+                }
+                actualizarBotonesCatalogo();
             });
         }
 
@@ -1523,9 +1670,23 @@ $cierreHoy = !$turnoAbierto;
             if (mTot) mTot.innerText = 'Bs. ' + totalDinero.toFixed(2);
         }
 
-        function aceptarStock(despachoId) {
+        let procesandoAceptacionStock = false;
+
+        function aceptarStock(despachoId, btnElement = null) {
+            if (procesandoAceptacionStock) return;
+            procesandoAceptacionStock = true;
+
+            const btn = btnElement || document.getElementById('btn-aceptar-stock-init') || document.querySelector('button[onclick*="aceptarStock"]');
+            let originalHtml = '';
+            if (btn) {
+                btn.disabled = true;
+                originalHtml = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> ACEPTANDO DESPACHO...';
+            }
+
             if (navigator.vibrate) navigator.vibrate(50);
             const payload = despachoId ? { despacho_id: despachoId } : {};
+
             fetch('api.php?accion=aceptar_stock', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1534,12 +1695,25 @@ $cierreHoy = !$turnoAbierto;
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
+                    if (btn) btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡STOCK ACEPTADO!';
                     location.reload();
                 } else {
+                    procesandoAceptacionStock = false;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    }
                     mostrarToast('No se pudo aceptar', data.error || 'Error al aceptar el stock.', 'danger');
                 }
             })
-            .catch(() => mostrarToast('Error de red', 'No se pudo conectar para aceptar el stock.', 'danger'));
+            .catch(() => {
+                procesandoAceptacionStock = false;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+                mostrarToast('Error de red', 'No se pudo conectar para aceptar el stock.', 'danger');
+            });
         }
 
         function confirmarCierreTurno() {
@@ -1732,7 +1906,18 @@ $cierreHoy = !$turnoAbierto;
                 .catch(() => {});
         }
 
-        function aceptarDespachoRecibido() {
+        function aceptarDespachoRecibido(btnElement = null) {
+            if (procesandoAceptacionStock) return;
+            procesandoAceptacionStock = true;
+
+            const btn = btnElement || document.getElementById('btn-aceptar-stock-banner') || document.querySelector('button[onclick*="aceptarDespachoRecibido"]');
+            let originalHtml = '';
+            if (btn) {
+                btn.disabled = true;
+                originalHtml = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Aceptando...';
+            }
+
             if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
             const payload = {
                 despacho_id: ultimoDespachoData ? ultimoDespachoData.id : null,
@@ -1747,12 +1932,25 @@ $cierreHoy = !$turnoAbierto;
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
+                    if (btn) btn.innerHTML = '<i class="bi bi-check me-1"></i> Aceptado';
                     location.reload();
                 } else {
+                    procesandoAceptacionStock = false;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    }
                     mostrarToast('No se pudo aceptar', data.error || 'Error al aceptar el stock.', 'danger');
                 }
             })
-            .catch(() => mostrarToast('Error de red', 'No se pudo aceptar el stock en este momento.', 'danger'));
+            .catch(() => {
+                procesandoAceptacionStock = false;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+                mostrarToast('Error de red', 'No se pudo aceptar el stock en este momento.', 'danger');
+            });
         }
 
         function reintentarEnvioCentral() {
@@ -1784,7 +1982,19 @@ $cierreHoy = !$turnoAbierto;
                 });
         }
 
-        function abrirTurno() {
+        let abriendoTurno = false;
+        function abrirTurno(btnElement = null) {
+            if (abriendoTurno) return;
+            abriendoTurno = true;
+
+            const btn = btnElement || document.getElementById('btn-abrir-turno-main') || document.querySelector('button[onclick*="abrirTurno"]');
+            let originalHtml = '';
+            if (btn) {
+                btn.disabled = true;
+                originalHtml = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> ABRIENDO TURNO...';
+            }
+
             if (navigator.vibrate) navigator.vibrate(50);
             fetch('api.php?accion=abrir_turno')
                 .then(r => r.json())
@@ -1792,11 +2002,26 @@ $cierreHoy = !$turnoAbierto;
                     if (data.success) {
                         location.reload();
                     } else {
+                        abriendoTurno = false;
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                        }
                         mostrarToast('Error al abrir turno', data.error || 'Intenta nuevamente.', 'danger');
                     }
                 })
-                .catch(() => mostrarToast('Error de red', 'No se pudo conectar para abrir el turno.', 'danger'));
+                .catch(() => {
+                    abriendoTurno = false;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    }
+                    mostrarToast('Error de red', 'No se pudo conectar para abrir el turno.', 'danger');
+                });
         }
+
+        // Actualizar estados visuales de stock y botones en el catalogo
+        actualizarBotonesCatalogo();
 
         <?php if ($turnoAbierto): ?>
         // Consultar despacho de inmediato y luego cada 15 segundos (solo con turno abierto)
