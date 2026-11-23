@@ -39,6 +39,22 @@ try {
 
     $db->beginTransaction();
 
+    // 1.5. REGISTRAR INCIDENTE SI FUE REPORTADO
+    if (isset($_POST['tiene_incidente']) && $_POST['tiene_incidente'] == '1') {
+        $descInc = strtoupper(trim($_POST['descripcion_incidente'] ?? $_POST['descripcion'] ?? ''));
+        if ($descInc) {
+            $sqlClis = "SELECT clienteID FROM hospedajes_clientes WHERE hospedajeID = ? AND _estado <> 'X'";
+            $clientesAsoc = $db->obtenerTodo($sqlClis, [$hospedajeID_anterior]);
+            foreach ($clientesAsoc as $c) {
+                $sqlInc = "INSERT INTO incidentes (
+                                clienteID, empresaID, descripcion, fecha, estado, 
+                                usuarioID, _usuario, _fec_insercion, _estado
+                            ) VALUES (?, ?, ?, ?, 'PENDIENTE', ?, ?, ?, 'A')";
+                $db->ejecutar($sqlInc, [$c['clienteID'], $empresaID, $descInc, $ahora, $usuarioID, $usuarioID, $ahora]);
+            }
+        }
+    }
+
     // 2. INACTIVAR HOSPEDAJE ANTERIOR
     $sqlOld = "UPDATE hospedajes SET estado = 'INACTIVO', observaciones = CONCAT(observaciones, ' | EXTENDIDO POR PERMANENCIA') 
                WHERE hospedajeID = ? AND empresaID = ?";

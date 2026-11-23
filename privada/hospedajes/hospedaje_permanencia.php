@@ -238,6 +238,14 @@ $monto_defecto = $precio_diario_pactado;
                             <input type="hidden" name="hospedajeID_anterior" value="<?php echo $hospedajeID; ?>">
                             <input type="hidden" name="habitacionID" value="<?php echo $hospedaje['habitacionID']; ?>">
                             <input type="hidden" name="habitacion_numero" value="<?php echo $hospedaje['numero']; ?>">
+                            <?php if (!empty($_POST['tiene_incidente']) && $_POST['tiene_incidente'] == '1'): ?>
+                                <input type="hidden" name="tiene_incidente" value="1">
+                                <input type="hidden" name="descripcion_incidente" value="<?php echo htmlspecialchars($_POST['descripcion_incidente'] ?? ''); ?>">
+                                <div class="alert alert-warning py-2 px-3 small mb-3 fw-bold border-warning">
+                                    <i class="fas fa-exclamation-triangle text-danger"></i> INCIDENTE REPORTADO:
+                                    <span class="text-dark font-weight-normal"><?php echo htmlspecialchars($_POST['descripcion_incidente'] ?? ''); ?></span>
+                                </div>
+                            <?php endif; ?>
 
                             <div class="row">
                                 <!-- LADO IZQUIERDO: HUÉSPEDES -->

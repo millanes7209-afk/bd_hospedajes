@@ -62,8 +62,26 @@ function handleHabitacionClick(estado, numero, tipo, precio, habitacionID) {
         modal.show();
     } else if (estado === 'DEUDA') {
         modalFooter.innerHTML = `
-            <button type="button" class="btn btn-primary" onclick="mostrarModalPermanencia('${habitacionID}')">PAGAR Y OCUPAR</button>
-            <button type="button" class="btn btn-secondary" onclick="mostrarModalPagoDeuda('${habitacionID}', '${precio}')">PAGAR Y DESOCUPAR</button>
+            <div class="w-100 text-start p-2 mb-2 bg-light rounded border border-warning">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="deuda-check-incidente" value="1" onchange="toggleIncidenteDeuda(this)">
+                    <label class="form-check-label fw-bold text-danger" for="deuda-check-incidente" style="cursor:pointer; font-size: 0.85rem;">
+                        <i class="fas fa-exclamation-triangle"></i> ¿EL CLIENTE TUVO ALGÚN PROBLEMA / INCIDENTE?
+                    </label>
+                </div>
+                <div id="deuda-seccion-incidente" style="display:none; margin-top: 8px;">
+                    <label class="form-label fw-bold text-dark mb-1 small">(*) Detalle del incidente / daño:</label>
+                    <textarea class="form-control form-control-sm" id="deuda-descripcion-incidente" rows="2"
+                        placeholder="Ej: Rompió sábanas, retraso de pago..."
+                        oninput="this.value = this.value.toUpperCase()"></textarea>
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary w-100 mb-1" onclick="ejecutarPagarYOcupar('${habitacionID}')">
+                <i class="fas fa-calendar-plus"></i> PAGAR Y OCUPAR
+            </button>
+            <button type="button" class="btn btn-secondary w-100" onclick="ejecutarPagarYDesocupar('${habitacionID}', '${precio}')">
+                <i class="fas fa-sign-out-alt"></i> PAGAR Y DESOCUPAR
+            </button>
         `;
         modal.show();
     } else if (estado === 'RESERVADA') {
@@ -250,10 +268,54 @@ function liberar(habitacionID) {
     window.location.href = 'liberar.php?habitacionID=' + habitacionID + '&auth=habitaciones.php';
 }
 
+function toggleIncidenteDeuda(chk) {
+    const sec = document.getElementById('deuda-seccion-incidente');
+    const txt = document.getElementById('deuda-descripcion-incidente');
+    if (chk.checked) {
+        sec.style.display = 'block';
+        txt.required = true;
+        txt.focus();
+    } else {
+        sec.style.display = 'none';
+        txt.required = false;
+        txt.value = '';
+    }
+}
+
+function ejecutarPagarYOcupar(habitacionID) {
+    const chk = document.getElementById('deuda-check-incidente');
+    const txt = document.getElementById('deuda-descripcion-incidente');
+    const tieneIncidente = chk && chk.checked ? 1 : 0;
+    const descIncidente = tieneIncidente ? (txt ? txt.value.trim() : '') : '';
+
+    if (tieneIncidente && !descIncidente) {
+        alert('Por favor, ingrese el detalle del incidente antes de continuar.');
+        if (txt) txt.focus();
+        return;
+    }
+
+    mostrarModalPermanencia(habitacionID, 0, tieneIncidente, descIncidente);
+}
+
+function ejecutarPagarYDesocupar(habitacionID, precio) {
+    const chk = document.getElementById('deuda-check-incidente');
+    const txt = document.getElementById('deuda-descripcion-incidente');
+    const tieneIncidente = chk && chk.checked ? 1 : 0;
+    const descIncidente = tieneIncidente ? (txt ? txt.value.trim() : '') : '';
+
+    if (tieneIncidente && !descIncidente) {
+        alert('Por favor, ingrese el detalle del incidente antes de continuar.');
+        if (txt) txt.focus();
+        return;
+    }
+
+    mostrarModalPagoDeuda(habitacionID, precio, tieneIncidente, descIncidente);
+}
+
 /**
  * GESTIÓN DE PERMANENCIA - Redirección a pantalla completa
  */
-function mostrarModalPermanencia(habitacionID, monto_deuda = 0) {
+function mostrarModalPermanencia(habitacionID, monto_deuda = 0, tieneIncidente = 0, descIncidente = '') {
     var modalOpciones = bootstrap.Modal.getInstance(document.getElementById('menu-opciones'));
     if (modalOpciones) modalOpciones.hide();
 
@@ -288,6 +350,20 @@ function mostrarModalPermanencia(habitacionID, monto_deuda = 0) {
                     montoInput.name = 'monto_deuda';
                     montoInput.value = monto_deuda;
                     form.appendChild(montoInput);
+                }
+
+                if (tieneIncidente) {
+                    var incInput = document.createElement('input');
+                    incInput.type = 'hidden';
+                    incInput.name = 'tiene_incidente';
+                    incInput.value = '1';
+                    form.appendChild(incInput);
+
+                    var descInput = document.createElement('input');
+                    descInput.type = 'hidden';
+                    descInput.name = 'descripcion_incidente';
+                    descInput.value = descIncidente;
+                    form.appendChild(descInput);
                 }
 
                 document.body.appendChild(form);
@@ -576,18 +652,25 @@ setInterval(actualizarEstadoHabitaciones, 60000);
 /**
  * PAGO DE DEUDA
  */
-function mostrarModalPagoDeuda(habitacionID, monto) {
+function mostrarModalPagoDeuda(habitacionID, monto, tieneIncidente = 0, descIncidente = '') {
     var modalOpciones = bootstrap.Modal.getInstance(document.getElementById('menu-opciones'));
     if (modalOpciones) modalOpciones.hide();
 
     document.getElementById('pago-deuda-monto_total').value = parseFloat(monto) || 0;
     document.getElementById('pago-deuda-habitacionID').value = habitacionID;
 
-    // Resetear sección incidente
-    document.getElementById('pago-deuda-check-incidente').checked = false;
-    document.getElementById('pago-deuda-seccion-incidente').style.display = 'none';
-    document.getElementById('pago-deuda-descripcion').required = false;
-    document.getElementById('pago-deuda-descripcion').value = '';
+    // Configurar sección incidente según lo seleccionado previamente
+    if (tieneIncidente) {
+        document.getElementById('pago-deuda-check-incidente').checked = true;
+        document.getElementById('pago-deuda-seccion-incidente').style.display = 'block';
+        document.getElementById('pago-deuda-descripcion').required = true;
+        document.getElementById('pago-deuda-descripcion').value = descIncidente;
+    } else {
+        document.getElementById('pago-deuda-check-incidente').checked = false;
+        document.getElementById('pago-deuda-seccion-incidente').style.display = 'none';
+        document.getElementById('pago-deuda-descripcion').required = false;
+        document.getElementById('pago-deuda-descripcion').value = '';
+    }
 
     fetch('obtener_datos_hospedaje.php?habitacionID=' + habitacionID + '&auth=habitaciones.php')
         .then(response => response.json())
