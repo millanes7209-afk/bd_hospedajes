@@ -12,6 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             \App\Http\Middleware\NormalizeDecimalInputs::class,
             \App\Http\Middleware\EnsureUpdatedSchema::class,
@@ -21,5 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            return redirect()->route('login')->withErrors([
+                'email' => 'Tu sesión expiró o la página estuvo abierta demasiado tiempo. Por favor, inicia sesión nuevamente.',
+            ]);
+        });
     })->create();

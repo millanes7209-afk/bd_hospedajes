@@ -236,8 +236,16 @@
                     </div>
                 </div>
 
+                <div class="flex items-center justify-between text-xs text-gray-400">
+                    <label class="flex items-center gap-2 cursor-pointer select-none hover:text-gray-200 transition-colors">
+                        <input type="checkbox" name="remember" value="1" checked
+                            class="rounded border-gray-600 bg-gray-900/50 text-amber-400 focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer">
+                        <span>Recordar mi sesión</span>
+                    </label>
+                </div>
+
                 <div class="pt-2">
-                    <button type="submit"
+                    <button type="submit" id="btnLogin"
                         class="btn-primary px-6 py-3 w-full justify-center text-sm flex items-center justify-center gap-1.5 uppercase font-bold">
                         <i class="fa-solid fa-right-to-bracket"></i>INICIAR SESIÓN
                     </button>
@@ -247,6 +255,22 @@
     </div>
 
     <script>
+        const loginForm = document.querySelector('form');
+        if (loginForm) {
+            loginForm.addEventListener('submit', function (e) {
+                const submitBtn = document.getElementById('btnLogin');
+                if (submitBtn) {
+                    if (submitBtn.disabled) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>INICIANDO SESIÓN...';
+                    submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+                }
+            });
+        }
+
         const toggle = document.getElementById('togglePass');
         const pass = document.getElementById('contrasena');
         const eyeIcon = document.getElementById('eyeIcon');
