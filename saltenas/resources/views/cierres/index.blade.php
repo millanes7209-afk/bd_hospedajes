@@ -3,6 +3,89 @@
 @section('title', 'Cierres Diarios & Liquidación de Carritos — Salteñas')
 
 @section('content')
+    <script>
+    function cierreDiarioModal() {
+        return {
+            showModal: false,
+            resumen: [],
+            montoResumen: { visible: false, ok: true, real: '0.00', estimado: '0.00', diff: '0.00' },
+            hayInconsistencias: false,
+
+            closeModal() {
+                this.showModal = false;
+                this.resumen = [];
+                this.montoResumen = { visible: false, ok: true, real: '0.00', estimado: '0.00', diff: '0.00' };
+                this.hayInconsistencias = false;
+            },
+
+            recalcularMontoReal() {
+                const form = document.getElementById('formCierreDiario');
+                if (!form) return;
+                const ef = parseFloat(form.querySelector('[name="dinero_efectivo"]')?.value) || 0;
+                const qr = parseFloat(form.querySelector('[name="dinero_qr"]')?.value) || 0;
+                const inputReal = document.getElementById('monto_real_input');
+                if (inputReal && (ef > 0 || qr > 0)) {
+                    inputReal.value = (ef + qr).toFixed(2);
+                }
+                this.recalcular();
+            },
+
+            recalcular() {
+                const form = document.getElementById('formCierreDiario');
+                if (!form) return;
+
+                const bloques = form.querySelectorAll('[data-variante-nombre]');
+                let montoEstimado = 0;
+                let inconsistente = false;
+                const nuevasFila = [];
+
+                bloques.forEach(bloque => {
+                    const nombre    = bloque.dataset.varianteNombre;
+                    const precio    = parseFloat(bloque.dataset.variantePrecio) || 0;
+                    const entregada = parseInt(bloque.querySelector('[name$="[cantidad_entregada]"]')?.value) || 0;
+                    const vendida   = parseInt(bloque.querySelector('[name$="[cantidad_vendida_normal]"]')?.value) || 0;
+                    const sobrante  = parseInt(bloque.querySelector('[name$="[cantidad_sobrante]"]')?.value) || 0;
+
+                    const totalJustificado = vendida + sobrante;
+
+                    if (entregada > 0 || vendida > 0 || sobrante > 0) {
+                        const ok = (entregada === totalJustificado);
+                        if (!ok) inconsistente = true;
+                        nuevasFila.push({
+                            nombre,
+                            entregada,
+                            vendida,
+                            sobrante,
+                            ok
+                        });
+                        montoEstimado += (vendida * precio);
+                    }
+                });
+
+                this.resumen = nuevasFila;
+
+                const montoReal = parseFloat(form.querySelector('[name="monto_real"]')?.value) || 0;
+                if (montoReal > 0 || montoEstimado > 0) {
+                    const diff = Math.abs(montoReal - montoEstimado);
+                    const montoOk = diff <= 0.01;
+                    if (!montoOk) inconsistente = true;
+                    this.montoResumen = {
+                        visible: true,
+                        ok: montoOk,
+                        real: montoReal.toFixed(2),
+                        estimado: montoEstimado.toFixed(2),
+                        diff: (montoReal - montoEstimado).toFixed(2)
+                    };
+                } else {
+                    this.montoResumen = { visible: false, ok: true, real: '0.00', estimado: '0.00', diff: '0.00' };
+                }
+
+                this.hayInconsistencias = inconsistente;
+            }
+        };
+    }
+    </script>
+
     <div class="space-y-6" x-data="cierreDiarioModal()" @keydown.escape.window="closeModal()">
 
         <!-- Header Principal -->
@@ -355,7 +438,8 @@
              ===================================================================== --}}
         @if(!$carritos->isEmpty() && !$variantes->isEmpty())
             <div x-show="showModal" x-cloak
-                class="fixed inset-0 z-50 overflow-y-auto"
+                :class="showModal ? 'fixed inset-0 z-[10000] overflow-y-auto' : 'hidden'"
+                class="hidden fixed inset-0 z-[10000] overflow-y-auto"
                 aria-labelledby="modal-title" role="dialog" aria-modal="true">
                 <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                     <div x-show="showModal"
@@ -517,88 +601,3 @@
 
     </div>
 @endsection
-
-@push('scripts')
-<script>
-function cierreDiarioModal() {
-    return {
-        showModal: false,
-        resumen: [],
-        montoResumen: { visible: false, ok: true, real: '0.00', estimado: '0.00', diff: '0.00' },
-        hayInconsistencias: false,
-
-        closeModal() {
-            this.showModal = false;
-            this.resumen = [];
-            this.montoResumen = { visible: false, ok: true, real: '0.00', estimado: '0.00', diff: '0.00' };
-            this.hayInconsistencias = false;
-        },
-
-        recalcularMontoReal() {
-            const form = document.getElementById('formCierreDiario');
-            if (!form) return;
-            const ef = parseFloat(form.querySelector('[name="dinero_efectivo"]')?.value) || 0;
-            const qr = parseFloat(form.querySelector('[name="dinero_qr"]')?.value) || 0;
-            const inputReal = document.getElementById('monto_real_input');
-            if (inputReal && (ef > 0 || qr > 0)) {
-                inputReal.value = (ef + qr).toFixed(2);
-            }
-            this.recalcular();
-        },
-
-        recalcular() {
-            const form = document.getElementById('formCierreDiario');
-            if (!form) return;
-
-            const bloques = form.querySelectorAll('[data-variante-nombre]');
-            let montoEstimado = 0;
-            let inconsistente = false;
-            const nuevasFila = [];
-
-            bloques.forEach(bloque => {
-                const nombre    = bloque.dataset.varianteNombre;
-                const precio    = parseFloat(bloque.dataset.variantePrecio) || 0;
-                const entregada = parseInt(bloque.querySelector('[name$="[cantidad_entregada]"]')?.value) || 0;
-                const vendida   = parseInt(bloque.querySelector('[name$="[cantidad_vendida_normal]"]')?.value) || 0;
-                const sobrante  = parseInt(bloque.querySelector('[name$="[cantidad_sobrante]"]')?.value) || 0;
-
-                const totalJustificado = vendida + sobrante;
-
-                if (entregada > 0 || vendida > 0 || sobrante > 0) {
-                    const ok = (entregada === totalJustificado);
-                    if (!ok) inconsistente = true;
-                    nuevasFila.push({
-                        nombre,
-                        entregada,
-                        vendida,
-                        sobrante,
-                        ok
-                    });
-                    montoEstimado += (vendida * precio);
-                }
-            });
-
-            this.resumen = nuevasFila;
-
-            const montoReal = parseFloat(form.querySelector('[name="monto_real"]')?.value) || 0;
-            if (montoReal > 0 || montoEstimado > 0) {
-                const diff = Math.abs(montoReal - montoEstimado);
-                const montoOk = diff <= 0.01;
-                if (!montoOk) inconsistente = true;
-                this.montoResumen = {
-                    visible: true,
-                    ok: montoOk,
-                    real: montoReal.toFixed(2),
-                    estimado: montoEstimado.toFixed(2),
-                    diff: (montoReal - montoEstimado).toFixed(2)
-                };
-            } else {
-                this.montoResumen = { visible: false, ok: true, real: '0.00', estimado: '0.00', diff: '0.00' };
-            }
-
-            this.hayInconsistencias = inconsistente;
-        }
-    };
-}
-</script>
-@endpush

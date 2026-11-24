@@ -38,7 +38,8 @@
     <!-- Top Navigation Bar (Fixed with Superposed Mobile Menu) -->
     <nav x-data="{ mobileMenuOpen: false }"
         x-effect="document.body.style.overflow = mobileMenuOpen ? 'hidden' : ''"
-        class="fixed top-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        class="fixed top-0 left-0 right-0 w-full z-[9999] bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 shadow-sm"
+        style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; width: 100% !important; z-index: 9999 !important;">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
 
@@ -210,7 +211,8 @@
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
             @click="mobileMenuOpen = false"
-            class="fixed inset-0 top-16 bg-slate-950/60 backdrop-blur-sm z-40 md:hidden"
+            class="fixed inset-0 top-16 bg-slate-950/70 backdrop-blur-sm z-[9998] md:hidden"
+            style="position: fixed !important; top: 64px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100% !important; height: calc(100vh - 64px) !important; z-index: 9998 !important;"
             x-cloak></div>
 
         <!-- Dynamic Mobile Menu (Superpuesto en pantalla / Fixed Overlay) -->
@@ -221,7 +223,8 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
             x-transition:leave-end="opacity-0 -translate-y-4 scale-95"
-            class="fixed inset-x-0 top-16 bottom-0 z-50 md:hidden bg-white/98 dark:bg-slate-950/98 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-4 pt-3 pb-8 space-y-1.5 shadow-2xl overflow-y-auto"
+            class="fixed inset-x-0 top-16 bottom-0 z-[9999] md:hidden bg-white/98 dark:bg-slate-950/98 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-4 pt-3 pb-8 space-y-1.5 shadow-2xl overflow-y-auto"
+            style="position: fixed !important; top: 64px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100% !important; height: calc(100vh - 64px) !important; z-index: 9999 !important;"
             x-cloak>
 
             <a href="{{ route('dashboard') }}" @click="mobileMenuOpen = false"
