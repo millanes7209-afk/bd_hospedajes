@@ -33,11 +33,12 @@
 </head>
 
 <body
-    class="h-full font-sans antialiased bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 selection:bg-amber-500 selection:text-slate-950 transition-colors duration-150">
+    class="min-h-screen font-sans antialiased bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 selection:bg-amber-500 selection:text-slate-950 transition-colors duration-150">
 
-    <!-- Top Navigation Bar (Responsive with Dynamic Mobile Hamburger) -->
+    <!-- Top Navigation Bar (Fixed with Superposed Mobile Menu) -->
     <nav x-data="{ mobileMenuOpen: false }"
-        class="sticky top-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        x-effect="document.body.style.overflow = mobileMenuOpen ? 'hidden' : ''"
+        class="fixed top-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
 
@@ -200,12 +201,27 @@
             </div>
         </div>
 
-        <!-- Dynamic Mobile Menu (Automatically expands vertically with more options) -->
-        <div x-show="mobileMenuOpen" x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
-            x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0"
-            x-transition:leave-end="opacity-0 -translate-y-2"
-            class="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur px-4 pt-3 pb-5 space-y-1.5 shadow-xl max-h-[85vh] overflow-y-auto"
+        <!-- Backdrop Overlay on Mobile -->
+        <div x-show="mobileMenuOpen"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            @click="mobileMenuOpen = false"
+            class="fixed inset-0 top-16 bg-slate-950/60 backdrop-blur-sm z-40 md:hidden"
+            x-cloak></div>
+
+        <!-- Dynamic Mobile Menu (Superpuesto en pantalla / Fixed Overlay) -->
+        <div x-show="mobileMenuOpen"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 -translate-y-4 scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+            x-transition:leave-end="opacity-0 -translate-y-4 scale-95"
+            class="fixed inset-x-0 top-16 bottom-0 z-50 md:hidden bg-white/98 dark:bg-slate-950/98 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-4 pt-3 pb-8 space-y-1.5 shadow-2xl overflow-y-auto"
             x-cloak>
 
             <a href="{{ route('dashboard') }}" @click="mobileMenuOpen = false"
@@ -276,7 +292,6 @@
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
             </a>
 
-
             <div class="pt-3 mt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <span class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Sesión de Usuario</span>
                 <form action="{{ route('logout') }}" method="POST" class="inline">
@@ -290,54 +305,59 @@
         </div>
     </nav>
 
-    <!-- Alert Messages -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        @if (session('success'))
-            <div
-                class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-extrabold text-xs uppercase flex items-center justify-between shadow-sm mb-4">
-                <span class="flex items-center gap-2"><i
-                        class="fa-solid fa-circle-check text-emerald-600 dark:text-emerald-400 text-base"></i>
-                    {{ session('success') }}</span>
-                <button onclick="this.parentElement.remove()" class="opacity-70 hover:opacity-100">✕</button>
-            </div>
-        @endif
+    <!-- Main Wrapper with top padding for fixed navbar -->
+    <div class="pt-16 min-h-screen flex flex-col justify-between">
+        <div>
+            <!-- Alert Messages -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+                @if (session('success'))
+                    <div
+                        class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-extrabold text-xs uppercase flex items-center justify-between shadow-sm mb-4">
+                        <span class="flex items-center gap-2"><i
+                                class="fa-solid fa-circle-check text-emerald-600 dark:text-emerald-400 text-base"></i>
+                            {{ session('success') }}</span>
+                        <button onclick="this.parentElement.remove()" class="opacity-70 hover:opacity-100">✕</button>
+                    </div>
+                @endif
 
-        @if (session('warning'))
-            <div
-                class="p-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 font-extrabold text-xs uppercase flex items-center justify-between shadow-sm mb-4">
-                <span class="flex items-center gap-2"><i
-                        class="fa-solid fa-triangle-exclamation text-amber-600 dark:text-amber-400 text-base"></i>
-                    {{ session('warning') }}</span>
-                <button onclick="this.parentElement.remove()" class="opacity-70 hover:opacity-100">✕</button>
-            </div>
-        @endif
+                @if (session('warning'))
+                    <div
+                        class="p-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 font-extrabold text-xs uppercase flex items-center justify-between shadow-sm mb-4">
+                        <span class="flex items-center gap-2"><i
+                                class="fa-solid fa-triangle-exclamation text-amber-600 dark:text-amber-400 text-base"></i>
+                            {{ session('warning') }}</span>
+                        <button onclick="this.parentElement.remove()" class="opacity-70 hover:opacity-100">✕</button>
+                    </div>
+                @endif
 
-        @if ($errors->any())
-            <div
-                class="p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 font-bold text-xs uppercase shadow-sm mb-4">
-                <div class="flex items-center gap-2 mb-1"><i
-                        class="fa-solid fa-triangle-exclamation text-red-600 dark:text-red-400 text-base"></i> Revisa los
-                    siguientes errores:
-                </div>
-                <ul class="list-disc list-inside text-[11px] opacity-90 space-y-0.5">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
+                @if ($errors->any())
+                    <div
+                        class="p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 font-bold text-xs uppercase shadow-sm mb-4">
+                        <div class="flex items-center gap-2 mb-1"><i
+                                class="fa-solid fa-triangle-exclamation text-red-600 dark:text-red-400 text-base"></i> Revisa los
+                            siguientes errores:
+                        </div>
+                        <ul class="list-disc list-inside text-[11px] opacity-90 space-y-0.5">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             </div>
-        @endif
+
+            <!-- Main Content Container -->
+            <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                @yield('content')
+            </main>
+        </div>
+
+        <!-- Global Footer -->
+        <footer
+            class="border-t border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950/80 py-6 mt-12 text-center text-xs text-slate-500 dark:text-slate-500">
+            <p class="font-bold">SALTEÑAS © {{ date('Y') }} — Bóveda Central & Control de Carritos</p>
+        </footer>
     </div>
-
-    <!-- Main Content Container -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        @yield('content')
-    </main>
-
-    <!-- Global Footer -->
-    <footer
-        class="border-t border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950/80 py-6 mt-12 text-center text-xs text-slate-500 dark:text-slate-500">
-        <p class="font-bold">SALTEÑAS © {{ date('Y') }} — Bóveda Central & Control de Carritos</p>
-    </footer>
 
     @yield('scripts')
     <script>

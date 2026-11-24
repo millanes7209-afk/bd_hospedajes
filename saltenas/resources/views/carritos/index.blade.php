@@ -47,9 +47,6 @@
                                 <span class="px-2.5 py-1 rounded-lg bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 font-black text-xs uppercase tracking-wider">
                                     🛒 {{ $tv['carrito_nombre'] }}
                                 </span>
-                                <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">
-                                    {{ $tv['carrito_zona'] }}
-                                </span>
                                 @if($tv['stock_aceptado'])
                                     <span class="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-black text-[10px] uppercase inline-flex items-center gap-1">
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> EN TURNO
@@ -72,7 +69,7 @@
                             <div class="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-500/30 rounded-xl p-3.5 space-y-2.5">
                                 <div class="flex items-center justify-between gap-2">
                                     <span class="text-[10px] font-black uppercase text-blue-700 dark:text-blue-400 tracking-wider">
-                                        🥟 SALTEÑAS EN CARRITO AHORA
+                                        🥟 DISPONIBLES
                                     </span>
                                     <span class="text-xl font-black {{ $tv['total_restantes'] <= 5 && $tv['stock_aceptado'] ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-blue-400' }}">
                                         {{ $tv['total_restantes'] }} u.
@@ -101,7 +98,7 @@
                             <div class="bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-500/30 rounded-xl p-3.5 space-y-2.5">
                                 <div class="flex items-center justify-between gap-2">
                                     <span class="text-[10px] font-black uppercase text-emerald-700 dark:text-emerald-400 tracking-wider">
-                                        💰 TOTAL VENDIDO EN EL TURNO
+                                        💰 TOTAL
                                     </span>
                                     <div class="text-right">
                                         <span class="text-xl font-black text-emerald-600 dark:text-emerald-400">
@@ -292,9 +289,6 @@
                             <span class="px-2.5 py-1 rounded-lg bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 font-black text-xs uppercase tracking-wider">
                                 🛒 ${escHtmlVivo(tv.carrito_nombre)}
                             </span>
-                            <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">
-                                ${escHtmlVivo(tv.carrito_zona)}
-                            </span>
                             ${estadoBadge}
                         </div>
                         <div class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-3">
@@ -307,7 +301,7 @@
                         <div class="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-500/30 rounded-xl p-3.5 space-y-2.5">
                             <div class="flex items-center justify-between gap-2">
                                 <span class="text-[10px] font-black uppercase text-blue-700 dark:text-blue-400 tracking-wider">
-                                    🥟 SALTEÑAS EN CARRITO AHORA
+                                    🥟 DISPONIBLES
                                 </span>
                                 <span class="text-xl font-black ${totalRestColor}">
                                     ${parseInt(tv.total_restantes || 0)} u.
@@ -319,7 +313,7 @@
                         <div class="bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-500/30 rounded-xl p-3.5 space-y-2.5">
                             <div class="flex items-center justify-between gap-2">
                                 <span class="text-[10px] font-black uppercase text-emerald-700 dark:text-emerald-400 tracking-wider">
-                                    💰 TOTAL VENDIDO EN EL TURNO
+                                    💰 TOTAL
                                 </span>
                                 <div class="text-right">
                                     <span class="text-xl font-black text-emerald-600 dark:text-emerald-400">
