@@ -323,6 +323,16 @@
                     </div>
                 @endif
 
+                @if (session('error'))
+                    <div
+                        class="p-4 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 font-extrabold text-xs uppercase flex items-center justify-between shadow-sm mb-4">
+                        <span class="flex items-center gap-2"><i
+                                class="fa-solid fa-circle-xmark text-rose-600 dark:text-rose-400 text-base"></i>
+                            {{ session('error') }}</span>
+                        <button onclick="this.parentElement.remove()" class="opacity-70 hover:opacity-100">✕</button>
+                    </div>
+                @endif
+
                 @if (session('warning'))
                     <div
                         class="p-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 font-extrabold text-xs uppercase flex items-center justify-between shadow-sm mb-4">

@@ -21,6 +21,51 @@
             </a>
         </div>
 
+        {{-- Métricas Rápidas / Totales de Salteñas --}}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-sm flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest block mb-1">
+                        📦 TOTAL DESPACHOS
+                    </span>
+                    <span class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                        {{ $despachos->total() }} envíos
+                    </span>
+                </div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300">
+                    <i class="fa-solid fa-boxes-packing text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-500/30 p-4 rounded-xl shadow-sm flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest block mb-1">
+                        🥟 TOTAL SALTEÑAS ENVIADAS
+                    </span>
+                    <span class="text-2xl font-black text-amber-600 dark:text-amber-400 tracking-tight">
+                        {{ number_format($totalEnviadasGeneral ?? 0) }} uds.
+                    </span>
+                </div>
+                <div class="p-3 bg-amber-50 dark:bg-amber-500/10 rounded-xl text-amber-600 dark:text-amber-400">
+                    <i class="fa-solid fa-truck-ramp-box text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-500/30 p-4 rounded-xl shadow-sm flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest block mb-1">
+                        ✅ TOTAL ACEPTADAS EN POS
+                    </span>
+                    <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                        {{ number_format($totalAceptadasGeneral ?? 0) }} uds.
+                    </span>
+                </div>
+                <div class="p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400">
+                    <i class="fa-solid fa-clipboard-check text-xl"></i>
+                </div>
+            </div>
+        </div>
+
         {{-- Filtros --}}
         <form method="GET" action="{{ route('despachos.index') }}"
             class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex flex-wrap gap-3 items-end">
@@ -78,7 +123,7 @@
                                 <th class="px-4 py-3 text-left font-black uppercase text-slate-500 dark:text-slate-400">Carrito
                                 </th>
                                 <th class="px-4 py-3 text-left font-black uppercase text-slate-500 dark:text-slate-400">
-                                    Variantes</th>
+                                    Variantes Despachadas</th>
                                 <th class="px-4 py-3 text-center font-black uppercase text-slate-500 dark:text-slate-400">Total
                                     Enviado</th>
                                 <th class="px-4 py-3 text-center font-black uppercase text-slate-500 dark:text-slate-400">Total
@@ -105,23 +150,28 @@
                                         <div class="flex flex-wrap gap-1">
                                             @foreach($d->detalles as $det)
                                                 <span
-                                                    class="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 font-bold text-[10px]">
-                                                    {{ $det->variante?->nombre ?? '—' }}: {{ $det->cantidad_enviada }}
+                                                    class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[10px] border border-slate-200 dark:border-slate-700">
+                                                    {{ $det->variante?->nombre ?? '—' }}:
+                                                    <strong class="text-amber-600 dark:text-amber-400">{{ $det->cantidad_enviada }}</strong>
                                                     @if($det->cantidad_aceptada > 0 && $det->cantidad_aceptada != $det->cantidad_enviada)
-                                                        <span class="text-rose-600 dark:text-rose-400">(recibió
+                                                        <span class="text-rose-600 dark:text-rose-400 font-black">(recibió
                                                             {{ $det->cantidad_aceptada }})</span>
                                                     @endif
                                                 </span>
                                             @endforeach
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3 text-center font-black text-slate-800 dark:text-slate-200">
-                                        {{ $d->detalles->sum('cantidad_enviada') }}
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 font-black text-xs">
+                                            {{ $d->detalles->sum('cantidad_enviada') }} uds
+                                        </span>
                                     </td>
                                     <td class="px-4 py-3 text-center font-black">
                                         @if($d->estado === 'aceptado')
                                             <span
-                                                class="text-emerald-600 dark:text-emerald-400">{{ $d->detalles->sum('cantidad_aceptada') }}</span>
+                                                class="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs">
+                                                {{ $d->detalles->sum('cantidad_aceptada') }} uds
+                                            </span>
                                         @else
                                             <span class="text-slate-400">—</span>
                                         @endif
@@ -165,6 +215,20 @@
                                 </tr>
                             @endforeach
                         </tbody>
+                        <tfoot>
+                            <tr class="bg-slate-100 dark:bg-slate-950 font-black border-t-2 border-slate-300 dark:border-slate-700 text-xs">
+                                <td colspan="3" class="px-4 py-3 text-right uppercase text-slate-700 dark:text-slate-300">
+                                    TOTALES DE ESTA PÁGINA:
+                                </td>
+                                <td class="px-4 py-3 text-center text-sm font-black text-amber-600 dark:text-amber-400">
+                                    {{ $despachos->sum(fn($d) => $d->detalles->sum('cantidad_enviada')) }} uds.
+                                </td>
+                                <td class="px-4 py-3 text-center text-sm font-black text-emerald-600 dark:text-emerald-400">
+                                    {{ $despachos->sum(fn($d) => $d->detalles->sum('cantidad_aceptada')) }} uds.
+                                </td>
+                                <td colspan="3"></td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
 

@@ -14,7 +14,7 @@ class ProductoController extends Controller
     {
         SchemaSyncService::ensureUpdatedColumns();
 
-        $tab = $request->get('tab', 'insumos');
+        $tab = $request->get('tab', old('tab', 'insumos'));
         if (!in_array($tab, ['insumos', 'preparaciones', 'variantes'])) {
             $tab = 'insumos';
         }

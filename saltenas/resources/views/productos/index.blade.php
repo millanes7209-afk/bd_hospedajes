@@ -43,6 +43,7 @@
                         </h2>
 
                         <form action="{{ route('insumos.store') }}" method="POST" class="space-y-4">
+                            <input type="hidden" name="tab" value="insumos">
                             @csrf
                             <div>
                                 <label
@@ -195,6 +196,7 @@
                                             }
                                         }
                                     }">
+                                <input type="hidden" name="tab" value="preparaciones">
                                 @csrf
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
@@ -331,20 +333,27 @@
                         </h2>
 
                         <form action="{{ route('variantes.store') }}" method="POST" class="space-y-4">
+                            <input type="hidden" name="tab" value="variantes">
+                            @if ($errors->has('nombre') || $errors->has('precio_venta'))
+                                <div class="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-700 dark:text-rose-400 font-bold uppercase space-y-1">
+                                    @error('nombre') <div>• {{ $message }}</div> @enderror
+                                    @error('precio_venta') <div>• {{ $message }}</div> @enderror
+                                </div>
+                            @endif
                             @csrf
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <label
                                         class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">NOMBRE
                                         <span class="text-amber-500">*</span></label>
-                                    <input type="text" name="nombre" required placeholder="EJ. SALTEÑA DE POLLO"
+                                    <input type="text" name="nombre" required value="{{ old('tab') === 'variantes' ? old('nombre') : '' }}" placeholder="EJ. SALTEÑA DE POLLO"
                                         class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:border-amber-500 focus:outline-none uppercase">
                                 </div>
                                 <div>
                                     <label
                                         class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">PRECIO
                                         VENTA (BS.) <span class="text-amber-500">*</span></label>
-                                    <input type="number" step="any" name="precio_venta" required placeholder="EJ. 8.00"
+                                    <input type="number" step="any" name="precio_venta" required value="{{ old('tab') === 'variantes' ? old('precio_venta') : '' }}" placeholder="EJ. 8.00"
                                         class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 focus:border-amber-500 focus:outline-none uppercase">
                                 </div>
                             </div>

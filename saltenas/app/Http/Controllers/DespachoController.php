@@ -6,6 +6,7 @@ use App\Models\Carrito;
 use App\Models\DespachoDiario;
 use App\Models\DespachoDetalle;
 use App\Models\VarianteSaltena;
+use App\Services\SchemaSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,8 @@ class DespachoController extends Controller
 {
     public function index(Request $request)
     {
+        SchemaSyncService::ensureUpdatedColumns();
+
         $carritoId = $request->get('carrito_id');
         $fechaInicio = $request->get('fecha_inicio');
         $fechaFin = $request->get('fecha_fin');
@@ -32,14 +35,24 @@ class DespachoController extends Controller
             $query->whereDate('fecha', '<=', $fechaFin);
         }
 
+        // Totales de salteñas enviadas y aceptadas para la consulta actual
+        $despachoIds = (clone $query)->pluck('id');
+        $totalEnviadasGeneral = DespachoDetalle::whereIn('despacho_diario_id', $despachoIds)->sum('cantidad_enviada');
+        $totalAceptadasGeneral = DespachoDetalle::whereIn('despacho_diario_id', $despachoIds)->sum('cantidad_aceptada');
+
         $despachos = $query->paginate(15)->appends($request->all());
         $carritos = Carrito::where('activo', true)->orderBy('nombre')->get();
 
-        return view('despachos.index', compact('despachos', 'carritos', 'carritoId', 'fechaInicio', 'fechaFin'));
+        return view('despachos.index', compact(
+            'despachos', 'carritos', 'carritoId', 'fechaInicio', 'fechaFin',
+            'totalEnviadasGeneral', 'totalAceptadasGeneral'
+        ));
     }
 
     public function create()
     {
+        SchemaSyncService::ensureUpdatedColumns();
+
         try {
             try {
                 DB::statement("CREATE INDEX `despachos_diarios_carrito_id_fk_idx` ON `despachos_diarios` (`carrito_id`)");
@@ -55,6 +68,8 @@ class DespachoController extends Controller
 
     public function store(Request $request)
     {
+        SchemaSyncService::ensureUpdatedColumns();
+
         $request->validate([
             'carrito_id' => 'required|exists:carritos,id',
             'fecha' => 'nullable|date',
@@ -66,18 +81,17 @@ class DespachoController extends Controller
 
         // Asegurar que la restricción unique esté eliminada de la base de datos para permitir múltiples despachos
         try {
-            // 1. MySQL requiere un índice no-único en carrito_id para sostener la foreign key
             try {
                 DB::statement("CREATE INDEX `despachos_diarios_carrito_id_fk_idx` ON `despachos_diarios` (`carrito_id`)");
             } catch (\Throwable $eIdx) {}
 
-            // 2. Ahora sí MySQL permite eliminar el índice unique compuesto
             DB::statement("ALTER TABLE `despachos_diarios` DROP INDEX `despachos_diarios_carrito_id_fecha_unique`");
         } catch (\Throwable $e) {}
 
         $fechaDespacho = $request->input('fecha') ?: now()->toDateString();
 
-        DB::transaction(function () use ($request, $fechaDespacho) {
+        $totalSaltenas = 0;
+        DB::transaction(function () use ($request, $fechaDespacho, &$totalSaltenas) {
             $despacho = DespachoDiario::create([
                 'carrito_id' => $request->carrito_id,
                 'fecha' => $fechaDespacho,
@@ -87,19 +101,21 @@ class DespachoController extends Controller
             ]);
 
             foreach ($request->detalles as $det) {
-                if ((int) $det['cantidad_enviada'] > 0) {
+                $cant = (int)$det['cantidad_enviada'];
+                if ($cant > 0) {
                     DespachoDetalle::create([
                         'despacho_diario_id' => $despacho->id,
                         'variante_id' => $det['variante_id'],
-                        'cantidad_enviada' => (int) $det['cantidad_enviada'],
+                        'cantidad_enviada' => $cant,
                         'cantidad_aceptada' => 0,
                     ]);
+                    $totalSaltenas += $cant;
                 }
             }
         });
 
         return redirect()->route('despachos.index')
-            ->with('success', 'Despacho registrado. El carrito podrá aceptarlo al abrir el POS.');
+            ->with('success', 'Despacho de ' . $totalSaltenas . ' salteñas registrado exitosamente. El carrito podrá aceptarlo al abrir el POS.');
     }
 
     public function destroy($id)
