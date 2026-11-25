@@ -14,6 +14,9 @@ class Compra extends Model
     protected $fillable = [
         'fecha',
         'monto_total',
+        'metodo_pago',
+        'proveedor',
+        'comprobante_nro',
         'observaciones',
     ];
 

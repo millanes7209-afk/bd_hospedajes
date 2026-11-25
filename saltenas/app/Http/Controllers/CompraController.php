@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Compra;
 use App\Models\Insumo;
 use App\Services\CompraService;
+use App\Services\SchemaSyncService;
 use Illuminate\Http\Request;
 
 class CompraController extends Controller
@@ -18,16 +19,38 @@ class CompraController extends Controller
 
     public function index()
     {
-        $compras = Compra::with('detalles.insumo')->orderBy('fecha', 'desc')->paginate(15);
-        $insumos = Insumo::orderBy('nombre')->get();
+        SchemaSyncService::ensureUpdatedColumns();
 
-        return view('compras.index', compact('compras', 'insumos'));
+        $compras = Compra::with('detalles.insumo')
+            ->orderBy('fecha', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate(15);
+
+        $insumos = Insumo::with([
+            'preciosHistorial' => function ($q) {
+                $q->orderBy('vigente_desde', 'desc')->orderBy('id', 'desc');
+            }
+        ])->orderBy('nombre')->get();
+
+        $totalComprasMes = Compra::whereYear('fecha', now()->year)
+            ->whereMonth('fecha', now()->month)
+            ->sum('monto_total');
+
+        $totalComprasHoy = Compra::whereDate('fecha', now()->toDateString())
+            ->sum('monto_total');
+
+        return view('compras.index', compact('compras', 'insumos', 'totalComprasMes', 'totalComprasHoy'));
     }
 
     public function store(Request $request)
     {
+        SchemaSyncService::ensureUpdatedColumns();
+
         $request->validate([
             'fecha' => 'required|date',
+            'metodo_pago' => 'required|in:efectivo,qr',
+            'proveedor' => 'nullable|string|max:100',
+            'comprobante_nro' => 'nullable|string|max:50',
             'items' => 'required|array|min:1',
             'items.*.insumo_id' => 'required|exists:insumos,id',
             'items.*.cantidad' => 'required|numeric|min:0.01',
@@ -37,6 +60,6 @@ class CompraController extends Controller
 
         $this->compraService->registrarCompra($request->all());
 
-        return redirect()->route('compras.index')->with('success', 'Compra registrada exitosamente. El egreso de Bóveda y el historial de precios se actualizaron automáticamente.');
+        return redirect()->route('compras.index')->with('success', 'Compra registrada exitosamente. El stock de insumos y el egreso en Bóveda (' . strtoupper($request->metodo_pago) . ') se actualizaron correctamente.');
     }
 }

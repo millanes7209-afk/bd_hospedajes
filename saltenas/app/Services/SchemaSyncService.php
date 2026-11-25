@@ -29,6 +29,27 @@ class SchemaSyncService
             });
         }
 
+        if (Schema::hasTable('insumos')) {
+            self::addColumnSafe('insumos', 'stock_actual', function (Blueprint $table) {
+                $table->decimal('stock_actual', 10, 2)->default(0);
+            });
+            self::addColumnSafe('insumos', 'stock_minimo', function (Blueprint $table) {
+                $table->decimal('stock_minimo', 10, 2)->default(0);
+            });
+        }
+
+        if (Schema::hasTable('compras')) {
+            self::addColumnSafe('compras', 'metodo_pago', function (Blueprint $table) {
+                $table->string('metodo_pago', 20)->default('efectivo');
+            });
+            self::addColumnSafe('compras', 'proveedor', function (Blueprint $table) {
+                $table->string('proveedor', 100)->nullable();
+            });
+            self::addColumnSafe('compras', 'comprobante_nro', function (Blueprint $table) {
+                $table->string('comprobante_nro', 50)->nullable();
+            });
+        }
+
         if (Schema::hasTable('cierres_diarios')) {
             self::addColumnSafe('cierres_diarios', 'dinero_efectivo', function (Blueprint $table) {
                 $table->decimal('dinero_efectivo', 10, 2)->default(0);

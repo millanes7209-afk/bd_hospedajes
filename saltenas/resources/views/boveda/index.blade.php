@@ -142,7 +142,15 @@
                                             </span>
                                         </div>
                                     @else
-                                        <span class="text-slate-400 text-[10px] font-semibold uppercase">Efectivo de Caja</span>
+                                        @if((float)$mov->dinero_qr > 0)
+                                            <span class="px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 text-[10px] font-bold uppercase inline-flex items-center gap-1">
+                                                <i class="fa-solid fa-qrcode"></i> Egreso QR: Bs. {{ number_format($mov->dinero_qr, 2) }}
+                                            </span>
+                                        @else
+                                            <span class="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 text-[10px] font-bold uppercase inline-flex items-center gap-1">
+                                                <i class="fa-solid fa-money-bill-wave"></i> Egreso Ef: Bs. {{ number_format((float)$mov->dinero_efectivo > 0 ? $mov->dinero_efectivo : $mov->monto, 2) }}
+                                            </span>
+                                        @endif
                                     @endif
                                 </td>
 

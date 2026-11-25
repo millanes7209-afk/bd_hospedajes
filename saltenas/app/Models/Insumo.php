@@ -14,11 +14,20 @@ class Insumo extends Model
     protected $fillable = [
         'nombre',
         'unidad_medida',
+        'stock_actual',
+        'stock_minimo',
+    ];
+
+    protected $casts = [
+        'stock_actual' => 'decimal:2',
+        'stock_minimo' => 'decimal:2',
     ];
 
     public function preciosHistorial()
     {
-        return $this->hasMany(InsumoPrecioHistorial::class, 'insumo_id')->orderBy('vigente_desde', 'desc');
+        return $this->hasMany(InsumoPrecioHistorial::class, 'insumo_id')
+            ->orderBy('vigente_desde', 'desc')
+            ->orderBy('id', 'desc');
     }
 
     public function precioEnFecha($fecha)
@@ -29,6 +38,12 @@ class Insumo extends Model
             ->orderBy('id', 'desc')
             ->first();
 
-        return $registro ? $registro->precio : 0.00;
+        return $registro ? (float)$registro->precio : 0.00;
+    }
+
+    public function getUltimoPrecioAttribute(): float
+    {
+        $ultimo = $this->preciosHistorial()->first();
+        return $ultimo ? (float)$ultimo->precio : 0.00;
     }
 }

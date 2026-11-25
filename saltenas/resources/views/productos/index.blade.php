@@ -110,6 +110,8 @@
                                     class="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">
                                     <th class="py-2.5 px-4">NOMBRE</th>
                                     <th class="py-2.5 px-4">UNIDAD MEDIDA</th>
+                                    <th class="py-2.5 px-4 text-center">STOCK EN ALMACÉN</th>
+                                    <th class="py-2.5 px-4 text-right">ÚLTIMO PRECIO</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -121,10 +123,30 @@
                                         <td class="py-2.5 px-4 font-bold text-amber-600 dark:text-amber-400 uppercase">
                                             {{ strtoupper($ins->unidad_medida) }}
                                         </td>
+                                        <td class="py-2.5 px-4 text-center">
+                                            @php $stk = (float)($ins->stock_actual ?? 0); @endphp
+                                            @if($stk > 0)
+                                                <span class="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-black text-[10px] uppercase">
+                                                    {{ number_format($stk, 2) }} {{ strtoupper($ins->unidad_medida) }}
+                                                </span>
+                                            @else
+                                                <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold text-[10px] uppercase">
+                                                    0.00
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td class="py-2.5 px-4 text-right font-black text-slate-700 dark:text-slate-300">
+                                            @php $up = (float)($ins->ultimo_precio ?? 0); @endphp
+                                            @if($up > 0)
+                                                Bs. {{ number_format($up, 2) }}
+                                            @else
+                                                <span class="text-slate-400 font-normal">Sin compras</span>
+                                            @endif
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="2" class="py-8 text-center text-slate-400 font-bold uppercase">NO HAY
+                                        <td colspan="4" class="py-8 text-center text-slate-400 font-bold uppercase">NO HAY
                                             INSUMOS REGISTRADOS AÚN.</td>
                                     </tr>
                                 @endforelse
