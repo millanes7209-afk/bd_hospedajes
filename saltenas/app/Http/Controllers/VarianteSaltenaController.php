@@ -34,6 +34,8 @@ class VarianteSaltenaController extends Controller
             ]);
         }
 
+        $isJson = $request->ajax() || $request->wantsJson();
+
         try {
             $request->validate([
                 'nombre' => 'required|string|max:255',
@@ -46,8 +48,9 @@ class VarianteSaltenaController extends Controller
                 'precio_venta.min' => 'El precio de venta debe ser mayor a 0.',
             ]);
 
-            DB::transaction(function () use ($request) {
-                $var = VarianteSaltena::create([
+            $createdVar = null;
+            DB::transaction(function () use ($request, &$createdVar) {
+                $createdVar = VarianteSaltena::create([
                     'nombre' => trim($request->nombre),
                     'precio_venta' => (float)$request->precio_venta,
                     'activo' => true,
@@ -56,15 +59,15 @@ class VarianteSaltenaController extends Controller
                 if ($request->has('componentes') && is_array($request->componentes)) {
                     foreach ($request->componentes as $comp) {
                         $tipo = $comp['tipo_componente'] ?? null;
-                        $insumoId = !empty($comp['insumo_id']) ? $comp['insumo_id'] : null;
-                        $preparacionId = !empty($comp['preparacion_id']) ? $comp['preparacion_id'] : null;
+                        $insumoId = !empty($comp['insumo_id']) ? (int)$comp['insumo_id'] : null;
+                        $preparacionId = !empty($comp['preparacion_id']) ? (int)$comp['preparacion_id'] : null;
                         $cantidadStr = !empty($comp['cantidad_usada']) ? str_replace(',', '.', (string)$comp['cantidad_usada']) : '0';
                         $cantidad = (float)$cantidadStr;
 
                         // Solo guardar si se seleccionó un insumo o preparación válido con cantidad > 0
                         if ($tipo === 'insumo' && $insumoId && $cantidad > 0) {
                             VarianteReceta::create([
-                                'variante_id' => $var->id,
+                                'variante_id' => $createdVar->id,
                                 'tipo_componente' => 'insumo',
                                 'insumo_id' => $insumoId,
                                 'preparacion_id' => null,
@@ -72,7 +75,7 @@ class VarianteSaltenaController extends Controller
                             ]);
                         } elseif ($tipo === 'preparacion' && $preparacionId && $cantidad > 0) {
                             VarianteReceta::create([
-                                'variante_id' => $var->id,
+                                'variante_id' => $createdVar->id,
                                 'tipo_componente' => 'preparacion',
                                 'insumo_id' => null,
                                 'preparacion_id' => $preparacionId,
@@ -83,15 +86,37 @@ class VarianteSaltenaController extends Controller
                 }
             });
 
+            if ($isJson) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Variante de Salteña creada exitosamente.',
+                    'variante' => $createdVar,
+                ], 200);
+            }
+
             return redirect()->route('productos.index', ['tab' => 'variantes'])
                 ->with('success', 'Variante de Salteña creada exitosamente.');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $firstError = collect($e->errors())->flatten()->first() ?? 'Error de validación.';
+            if ($isJson) {
+                return response()->json([
+                    'success' => false,
+                    'error' => $firstError,
+                    'errors' => $e->errors(),
+                ], 422);
+            }
             return redirect()->route('productos.index', ['tab' => 'variantes'])
                 ->withErrors($e->validator)
                 ->withInput()
-                ->with('error', 'Error al registrar la variante: Por favor revisa los campos requeridos marcados en rojo.');
+                ->with('error', 'Error al registrar la variante: ' . $firstError);
         } catch (\Throwable $e) {
+            if ($isJson) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error en base de datos: ' . $e->getMessage(),
+                ], 500);
+            }
             return redirect()->route('productos.index', ['tab' => 'variantes'])
                 ->withInput()
                 ->with('error', 'Error al registrar la variante: ' . $e->getMessage());
@@ -107,6 +132,8 @@ class VarianteSaltenaController extends Controller
                 'precio_venta' => str_replace(',', '.', (string)$request->precio_venta)
             ]);
         }
+
+        $isJson = $request->ajax() || $request->wantsJson();
 
         try {
             $request->validate([
@@ -132,8 +159,8 @@ class VarianteSaltenaController extends Controller
                     if (is_array($request->componentes)) {
                         foreach ($request->componentes as $comp) {
                             $tipo = $comp['tipo_componente'] ?? null;
-                            $insumoId = !empty($comp['insumo_id']) ? $comp['insumo_id'] : null;
-                            $preparacionId = !empty($comp['preparacion_id']) ? $comp['preparacion_id'] : null;
+                            $insumoId = !empty($comp['insumo_id']) ? (int)$comp['insumo_id'] : null;
+                            $preparacionId = !empty($comp['preparacion_id']) ? (int)$comp['preparacion_id'] : null;
                             $cantidadStr = !empty($comp['cantidad_usada']) ? str_replace(',', '.', (string)$comp['cantidad_usada']) : '0';
                             $cantidad = (float)$cantidadStr;
 
@@ -159,15 +186,37 @@ class VarianteSaltenaController extends Controller
                 }
             });
 
+            if ($isJson) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Variante de Salteña actualizada exitosamente.',
+                    'variante' => $var,
+                ], 200);
+            }
+
             return redirect()->route('productos.index', ['tab' => 'variantes'])
                 ->with('success', 'Variante de Salteña actualizada exitosamente.');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $firstError = collect($e->errors())->flatten()->first() ?? 'Error de validación.';
+            if ($isJson) {
+                return response()->json([
+                    'success' => false,
+                    'error' => $firstError,
+                    'errors' => $e->errors(),
+                ], 422);
+            }
             return redirect()->route('productos.index', ['tab' => 'variantes'])
                 ->withErrors($e->validator)
                 ->withInput()
-                ->with('error', 'Error al actualizar la variante: Por favor revisa los campos requeridos.');
+                ->with('error', 'Error al actualizar la variante: ' . $firstError);
         } catch (\Throwable $e) {
+            if ($isJson) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Error en base de datos: ' . $e->getMessage(),
+                ], 500);
+            }
             return redirect()->route('productos.index', ['tab' => 'variantes'])
                 ->withInput()
                 ->with('error', 'Error al actualizar la variante: ' . $e->getMessage());

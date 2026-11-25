@@ -332,7 +332,9 @@
                             <i class="fa-solid fa-plus-circle text-amber-500"></i> NUEVA VARIANTE DE SALTEÑA
                         </h2>
 
-                        <form action="{{ route('variantes.store') }}" method="POST" class="space-y-4">
+                        <div id="debugVarianteAlertBox" class="hidden mb-3"></div>
+
+                        <form id="formCrearVariante" action="{{ route('variantes.store') }}" method="POST" class="space-y-4">
                             <input type="hidden" name="tab" value="variantes">
                             @if ($errors->has('nombre') || $errors->has('precio_venta'))
                                 <div class="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-700 dark:text-rose-400 font-bold uppercase space-y-1">
@@ -602,21 +604,145 @@
 @endsection
 
 @section('scripts')
-    <!-- AlpineJS para el cambio dinámico de pestañas y componentes -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Depurador interactivo de consola para el registro y actualización de variantes -->
+
     <script>
-        document.addEventListener('submit', function (e) {
-            var form = e.target;
-            if (form.dataset.submitting === 'true') {
-                e.preventDefault();
-                return false;
+        (function () {
+            console.log('%c🥟 [SISTEMA SALTEÑAS] Módulo de Variantes y Productos Activo', 'background: #f59e0b; color: #020617; font-weight: bold; font-size: 12px; padding: 4px 8px; border-radius: 4px;');
+            console.log('ℹ️ Para inspeccionar la creación de variantes, mantén abierta esta consola (F12) al hacer clic en "GUARDAR VARIANTE".');
+
+            const formCrear = document.getElementById('formCrearVariante');
+            const alertBox = document.getElementById('debugVarianteAlertBox');
+
+            function mostrarAlerta(tipo, mensaje) {
+                if (!alertBox) return;
+                alertBox.classList.remove('hidden');
+                if (tipo === 'error') {
+                    alertBox.className = 'p-3 rounded-lg text-xs font-bold uppercase border bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800 space-y-1 mb-3';
+                    alertBox.innerHTML = '<div class="flex items-center gap-2"><i class="fa-solid fa-circle-exclamation text-base"></i> <span>' + mensaje + '</span></div>';
+                } else {
+                    alertBox.className = 'p-3 rounded-lg text-xs font-bold uppercase border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 flex items-center gap-2 mb-3';
+                    alertBox.innerHTML = '<i class="fa-solid fa-circle-check text-base"></i> <span>' + mensaje + '</span>';
+                }
             }
-            form.dataset.submitting = 'true';
-            var btn = form.querySelector('button[type="submit"]');
-            if (btn) {
-                btn.disabled = true;
-                btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            if (formCrear) {
+                formCrear.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const submitBtn = formCrear.querySelector('button[type="submit"]');
+                    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> ENVIANDO Y VERIFICANDO...';
+                    }
+
+                    console.group('%c🔍 [DEPURADOR VARIANTE] 1. Intercepción y Envío de Formulario', 'color: #d97706; font-size: 13px; font-weight: bold;');
+                    console.log('⏰ Timestamp:', new Date().toLocaleString());
+                    console.log('📍 Endpoint URL:', formCrear.action);
+                    console.log('📮 Método:', formCrear.method);
+
+                    // Inspección campo por campo y chequeo de nulos
+                    const formData = new FormData(formCrear);
+                    const camposObj = {};
+                    let camposObligatoriosFaltantes = false;
+
+                    console.group('📋 2. Inspección Detallada de Campos Enviados y Chequeo de Nulos:');
+                    for (const [clave, valor] of formData.entries()) {
+                        camposObj[clave] = valor;
+                        const esNuloOVacio = (valor === null || valor === undefined || (typeof valor === 'string' && valor.trim() === ''));
+                        if (esNuloOVacio) {
+                            console.warn(`⚠️ Campo "${clave}": VALOR NULO O VACÍO ("${valor}")`);
+                            if (clave === 'nombre' || clave === 'precio_venta') {
+                                camposObligatoriosFaltantes = true;
+                            }
+                        } else {
+                            console.log(`✅ Campo "${clave}":`, valor);
+                        }
+                    }
+                    console.table(camposObj);
+                    console.groupEnd();
+
+                    if (camposObligatoriosFaltantes) {
+                        console.error('❌ ADVERTENCIA: El nombre o precio_venta están vacíos. Laravel rechazará la petición con validación 422.');
+                    }
+
+                    console.log('📡 3. Enviando petición AJAX (Fetch con X-Requested-With / Accept: application/json)...');
+                    console.time('⏱️ Tiempo de Respuesta del Servidor');
+
+                    fetch(formCrear.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(async response => {
+                        console.timeEnd('⏱️ Tiempo de Respuesta del Servidor');
+                        console.group(`📬 4. Respuesta del Servidor — Código HTTP: ${response.status} (${response.statusText})`);
+
+                        let data = null;
+                        const cloneRes = response.clone();
+                        try {
+                            data = await response.json();
+                            console.log('📦 Payload JSON Recibido:', data);
+                        } catch (err) {
+                            const raw = await cloneRes.text();
+                            console.warn('⚠️ La respuesta no es JSON válido. Texto recibido:', raw.substring(0, 400));
+                        }
+                        console.groupEnd();
+
+                        if (response.ok && data && data.success) {
+                            console.log('%c🎉 ¡ÉXITO! Variante creada correctamente en base de datos.', 'color: #16a34a; font-weight: bold; font-size: 13px;');
+                            console.log('🥟 Variante Registrada:', data.variante);
+                            console.groupEnd();
+
+                            mostrarAlerta('success', data.message || 'Variante de Salteña guardada correctamente.');
+                            setTimeout(function () {
+                                window.location.href = '?tab=variantes';
+                            }, 800);
+                        } else {
+                            let mensajeError = 'Error al registrar la variante.';
+                            if (data) {
+                                if (data.error) {
+                                    mensajeError = data.error;
+                                } else if (data.errors) {
+                                    mensajeError = Object.values(data.errors).flat().join(' | ');
+                                }
+                            } else {
+                                mensajeError = 'Error del servidor (HTTP ' + response.status + '): ' + response.statusText;
+                            }
+
+                            console.error('%c❌ ERROR AL GUARDAR LA VARIANTE:', 'color: #dc2626; font-weight: bold; font-size: 13px;', mensajeError);
+                            if (data && data.errors) {
+                                console.table(data.errors);
+                            }
+                            console.groupEnd();
+
+                            mostrarAlerta('error', mensajeError);
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = originalBtnHtml;
+                            }
+                            formCrear.dataset.submitting = 'false';
+                        }
+                    })
+                    .catch(err => {
+                        console.timeEnd('⏱️ Tiempo de Respuesta del Servidor');
+                        console.error('🚨 Error de red o petición interrumpida:', err);
+                        console.groupEnd();
+
+                        mostrarAlerta('error', 'Error de red o conexión: ' + err.message);
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalBtnHtml;
+                        }
+                        formCrear.dataset.submitting = 'false';
+                    });
+                });
             }
-        });
+        })();
     </script>
 @endsection

@@ -29,6 +29,46 @@
         [x-cloak] {
             display: none !important;
         }
+
+        /* Barra de navegacion superior fija con fondo solido */
+        .top-navbar-fixed {
+            background-color: #ffffff !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+        .dark .top-navbar-fixed {
+            background-color: #0f172a !important;
+            border-bottom: 1px solid #1e293b !important;
+        }
+
+        /* Drawer Móvil superpuesto: fondo 100% solido y sin transparencias oscuras en modo claro */
+        .mobile-menu-drawer {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+        }
+        .dark .mobile-menu-drawer {
+            background-color: #020617 !important;
+            color: #f8fafc !important;
+        }
+        .mobile-item-btn {
+            background-color: transparent;
+            color: #1e293b !important;
+        }
+        .mobile-item-btn:hover {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+        }
+        .dark .mobile-item-btn {
+            background-color: transparent;
+            color: #cbd5e1 !important;
+        }
+        .dark .mobile-item-btn:hover {
+            background-color: #1e293b !important;
+            color: #ffffff !important;
+        }
+        .mobile-item-btn.is-active {
+            background-color: #f59e0b !important;
+            color: #020617 !important;
+        }
     </style>
 </head>
 
@@ -38,7 +78,7 @@
     <!-- Top Navigation Bar (Fixed with Superposed Mobile Menu) -->
     <nav x-data="{ mobileMenuOpen: false }"
         x-effect="document.body.style.overflow = mobileMenuOpen ? 'hidden' : ''"
-        class="fixed top-0 left-0 right-0 w-full z-[9999] bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 shadow-sm"
+        class="fixed top-0 left-0 right-0 w-full z-[9999] top-navbar-fixed shadow-sm"
         style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; width: 100% !important; z-index: 9999 !important;">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
@@ -166,10 +206,10 @@
                             </div>
                         </div>
 
-                        <button type="button" id="theme-toggle" title="Cambiar Modo Claro/Oscuro"
+                        <button type="button" id="theme-toggle" onclick="toggleTheme()" title="Cambiar Modo Claro/Oscuro"
                             class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-xs flex items-center gap-1">
-                            <i id="theme-toggle-dark-icon" class="fa-solid fa-moon hidden"></i>
-                            <i id="theme-toggle-light-icon" class="fa-solid fa-sun hidden"></i>
+                            <i class="theme-toggle-dark-icon fa-solid fa-moon"></i>
+                            <i class="theme-toggle-light-icon fa-solid fa-sun hidden"></i>
                         </button>
 
                         <form action="{{ route('logout') }}" method="POST" class="inline">
@@ -184,10 +224,11 @@
 
                 <!-- Right Side Actions on Mobile (Theme Toggle + Hamburger) -->
                 <div class="flex items-center gap-2 md:hidden">
-                    <button type="button" onclick="document.getElementById('theme-toggle').click()"
+                    <button type="button" onclick="toggleTheme()"
                         title="Cambiar Modo Claro/Oscuro"
                         class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-sm">
-                        <i class="fa-solid fa-circle-half-stroke"></i>
+                        <i class="theme-toggle-dark-icon fa-solid fa-moon"></i>
+                        <i class="theme-toggle-light-icon fa-solid fa-sun hidden"></i>
                     </button>
 
                     <!-- Dynamic Hamburger Toggle Button -->
@@ -211,7 +252,7 @@
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
             @click="mobileMenuOpen = false"
-            class="fixed inset-0 top-16 bg-slate-950/70 backdrop-blur-sm z-[9998] md:hidden"
+            class="fixed inset-0 top-16 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-sm z-[9998] md:hidden"
             style="position: fixed !important; top: 64px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100% !important; height: calc(100vh - 64px) !important; z-index: 9998 !important;"
             x-cloak></div>
 
@@ -223,12 +264,12 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
             x-transition:leave-end="opacity-0 -translate-y-4 scale-95"
-            class="fixed inset-x-0 top-16 bottom-0 z-[9999] md:hidden bg-white/98 dark:bg-slate-950/98 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-4 pt-3 pb-8 space-y-1.5 shadow-2xl overflow-y-auto"
+            class="fixed inset-x-0 top-16 bottom-0 z-[9999] md:hidden mobile-menu-drawer border-t border-slate-200 dark:border-slate-800 px-4 pt-3 pb-8 space-y-1.5 shadow-2xl overflow-y-auto"
             style="position: fixed !important; top: 64px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100% !important; height: calc(100vh - 64px) !important; z-index: 9999 !important;"
             x-cloak>
 
             <a href="{{ route('dashboard') }}" @click="mobileMenuOpen = false"
-                class="px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('dashboard') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                class="mobile-item-btn px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('dashboard') ? 'is-active bg-amber-500 text-slate-950 shadow-sm' : '' }}">
                 <span class="flex items-center gap-3"><i
                         class="fa-solid fa-chart-pie text-sm text-amber-600 dark:text-amber-400"></i> Inicio /
                     Dashboard</span>
@@ -236,14 +277,14 @@
             </a>
 
             <a href="{{ route('boveda.index') }}" @click="mobileMenuOpen = false"
-                class="px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('boveda.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                class="mobile-item-btn px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('boveda.*') ? 'is-active bg-amber-500 text-slate-950 shadow-sm' : '' }}">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-vault text-amber-500 text-sm"></i> Bóveda
                     Central</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
             </a>
 
             <a href="{{ route('cierres.index') }}" @click="mobileMenuOpen = false"
-                class="px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('cierres.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                class="mobile-item-btn px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('cierres.*') ? 'is-active bg-amber-500 text-slate-950 shadow-sm' : '' }}">
                 <span class="flex items-center gap-3">
                     <i class="fa-solid fa-calendar-check text-emerald-600 text-sm"></i> Cierre Diario
                     <span id="mobile-cierres-badge" class="{{ $cierreBadgeCount > 0 ? '' : 'hidden' }} ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-600 text-white">
@@ -254,42 +295,42 @@
             </a>
 
             <a href="{{ route('compras.index') }}" @click="mobileMenuOpen = false"
-                class="px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('compras.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                class="mobile-item-btn px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('compras.*') ? 'is-active bg-amber-500 text-slate-950 shadow-sm' : '' }}">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-cart-shopping text-cyan-600 text-sm"></i>
                     Compras & Precios</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
             </a>
 
             <a href="{{ route('carritos.index') }}" @click="mobileMenuOpen = false"
-                class="px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('carritos.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                class="mobile-item-btn px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('carritos.*') ? 'is-active bg-amber-500 text-slate-950 shadow-sm' : '' }}">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-store text-purple-600 text-sm"></i> Carritos
                     (Puntos de Venta)</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
             </a>
 
             <a href="{{ route('despachos.index') }}" @click="mobileMenuOpen = false"
-                class="px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('despachos.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                class="mobile-item-btn px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('despachos.*') ? 'is-active bg-amber-500 text-slate-950 shadow-sm' : '' }}">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-truck-fast text-orange-500 text-sm"></i>
                     Despachos Diarios</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
             </a>
 
             <a href="{{ route('productos.index') }}" @click="mobileMenuOpen = false"
-                class="px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('productos.*') || request()->routeIs('insumos.*') || request()->routeIs('preparaciones.*') || request()->routeIs('variantes.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                class="mobile-item-btn px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('productos.*') || request()->routeIs('insumos.*') || request()->routeIs('preparaciones.*') || request()->routeIs('variantes.*') ? 'is-active bg-amber-500 text-slate-950 shadow-sm' : '' }}">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-boxes-stacked text-amber-500 text-sm"></i>
                     Productos & Recetas</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
             </a>
 
             <a href="{{ route('promociones.index') }}" @click="mobileMenuOpen = false"
-                class="px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('promociones.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                class="mobile-item-btn px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('promociones.*') ? 'is-active bg-amber-500 text-slate-950 shadow-sm' : '' }}">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-tags text-indigo-600 text-sm"></i>
                     Promociones</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
             </a>
 
             <a href="{{ route('usuarios.index') }}" @click="mobileMenuOpen = false"
-                class="px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('usuarios.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                class="mobile-item-btn px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('usuarios.*') ? 'is-active bg-amber-500 text-slate-950 shadow-sm' : '' }}">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-users text-rose-500 text-sm"></i>
                     Usuarios</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
@@ -385,29 +426,24 @@
             }
         });
 
-        // Theme Toggle Logic
-        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
-        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
-
-        if (document.documentElement.classList.contains('dark')) {
-            themeToggleLightIcon.classList.remove('hidden');
-        } else {
-            themeToggleDarkIcon.classList.remove('hidden');
+        // Unified Theme Toggle Logic
+        function updateThemeIcons(isDark) {
+            document.querySelectorAll('.theme-toggle-dark-icon').forEach(function(el) {
+                el.classList.toggle('hidden', isDark);
+            });
+            document.querySelectorAll('.theme-toggle-light-icon').forEach(function(el) {
+                el.classList.toggle('hidden', !isDark);
+            });
         }
 
-        const themeToggleBtn = document.getElementById('theme-toggle');
-        themeToggleBtn.addEventListener('click', function () {
-            themeToggleDarkIcon.classList.toggle('hidden');
-            themeToggleLightIcon.classList.toggle('hidden');
+        window.toggleTheme = function() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeIcons(isDark);
+        };
 
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-            }
-        });
+        // Initialize theme icons
+        updateThemeIcons(document.documentElement.classList.contains('dark'));
 
         // Polling en tiempo real para notificar de nuevos cierres recibidos desde Carritos
         function verificarCierresPendientesCentral() {

@@ -72,6 +72,43 @@ class SchemaSyncService
         }
 
         try {
+            if (!Schema::hasTable('variantes_saltena')) {
+                Schema::create('variantes_saltena', function (Blueprint $table) {
+                    $table->id();
+                    $table->string('nombre');
+                    $table->decimal('precio_venta', 10, 2)->default(0);
+                    $table->boolean('activo')->default(true);
+                    $table->timestamps();
+                });
+            } else {
+                self::addColumnSafe('variantes_saltena', 'activo', function (Blueprint $table) {
+                    $table->boolean('activo')->default(true);
+                });
+                self::addColumnSafe('variantes_saltena', 'precio_venta', function (Blueprint $table) {
+                    $table->decimal('precio_venta', 10, 2)->default(0);
+                });
+            }
+        } catch (\Throwable $e) {
+            // Ignorar
+        }
+
+        try {
+            if (!Schema::hasTable('variante_receta')) {
+                Schema::create('variante_receta', function (Blueprint $table) {
+                    $table->id();
+                    $table->foreignId('variante_id')->constrained('variantes_saltena')->onDelete('cascade');
+                    $table->enum('tipo_componente', ['insumo', 'preparacion']);
+                    $table->foreignId('insumo_id')->nullable()->constrained('insumos')->onDelete('cascade');
+                    $table->foreignId('preparacion_id')->nullable()->constrained('preparaciones')->onDelete('cascade');
+                    $table->decimal('cantidad_usada', 10, 4)->default(0);
+                    $table->timestamps();
+                });
+            }
+        } catch (\Throwable $e) {
+            // Ignorar
+        }
+
+        try {
             if (!Schema::hasTable('carrito_turnos_vivos')) {
                 Schema::create('carrito_turnos_vivos', function (Blueprint $table) {
                     $table->id();
