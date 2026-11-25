@@ -35,18 +35,10 @@ class DespachoController extends Controller
             $query->whereDate('fecha', '<=', $fechaFin);
         }
 
-        // Totales de salteñas enviadas y aceptadas para la consulta actual
-        $despachoIds = (clone $query)->pluck('id');
-        $totalEnviadasGeneral = DespachoDetalle::whereIn('despacho_diario_id', $despachoIds)->sum('cantidad_enviada');
-        $totalAceptadasGeneral = DespachoDetalle::whereIn('despacho_diario_id', $despachoIds)->sum('cantidad_aceptada');
-
         $despachos = $query->paginate(15)->appends($request->all());
         $carritos = Carrito::where('activo', true)->orderBy('nombre')->get();
 
-        return view('despachos.index', compact(
-            'despachos', 'carritos', 'carritoId', 'fechaInicio', 'fechaFin',
-            'totalEnviadasGeneral', 'totalAceptadasGeneral'
-        ));
+        return view('despachos.index', compact('despachos', 'carritos', 'carritoId', 'fechaInicio', 'fechaFin'));
     }
 
     public function create()
@@ -79,7 +71,6 @@ class DespachoController extends Controller
             'detalles.*.cantidad_enviada' => 'required|integer|min:0',
         ]);
 
-        // Asegurar que la restricción unique esté eliminada de la base de datos para permitir múltiples despachos
         try {
             try {
                 DB::statement("CREATE INDEX `despachos_diarios_carrito_id_fk_idx` ON `despachos_diarios` (`carrito_id`)");
@@ -115,7 +106,7 @@ class DespachoController extends Controller
         });
 
         return redirect()->route('despachos.index')
-            ->with('success', 'Despacho de ' . $totalSaltenas . ' salteñas registrado exitosamente. El carrito podrá aceptarlo al abrir el POS.');
+            ->with('success', 'Despacho de ' . $totalSaltenas . ' salteñas registrado exitosamente.');
     }
 
     public function destroy($id)

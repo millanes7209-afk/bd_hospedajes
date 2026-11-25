@@ -16,19 +16,13 @@
                     <i class="fa-solid fa-truck-fast text-orange-500"></i> Nuevo Despacho
                 </h1>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Asigna el stock diario a un carrito. El POS lo verá al abrir el turno.
+                    Asigna el stock diario a un carrito.
                 </p>
             </div>
         </div>
 
-        {{-- Formulario con cálculo dinámico en tiempo real --}}
-        <form method="POST" action="{{ route('despachos.store') }}"
-            x-data="{
-                cantidades: [ {{ $variantes->map(fn($v, $i) => (int)old("detalles.$i.cantidad_enviada", 0))->implode(', ') }} ],
-                get total() {
-                    return this.cantidades.reduce((a, b) => (parseInt(a) || 0) + (parseInt(b) || 0), 0);
-                }
-            }"
+        {{-- Formulario con cálculo automático del total de salteñas --}}
+        <form method="POST" action="{{ route('despachos.store') }}" id="formDespacho"
             class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 space-y-6">
             @csrf
 
@@ -100,12 +94,11 @@
                                     </td>
                                     <td class="px-4 py-3">
                                         <input type="number" name="detalles[{{ $i }}][cantidad_enviada]" min="0"
-                                            x-model.number="cantidades[{{ $i }}]"
                                             value="{{ old("detalles.$i.cantidad_enviada", 0) }}"
                                             onfocus="this.select()"
                                             onclick="this.select()"
                                             placeholder="0"
-                                            class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm font-black text-center px-2 py-1.5 focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
+                                            class="saltena-qty-input w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm font-black text-center px-2 py-1.5 focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
                                     </td>
                                 </tr>
                             @empty
@@ -128,8 +121,8 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-3.5 text-center">
-                                        <div class="inline-flex items-baseline justify-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 shadow-sm font-black">
-                                            <span class="text-base" x-text="total">0</span>
+                                        <div class="inline-flex items-baseline justify-center gap-1 px-3.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 shadow-sm font-black">
+                                            <span id="totalSaltenasBadge" class="text-base">0</span>
                                             <span class="text-[10px] uppercase font-bold">uds</span>
                                         </div>
                                     </td>
@@ -144,6 +137,29 @@
                 </p>
             </div>
 
+            {{-- Resumen Total Acumulado --}}
+            <div class="p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/50 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-lg bg-amber-500 text-slate-950 font-black">
+                        <i class="fa-solid fa-boxes-packing text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-black uppercase text-amber-700 dark:text-amber-400 block tracking-widest">
+                            TOTAL ACUMULADO DE SALTEÑAS
+                        </span>
+                        <span class="text-xs text-slate-600 dark:text-slate-400 font-semibold">
+                            Suma de todos los tipos a despachar en este envío
+                        </span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span id="totalSaltenasBanner" class="text-3xl font-black text-amber-600 dark:text-amber-400">
+                        0
+                    </span>
+                    <span class="text-xs font-black text-slate-500 uppercase ml-1">uds.</span>
+                </div>
+            </div>
+
             {{-- Observaciones --}}
             <div>
                 <label class="block text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1.5">
@@ -155,24 +171,45 @@
             </div>
 
             {{-- Acciones --}}
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <div class="flex items-center gap-2 text-xs font-black uppercase">
-                    <span class="text-slate-400">Total Despachado:</span>
-                    <span class="px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 font-black"
-                        x-text="total + ' Salteñas'">0 Salteñas</span>
-                </div>
-                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-                    <a href="{{ route('despachos.index') }}"
-                        class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-black uppercase transition">
-                        Cancelar
-                    </a>
-                    <button type="submit"
-                        class="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase shadow-md shadow-amber-500/20 transition-all flex items-center gap-2">
-                        <i class="fa-solid fa-truck-fast"></i> Registrar Despacho
-                    </button>
-                </div>
+            <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <a href="{{ route('despachos.index') }}"
+                    class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-black uppercase transition">
+                    Cancelar
+                </a>
+                <button type="submit"
+                    class="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase shadow-md shadow-amber-500/20 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-truck-fast"></i> Registrar Despacho
+                </button>
             </div>
         </form>
 
     </div>
+
+    {{-- Script reactivo para calcular en tiempo real el total acumulado de salteñas --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            function recalcularTotalDespacho() {
+                let total = 0;
+                document.querySelectorAll('.saltena-qty-input').forEach(function (input) {
+                    const cant = parseInt(input.value) || 0;
+                    total += cant;
+                });
+
+                const badge = document.getElementById('totalSaltenasBadge');
+                const banner = document.getElementById('totalSaltenasBanner');
+
+                if (badge) badge.textContent = total;
+                if (banner) banner.textContent = total;
+            }
+
+            document.querySelectorAll('.saltena-qty-input').forEach(function (input) {
+                input.addEventListener('input', recalcularTotalDespacho);
+                input.addEventListener('change', recalcularTotalDespacho);
+                input.addEventListener('keyup', recalcularTotalDespacho);
+            });
+
+            // Cálculo inicial
+            recalcularTotalDespacho();
+        });
+    </script>
 @endsection
