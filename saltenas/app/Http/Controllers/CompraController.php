@@ -75,13 +75,13 @@ class CompraController extends Controller
             'proveedor' => 'nullable|string|max:100',
             'comprobante_nro' => 'nullable|string|max:50',
             'items' => 'required|array|min:1',
-            'items.*.cantidad' => 'required|numeric|min:0.01',
+            'items.*.cantidad' => 'required|numeric|min:0.001',
             'items.*.precio_unitario' => 'required|numeric|min:0.01',
             'observaciones' => 'nullable|string',
         ], [
             'items.required' => 'Debes agregar al menos un insumo a la compra.',
             'items.*.cantidad.required' => 'La cantidad es obligatoria en todos los ítems.',
-            'items.*.cantidad.min' => 'La cantidad debe ser mayor a 0.',
+            'items.*.cantidad.min' => 'La cantidad o peso debe ser mayor a 0.',
             'items.*.precio_unitario.required' => 'El precio unitario es obligatorio.',
             'items.*.precio_unitario.min' => 'El precio unitario debe ser mayor a 0.',
         ]);

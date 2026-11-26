@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class SchemaSyncService
@@ -31,11 +32,21 @@ class SchemaSyncService
 
         if (Schema::hasTable('insumos')) {
             self::addColumnSafe('insumos', 'stock_actual', function (Blueprint $table) {
-                $table->decimal('stock_actual', 10, 2)->default(0);
+                $table->decimal('stock_actual', 12, 3)->default(0);
             });
             self::addColumnSafe('insumos', 'stock_minimo', function (Blueprint $table) {
-                $table->decimal('stock_minimo', 10, 2)->default(0);
+                $table->decimal('stock_minimo', 12, 3)->default(0);
             });
+            try {
+                DB::statement("ALTER TABLE insumos MODIFY COLUMN stock_actual DECIMAL(12, 3) NOT NULL DEFAULT 0.000");
+                DB::statement("ALTER TABLE insumos MODIFY COLUMN stock_minimo DECIMAL(12, 3) NOT NULL DEFAULT 0.000");
+            } catch (\Throwable $e) {}
+        }
+
+        if (Schema::hasTable('compra_detalle')) {
+            try {
+                DB::statement("ALTER TABLE compra_detalle MODIFY COLUMN cantidad DECIMAL(12, 3) NOT NULL DEFAULT 0.000");
+            } catch (\Throwable $e) {}
         }
 
         if (Schema::hasTable('compras')) {

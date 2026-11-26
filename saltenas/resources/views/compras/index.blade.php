@@ -103,7 +103,7 @@
                         </div>
 
                         <!-- Barra de Ingreso Directo de Insumos (Estilo Carrito) -->
-                        <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-cyan-500/30 dark:border-cyan-500/20 space-y-2.5 shadow-xs">
+                        <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-cyan-500/30 dark:border-cyan-500/20 space-y-3 shadow-xs">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs font-black uppercase text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
                                     <i class="fa-solid fa-cart-arrow-down"></i> AGREGAR INSUMO AL CARRITO
@@ -122,16 +122,14 @@
                                     <input type="text" id="input-insumo-nombre" list="datalist-insumos" x-model="inputItem.nombre"
                                         @input="onInputNombreChange()" @change="onInputNombreChange()"
                                         @keydown.enter.prevent="agregarItem()"
-                                        placeholder="Escribe el insumo (ej. Harina, Pollo)..."
+                                        placeholder="Escribe el insumo (ej. Harina, Queso)..."
                                         class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
                                 </div>
 
-                                <!-- Unidad de Medida:
-                                     Si existe -> detecta la unidad automáticamente
-                                     Si NO existe -> select para que elija -->
+                                <!-- Medida (Unidad de Medida del Insumo) -->
                                 <div class="sm:col-span-2">
                                     <label class="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
-                                        UNIDAD <span class="text-amber-500">*</span>
+                                        MEDIDA <span class="text-amber-500">*</span>
                                     </label>
                                     <template x-if="!inputItem.es_nuevo && inputItem.insumo_id">
                                         <div class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-black text-amber-600 dark:text-amber-400 text-center uppercase">
@@ -139,14 +137,14 @@
                                         </div>
                                     </template>
                                     <template x-if="inputItem.es_nuevo || !inputItem.insumo_id">
-                                        <select x-model="inputItem.unidad_medida"
+                                        <select x-model="inputItem.unidad_medida" @change="onUnidadMedidaChange()"
                                             class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
-                                            <option value="kg">KG</option>
-                                            <option value="g">G</option>
+                                            <option value="kg">KG (KILOGRAMO)</option>
+                                            <option value="g">G (GRAMO)</option>
                                             <option value="quintal">QUINTAL</option>
                                             <option value="libra">LIBRA</option>
                                             <option value="litro">LITRO</option>
-                                            <option value="ml">ML</option>
+                                            <option value="ml">ML (MILILITRO)</option>
                                             <option value="taza">TAZA</option>
                                             <option value="unidad">UNIDAD</option>
                                             <option value="docena">DOCENA</option>
@@ -159,20 +157,53 @@
                                     </template>
                                 </div>
 
-                                <!-- Cantidad -->
+                                <!-- Cantidad / Peso con Switch de sub-unidad (KG vs Gramos, Litro vs ML) -->
                                 <div class="sm:col-span-2">
-                                    <label class="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
-                                        CANTIDAD <span class="text-amber-500">*</span>
-                                    </label>
-                                    <input type="number" step="any" min="0.01" x-model="inputItem.cantidad"
-                                        @keydown.enter.prevent="agregarItem()" placeholder="1.00"
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">
+                                            <span x-text="getCantidadLabel()"></span> <span class="text-amber-500">*</span>
+                                        </label>
+                                        <!-- Selector de modo Kg vs Gramos si la medida base es KG -->
+                                        <template x-if="inputItem.unidad_medida === 'kg'">
+                                            <div class="inline-flex rounded-md p-0.5 bg-slate-200 dark:bg-slate-800 text-[9px] font-black uppercase">
+                                                <button type="button" @click="setUnitMode('kg')"
+                                                    :class="inputItem.input_mode === 'kg' ? 'bg-cyan-600 text-white shadow-2xs' : 'text-slate-600 dark:text-slate-400 hover:text-cyan-500'"
+                                                    class="px-1.5 py-0.5 rounded transition-all">
+                                                    KG
+                                                </button>
+                                                <button type="button" @click="setUnitMode('g')"
+                                                    :class="inputItem.input_mode === 'g' ? 'bg-cyan-600 text-white shadow-2xs' : 'text-slate-600 dark:text-slate-400 hover:text-cyan-500'"
+                                                    class="px-1.5 py-0.5 rounded transition-all">
+                                                    GRAMOS
+                                                </button>
+                                            </div>
+                                        </template>
+                                        <!-- Selector de modo Litro vs ML si la medida base es LITRO -->
+                                        <template x-if="inputItem.unidad_medida === 'litro'">
+                                            <div class="inline-flex rounded-md p-0.5 bg-slate-200 dark:bg-slate-800 text-[9px] font-black uppercase">
+                                                <button type="button" @click="setUnitMode('litro')"
+                                                    :class="inputItem.input_mode === 'litro' ? 'bg-cyan-600 text-white shadow-2xs' : 'text-slate-600 dark:text-slate-400 hover:text-cyan-500'"
+                                                    class="px-1.5 py-0.5 rounded transition-all">
+                                                    L
+                                                </button>
+                                                <button type="button" @click="setUnitMode('ml')"
+                                                    :class="inputItem.input_mode === 'ml' ? 'bg-cyan-600 text-white shadow-2xs' : 'text-slate-600 dark:text-slate-400 hover:text-cyan-500'"
+                                                    class="px-1.5 py-0.5 rounded transition-all">
+                                                    ML
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    <input type="number" step="any" min="0.001" x-model="inputItem.raw_cantidad"
+                                        @keydown.enter.prevent="agregarItem()"
+                                        :placeholder="getCantidadPlaceholder()"
                                         class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
                                 </div>
 
-                                <!-- Precio Unitario -->
+                                <!-- Precio en la Medida Base -->
                                 <div class="sm:col-span-2">
                                     <label class="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
-                                        P. UNIT (BS.) <span class="text-amber-500">*</span>
+                                        <span x-text="getPrecioLabel()"></span> <span class="text-amber-500">*</span>
                                     </label>
                                     <input type="number" step="any" min="0.01" x-model="inputItem.precio_unitario"
                                         @keydown.enter.prevent="agregarItem()" placeholder="0.00"
@@ -189,17 +220,104 @@
                                 </div>
                             </div>
 
+                            <!-- Atajos Rápidos de Peso / Fracciones para agilizar la compra -->
+                            <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                <template x-if="inputItem.unidad_medida === 'kg'">
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <span class="text-[9px] font-black uppercase text-slate-400 mr-1">⚖️ Atajos de Peso:</span>
+                                        <button type="button" @click="setQuickWeight('0.25', '250')"
+                                            class="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase transition-all shadow-2xs">
+                                            ¼ Kg (250g)
+                                        </button>
+                                        <button type="button" @click="setQuickWeight('0.5', '500')"
+                                            class="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase transition-all shadow-2xs">
+                                            ½ Kg (500g)
+                                        </button>
+                                        <button type="button" @click="setQuickWeight('0.75', '750')"
+                                            class="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase transition-all shadow-2xs">
+                                            ¾ Kg (750g)
+                                        </button>
+                                        <button type="button" @click="setQuickWeight('1', '1000')"
+                                            class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-[10px] font-black uppercase transition-all shadow-2xs">
+                                            1 Kg
+                                        </button>
+                                        <button type="button" @click="setQuickWeight('2', '2000')"
+                                            class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-[10px] font-black uppercase transition-all shadow-2xs">
+                                            2 Kg
+                                        </button>
+                                    </div>
+                                </template>
+                                <template x-if="inputItem.unidad_medida === 'litro'">
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <span class="text-[9px] font-black uppercase text-slate-400 mr-1">🥤 Atajos de Volumen:</span>
+                                        <button type="button" @click="setQuickVolume('0.25', '250')"
+                                            class="px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/50 border border-purple-300 dark:border-purple-700 hover:bg-purple-100 text-purple-700 dark:text-purple-300 text-[10px] font-black uppercase transition-all shadow-2xs">
+                                            ¼ Litro (250ml)
+                                        </button>
+                                        <button type="button" @click="setQuickVolume('0.5', '500')"
+                                            class="px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/50 border border-purple-300 dark:border-purple-700 hover:bg-purple-100 text-purple-700 dark:text-purple-300 text-[10px] font-black uppercase transition-all shadow-2xs">
+                                            ½ Litro (500ml)
+                                        </button>
+                                        <button type="button" @click="setQuickVolume('0.75', '750')"
+                                            class="px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/50 border border-purple-300 dark:border-purple-700 hover:bg-purple-100 text-purple-700 dark:text-purple-300 text-[10px] font-black uppercase transition-all shadow-2xs">
+                                            ¾ Litro (750ml)
+                                        </button>
+                                        <button type="button" @click="setQuickVolume('1', '1000')"
+                                            class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-[10px] font-black uppercase transition-all shadow-2xs">
+                                            1 Litro
+                                        </button>
+                                    </div>
+                                </template>
+                                <template x-if="inputItem.unidad_medida === 'docena'">
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <span class="text-[9px] font-black uppercase text-slate-400 mr-1">🥚 Atajos de Docena:</span>
+                                        <button type="button" @click="setQuickDocena('0.5')"
+                                            class="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase transition-all shadow-2xs">
+                                            ½ Docena (6 un.)
+                                        </button>
+                                        <button type="button" @click="setQuickDocena('1')"
+                                            class="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase transition-all shadow-2xs">
+                                            1 Docena (12 un.)
+                                        </button>
+                                        <button type="button" @click="setQuickDocena('2')"
+                                            class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-[10px] font-black uppercase transition-all shadow-2xs">
+                                            2 Docenas (24 un.)
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Explicación en Tiempo Real y Cálculo del Subtotal -->
+                            <div class="p-2.5 rounded-lg border flex flex-wrap items-center justify-between gap-2 text-xs transition-all"
+                                :class="isLargeKgWarning ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200' : 'bg-cyan-50 dark:bg-cyan-950/30 border-cyan-200 dark:border-cyan-800/60 text-slate-800 dark:text-slate-200'">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base" x-text="isLargeKgWarning ? '⚠️' : '💡'"></span>
+                                    <div class="font-bold">
+                                        <span x-html="conversionMessage"></span>
+                                        <template x-if="isLargeKgWarning">
+                                            <button type="button" @click="fixLargeKgToGrams()"
+                                                class="ml-2 px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-500 text-white font-black text-[10px] uppercase shadow-xs">
+                                                Convertir a <span x-text="inputItem.raw_cantidad"></span> gramos (0.<span x-text="inputItem.raw_cantidad"></span> Kg)
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="font-black text-rose-600 dark:text-rose-400 uppercase text-xs">
+                                    Subtotal: Bs. <span x-text="computedSubtotal">0.00</span>
+                                </div>
+                            </div>
+
                             <!-- Feedback de detección y error -->
                             <div class="flex items-center justify-between text-[10px]">
                                 <div>
                                     <template x-if="inputItem.insumo_id && !inputItem.es_nuevo">
                                         <span class="font-extrabold text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1">
-                                            <i class="fa-solid fa-circle-check"></i> Insumo Registrado (Unidad detectada: <span x-text="inputItem.unidad_medida.toUpperCase()"></span>)
+                                            <i class="fa-solid fa-circle-check"></i> Insumo Registrado (Medida: <span x-text="inputItem.unidad_medida.toUpperCase()"></span>)
                                         </span>
                                     </template>
                                     <template x-if="inputItem.es_nuevo && inputItem.nombre.trim().length > 0">
                                         <span class="font-extrabold text-cyan-600 dark:text-cyan-400 uppercase flex items-center gap-1">
-                                            <i class="fa-solid fa-circle-plus"></i> Insumo Nuevo (Elige su unidad en el selector)
+                                            <i class="fa-solid fa-circle-plus"></i> Insumo Nuevo (Elige su medida en el selector)
                                         </span>
                                     </template>
                                 </div>
@@ -229,9 +347,9 @@
                                     <thead>
                                         <tr class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">
                                             <th class="py-2.5 px-3">INSUMO</th>
-                                            <th class="py-2.5 px-3 text-center">UNIDAD</th>
-                                            <th class="py-2.5 px-3 text-center">CANTIDAD</th>
-                                            <th class="py-2.5 px-3 text-right">PRECIO UNIT.</th>
+                                            <th class="py-2.5 px-3 text-center">MEDIDA</th>
+                                            <th class="py-2.5 px-3 text-center">CANTIDAD / PESO</th>
+                                            <th class="py-2.5 px-3 text-right">PRECIO BASE</th>
                                             <th class="py-2.5 px-3 text-right">SUBTOTAL</th>
                                             <th class="py-2.5 px-2 text-center">QUITAR</th>
                                         </tr>
@@ -262,15 +380,33 @@
                                                 </td>
 
                                                 <td class="py-2.5 px-3 text-center">
-                                                    <input type="number" step="any" min="0.01" :name="'items[' + idx + '][cantidad]'"
-                                                        x-model="row.cantidad" @input="calcSubtotal(idx)"
-                                                        class="w-20 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs font-bold text-center text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none">
+                                                    <div class="inline-flex items-center justify-center gap-1">
+                                                        <input type="number" step="any" min="0.001" :name="'items[' + idx + '][cantidad]'"
+                                                            x-model="row.cantidad" @input="calcSubtotal(idx)"
+                                                            class="w-24 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs font-black text-center text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none">
+                                                        <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase" x-text="row.unidad_medida"></span>
+                                                    </div>
+                                                    <template x-if="getDetailNote(row)">
+                                                        <div class="text-[10px] font-black text-cyan-600 dark:text-cyan-400 mt-1 uppercase"
+                                                            x-text="getDetailNote(row)"></div>
+                                                    </template>
+                                                    <template x-if="row.unidad_medida === 'kg' && parseFloat(row.cantidad) >= 50">
+                                                        <div class="text-[9px] font-black text-rose-500 mt-0.5 uppercase">
+                                                            ⚠️ ¿Pusiste Kilos o Gramos?
+                                                        </div>
+                                                    </template>
                                                 </td>
 
                                                 <td class="py-2.5 px-3 text-right">
-                                                    <input type="number" step="any" min="0.01" :name="'items[' + idx + '][precio_unitario]'"
-                                                        x-model="row.precio_unitario" @input="calcSubtotal(idx)"
-                                                        class="w-24 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs font-bold text-right text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none">
+                                                    <div class="inline-flex items-center justify-end gap-1">
+                                                        <span class="text-[10px] text-slate-400 font-bold">Bs.</span>
+                                                        <input type="number" step="any" min="0.01" :name="'items[' + idx + '][precio_unitario]'"
+                                                            x-model="row.precio_unitario" @input="calcSubtotal(idx)"
+                                                            class="w-24 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs font-bold text-right text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none">
+                                                    </div>
+                                                    <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 block text-right uppercase mt-0.5">
+                                                        x <span x-text="row.unidad_medida.toUpperCase()"></span>
+                                                    </span>
                                                 </td>
 
                                                 <td class="py-2.5 px-3 text-right font-black text-rose-600 dark:text-rose-400">
@@ -346,7 +482,13 @@
                                 <div class="text-right">
                                     @if($stock > 0)
                                         <span class="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-black text-[11px] uppercase">
-                                            {{ number_format($stock, 2) }} {{ strtoupper($ins->unidad_medida) }}
+                                            @if(strtolower($ins->unidad_medida) === 'kg' && $stock < 1)
+                                                {{ round($stock * 1000) }} g ({{ number_format($stock, 2) }} KG)
+                                            @elseif(strtolower($ins->unidad_medida) === 'litro' && $stock < 1)
+                                                {{ round($stock * 1000) }} ml ({{ number_format($stock, 2) }} L)
+                                            @else
+                                                {{ (float)$stock == (int)$stock ? number_format($stock, 0) : number_format($stock, 2) }} {{ strtoupper($ins->unidad_medida) }}
+                                            @endif
                                         </span>
                                     @else
                                         <span class="px-2.5 py-1 rounded-full bg-rose-100 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 font-bold text-[10px] uppercase">
@@ -418,10 +560,22 @@
                                 <td class="py-3 px-4">
                                     <div class="space-y-1">
                                         @foreach($c->detalles as $det)
+                                            @php
+                                                $detCant = (float)$det->cantidad;
+                                                $detUnid = strtolower($det->insumo->unidad_medida ?? 'unidad');
+                                            @endphp
                                             <div class="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase flex items-center gap-1">
                                                 <span class="text-cyan-500">•</span>
                                                 <span>{{ strtoupper($det->insumo->nombre ?? 'INSUMO') }}:</span>
-                                                <span class="text-slate-900 dark:text-white">{{ number_format($det->cantidad, 2) }} {{ strtoupper($det->insumo->unidad_medida ?? '') }}</span>
+                                                <span class="text-slate-900 dark:text-white">
+                                                    @if($detUnid === 'kg' && $detCant < 1)
+                                                        {{ round($detCant * 1000) }} g ({{ number_format($detCant, 2) }} Kg)
+                                                    @elseif($detUnid === 'litro' && $detCant < 1)
+                                                        {{ round($detCant * 1000) }} ml ({{ number_format($detCant, 2) }} L)
+                                                    @else
+                                                        {{ (float)$detCant == (int)$detCant ? number_format($detCant, 0) : number_format($detCant, 2) }} {{ strtoupper($detUnid) }}
+                                                    @endif
+                                                </span>
                                                 <span class="text-slate-400 text-[10px]">x Bs. {{ number_format($det->precio_unitario, 2) }}</span>
                                             </div>
                                         @endforeach
@@ -475,9 +629,199 @@
                 insumo_id: '',
                 nombre: '',
                 unidad_medida: 'kg',
-                cantidad: '1',
+                input_mode: 'kg',
+                raw_cantidad: '1',
                 precio_unitario: '',
                 es_nuevo: false
+            },
+
+            // Cantidad numérica real en la unidad base (ej: 250 g -> 0.25 kg)
+            get computedBaseCantidad() {
+                const raw = parseFloat(this.inputItem.raw_cantidad) || 0;
+                if (raw <= 0) return 0;
+                if (this.inputItem.unidad_medida === 'kg' && this.inputItem.input_mode === 'g') {
+                    return parseFloat((raw / 1000).toFixed(4));
+                }
+                if (this.inputItem.unidad_medida === 'litro' && this.inputItem.input_mode === 'ml') {
+                    return parseFloat((raw / 1000).toFixed(4));
+                }
+                return raw;
+            },
+
+            // Subtotal dinámico del ítem que se está agregando
+            get computedSubtotal() {
+                const cant = this.computedBaseCantidad;
+                const prec = parseFloat(this.inputItem.precio_unitario) || 0;
+                return (cant * prec).toFixed(2);
+            },
+
+            // Alerta si el usuario puso >= 50 en modo KG (probablemente quiso decir gramos)
+            get isLargeKgWarning() {
+                if (this.inputItem.unidad_medida === 'kg' && this.inputItem.input_mode === 'kg') {
+                    const raw = parseFloat(this.inputItem.raw_cantidad) || 0;
+                    return raw >= 50;
+                }
+                return false;
+            },
+
+            fixLargeKgToGrams() {
+                this.inputItem.input_mode = 'g';
+            },
+
+            getCantidadLabel() {
+                const u = (this.inputItem.unidad_medida || '').toLowerCase();
+                if (u === 'kg' || u === 'g' || u === 'libra' || u === 'quintal') {
+                    return 'PESO';
+                }
+                if (u === 'litro' || u === 'ml') {
+                    return 'VOLUMEN';
+                }
+                return 'CANTIDAD';
+            },
+
+            getCantidadPlaceholder() {
+                const u = (this.inputItem.unidad_medida || '').toLowerCase();
+                if (u === 'kg') {
+                    return this.inputItem.input_mode === 'g' ? 'Ej. 250 (g)' : 'Ej. 0.25 ó 1 (Kg)';
+                }
+                if (u === 'litro') {
+                    return this.inputItem.input_mode === 'ml' ? 'Ej. 500 (ml)' : 'Ej. 0.5 ó 1 (L)';
+                }
+                return '1.00';
+            },
+
+            getPrecioLabel() {
+                const u = (this.inputItem.unidad_medida || '').toLowerCase();
+                if (u === 'kg') return 'PRECIO X KG (BS.)';
+                if (u === 'g') return 'PRECIO X G (BS.)';
+                if (u === 'litro') return 'PRECIO X LITRO (BS.)';
+                if (u === 'ml') return 'PRECIO X ML (BS.)';
+                if (u === 'docena') return 'PRECIO X DOCENA (BS.)';
+                if (u === 'quintal') return 'PRECIO X QUINTAL (BS.)';
+                if (u === 'libra') return 'PRECIO X LIBRA (BS.)';
+                return 'PRECIO UNIT. (BS.)';
+            },
+
+            get conversionMessage() {
+                const u = (this.inputItem.unidad_medida || '').toLowerCase();
+                const raw = parseFloat(this.inputItem.raw_cantidad) || 0;
+                const baseCant = this.computedBaseCantidad;
+
+                if (this.isLargeKgWarning) {
+                    return `Has ingresado <strong>${raw} Kilogramos (${raw} Kilos)</strong>. Si compraste ${raw} gramos (0.${raw} Kg), pulsa:`;
+                }
+
+                if (u === 'kg') {
+                    if (this.inputItem.input_mode === 'g') {
+                        let desc = '';
+                        if (raw === 250) desc = ' (Un cuarto de kilo)';
+                        else if (raw === 500) desc = ' (Medio kilo)';
+                        else if (raw === 750) desc = ' (Tres cuartos de kilo)';
+                        else if (raw === 1000) desc = ' (Un kilo)';
+                        return `<strong>${raw} gramos</strong>${desc} = <span class="text-cyan-700 dark:text-cyan-300 font-black">${baseCant} KG</span>. Se sumarán <strong>${baseCant} KG</strong> a almacén.`;
+                    } else {
+                        let desc = '';
+                        if (raw === 0.25) desc = ' = 250 gramos (Un cuarto de kilo)';
+                        else if (raw === 0.5) desc = ' = 500 gramos (Medio kilo)';
+                        else if (raw === 0.75) desc = ' = 750 gramos (Tres cuartos de kilo)';
+                        else if (raw === 1) desc = ' = 1000 gramos (Un kilo)';
+                        else if (raw < 1 && raw > 0) desc = ` = ${Math.round(raw * 1000)} gramos`;
+                        return `<strong>${raw} KG</strong>${desc}. Se sumarán <strong>${baseCant} KG</strong> a almacén.`;
+                    }
+                }
+
+                if (u === 'litro') {
+                    if (this.inputItem.input_mode === 'ml') {
+                        let desc = '';
+                        if (raw === 250) desc = ' (Un cuarto de litro)';
+                        else if (raw === 500) desc = ' (Medio litro)';
+                        else if (raw === 750) desc = ' (Tres cuartos de litro)';
+                        else if (raw === 1000) desc = ' (Un litro)';
+                        return `<strong>${raw} ml</strong>${desc} = <span class="text-cyan-700 dark:text-cyan-300 font-black">${baseCant} Litro</span>. Se sumarán <strong>${baseCant} L</strong> a almacén.`;
+                    } else {
+                        let desc = '';
+                        if (raw === 0.25) desc = ' = 250 ml (Un cuarto de litro)';
+                        else if (raw === 0.5) desc = ' = 500 ml (Medio litro)';
+                        else if (raw === 0.75) desc = ' = 750 ml (Tres cuartos de litro)';
+                        else if (raw === 1) desc = ' = 1 Litro';
+                        else if (raw < 1 && raw > 0) desc = ` = ${Math.round(raw * 1000)} ml`;
+                        return `<strong>${raw} Litros</strong>${desc}. Se sumarán <strong>${baseCant} L</strong> a almacén.`;
+                    }
+                }
+
+                if (u === 'docena') {
+                    if (raw === 0.5) return `<strong>0.5 docena</strong> = <span class="text-cyan-700 dark:text-cyan-300 font-black">6 unidades</span> (Media docena).`;
+                    if (raw === 1) return `<strong>1 docena</strong> = <span class="text-cyan-700 dark:text-cyan-300 font-black">12 unidades</span>.`;
+                    if (raw > 0) return `<strong>${raw} docenas</strong> = <span class="text-cyan-700 dark:text-cyan-300 font-black">${Math.round(raw * 12)} unidades</span>.`;
+                }
+
+                return `Cantidad: <strong>${baseCant} ${u.toUpperCase()}</strong>.`;
+            },
+
+            getDetailNote(row) {
+                const u = (row.unidad_medida || '').toLowerCase();
+                const num = parseFloat(row.cantidad) || 0;
+                if (u === 'kg') {
+                    if (num === 0.25) return '⚖️ 250 gramos (¼ Kg)';
+                    if (num === 0.5) return '⚖️ 500 gramos (½ Kg)';
+                    if (num === 0.75) return '⚖️ 750 gramos (¾ Kg)';
+                    if (num > 0 && num < 1) return `⚖️ ${Math.round(num * 1000)} gramos`;
+                    if (num >= 1 && num % 1 !== 0) return `⚖️ ${Math.floor(num)} Kg y ${Math.round((num % 1) * 1000)}g`;
+                    if (num >= 1) return `⚖️ ${num} Kg`;
+                }
+                if (u === 'litro') {
+                    if (num === 0.25) return '🥤 250 ml (¼ Litro)';
+                    if (num === 0.5) return '🥤 500 ml (½ Litro)';
+                    if (num === 0.75) return '🥤 750 ml (¾ Litro)';
+                    if (num > 0 && num < 1) return `🥤 ${Math.round(num * 1000)} ml`;
+                    if (num >= 1 && num % 1 !== 0) return `🥤 ${Math.floor(num)} L y ${Math.round((num % 1) * 1000)} ml`;
+                    if (num >= 1) return `🥤 ${num} Litros`;
+                }
+                if (u === 'docena') {
+                    if (num === 0.5) return '🥚 6 unidades (½ docena)';
+                    if (num === 1) return '🥚 12 unidades (1 docena)';
+                    if (num > 0) return `🥚 ${Math.round(num * 12)} unidades`;
+                }
+                return '';
+            },
+
+            setUnitMode(mode) {
+                if (this.inputItem.input_mode === mode) return;
+                const currentRaw = parseFloat(this.inputItem.raw_cantidad) || 0;
+                if (this.inputItem.unidad_medida === 'kg') {
+                    if (mode === 'g' && this.inputItem.input_mode === 'kg') {
+                        this.inputItem.raw_cantidad = currentRaw > 0 ? (currentRaw * 1000).toString() : '250';
+                    } else if (mode === 'kg' && this.inputItem.input_mode === 'g') {
+                        this.inputItem.raw_cantidad = currentRaw > 0 ? (currentRaw / 1000).toString() : '1';
+                    }
+                } else if (this.inputItem.unidad_medida === 'litro') {
+                    if (mode === 'ml' && this.inputItem.input_mode === 'litro') {
+                        this.inputItem.raw_cantidad = currentRaw > 0 ? (currentRaw * 1000).toString() : '500';
+                    } else if (mode === 'litro' && this.inputItem.input_mode === 'ml') {
+                        this.inputItem.raw_cantidad = currentRaw > 0 ? (currentRaw / 1000).toString() : '1';
+                    }
+                }
+                this.inputItem.input_mode = mode;
+            },
+
+            setQuickWeight(kgVal, gVal) {
+                if (this.inputItem.input_mode === 'g') {
+                    this.inputItem.raw_cantidad = gVal;
+                } else {
+                    this.inputItem.raw_cantidad = kgVal;
+                }
+            },
+
+            setQuickVolume(litroVal, mlVal) {
+                if (this.inputItem.input_mode === 'ml') {
+                    this.inputItem.raw_cantidad = mlVal;
+                } else {
+                    this.inputItem.raw_cantidad = litroVal;
+                }
+            },
+
+            setQuickDocena(val) {
+                this.inputItem.raw_cantidad = val.toString();
             },
 
             onInputNombreChange() {
@@ -486,6 +830,7 @@
                 if (!val) {
                     this.inputItem.insumo_id = '';
                     this.inputItem.unidad_medida = 'kg';
+                    this.inputItem.input_mode = 'kg';
                     this.inputItem.es_nuevo = false;
                     return;
                 }
@@ -493,7 +838,11 @@
                 if (match) {
                     this.inputItem.insumo_id = match.id;
                     this.inputItem.nombre = match.nombre;
+                    const prevUnidad = this.inputItem.unidad_medida;
                     this.inputItem.unidad_medida = match.unidad_medida.toLowerCase();
+                    if (prevUnidad !== this.inputItem.unidad_medida) {
+                        this.inputItem.input_mode = this.inputItem.unidad_medida === 'kg' ? 'kg' : (this.inputItem.unidad_medida === 'litro' ? 'litro' : 'unidad');
+                    }
                     this.inputItem.es_nuevo = false;
                     if (!this.inputItem.precio_unitario && match.ultimo_precio > 0) {
                         this.inputItem.precio_unitario = match.ultimo_precio;
@@ -503,15 +852,20 @@
                     this.inputItem.es_nuevo = true;
                     if (!this.inputItem.unidad_medida) {
                         this.inputItem.unidad_medida = 'kg';
+                        this.inputItem.input_mode = 'kg';
                     }
                 }
             },
 
+            onUnidadMedidaChange() {
+                this.inputItem.input_mode = this.inputItem.unidad_medida === 'kg' ? 'kg' : (this.inputItem.unidad_medida === 'litro' ? 'litro' : 'unidad');
+            },
+
             agregarItem() {
                 const nom = (this.inputItem.nombre || '').trim();
-                const cant = parseFloat(this.inputItem.cantidad) || 0;
-                const prec = parseFloat(this.inputItem.precio_unitario) || 0;
-                const unid = (this.inputItem.unidad_medida || '').trim();
+                const cantBase = this.computedBaseCantidad;
+                const precBase = parseFloat(this.inputItem.precio_unitario) || 0;
+                const unid = (this.inputItem.unidad_medida || '').toLowerCase().trim();
 
                 if (!nom) {
                     this.inputError = 'Escribe el nombre del insumo.';
@@ -519,25 +873,25 @@
                     return;
                 }
                 if (!unid) {
-                    this.inputError = 'Selecciona la unidad de medida.';
+                    this.inputError = 'Selecciona la unidad o medida.';
                     return;
                 }
-                if (cant <= 0) {
-                    this.inputError = 'La cantidad debe ser mayor a 0.';
+                if (cantBase <= 0) {
+                    this.inputError = 'El peso o cantidad debe ser mayor a 0.';
                     return;
                 }
-                if (prec <= 0) {
-                    this.inputError = 'El precio unitario debe ser mayor a 0.';
+                if (precBase <= 0) {
+                    this.inputError = 'El precio debe ser mayor a 0.';
                     return;
                 }
 
-                const subtotal = (cant * prec).toFixed(2);
+                const subtotal = (cantBase * precBase).toFixed(2);
                 this.rows.push({
                     insumo_id: this.inputItem.insumo_id,
                     nombre: nom,
                     unidad_medida: unid,
-                    cantidad: cant,
-                    precio_unitario: prec,
+                    cantidad: cantBase,
+                    precio_unitario: precBase,
                     subtotal: subtotal,
                     es_nuevo: this.inputItem.es_nuevo
                 });
@@ -547,7 +901,8 @@
                     insumo_id: '',
                     nombre: '',
                     unidad_medida: 'kg',
-                    cantidad: '1',
+                    input_mode: 'kg',
+                    raw_cantidad: '1',
                     precio_unitario: '',
                     es_nuevo: false
                 };

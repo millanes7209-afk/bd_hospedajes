@@ -20,7 +20,7 @@ class CompraDetalle extends Model
     ];
 
     protected $casts = [
-        'cantidad' => 'decimal:2',
+        'cantidad' => 'decimal:3',
         'precio_unitario' => 'decimal:2',
         'subtotal' => 'decimal:2',
     ];
