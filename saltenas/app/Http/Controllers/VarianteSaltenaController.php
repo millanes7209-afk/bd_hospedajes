@@ -16,7 +16,12 @@ class VarianteSaltenaController extends Controller
     {
         SchemaSyncService::ensureUpdatedColumns();
 
-        $variantes = VarianteSaltena::with(['recetas.insumo', 'recetas.preparacion', 'promociones'])->orderBy('nombre')->get();
+        $variantes = VarianteSaltena::with([
+            'recetas.insumo.preciosHistorial',
+            'recetas.preparacion.receta.insumo.preciosHistorial',
+            'promociones'
+        ])->orderBy('nombre')->get();
+
         $insumos = Insumo::orderBy('nombre')->get();
         $preparaciones = Preparacion::orderBy('nombre')->get();
 
@@ -27,7 +32,6 @@ class VarianteSaltenaController extends Controller
     {
         SchemaSyncService::ensureUpdatedColumns();
 
-        // Normalizar coma por punto en caso de decimales con coma (ej. 8,50 -> 8.50)
         if ($request->has('precio_venta')) {
             $request->merge([
                 'precio_venta' => str_replace(',', '.', (string)$request->precio_venta)
@@ -42,8 +46,8 @@ class VarianteSaltenaController extends Controller
                 'precio_venta' => 'required|numeric|min:0.01',
                 'componentes' => 'nullable|array',
             ], [
-                'nombre.required' => 'El nombre de la variante es obligatorio.',
-                'precio_venta.required' => 'El precio de venta es obligatorio.',
+                'nombre.required' => 'El nombre de la salteña es obligatorio.',
+                'precio_venta.required' => 'El precio de venta al público es obligatorio.',
                 'precio_venta.numeric' => 'El precio de venta debe ser un número válido (ej. 8.00).',
                 'precio_venta.min' => 'El precio de venta debe ser mayor a 0.',
             ]);
@@ -64,8 +68,11 @@ class VarianteSaltenaController extends Controller
                         $cantidadStr = !empty($comp['cantidad_usada']) ? str_replace(',', '.', (string)$comp['cantidad_usada']) : '0';
                         $cantidad = (float)$cantidadStr;
 
-                        // Solo guardar si se seleccionó un insumo o preparación válido con cantidad > 0
-                        if ($tipo === 'insumo' && $insumoId && $cantidad > 0) {
+                        if ($cantidad <= 0) {
+                            continue;
+                        }
+
+                        if ($tipo === 'insumo' && $insumoId) {
                             VarianteReceta::create([
                                 'variante_id' => $createdVar->id,
                                 'tipo_componente' => 'insumo',
@@ -73,7 +80,7 @@ class VarianteSaltenaController extends Controller
                                 'preparacion_id' => null,
                                 'cantidad_usada' => $cantidad,
                             ]);
-                        } elseif ($tipo === 'preparacion' && $preparacionId && $cantidad > 0) {
+                        } elseif ($tipo === 'preparacion' && $preparacionId) {
                             VarianteReceta::create([
                                 'variante_id' => $createdVar->id,
                                 'tipo_componente' => 'preparacion',
@@ -90,7 +97,10 @@ class VarianteSaltenaController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Variante de Salteña creada exitosamente.',
-                    'variante' => $createdVar,
+                    'variante' => $createdVar->fresh()->load([
+                        'recetas.insumo.preciosHistorial',
+                        'recetas.preparacion.receta.insumo.preciosHistorial'
+                    ]),
                 ], 200);
             }
 
@@ -164,7 +174,11 @@ class VarianteSaltenaController extends Controller
                             $cantidadStr = !empty($comp['cantidad_usada']) ? str_replace(',', '.', (string)$comp['cantidad_usada']) : '0';
                             $cantidad = (float)$cantidadStr;
 
-                            if ($tipo === 'insumo' && $insumoId && $cantidad > 0) {
+                            if ($cantidad <= 0) {
+                                continue;
+                            }
+
+                            if ($tipo === 'insumo' && $insumoId) {
                                 VarianteReceta::create([
                                     'variante_id' => $var->id,
                                     'tipo_componente' => 'insumo',
@@ -172,7 +186,7 @@ class VarianteSaltenaController extends Controller
                                     'preparacion_id' => null,
                                     'cantidad_usada' => $cantidad,
                                 ]);
-                            } elseif ($tipo === 'preparacion' && $preparacionId && $cantidad > 0) {
+                            } elseif ($tipo === 'preparacion' && $preparacionId) {
                                 VarianteReceta::create([
                                     'variante_id' => $var->id,
                                     'tipo_componente' => 'preparacion',
@@ -190,7 +204,10 @@ class VarianteSaltenaController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Variante de Salteña actualizada exitosamente.',
-                    'variante' => $var,
+                    'variante' => $var->fresh()->load([
+                        'recetas.insumo.preciosHistorial',
+                        'recetas.preparacion.receta.insumo.preciosHistorial'
+                    ]),
                 ], 200);
             }
 
@@ -220,6 +237,41 @@ class VarianteSaltenaController extends Controller
             return redirect()->route('productos.index', ['tab' => 'variantes'])
                 ->withInput()
                 ->with('error', 'Error al actualizar la variante: ' . $e->getMessage());
+        }
+    }
+
+    public function destroy($id)
+    {
+        SchemaSyncService::ensureUpdatedColumns();
+
+        try {
+            $var = VarianteSaltena::findOrFail($id);
+            $nombre = $var->nombre;
+            $var->delete();
+
+            return redirect()->route('productos.index', ['tab' => 'variantes'])
+                ->with('success', "Variante '{$nombre}' eliminada correctamente.");
+        } catch (\Throwable $e) {
+            return redirect()->route('productos.index', ['tab' => 'variantes'])
+                ->with('error', 'Error al eliminar la variante: ' . $e->getMessage());
+        }
+    }
+
+    public function toggle($id)
+    {
+        SchemaSyncService::ensureUpdatedColumns();
+
+        try {
+            $var = VarianteSaltena::findOrFail($id);
+            $var->activo = !$var->activo;
+            $var->save();
+
+            $estado = $var->activo ? 'activada' : 'desactivada';
+            return redirect()->route('productos.index', ['tab' => 'variantes'])
+                ->with('success', "Variante '{$var->nombre}' {$estado} correctamente.");
+        } catch (\Throwable $e) {
+            return redirect()->route('productos.index', ['tab' => 'variantes'])
+                ->with('error', 'Error al cambiar estado de variante: ' . $e->getMessage());
         }
     }
 }

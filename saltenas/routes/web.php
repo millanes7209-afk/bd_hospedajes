@@ -49,18 +49,22 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/insumos/{id}', [InsumoController::class, 'update'])->name('insumos.update');
     Route::delete('/insumos/{id}', [InsumoController::class, 'destroy'])->name('insumos.destroy');
 
-    // Preparaciones Intermedias (Masa)
+    // Preparaciones Intermedias (Masa / Rinde)
     Route::get('/preparaciones', function () {
         return redirect()->route('productos.index', ['tab' => 'preparaciones']);
     })->name('preparaciones.index');
     Route::post('/preparaciones', [PreparacionController::class, 'store'])->name('preparaciones.store');
+    Route::put('/preparaciones/{id}', [PreparacionController::class, 'update'])->name('preparaciones.update');
+    Route::delete('/preparaciones/{id}', [PreparacionController::class, 'destroy'])->name('preparaciones.destroy');
 
-    // Variantes de Salteña & Receta
+    // Variantes de Salteña & Receta (Costeo Dinámico)
     Route::get('/variantes', function () {
         return redirect()->route('productos.index', ['tab' => 'variantes']);
     })->name('variantes.index');
     Route::post('/variantes', [VarianteSaltenaController::class, 'store'])->name('variantes.store');
     Route::put('/variantes/{id}', [VarianteSaltenaController::class, 'update'])->name('variantes.update');
+    Route::delete('/variantes/{id}', [VarianteSaltenaController::class, 'destroy'])->name('variantes.destroy');
+    Route::post('/variantes/{id}/toggle', [VarianteSaltenaController::class, 'toggle'])->name('variantes.toggle');
 
     // Promociones Explícitas (Combos 3x10Bs)
     Route::get('/promociones', [PromocionController::class, 'index'])->name('promociones.index');
@@ -102,7 +106,7 @@ Route::middleware(['auth'])->group(function () {
         ]);
     })->name('notificaciones.pendientes');
 
-    // Despachos Diarios (Central → Carritos)
+    // Despachos Diarios (Central -> Carritos)
     Route::get('/despachos', [DespachoController::class, 'index'])->name('despachos.index');
     Route::get('/despachos/crear', [DespachoController::class, 'create'])->name('despachos.create');
     Route::post('/despachos', [DespachoController::class, 'store'])->name('despachos.store');

@@ -25,19 +25,72 @@ class Preparacion extends Model
         return $this->hasMany(PreparacionReceta::class, 'preparacion_id');
     }
 
-    public function costoEnFecha($fecha)
+    /**
+     * Costo total del lote completo (ej. toda la tanda de masa preparada)
+     */
+    public function costoTotalLote($fecha = null): float
     {
-        $costoTotalLote = 0;
+        $costoTotal = 0;
 
         foreach ($this->receta as $item) {
-            $precioInsumo = $item->insumo ? $item->insumo->precioEnFecha($fecha) : 0;
-            $costoTotalLote += ($item->cantidad_usada * $precioInsumo);
+            if ($item->insumo) {
+                $precio = $fecha ? $item->insumo->precioEnFecha($fecha) : $item->insumo->ultimo_precio;
+                $costoTotal += ((float)$item->cantidad_usada * $precio);
+            }
         }
 
-        if ($this->rinde_cantidad > 0) {
-            return $costoTotalLote / $this->rinde_cantidad;
+        return (float)$costoTotal;
+    }
+
+    /**
+     * Costo unitario por salteña / porción (costo del lote / rinde_cantidad)
+     */
+    public function costoEnFecha($fecha = null): float
+    {
+        $rinde = (float)$this->rinde_cantidad;
+        if ($rinde <= 0) {
+            return 0.00;
         }
 
-        return 0;
+        return (float)($this->costoTotalLote($fecha) / $rinde);
+    }
+
+    /**
+     * Atributo conveniente para obtener el costo unitario actual
+     */
+    public function getCostoUnitarioAttribute(): float
+    {
+        return $this->costoEnFecha();
+    }
+
+    /**
+     * Desglose detallado de los insumos y costos que componen la preparación
+     */
+    public function desgloseCostos($fecha = null): array
+    {
+        $totalLote = $this->costoTotalLote($fecha);
+        $rinde = (float)$this->rinde_cantidad > 0 ? (float)$this->rinde_cantidad : 1;
+        $desglose = [];
+
+        foreach ($this->receta as $item) {
+            if (!$item->insumo) continue;
+            $precioUnit = $fecha ? $item->insumo->precioEnFecha($fecha) : $item->insumo->ultimo_precio;
+            $subtotalLote = (float)$item->cantidad_usada * $precioUnit;
+            $costoPorSaltena = $subtotalLote / $rinde;
+            $porcentaje = $totalLote > 0 ? ($subtotalLote / $totalLote) * 100 : 0;
+
+            $desglose[] = [
+                'insumo_id' => $item->insumo->id,
+                'nombre' => $item->insumo->nombre,
+                'unidad' => $item->insumo->unidad_medida,
+                'cantidad_lote' => (float)$item->cantidad_usada,
+                'precio_compra' => (float)$precioUnit,
+                'subtotal_lote' => (float)$subtotalLote,
+                'costo_por_saltena' => (float)$costoPorSaltena,
+                'porcentaje_lote' => round($porcentaje, 1),
+            ];
+        }
+
+        return $desglose;
     }
 }
