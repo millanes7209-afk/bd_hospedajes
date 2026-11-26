@@ -12,8 +12,8 @@
             </h1>
         </div>
 
-        <!-- KPI Cards: Métricas Rápidas -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <!-- KPI Cards: Métricas Rápidas (Compras de Hoy y del Mes Lado a Lado) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-sm flex items-center justify-between">
                 <div>
                     <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest block mb-1">
@@ -39,20 +39,6 @@
                 </div>
                 <div class="p-3 bg-cyan-50 dark:bg-cyan-500/10 rounded-xl text-cyan-600 dark:text-cyan-400">
                     <i class="fa-solid fa-receipt text-xl"></i>
-                </div>
-            </div>
-
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-sm flex items-center justify-between">
-                <div>
-                    <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest block mb-1">
-                        📦 INSUMOS REGISTRADOS
-                    </span>
-                    <span class="text-2xl font-black text-amber-600 dark:text-amber-400 tracking-tight">
-                        {{ $insumos->count() }} TIPOS
-                    </span>
-                </div>
-                <div class="p-3 bg-amber-50 dark:bg-amber-500/10 rounded-xl text-amber-600 dark:text-amber-400">
-                    <i class="fa-solid fa-dolly text-xl"></i>
                 </div>
             </div>
         </div>
