@@ -384,12 +384,7 @@
     function compraForm() {
         return {
             metodoPago: 'efectivo',
-            insumosList: @json($insumos->map(fn($i) => [
-                'id' => $i->id,
-                'nombre' => $i->nombre,
-                'unidad_medida' => $i->unidad_medida,
-                'ultimo_precio' => (float)$i->ultimo_precio
-            ])),
+            insumosList: {!! json_encode($insumosList ?? []) !!},
             rows: [
                 { insumo_id: '', nombre: '', cantidad: 1, precio_unitario: '', subtotal: '0.00', unidad: '', es_nuevo: false }
             ],

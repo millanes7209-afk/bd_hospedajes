@@ -39,7 +39,16 @@ class CompraController extends Controller
         $totalComprasHoy = Compra::whereDate('fecha', now()->toDateString())
             ->sum('monto_total');
 
-        return view('compras.index', compact('compras', 'insumos', 'totalComprasMes', 'totalComprasHoy'));
+        $insumosList = $insumos->map(function ($i) {
+            return [
+                'id' => $i->id,
+                'nombre' => $i->nombre,
+                'unidad_medida' => $i->unidad_medida,
+                'ultimo_precio' => (float)$i->ultimo_precio,
+            ];
+        })->values();
+
+        return view('compras.index', compact('compras', 'insumos', 'insumosList', 'totalComprasMes', 'totalComprasHoy'));
     }
 
     public function store(Request $request)
