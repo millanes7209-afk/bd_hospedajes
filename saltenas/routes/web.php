@@ -41,11 +41,13 @@ Route::middleware(['auth'])->group(function () {
     // Catálogo Unificado: Productos & Recetas (Variantes, Preparaciones, Insumos)
     Route::get('/productos', [\App\Http\Controllers\ProductoController::class, 'index'])->name('productos.index');
 
-    // Insumos
+    // Insumos (CRUD Completo)
     Route::get('/insumos', function () {
         return redirect()->route('productos.index', ['tab' => 'insumos']);
     })->name('insumos.index');
     Route::post('/insumos', [InsumoController::class, 'store'])->name('insumos.store');
+    Route::put('/insumos/{id}', [InsumoController::class, 'update'])->name('insumos.update');
+    Route::delete('/insumos/{id}', [InsumoController::class, 'destroy'])->name('insumos.destroy');
 
     // Preparaciones Intermedias (Masa)
     Route::get('/preparaciones', function () {

@@ -46,20 +46,39 @@ class CompraController extends Controller
     {
         SchemaSyncService::ensureUpdatedColumns();
 
+        // Normalizar comas por puntos en cantidades y precios
+        if ($request->has('items') && is_array($request->items)) {
+            $items = $request->items;
+            foreach ($items as $k => $item) {
+                if (isset($item['cantidad'])) {
+                    $items[$k]['cantidad'] = str_replace(',', '.', (string)$item['cantidad']);
+                }
+                if (isset($item['precio_unitario'])) {
+                    $items[$k]['precio_unitario'] = str_replace(',', '.', (string)$item['precio_unitario']);
+                }
+            }
+            $request->merge(['items' => $items]);
+        }
+
         $request->validate([
             'fecha' => 'required|date',
             'metodo_pago' => 'required|in:efectivo,qr',
             'proveedor' => 'nullable|string|max:100',
             'comprobante_nro' => 'nullable|string|max:50',
             'items' => 'required|array|min:1',
-            'items.*.insumo_id' => 'required|exists:insumos,id',
             'items.*.cantidad' => 'required|numeric|min:0.01',
             'items.*.precio_unitario' => 'required|numeric|min:0.01',
             'observaciones' => 'nullable|string',
+        ], [
+            'items.required' => 'Debes agregar al menos un insumo a la compra.',
+            'items.*.cantidad.required' => 'La cantidad es obligatoria en todos los ítems.',
+            'items.*.cantidad.min' => 'La cantidad debe ser mayor a 0.',
+            'items.*.precio_unitario.required' => 'El precio unitario es obligatorio.',
+            'items.*.precio_unitario.min' => 'El precio unitario debe ser mayor a 0.',
         ]);
 
         $this->compraService->registrarCompra($request->all());
 
-        return redirect()->route('compras.index')->with('success', 'Compra registrada exitosamente. El stock de insumos y el egreso en Bóveda (' . strtoupper($request->metodo_pago) . ') se actualizaron correctamente.');
+        return redirect()->route('compras.index')->with('success', 'Compra registrada exitosamente en ' . strtoupper($request->metodo_pago) . ' y stock actualizado.');
     }
 }

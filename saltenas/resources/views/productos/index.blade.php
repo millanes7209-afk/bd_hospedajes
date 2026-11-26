@@ -86,6 +86,13 @@
                                 </select>
                             </div>
 
+                            <div>
+                                <label
+                                    class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">STOCK INICIAL EN ALMACÉN (OPCIONAL)</label>
+                                <input type="number" step="any" min="0" name="stock_actual" placeholder="0.00"
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:border-amber-500 focus:outline-none uppercase">
+                            </div>
+
                             <button type="submit"
                                 class="w-full py-2 px-4 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-save"></i> GUARDAR INSUMO
@@ -95,64 +102,137 @@
                 </div>
 
                 <!-- Lista Insumos (Col 7) -->
-                <div class="lg:col-span-7">
+                <div class="lg:col-span-7" x-data="{ editingInsumoId: null }">
                     <div
                         class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
-                        <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800">
+                        <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                             <h2
                                 class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
                                 <i class="fa-solid fa-boxes-stacked text-amber-500"></i> CATÁLOGO DE INSUMOS
                             </h2>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">{{ $insumos->count() }} REGISTRADOS</span>
                         </div>
 
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr
-                                    class="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">
-                                    <th class="py-2.5 px-4">NOMBRE</th>
-                                    <th class="py-2.5 px-4">UNIDAD MEDIDA</th>
-                                    <th class="py-2.5 px-4 text-center">STOCK EN ALMACÉN</th>
-                                    <th class="py-2.5 px-4 text-right">ÚLTIMO PRECIO</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
-                                @forelse($insumos as $ins)
-                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                                        <td class="py-2.5 px-4 font-bold text-slate-900 dark:text-white uppercase">📦
-                                            {{ strtoupper($ins->nombre) }}
-                                        </td>
-                                        <td class="py-2.5 px-4 font-bold text-amber-600 dark:text-amber-400 uppercase">
-                                            {{ strtoupper($ins->unidad_medida) }}
-                                        </td>
-                                        <td class="py-2.5 px-4 text-center">
-                                            @php $stk = (float)($ins->stock_actual ?? 0); @endphp
-                                            @if($stk > 0)
-                                                <span class="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-black text-[10px] uppercase">
-                                                    {{ number_format($stk, 2) }} {{ strtoupper($ins->unidad_medida) }}
-                                                </span>
-                                            @else
-                                                <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold text-[10px] uppercase">
-                                                    0.00
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td class="py-2.5 px-4 text-right font-black text-slate-700 dark:text-slate-300">
-                                            @php $up = (float)($ins->ultimo_precio ?? 0); @endphp
-                                            @if($up > 0)
-                                                Bs. {{ number_format($up, 2) }}
-                                            @else
-                                                <span class="text-slate-400 font-normal">Sin compras</span>
-                                            @endif
-                                        </td>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr
+                                        class="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">
+                                        <th class="py-2.5 px-4">NOMBRE</th>
+                                        <th class="py-2.5 px-3">UNIDAD</th>
+                                        <th class="py-2.5 px-3 text-center">STOCK ACTUAL</th>
+                                        <th class="py-2.5 px-3 text-right">ÚLTIMO PRECIO</th>
+                                        <th class="py-2.5 px-4 text-center">ACCIONES</th>
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="4" class="py-8 text-center text-slate-400 font-bold uppercase">NO HAY
-                                            INSUMOS REGISTRADOS AÚN.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                                    @forelse($insumos as $ins)
+                                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                            <td class="py-2.5 px-4 font-bold text-slate-900 dark:text-white uppercase">
+                                                📦 {{ strtoupper($ins->nombre) }}
+                                            </td>
+                                            <td class="py-2.5 px-3 font-bold text-amber-600 dark:text-amber-400 uppercase">
+                                                {{ strtoupper($ins->unidad_medida) }}
+                                            </td>
+                                            <td class="py-2.5 px-3 text-center">
+                                                @php $stk = (float)($ins->stock_actual ?? 0); @endphp
+                                                @if($stk > 0)
+                                                    <span class="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-black text-[10px] uppercase">
+                                                        {{ number_format($stk, 2) }} {{ strtoupper($ins->unidad_medida) }}
+                                                    </span>
+                                                @else
+                                                    <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold text-[10px] uppercase">
+                                                        0.00
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="py-2.5 px-3 text-right font-black text-slate-700 dark:text-slate-300">
+                                                @php $up = (float)($ins->ultimo_precio ?? 0); @endphp
+                                                @if($up > 0)
+                                                    Bs. {{ number_format($up, 2) }}
+                                                @else
+                                                    <span class="text-slate-400 font-normal">Sin compras</span>
+                                                @endif
+                                            </td>
+                                            <td class="py-2.5 px-4 text-center">
+                                                <div class="flex items-center justify-center gap-1.5">
+                                                    <button type="button" @click="editingInsumoId = (editingInsumoId === {{ $ins->id }} ? null : {{ $ins->id }})"
+                                                        class="px-2 py-1 rounded bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/80 text-amber-700 dark:text-amber-400 font-black text-[10px] uppercase transition-all flex items-center gap-1"
+                                                        title="Editar Insumo">
+                                                        <i class="fa-solid fa-pen-to-square"></i> EDITAR
+                                                    </button>
+                                                    <form action="{{ route('insumos.destroy', $ins->id) }}" method="POST" class="inline"
+                                                        onsubmit="return confirm('¿Seguro que deseas eliminar el insumo {{ strtoupper($ins->nombre) }}?')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit"
+                                                            class="px-2 py-1 rounded bg-rose-100 hover:bg-rose-200 dark:bg-rose-950/60 dark:hover:bg-rose-900/80 text-rose-700 dark:text-rose-400 font-black text-[10px] uppercase transition-all flex items-center gap-1"
+                                                            title="Eliminar Insumo">
+                                                            <i class="fa-solid fa-trash-can"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Fila de Edición de Insumo -->
+                                        <tr x-show="editingInsumoId === {{ $ins->id }}" class="bg-amber-50/70 dark:bg-amber-950/30 border-y border-amber-200 dark:border-amber-800" x-cloak>
+                                            <td colspan="5" class="p-3">
+                                                <form action="{{ route('insumos.update', $ins->id) }}" method="POST" class="space-y-3">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <input type="hidden" name="tab" value="insumos">
+                                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                        <div>
+                                                            <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">NOMBRE INSUMO</label>
+                                                            <input type="text" name="nombre" value="{{ $ins->nombre }}" required
+                                                                class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-amber-500 focus:outline-none">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">UNIDAD MEDIDA</label>
+                                                            <select name="unidad_medida" required
+                                                                class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase focus:border-amber-500 focus:outline-none">
+                                                                <option value="kg" {{ strtolower($ins->unidad_medida) === 'kg' ? 'selected' : '' }}>KG — KILOGRAMO</option>
+                                                                <option value="g" {{ strtolower($ins->unidad_medida) === 'g' ? 'selected' : '' }}>G — GRAMO</option>
+                                                                <option value="quintal" {{ strtolower($ins->unidad_medida) === 'quintal' ? 'selected' : '' }}>QUINTAL (46 KG)</option>
+                                                                <option value="libra" {{ strtolower($ins->unidad_medida) === 'libra' ? 'selected' : '' }}>LIBRA (500 G)</option>
+                                                                <option value="litro" {{ strtolower($ins->unidad_medida) === 'litro' ? 'selected' : '' }}>LITRO</option>
+                                                                <option value="ml" {{ strtolower($ins->unidad_medida) === 'ml' ? 'selected' : '' }}>ML — MILILITRO</option>
+                                                                <option value="unidad" {{ strtolower($ins->unidad_medida) === 'unidad' ? 'selected' : '' }}>UNIDAD</option>
+                                                                <option value="docena" {{ strtolower($ins->unidad_medida) === 'docena' ? 'selected' : '' }}>DOCENA</option>
+                                                                <option value="paquete" {{ strtolower($ins->unidad_medida) === 'paquete' ? 'selected' : '' }}>PAQUETE</option>
+                                                                <option value="caja" {{ strtolower($ins->unidad_medida) === 'caja' ? 'selected' : '' }}>CAJA</option>
+                                                                <option value="bolsa" {{ strtolower($ins->unidad_medida) === 'bolsa' ? 'selected' : '' }}>BOLSA</option>
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">STOCK EN ALMACÉN</label>
+                                                            <input type="number" step="any" min="0" name="stock_actual" value="{{ (float)$ins->stock_actual }}" required
+                                                                class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-amber-500 focus:outline-none">
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex justify-end gap-2">
+                                                        <button type="button" @click="editingInsumoId = null"
+                                                            class="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold uppercase transition-all">
+                                                            CANCELAR
+                                                        </button>
+                                                        <button type="submit"
+                                                            class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase transition-all shadow-sm flex items-center gap-1.5">
+                                                            <i class="fa-solid fa-save"></i> GUARDAR CAMBIOS
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="py-8 text-center text-slate-400 font-bold uppercase">NO HAY
+                                                INSUMOS REGISTRADOS AÚN.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
