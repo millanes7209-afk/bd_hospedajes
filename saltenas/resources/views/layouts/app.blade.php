@@ -297,7 +297,7 @@
             <a href="{{ route('compras.index') }}" @click="mobileMenuOpen = false"
                 class="mobile-item-btn px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('compras.*') ? 'is-active bg-amber-500 text-slate-950 shadow-sm' : '' }}">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-cart-shopping text-cyan-600 text-sm"></i>
-                    Compras & Precios</span>
+                    Compras</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
             </a>
 

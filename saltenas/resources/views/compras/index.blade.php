@@ -1,20 +1,15 @@
 @extends('layouts.app')
 
-@section('title', 'COMPRAS & STOCK DE INSUMOS — SALTEÑAS')
+@section('title', 'COMPRAS — SALTEÑAS')
 
 @section('content')
-    <div class="space-y-6">
+    <div class="space-y-6" x-data="compraForm()">
 
-        <!-- Header Principal -->
+        <!-- Header Principal: Solo COMPRAS -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-xl shadow-sm">
-            <div>
-                <h1 class="text-xl font-black text-slate-900 dark:text-white uppercase flex items-center gap-2">
-                    <i class="fa-solid fa-cart-shopping text-cyan-600 dark:text-cyan-400"></i> COMPRAS & STOCK DE INSUMOS
-                </h1>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 uppercase">
-                    REGISTRO DE COMPRAS DE MATERIA PRIMA E INSUMOS CON CONTROL DE STOCK Y FORMA DE PAGO (EFECTIVO O QR).
-                </p>
-            </div>
+            <h1 class="text-xl font-black text-slate-900 dark:text-white uppercase flex items-center gap-2">
+                <i class="fa-solid fa-cart-shopping text-cyan-600 dark:text-cyan-400"></i> COMPRAS
+            </h1>
         </div>
 
         <!-- KPI Cards: Métricas Rápidas -->
@@ -66,10 +61,9 @@
 
             <!-- Formulario Registrar Compra (Col 8) -->
             <div class="lg:col-span-8">
-                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4 shadow-sm"
-                    x-data="compraForm()">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4 shadow-sm">
                     <h2 class="text-xs font-black text-slate-900 dark:text-cyan-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                        <i class="fa-solid fa-cart-plus text-cyan-500"></i> REGISTRAR NUEVA COMPRA
+                        <i class="fa-solid fa-cart-plus text-cyan-500"></i> REGISTRAR COMPRA
                     </h2>
 
                     <form action="{{ route('compras.store') }}" method="POST" class="space-y-4">
@@ -108,111 +102,103 @@
                             </div>
                         </div>
 
-                        <!-- Tabla Dinámica Multi-Ítems de Insumos con Autocompletado -->
+                        <!-- Sección de Ítems / Insumos Agregados -->
                         <div class="space-y-3 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
                             <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
                                 <div>
                                     <span class="text-xs font-black uppercase text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
-                                        <i class="fa-solid fa-list-ol"></i> ÍTEMS DE LA COMPRA
-                                    </span>
-                                    <span class="text-[10px] text-slate-400 uppercase block font-semibold">
-                                        Escribe el nombre: si ya existe se autocompleta para evitar duplicados.
+                                        <i class="fa-solid fa-list-check"></i> INSUMOS A COMPRAR (<span x-text="rows.length"></span>)
                                     </span>
                                 </div>
-                                <button type="button" @click="addRow()"
+                                <button type="button" @click="abrirModalInsumo()"
                                     class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 shadow-sm">
                                     <i class="fa-solid fa-plus-circle"></i> AGREGAR INSUMO
                                 </button>
                             </div>
 
-                            <!-- Datalist compartido para autocompletar insumos -->
-                            <datalist id="datalist-insumos">
-                                @foreach($insumos as $ins)
-                                    <option value="{{ $ins->nombre }}">{{ $ins->nombre }} ({{ strtoupper($ins->unidad_medida) }})</option>
-                                @endforeach
-                            </datalist>
+                            <!-- Estado Vacío: Sin Ítems todavía -->
+                            <div x-show="rows.length === 0" class="py-8 text-center space-y-3">
+                                <div class="text-3xl">🛒</div>
+                                <p class="text-xs font-bold text-slate-400 uppercase">
+                                    NO HAY INSUMOS AGREGADOS A ESTA COMPRA TODAVÍA.
+                                </p>
+                                <button type="button" @click="abrirModalInsumo()"
+                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black uppercase transition-all shadow-sm">
+                                    <i class="fa-solid fa-plus-circle"></i> + AGREGAR PRIMER INSUMO
+                                </button>
+                            </div>
 
-                            <div class="space-y-3 pt-1">
-                                <template x-for="(row, idx) in rows" :key="idx">
-                                    <div class="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center gap-3 shadow-xs">
-                                        <!-- Campo Nombre del Insumo con Autocompletado -->
-                                        <div class="w-full md:w-5/12">
-                                            <div class="flex items-center justify-between mb-0.5">
-                                                <label class="block text-[9px] font-black text-slate-500 uppercase">
-                                                    INSUMO <span class="text-amber-500">*</span>
-                                                </label>
-                                                <span x-show="row.insumo_id && !row.es_nuevo" class="text-[9px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase">
-                                                    ✓ REGISTRADO
-                                                </span>
-                                                <span x-show="row.es_nuevo" class="text-[9px] font-extrabold text-cyan-600 dark:text-cyan-400 uppercase">
-                                                    ★ NUEVO
-                                                </span>
-                                            </div>
-                                            <input type="hidden" :name="'items[' + idx + '][insumo_id]'" x-model="row.insumo_id">
-                                            <input type="text" :name="'items[' + idx + '][nombre]'" list="datalist-insumos" required
-                                                x-model="row.nombre" @input="onNombreChange(idx)" @change="onNombreChange(idx)"
-                                                placeholder="Ej. Harina, Pollo, Manteca..."
-                                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
-                                        </div>
+                            <!-- Tabla de Ítems Agregados -->
+                            <div x-show="rows.length > 0" class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">
+                                            <th class="py-2.5 px-3">INSUMO</th>
+                                            <th class="py-2.5 px-3 text-center">UNIDAD</th>
+                                            <th class="py-2.5 px-3 text-center">CANTIDAD</th>
+                                            <th class="py-2.5 px-3 text-right">PRECIO UNIT.</th>
+                                            <th class="py-2.5 px-3 text-right">SUBTOTAL</th>
+                                            <th class="py-2.5 px-2 text-center">QUITAR</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900">
+                                        <template x-for="(row, idx) in rows" :key="idx">
+                                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                                <td class="py-2.5 px-3">
+                                                    <!-- Inputs ocultos para el envío del formulario -->
+                                                    <input type="hidden" :name="'items[' + idx + '][insumo_id]'" :value="row.insumo_id">
+                                                    <input type="hidden" :name="'items[' + idx + '][nombre]'" :value="row.nombre">
+                                                    <input type="hidden" :name="'items[' + idx + '][unidad_medida]'" :value="row.unidad_medida">
+                                                    <input type="hidden" :name="'items[' + idx + '][cantidad]'" :value="row.cantidad">
+                                                    <input type="hidden" :name="'items[' + idx + '][precio_unitario]'" :value="row.precio_unitario">
 
-                                        <!-- Unidad de Medida (fija si es existente, seleccionable si es nuevo) -->
-                                        <div class="w-full md:w-2/12">
-                                            <label class="block text-[9px] font-black text-slate-500 uppercase mb-0.5">UNIDAD</label>
-                                            <template x-if="!row.es_nuevo">
-                                                <div class="py-1.5 px-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-black text-amber-600 dark:text-amber-400 text-center uppercase border border-slate-200 dark:border-slate-700">
-                                                    <span x-text="row.unidad || '—'"></span>
-                                                </div>
-                                            </template>
-                                            <template x-if="row.es_nuevo">
-                                                <select :name="'items[' + idx + '][unidad_medida]'" x-model="row.unidad"
-                                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-cyan-500 rounded-lg px-2 py-1.5 text-xs font-bold text-cyan-600 dark:text-cyan-400 uppercase focus:outline-none">
-                                                    <option value="kg">KG</option>
-                                                    <option value="litro">LITRO</option>
-                                                    <option value="unidad">UNIDAD</option>
-                                                    <option value="paquete">PAQUETE</option>
-                                                    <option value="g">GRAMO</option>
-                                                    <option value="quintal">QUINTAL</option>
-                                                    <option value="docena">DOCENA</option>
-                                                    <option value="bolsa">BOLSA</option>
-                                                    <option value="caja">CAJA</option>
-                                                </select>
-                                            </template>
-                                        </div>
+                                                    <div class="font-black text-slate-900 dark:text-white uppercase flex items-center gap-1.5">
+                                                        <span>📦</span>
+                                                        <span x-text="row.nombre"></span>
+                                                    </div>
+                                                    <template x-if="row.es_nuevo">
+                                                        <span class="text-[9px] font-extrabold text-cyan-600 dark:text-cyan-400 uppercase block">
+                                                            ★ Nuevo (Se registrará en catálogo)
+                                                        </span>
+                                                    </template>
+                                                </td>
 
-                                        <!-- Cantidad -->
-                                        <div class="w-full md:w-2/12">
-                                            <label class="block text-[9px] font-black text-slate-500 uppercase mb-0.5">CANTIDAD</label>
-                                            <input type="number" :name="'items[' + idx + '][cantidad]'" step="any" min="0.01" required
-                                                x-model="row.cantidad" @input="calcSubtotal(idx)" placeholder="1.00"
-                                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none">
-                                        </div>
+                                                <td class="py-2.5 px-3 text-center font-black text-amber-600 dark:text-amber-400 uppercase">
+                                                    <span class="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-[10px]"
+                                                        x-text="row.unidad_medida.toUpperCase()"></span>
+                                                </td>
 
-                                        <!-- Precio Unitario -->
-                                        <div class="w-full md:w-2/12">
-                                            <label class="block text-[9px] font-black text-slate-500 uppercase mb-0.5">P. UNIT (BS.)</label>
-                                            <input type="number" :name="'items[' + idx + '][precio_unitario]'" step="any" min="0.01" required
-                                                x-model="row.precio_unitario" @input="calcSubtotal(idx)" placeholder="0.00"
-                                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none">
-                                        </div>
+                                                <td class="py-2.5 px-3 text-center font-bold text-slate-900 dark:text-white">
+                                                    <span x-text="row.cantidad"></span>
+                                                </td>
 
-                                        <!-- Subtotal -->
-                                        <div class="w-full md:w-2/12 text-right">
-                                            <label class="block text-[9px] font-black text-slate-500 uppercase mb-0.5">SUBTOTAL</label>
-                                            <div class="py-1.5 font-black text-xs text-rose-600 dark:text-rose-400">
-                                                Bs. <span x-text="row.subtotal">0.00</span>
-                                            </div>
-                                        </div>
+                                                <td class="py-2.5 px-3 text-right font-bold text-slate-700 dark:text-slate-300">
+                                                    Bs. <span x-text="parseFloat(row.precio_unitario).toFixed(2)"></span>
+                                                </td>
 
-                                        <!-- Botón Eliminar Fila -->
-                                        <div class="w-full md:w-1/12 text-center pt-2 md:pt-0">
-                                            <button type="button" @click="removeRow(idx)" :disabled="rows.length <= 1"
-                                                class="p-1.5 text-slate-400 hover:text-rose-500 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-                                                title="Eliminar fila">
-                                                <i class="fa-solid fa-trash-can text-sm"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </template>
+                                                <td class="py-2.5 px-3 text-right font-black text-rose-600 dark:text-rose-400">
+                                                    Bs. <span x-text="row.subtotal"></span>
+                                                </td>
+
+                                                <td class="py-2.5 px-2 text-center">
+                                                    <button type="button" @click="removeRow(idx)"
+                                                        class="p-1.5 text-slate-400 hover:text-rose-500 transition-colors"
+                                                        title="Quitar de la lista">
+                                                        <i class="fa-solid fa-trash-can text-sm"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Botón para seguir agregando insumos -->
+                            <div x-show="rows.length > 0" class="pt-2 flex justify-start">
+                                <button type="button" @click="abrirModalInsumo()"
+                                    class="text-xs font-black uppercase text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1">
+                                    <i class="fa-solid fa-plus-circle"></i> + AGREGAR OTRO INSUMO A LA LISTA
+                                </button>
                             </div>
 
                             <!-- Total General de la Compra -->
@@ -234,8 +220,9 @@
                                 class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-200 focus:border-cyan-500 focus:outline-none uppercase"></textarea>
                         </div>
 
-                        <button type="submit"
-                            class="w-full py-3 px-4 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2">
+                        <button type="submit" :disabled="rows.length === 0"
+                            :class="rows.length === 0 ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-cyan-600 hover:bg-cyan-500'"
+                            class="w-full py-3 px-4 rounded-lg text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2">
                             <i class="fa-solid fa-cart-check text-sm"></i> REGISTRAR COMPRA
                         </button>
                     </form>
@@ -376,6 +363,164 @@
                 {{ $compras->links() }}
             </div>
         </div>
+
+        <!-- Datalist para Autocompletar Insumos en el Modal -->
+        <datalist id="datalist-insumos">
+            @foreach($insumos as $ins)
+                <option value="{{ $ins->nombre }}">{{ $ins->nombre }} ({{ strtoupper($ins->unidad_medida) }})</option>
+            @endforeach
+        </datalist>
+
+        <!-- ========================================== -->
+        <!-- MODAL: AGREGAR INSUMO A LA COMPRA          -->
+        <!-- ========================================== -->
+        <div x-show="modalInsumoOpen" x-cloak
+            :class="modalInsumoOpen ? 'fixed inset-0 z-[10000] overflow-y-auto' : 'hidden'"
+            class="hidden fixed inset-0 z-[10000] overflow-y-auto"
+            aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <!-- Backdrop -->
+                <div x-show="modalInsumoOpen"
+                    x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                    x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                    @click="cerrarModalInsumo()"
+                    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <!-- Contenido del Modal -->
+                <div x-show="modalInsumoOpen"
+                    x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    class="inline-block align-bottom bg-white dark:bg-slate-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-200 dark:border-slate-800">
+
+                    <!-- Modal Header -->
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <h3 class="text-xs font-black text-slate-900 dark:text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle text-cyan-500"></i> AGREGAR INSUMO A LA COMPRA
+                        </h3>
+                        <button @click="cerrarModalInsumo()" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="p-6 space-y-4">
+                        <!-- Nombre del Insumo -->
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
+                                NOMBRE DEL INSUMO <span class="text-amber-500">*</span>
+                            </label>
+                            <input type="text" list="datalist-insumos" x-model="modalItem.nombre"
+                                @input="onModalNombreChange()" @change="onModalNombreChange()"
+                                placeholder="Escribe el insumo (ej. Harina, Pollo, Manteca)..."
+                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
+
+                            <div class="mt-1 flex items-center gap-2">
+                                <template x-if="modalItem.insumo_id && !modalItem.es_nuevo">
+                                    <span class="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1">
+                                        <i class="fa-solid fa-circle-check"></i> Insumo Registrado
+                                    </span>
+                                </template>
+                                <template x-if="modalItem.es_nuevo && modalItem.nombre.trim().length > 0">
+                                    <span class="text-[10px] font-extrabold text-cyan-600 dark:text-cyan-400 uppercase flex items-center gap-1">
+                                        <i class="fa-solid fa-circle-plus"></i> Insumo Nuevo (se creará en el catálogo)
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Unidad de Medida:
+                             Si el insumo existe -> aparece su medida automáticamente.
+                             Si NO existe -> muestra el select para elegir la unidad. -->
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
+                                UNIDAD DE MEDIDA <span class="text-amber-500">*</span>
+                            </label>
+
+                            <!-- Medida Automática (Si existe) -->
+                            <template x-if="!modalItem.es_nuevo && modalItem.insumo_id">
+                                <div class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-black text-amber-600 dark:text-amber-400 uppercase flex items-center justify-between">
+                                    <span x-text="modalItem.unidad_medida.toUpperCase()"></span>
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase">ASIGNADA AL INSUMO</span>
+                                </div>
+                            </template>
+
+                            <!-- Select de Unidad (Si es nuevo o no identificado) -->
+                            <template x-if="modalItem.es_nuevo || !modalItem.insumo_id">
+                                <select x-model="modalItem.unidad_medida"
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
+                                    <option value="">SELECCIONAR UNIDAD...</option>
+                                    <optgroup label="── PESO ──">
+                                        <option value="kg">KG — KILOGRAMO</option>
+                                        <option value="g">G — GRAMO</option>
+                                        <option value="quintal">QUINTAL (46 KG)</option>
+                                        <option value="libra">LIBRA (500 G)</option>
+                                    </optgroup>
+                                    <optgroup label="── VOLUMEN ──">
+                                        <option value="litro">LITRO</option>
+                                        <option value="ml">ML — MILILITRO</option>
+                                        <option value="taza">TAZA (250 ML)</option>
+                                    </optgroup>
+                                    <optgroup label="── CANTIDAD ──">
+                                        <option value="unidad">UNIDAD</option>
+                                        <option value="docena">DOCENA (12 UDS.)</option>
+                                        <option value="paquete">PAQUETE</option>
+                                        <option value="caja">CAJA</option>
+                                        <option value="bolsa">BOLSA</option>
+                                        <option value="lata">LATA</option>
+                                        <option value="botella">BOTELLA</option>
+                                    </optgroup>
+                                </select>
+                            </template>
+                        </div>
+
+                        <!-- Cantidad y Precio Unitario -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
+                                    CANTIDAD <span class="text-amber-500">*</span>
+                                </label>
+                                <input type="number" step="any" min="0.01" x-model="modalItem.cantidad" @input="calcModalSubtotal()"
+                                    placeholder="Ej. 10.00"
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
+                                    PRECIO UNIT. (BS.) <span class="text-amber-500">*</span>
+                                </label>
+                                <input type="number" step="any" min="0.01" x-model="modalItem.precio_unitario" @input="calcModalSubtotal()"
+                                    placeholder="Ej. 8.50"
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Subtotal Calculado en Modal -->
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                            <span class="text-xs font-black uppercase text-slate-500 dark:text-slate-400">SUBTOTAL ESTIMADO:</span>
+                            <span class="text-base font-black text-rose-600 dark:text-rose-400">
+                                Bs. <span x-text="modalSubtotal">0.00</span>
+                            </span>
+                        </div>
+
+                        <div x-show="modalError" class="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-600 dark:text-rose-400 font-bold uppercase" x-text="modalError"></div>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="px-6 py-3 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+                        <button type="button" @click="cerrarModalInsumo()"
+                            class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold uppercase transition-all">
+                            CANCELAR
+                        </button>
+                        <button type="button" @click="confirmarModalItem()"
+                            class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black uppercase transition-all shadow-sm flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus-circle"></i> AGREGAR A LA LISTA
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
 
@@ -385,57 +530,114 @@
         return {
             metodoPago: 'efectivo',
             insumosList: {!! json_encode($insumosList ?? []) !!},
-            rows: [
-                { insumo_id: '', nombre: '', cantidad: 1, precio_unitario: '', subtotal: '0.00', unidad: '', es_nuevo: false }
-            ],
-            addRow() {
-                this.rows.push({
+            rows: [],
+            modalInsumoOpen: false,
+            modalError: '',
+            modalSubtotal: '0.00',
+            modalItem: {
+                insumo_id: '',
+                nombre: '',
+                unidad_medida: '',
+                cantidad: '',
+                precio_unitario: '',
+                es_nuevo: false
+            },
+
+            abrirModalInsumo() {
+                this.modalError = '';
+                this.modalSubtotal = '0.00';
+                this.modalItem = {
                     insumo_id: '',
                     nombre: '',
-                    cantidad: 1,
+                    unidad_medida: '',
+                    cantidad: '1',
                     precio_unitario: '',
-                    subtotal: '0.00',
-                    unidad: '',
                     es_nuevo: false
-                });
+                };
+                this.modalInsumoOpen = true;
             },
-            removeRow(idx) {
-                if (this.rows.length > 1) {
-                    this.rows.splice(idx, 1);
-                }
+
+            cerrarModalInsumo() {
+                this.modalInsumoOpen = false;
+                this.modalError = '';
             },
-            onNombreChange(idx) {
-                const val = (this.rows[idx].nombre || '').trim();
+
+            onModalNombreChange() {
+                const val = (this.modalItem.nombre || '').trim();
                 if (!val) {
-                    this.rows[idx].insumo_id = '';
-                    this.rows[idx].unidad = '';
-                    this.rows[idx].es_nuevo = false;
-                    this.calcSubtotal(idx);
+                    this.modalItem.insumo_id = '';
+                    this.modalItem.unidad_medida = '';
+                    this.modalItem.es_nuevo = false;
+                    this.calcModalSubtotal();
                     return;
                 }
                 const match = this.insumosList.find(i => i.nombre.toLowerCase() === val.toLowerCase());
                 if (match) {
-                    this.rows[idx].insumo_id = match.id;
-                    this.rows[idx].nombre = match.nombre;
-                    this.rows[idx].unidad = match.unidad_medida.toUpperCase();
-                    this.rows[idx].es_nuevo = false;
-                    if (!this.rows[idx].precio_unitario && match.ultimo_precio > 0) {
-                        this.rows[idx].precio_unitario = match.ultimo_precio;
+                    this.modalItem.insumo_id = match.id;
+                    this.modalItem.nombre = match.nombre;
+                    this.modalItem.unidad_medida = match.unidad_medida.toLowerCase();
+                    this.modalItem.es_nuevo = false;
+                    if (!this.modalItem.precio_unitario && match.ultimo_precio > 0) {
+                        this.modalItem.precio_unitario = match.ultimo_precio;
                     }
                 } else {
-                    this.rows[idx].insumo_id = 'nuevo';
-                    this.rows[idx].es_nuevo = true;
-                    if (!this.rows[idx].unidad) {
-                        this.rows[idx].unidad = 'kg';
+                    this.modalItem.insumo_id = 'nuevo';
+                    this.modalItem.es_nuevo = true;
+                    if (!this.modalItem.unidad_medida) {
+                        this.modalItem.unidad_medida = 'kg';
                     }
                 }
-                this.calcSubtotal(idx);
+                this.calcModalSubtotal();
             },
-            calcSubtotal(idx) {
-                const cant = parseFloat(this.rows[idx].cantidad) || 0;
-                const prec = parseFloat(this.rows[idx].precio_unitario) || 0;
-                this.rows[idx].subtotal = (cant * prec).toFixed(2);
+
+            calcModalSubtotal() {
+                const cant = parseFloat(this.modalItem.cantidad) || 0;
+                const prec = parseFloat(this.modalItem.precio_unitario) || 0;
+                this.modalSubtotal = (cant * prec).toFixed(2);
             },
+
+            confirmarModalItem() {
+                const nom = (this.modalItem.nombre || '').trim();
+                const cant = parseFloat(this.modalItem.cantidad) || 0;
+                const prec = parseFloat(this.modalItem.precio_unitario) || 0;
+                const unid = (this.modalItem.unidad_medida || '').trim();
+
+                if (!nom) {
+                    this.modalError = 'Por favor escribe el nombre del insumo.';
+                    return;
+                }
+                if (!unid) {
+                    this.modalError = 'Por favor selecciona la unidad de medida.';
+                    return;
+                }
+                if (cant <= 0) {
+                    this.modalError = 'La cantidad debe ser mayor a 0.';
+                    return;
+                }
+                if (prec <= 0) {
+                    this.modalError = 'El precio unitario debe ser mayor a 0.';
+                    return;
+                }
+
+                // Agregar o acumular si ya estaba en la lista de esta compra
+                const subtotal = (cant * prec).toFixed(2);
+                this.rows.push({
+                    insumo_id: this.modalItem.insumo_id,
+                    nombre: nom,
+                    unidad_medida: unid,
+                    cantidad: cant,
+                    precio_unitario: prec,
+                    subtotal: subtotal,
+                    es_nuevo: this.modalItem.es_nuevo
+                });
+
+                this.cerrarModalInsumo();
+            },
+
+            removeRow(idx) {
+                this.rows.splice(idx, 1);
+            },
+
             get grandTotal() {
                 return this.rows.reduce((sum, r) => {
                     const cant = parseFloat(r.cantidad) || 0;
