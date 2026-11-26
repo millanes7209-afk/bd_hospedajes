@@ -104,17 +104,6 @@
 
                         <!-- Sección de Ítems / Insumos Agregados -->
                         <div class="space-y-3 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-                            <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
-                                <div>
-                                    <span class="text-xs font-black uppercase text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
-                                        <i class="fa-solid fa-list-check"></i> INSUMOS A COMPRAR (<span x-text="rows.length"></span>)
-                                    </span>
-                                </div>
-                                <button type="button" @click="abrirModalInsumo()"
-                                    class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 shadow-sm">
-                                    <i class="fa-solid fa-plus-circle"></i> AGREGAR INSUMO
-                                </button>
-                            </div>
 
                             <!-- Estado Vacío: Sin Ítems todavía -->
                             <div x-show="rows.length === 0" class="py-8 text-center space-y-3">
@@ -124,7 +113,7 @@
                                 </p>
                                 <button type="button" @click="abrirModalInsumo()"
                                     class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black uppercase transition-all shadow-sm">
-                                    <i class="fa-solid fa-plus-circle"></i> + AGREGAR PRIMER INSUMO
+                                    <i class="fa-solid fa-plus-circle"></i> + AGREGAR INSUMO
                                 </button>
                             </div>
 
@@ -197,7 +186,7 @@
                             <div x-show="rows.length > 0" class="pt-2 flex justify-start">
                                 <button type="button" @click="abrirModalInsumo()"
                                     class="text-xs font-black uppercase text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1">
-                                    <i class="fa-solid fa-plus-circle"></i> + AGREGAR OTRO INSUMO A LA LISTA
+                                    <i class="fa-solid fa-plus-circle"></i> + AGREGAR INSUMO
                                 </button>
                             </div>
 
