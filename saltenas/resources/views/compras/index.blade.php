@@ -102,22 +102,128 @@
                             </div>
                         </div>
 
-                        <!-- Sección de Ítems / Insumos Agregados -->
-                        <div class="space-y-3 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-
-                            <!-- Estado Vacío: Sin Ítems todavía -->
-                            <div x-show="rows.length === 0" class="py-8 text-center space-y-3">
-                                <div class="text-3xl">🛒</div>
-                                <p class="text-xs font-bold text-slate-400 uppercase">
-                                    NO HAY INSUMOS AGREGADOS A ESTA COMPRA TODAVÍA.
-                                </p>
-                                <button type="button" @click="abrirModalInsumo()"
-                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black uppercase transition-all shadow-sm">
-                                    <i class="fa-solid fa-plus-circle"></i> + AGREGAR INSUMO
-                                </button>
+                        <!-- Barra de Ingreso Directo de Insumos (Estilo Carrito) -->
+                        <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-cyan-500/30 dark:border-cyan-500/20 space-y-2.5 shadow-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-black uppercase text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-cart-arrow-down"></i> AGREGAR INSUMO AL CARRITO
+                                </span>
+                                <span class="text-[10px] text-slate-400 uppercase font-semibold hidden sm:inline">
+                                    Escribe el insumo y presiona Enter o clic en [+]
+                                </span>
                             </div>
 
-                            <!-- Tabla de Ítems Agregados -->
+                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                                <!-- Input del Insumo -->
+                                <div class="sm:col-span-5">
+                                    <label class="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                                        INSUMO <span class="text-amber-500">*</span>
+                                    </label>
+                                    <input type="text" id="input-insumo-nombre" list="datalist-insumos" x-model="inputItem.nombre"
+                                        @input="onInputNombreChange()" @change="onInputNombreChange()"
+                                        @keydown.enter.prevent="agregarItem()"
+                                        placeholder="Escribe el insumo (ej. Harina, Pollo)..."
+                                        class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
+                                </div>
+
+                                <!-- Unidad de Medida:
+                                     Si existe -> detecta la unidad automáticamente
+                                     Si NO existe -> select para que elija -->
+                                <div class="sm:col-span-2">
+                                    <label class="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                                        UNIDAD <span class="text-amber-500">*</span>
+                                    </label>
+                                    <template x-if="!inputItem.es_nuevo && inputItem.insumo_id">
+                                        <div class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-black text-amber-600 dark:text-amber-400 text-center uppercase">
+                                            <span x-text="inputItem.unidad_medida.toUpperCase()"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="inputItem.es_nuevo || !inputItem.insumo_id">
+                                        <select x-model="inputItem.unidad_medida"
+                                            class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
+                                            <option value="kg">KG</option>
+                                            <option value="g">G</option>
+                                            <option value="quintal">QUINTAL</option>
+                                            <option value="libra">LIBRA</option>
+                                            <option value="litro">LITRO</option>
+                                            <option value="ml">ML</option>
+                                            <option value="taza">TAZA</option>
+                                            <option value="unidad">UNIDAD</option>
+                                            <option value="docena">DOCENA</option>
+                                            <option value="paquete">PAQUETE</option>
+                                            <option value="caja">CAJA</option>
+                                            <option value="bolsa">BOLSA</option>
+                                            <option value="lata">LATA</option>
+                                            <option value="botella">BOTELLA</option>
+                                        </select>
+                                    </template>
+                                </div>
+
+                                <!-- Cantidad -->
+                                <div class="sm:col-span-2">
+                                    <label class="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                                        CANTIDAD <span class="text-amber-500">*</span>
+                                    </label>
+                                    <input type="number" step="any" min="0.01" x-model="inputItem.cantidad"
+                                        @keydown.enter.prevent="agregarItem()" placeholder="1.00"
+                                        class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
+                                </div>
+
+                                <!-- Precio Unitario -->
+                                <div class="sm:col-span-2">
+                                    <label class="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                                        P. UNIT (BS.) <span class="text-amber-500">*</span>
+                                    </label>
+                                    <input type="number" step="any" min="0.01" x-model="inputItem.precio_unitario"
+                                        @keydown.enter.prevent="agregarItem()" placeholder="0.00"
+                                        class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
+                                </div>
+
+                                <!-- Botón [+] para agregar al carrito -->
+                                <div class="sm:col-span-1">
+                                    <button type="button" @click="agregarItem()"
+                                        class="w-full py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-black uppercase transition-all shadow-sm flex items-center justify-center gap-1"
+                                        title="Agregar al Carrito">
+                                        <i class="fa-solid fa-plus text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Feedback de detección y error -->
+                            <div class="flex items-center justify-between text-[10px]">
+                                <div>
+                                    <template x-if="inputItem.insumo_id && !inputItem.es_nuevo">
+                                        <span class="font-extrabold text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1">
+                                            <i class="fa-solid fa-circle-check"></i> Insumo Registrado (Unidad detectada: <span x-text="inputItem.unidad_medida.toUpperCase()"></span>)
+                                        </span>
+                                    </template>
+                                    <template x-if="inputItem.es_nuevo && inputItem.nombre.trim().length > 0">
+                                        <span class="font-extrabold text-cyan-600 dark:text-cyan-400 uppercase flex items-center gap-1">
+                                            <i class="fa-solid fa-circle-plus"></i> Insumo Nuevo (Elige su unidad en el selector)
+                                        </span>
+                                    </template>
+                                </div>
+                                <div x-show="inputError" class="font-bold text-rose-500 uppercase flex items-center gap-1" x-text="inputError"></div>
+                            </div>
+                        </div>
+
+                        <!-- Carrito: Lista de Ítems Agregados -->
+                        <div class="space-y-3 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <div class="flex items-center justify-between pb-1 border-b border-slate-200 dark:border-slate-800">
+                                <span class="text-xs font-black uppercase text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-cart-shopping text-cyan-600"></i> INSUMOS EN EL CARRITO (<span x-text="rows.length"></span>)
+                                </span>
+                            </div>
+
+                            <!-- Estado Vacío: Sin Ítems todavía -->
+                            <div x-show="rows.length === 0" class="py-6 text-center space-y-2">
+                                <div class="text-2xl text-slate-300 dark:text-slate-600">🛒</div>
+                                <p class="text-xs font-bold text-slate-400 uppercase">
+                                    El carrito de compras está vacío. Escribe arriba el insumo que deseas comprar para agregarlo.
+                                </p>
+                            </div>
+
+                            <!-- Tabla del Carrito con Ítems Agregados -->
                             <div x-show="rows.length > 0" class="overflow-x-auto">
                                 <table class="w-full text-left border-collapse text-xs">
                                     <thead>
@@ -138,8 +244,6 @@
                                                     <input type="hidden" :name="'items[' + idx + '][insumo_id]'" :value="row.insumo_id">
                                                     <input type="hidden" :name="'items[' + idx + '][nombre]'" :value="row.nombre">
                                                     <input type="hidden" :name="'items[' + idx + '][unidad_medida]'" :value="row.unidad_medida">
-                                                    <input type="hidden" :name="'items[' + idx + '][cantidad]'" :value="row.cantidad">
-                                                    <input type="hidden" :name="'items[' + idx + '][precio_unitario]'" :value="row.precio_unitario">
 
                                                     <div class="font-black text-slate-900 dark:text-white uppercase flex items-center gap-1.5">
                                                         <span>📦</span>
@@ -157,12 +261,16 @@
                                                         x-text="row.unidad_medida.toUpperCase()"></span>
                                                 </td>
 
-                                                <td class="py-2.5 px-3 text-center font-bold text-slate-900 dark:text-white">
-                                                    <span x-text="row.cantidad"></span>
+                                                <td class="py-2.5 px-3 text-center">
+                                                    <input type="number" step="any" min="0.01" :name="'items[' + idx + '][cantidad]'"
+                                                        x-model="row.cantidad" @input="calcSubtotal(idx)"
+                                                        class="w-20 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs font-bold text-center text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none">
                                                 </td>
 
-                                                <td class="py-2.5 px-3 text-right font-bold text-slate-700 dark:text-slate-300">
-                                                    Bs. <span x-text="parseFloat(row.precio_unitario).toFixed(2)"></span>
+                                                <td class="py-2.5 px-3 text-right">
+                                                    <input type="number" step="any" min="0.01" :name="'items[' + idx + '][precio_unitario]'"
+                                                        x-model="row.precio_unitario" @input="calcSubtotal(idx)"
+                                                        class="w-24 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs font-bold text-right text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none">
                                                 </td>
 
                                                 <td class="py-2.5 px-3 text-right font-black text-rose-600 dark:text-rose-400">
@@ -172,7 +280,7 @@
                                                 <td class="py-2.5 px-2 text-center">
                                                     <button type="button" @click="removeRow(idx)"
                                                         class="p-1.5 text-slate-400 hover:text-rose-500 transition-colors"
-                                                        title="Quitar de la lista">
+                                                        title="Quitar del carrito">
                                                         <i class="fa-solid fa-trash-can text-sm"></i>
                                                     </button>
                                                 </td>
@@ -180,14 +288,6 @@
                                         </template>
                                     </tbody>
                                 </table>
-                            </div>
-
-                            <!-- Botón para seguir agregando insumos -->
-                            <div x-show="rows.length > 0" class="pt-2 flex justify-start">
-                                <button type="button" @click="abrirModalInsumo()"
-                                    class="text-xs font-black uppercase text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1">
-                                    <i class="fa-solid fa-plus-circle"></i> + AGREGAR INSUMO
-                                </button>
                             </div>
 
                             <!-- Total General de la Compra -->
@@ -353,163 +453,13 @@
             </div>
         </div>
 
-        <!-- Datalist para Autocompletar Insumos en el Modal -->
+        <!-- Datalist para Autocompletar Insumos en el Carrito -->
         <datalist id="datalist-insumos">
             @foreach($insumos as $ins)
                 <option value="{{ $ins->nombre }}">{{ $ins->nombre }} ({{ strtoupper($ins->unidad_medida) }})</option>
             @endforeach
         </datalist>
 
-        <!-- ========================================== -->
-        <!-- MODAL: AGREGAR INSUMO A LA COMPRA          -->
-        <!-- ========================================== -->
-        <div x-show="modalInsumoOpen" x-cloak
-            :class="modalInsumoOpen ? 'fixed inset-0 z-[10000] overflow-y-auto' : 'hidden'"
-            class="hidden fixed inset-0 z-[10000] overflow-y-auto"
-            aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <!-- Backdrop -->
-                <div x-show="modalInsumoOpen"
-                    x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-                    x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                    @click="cerrarModalInsumo()"
-                    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
-
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-                <!-- Contenido del Modal -->
-                <div x-show="modalInsumoOpen"
-                    x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                    x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    class="inline-block align-bottom bg-white dark:bg-slate-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-200 dark:border-slate-800">
-
-                    <!-- Modal Header -->
-                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                        <h3 class="text-xs font-black text-slate-900 dark:text-cyan-400 uppercase tracking-wider flex items-center gap-2">
-                            <i class="fa-solid fa-plus-circle text-cyan-500"></i> AGREGAR INSUMO A LA COMPRA
-                        </h3>
-                        <button @click="cerrarModalInsumo()" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                            <i class="fa-solid fa-xmark text-lg"></i>
-                        </button>
-                    </div>
-
-                    <!-- Modal Body -->
-                    <div class="p-6 space-y-4">
-                        <!-- Nombre del Insumo -->
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
-                                NOMBRE DEL INSUMO <span class="text-amber-500">*</span>
-                            </label>
-                            <input type="text" list="datalist-insumos" x-model="modalItem.nombre"
-                                @input="onModalNombreChange()" @change="onModalNombreChange()"
-                                placeholder="Escribe el insumo (ej. Harina, Pollo, Manteca)..."
-                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
-
-                            <div class="mt-1 flex items-center gap-2">
-                                <template x-if="modalItem.insumo_id && !modalItem.es_nuevo">
-                                    <span class="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1">
-                                        <i class="fa-solid fa-circle-check"></i> Insumo Registrado
-                                    </span>
-                                </template>
-                                <template x-if="modalItem.es_nuevo && modalItem.nombre.trim().length > 0">
-                                    <span class="text-[10px] font-extrabold text-cyan-600 dark:text-cyan-400 uppercase flex items-center gap-1">
-                                        <i class="fa-solid fa-circle-plus"></i> Insumo Nuevo (se creará en el catálogo)
-                                    </span>
-                                </template>
-                            </div>
-                        </div>
-
-                        <!-- Unidad de Medida:
-                             Si el insumo existe -> aparece su medida automáticamente.
-                             Si NO existe -> muestra el select para elegir la unidad. -->
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
-                                UNIDAD DE MEDIDA <span class="text-amber-500">*</span>
-                            </label>
-
-                            <!-- Medida Automática (Si existe) -->
-                            <template x-if="!modalItem.es_nuevo && modalItem.insumo_id">
-                                <div class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-black text-amber-600 dark:text-amber-400 uppercase flex items-center justify-between">
-                                    <span x-text="modalItem.unidad_medida.toUpperCase()"></span>
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase">ASIGNADA AL INSUMO</span>
-                                </div>
-                            </template>
-
-                            <!-- Select de Unidad (Si es nuevo o no identificado) -->
-                            <template x-if="modalItem.es_nuevo || !modalItem.insumo_id">
-                                <select x-model="modalItem.unidad_medida"
-                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
-                                    <option value="">SELECCIONAR UNIDAD...</option>
-                                    <optgroup label="── PESO ──">
-                                        <option value="kg">KG — KILOGRAMO</option>
-                                        <option value="g">G — GRAMO</option>
-                                        <option value="quintal">QUINTAL (46 KG)</option>
-                                        <option value="libra">LIBRA (500 G)</option>
-                                    </optgroup>
-                                    <optgroup label="── VOLUMEN ──">
-                                        <option value="litro">LITRO</option>
-                                        <option value="ml">ML — MILILITRO</option>
-                                        <option value="taza">TAZA (250 ML)</option>
-                                    </optgroup>
-                                    <optgroup label="── CANTIDAD ──">
-                                        <option value="unidad">UNIDAD</option>
-                                        <option value="docena">DOCENA (12 UDS.)</option>
-                                        <option value="paquete">PAQUETE</option>
-                                        <option value="caja">CAJA</option>
-                                        <option value="bolsa">BOLSA</option>
-                                        <option value="lata">LATA</option>
-                                        <option value="botella">BOTELLA</option>
-                                    </optgroup>
-                                </select>
-                            </template>
-                        </div>
-
-                        <!-- Cantidad y Precio Unitario -->
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
-                                    CANTIDAD <span class="text-amber-500">*</span>
-                                </label>
-                                <input type="number" step="any" min="0.01" x-model="modalItem.cantidad" @input="calcModalSubtotal()"
-                                    placeholder="Ej. 10.00"
-                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
-                                    PRECIO UNIT. (BS.) <span class="text-amber-500">*</span>
-                                </label>
-                                <input type="number" step="any" min="0.01" x-model="modalItem.precio_unitario" @input="calcModalSubtotal()"
-                                    placeholder="Ej. 8.50"
-                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-cyan-500 focus:outline-none">
-                            </div>
-                        </div>
-
-                        <!-- Subtotal Calculado en Modal -->
-                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                            <span class="text-xs font-black uppercase text-slate-500 dark:text-slate-400">SUBTOTAL ESTIMADO:</span>
-                            <span class="text-base font-black text-rose-600 dark:text-rose-400">
-                                Bs. <span x-text="modalSubtotal">0.00</span>
-                            </span>
-                        </div>
-
-                        <div x-show="modalError" class="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-600 dark:text-rose-400 font-bold uppercase" x-text="modalError"></div>
-                    </div>
-
-                    <!-- Modal Footer -->
-                    <div class="px-6 py-3 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
-                        <button type="button" @click="cerrarModalInsumo()"
-                            class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold uppercase transition-all">
-                            CANCELAR
-                        </button>
-                        <button type="button" @click="confirmarModalItem()"
-                            class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black uppercase transition-all shadow-sm flex items-center gap-1.5">
-                            <i class="fa-solid fa-plus-circle"></i> AGREGAR A LA LISTA
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 @endsection
 
@@ -520,107 +470,95 @@
             metodoPago: 'efectivo',
             insumosList: {!! json_encode($insumosList ?? []) !!},
             rows: [],
-            modalInsumoOpen: false,
-            modalError: '',
-            modalSubtotal: '0.00',
-            modalItem: {
+            inputError: '',
+            inputItem: {
                 insumo_id: '',
                 nombre: '',
-                unidad_medida: '',
-                cantidad: '',
+                unidad_medida: 'kg',
+                cantidad: '1',
                 precio_unitario: '',
                 es_nuevo: false
             },
 
-            abrirModalInsumo() {
-                this.modalError = '';
-                this.modalSubtotal = '0.00';
-                this.modalItem = {
-                    insumo_id: '',
-                    nombre: '',
-                    unidad_medida: '',
-                    cantidad: '1',
-                    precio_unitario: '',
-                    es_nuevo: false
-                };
-                this.modalInsumoOpen = true;
-            },
-
-            cerrarModalInsumo() {
-                this.modalInsumoOpen = false;
-                this.modalError = '';
-            },
-
-            onModalNombreChange() {
-                const val = (this.modalItem.nombre || '').trim();
+            onInputNombreChange() {
+                const val = (this.inputItem.nombre || '').trim();
+                this.inputError = '';
                 if (!val) {
-                    this.modalItem.insumo_id = '';
-                    this.modalItem.unidad_medida = '';
-                    this.modalItem.es_nuevo = false;
-                    this.calcModalSubtotal();
+                    this.inputItem.insumo_id = '';
+                    this.inputItem.unidad_medida = 'kg';
+                    this.inputItem.es_nuevo = false;
                     return;
                 }
                 const match = this.insumosList.find(i => i.nombre.toLowerCase() === val.toLowerCase());
                 if (match) {
-                    this.modalItem.insumo_id = match.id;
-                    this.modalItem.nombre = match.nombre;
-                    this.modalItem.unidad_medida = match.unidad_medida.toLowerCase();
-                    this.modalItem.es_nuevo = false;
-                    if (!this.modalItem.precio_unitario && match.ultimo_precio > 0) {
-                        this.modalItem.precio_unitario = match.ultimo_precio;
+                    this.inputItem.insumo_id = match.id;
+                    this.inputItem.nombre = match.nombre;
+                    this.inputItem.unidad_medida = match.unidad_medida.toLowerCase();
+                    this.inputItem.es_nuevo = false;
+                    if (!this.inputItem.precio_unitario && match.ultimo_precio > 0) {
+                        this.inputItem.precio_unitario = match.ultimo_precio;
                     }
                 } else {
-                    this.modalItem.insumo_id = 'nuevo';
-                    this.modalItem.es_nuevo = true;
-                    if (!this.modalItem.unidad_medida) {
-                        this.modalItem.unidad_medida = 'kg';
+                    this.inputItem.insumo_id = 'nuevo';
+                    this.inputItem.es_nuevo = true;
+                    if (!this.inputItem.unidad_medida) {
+                        this.inputItem.unidad_medida = 'kg';
                     }
                 }
-                this.calcModalSubtotal();
             },
 
-            calcModalSubtotal() {
-                const cant = parseFloat(this.modalItem.cantidad) || 0;
-                const prec = parseFloat(this.modalItem.precio_unitario) || 0;
-                this.modalSubtotal = (cant * prec).toFixed(2);
-            },
-
-            confirmarModalItem() {
-                const nom = (this.modalItem.nombre || '').trim();
-                const cant = parseFloat(this.modalItem.cantidad) || 0;
-                const prec = parseFloat(this.modalItem.precio_unitario) || 0;
-                const unid = (this.modalItem.unidad_medida || '').trim();
+            agregarItem() {
+                const nom = (this.inputItem.nombre || '').trim();
+                const cant = parseFloat(this.inputItem.cantidad) || 0;
+                const prec = parseFloat(this.inputItem.precio_unitario) || 0;
+                const unid = (this.inputItem.unidad_medida || '').trim();
 
                 if (!nom) {
-                    this.modalError = 'Por favor escribe el nombre del insumo.';
+                    this.inputError = 'Escribe el nombre del insumo.';
+                    document.getElementById('input-insumo-nombre')?.focus();
                     return;
                 }
                 if (!unid) {
-                    this.modalError = 'Por favor selecciona la unidad de medida.';
+                    this.inputError = 'Selecciona la unidad de medida.';
                     return;
                 }
                 if (cant <= 0) {
-                    this.modalError = 'La cantidad debe ser mayor a 0.';
+                    this.inputError = 'La cantidad debe ser mayor a 0.';
                     return;
                 }
                 if (prec <= 0) {
-                    this.modalError = 'El precio unitario debe ser mayor a 0.';
+                    this.inputError = 'El precio unitario debe ser mayor a 0.';
                     return;
                 }
 
-                // Agregar o acumular si ya estaba en la lista de esta compra
                 const subtotal = (cant * prec).toFixed(2);
                 this.rows.push({
-                    insumo_id: this.modalItem.insumo_id,
+                    insumo_id: this.inputItem.insumo_id,
                     nombre: nom,
                     unidad_medida: unid,
                     cantidad: cant,
                     precio_unitario: prec,
                     subtotal: subtotal,
-                    es_nuevo: this.modalItem.es_nuevo
+                    es_nuevo: this.inputItem.es_nuevo
                 });
 
-                this.cerrarModalInsumo();
+                // Resetear campos para escribir el siguiente insumo inmediatamente
+                this.inputItem = {
+                    insumo_id: '',
+                    nombre: '',
+                    unidad_medida: 'kg',
+                    cantidad: '1',
+                    precio_unitario: '',
+                    es_nuevo: false
+                };
+                this.inputError = '';
+                document.getElementById('input-insumo-nombre')?.focus();
+            },
+
+            calcSubtotal(idx) {
+                const cant = parseFloat(this.rows[idx].cantidad) || 0;
+                const prec = parseFloat(this.rows[idx].precio_unitario) || 0;
+                this.rows[idx].subtotal = (cant * prec).toFixed(2);
             },
 
             removeRow(idx) {
