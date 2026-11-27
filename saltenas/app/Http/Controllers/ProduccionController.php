@@ -8,6 +8,7 @@ use App\Models\ProduccionArmado;
 use App\Models\ProduccionTanda;
 use App\Models\VarianteSaltena;
 use App\Services\SchemaSyncService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -27,7 +28,6 @@ class ProduccionController extends Controller
         $masas = $preparaciones->filter(fn($p) => strtolower($p->tipo_preparacion) === 'masa' || str_contains(strtolower($p->nombre), 'masa') || str_contains(strtolower($p->nombre), 'tapa'));
         $jigotes = $preparaciones->filter(fn($p) => strtolower($p->tipo_preparacion) === 'jigote' || str_contains(strtolower($p->nombre), 'jigote') || str_contains(strtolower($p->nombre), 'relleno'));
 
-        // Si no se clasificó por nombre, mostrar todas en ambos selectores para libertad total
         if ($masas->isEmpty()) {
             $masas = $preparaciones;
         }
@@ -36,7 +36,7 @@ class ProduccionController extends Controller
         }
 
         $variantes = VarianteSaltena::where('activo', true)->orderBy('nombre')->get();
-        $insumos = Insumo::orderBy('nombre')->get();
+        $insumos = Insumo::orderByRaw('CASE WHEN stock_actual > 0 THEN 0 ELSE 1 END')->orderBy('nombre')->get();
 
         // Métricas de Stock Intermedio (Cámara Fría / Almacén de Producción)
         $totalTapasStock = $preparaciones->filter(fn($p) => str_contains(strtolower($p->nombre), 'masa') || str_contains(strtolower($p->nombre), 'tapa') || strtolower($p->tipo_preparacion) === 'masa')->sum('stock_actual');
@@ -90,33 +90,37 @@ class ProduccionController extends Controller
     }
 
     /**
-     * Paso 1: Registrar Preparación de Tanda (Masa o Jigote).
+     * Paso 1: Registrar Preparación (Masa o Jigote).
      * Descuenta los insumos de materia prima y suma al stock intermedio de tapas o jigote.
      */
     public function storeTanda(Request $request)
     {
         SchemaSyncService::ensureUpdatedColumns();
 
+        $fechaHoy = Carbon::now('America/La_Paz')->format('Y-m-d');
+        if (!$request->filled('fecha')) {
+            $request->merge(['fecha' => $fechaHoy]);
+        }
+
         $request->validate([
             'fecha' => 'required|date',
             'preparacion_id' => 'required|exists:preparaciones,id',
-            'tandas' => 'required|numeric|min:0.1',
+            'tandas' => 'nullable|numeric|min:0.01',
             'cantidad_producida' => 'required|numeric|min:0.5',
             'observaciones' => 'nullable|string|max:500',
         ], [
             'preparacion_id.required' => 'Debes seleccionar qué masa o preparación vas a elaborar.',
-            'tandas.required' => 'Debes indicar cuántas tandas hiciste (ej. 1 tanda).',
             'cantidad_producida.required' => 'Debes indicar la cantidad de tapas contadas o porciones aproximadas obtenidas.',
         ]);
 
         $prep = Preparacion::with('receta.insumo')->findOrFail($request->preparacion_id);
-        $numTandas = (float)$request->tandas;
+        $numTandas = $request->filled('tandas') && (float)$request->tandas > 0 ? (float)$request->tandas : 1;
         $cantidadProducida = (float)$request->cantidad_producida;
 
         DB::transaction(function () use ($request, $prep, $numTandas, $cantidadProducida) {
             $costoTotal = 0;
 
-            // 1. Descontar insumos de almacén según la receta escalada
+            // 1. Descontar insumos de almacén según la receta de la preparación
             foreach ($prep->receta as $item) {
                 if ($item->insumo) {
                     $cantidadTotalInsumo = (float)$item->cantidad_usada * $numTandas;
@@ -144,7 +148,7 @@ class ProduccionController extends Controller
 
         $tipo = str_contains(strtolower($prep->nombre), 'jigote') ? 'porciones aproximadas de jigote' : 'tapas contadas de masa';
         return redirect()->route('produccion.index', ['tab' => 'tandas'])
-            ->with('success', "¡Tanda registrada! Se descontaron los insumos del almacén y se sumaron +{$cantidadProducida} {$tipo} al stock intermedio listo en frío.");
+            ->with('success', "¡Preparación registrada! Se descontaron los insumos del almacén y se sumaron +{$cantidadProducida} {$tipo} al stock intermedio listo en frío.");
     }
 
     /**
@@ -154,6 +158,11 @@ class ProduccionController extends Controller
     public function storeArmado(Request $request)
     {
         SchemaSyncService::ensureUpdatedColumns();
+
+        $fechaHoy = Carbon::now('America/La_Paz')->format('Y-m-d');
+        if (!$request->filled('fecha')) {
+            $request->merge(['fecha' => $fechaHoy]);
+        }
 
         $request->validate([
             'fecha' => 'required|date',

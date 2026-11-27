@@ -196,9 +196,14 @@
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                                     @forelse($insumos as $ins)
-                                        <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30">
-                                            <td class="py-3 px-4 font-black text-slate-900 dark:text-white uppercase">
-                                                {{ $ins->nombre }}
+                                        <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 {{ (float)$ins->stock_actual <= 0 ? 'opacity-75 bg-slate-50/40 dark:bg-slate-950/40' : '' }}">
+                                            <td class="py-3 px-4 font-black text-slate-900 dark:text-white uppercase flex items-center gap-2">
+                                                @if((float)$ins->stock_actual > 0)
+                                                    <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Disponible en Almacén"></span>
+                                                @else
+                                                    <span class="w-2 h-2 rounded-full bg-slate-400 shrink-0" title="Agotado / Sin Stock"></span>
+                                                @endif
+                                                <span>{{ $ins->nombre }}</span>
                                             </td>
                                             <td class="py-3 px-3 text-center">
                                                 <span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase">
@@ -214,8 +219,16 @@
                                                     <span class="text-[10px] text-slate-400 italic">SIN COMPRA</span>
                                                 @endif
                                             </td>
-                                            <td class="py-3 px-3 text-right font-bold text-slate-700 dark:text-slate-300">
-                                                {{ number_format((float)$ins->stock_actual, 3) }}
+                                            <td class="py-3 px-3 text-right font-bold">
+                                                @if((float)$ins->stock_actual > 0)
+                                                    <span class="text-emerald-600 dark:text-emerald-400 font-black">
+                                                        {{ number_format((float)$ins->stock_actual, 3) }}
+                                                    </span>
+                                                @else
+                                                    <span class="text-slate-400 font-bold text-[10px] uppercase">
+                                                        0.000 (AGOTADO)
+                                                    </span>
+                                                @endif
                                             </td>
                                             <td class="py-3 px-4 text-center">
                                                 <div class="flex items-center justify-center gap-1.5">

@@ -30,7 +30,10 @@ class CompraController extends Controller
             'preciosHistorial' => function ($q) {
                 $q->orderBy('vigente_desde', 'desc')->orderBy('id', 'desc');
             }
-        ])->orderBy('nombre')->get();
+        ])
+        ->orderByRaw('CASE WHEN stock_actual > 0 THEN 0 ELSE 1 END')
+        ->orderBy('nombre')
+        ->get();
 
         $totalComprasMes = Compra::whereYear('fecha', now()->year)
             ->whereMonth('fecha', now()->month)

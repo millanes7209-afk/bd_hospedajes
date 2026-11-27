@@ -16,7 +16,7 @@
                     <i class="fa-solid fa-kitchen-set text-rose-500"></i> PRODUCCIÓN CENTRAL & COCINA
                 </h1>
                 <p class="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase mt-0.5">
-                    FASE 3: PRODUCCIÓN EN 2 TIEMPOS — TANDAS INTERMEDIAS (MASA/JIGOTE) Y MESA DE ARMADO LIBRE
+                    FASE 3: PRODUCCIÓN EN 2 TIEMPOS — PREPARACIONES (MASA/JIGOTE) Y MESA DE ARMADO LIBRE
                 </p>
             </div>
         </div>
@@ -75,13 +75,13 @@
 
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-sm">
                 <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest block mb-1">
-                    📦 MATERIA PRIMA (ALMACÉN)
+                    📦 INSUMOS EN ALMACÉN
                 </span>
                 <span class="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
                     {{ $insumos->count() }} <span class="text-xs text-slate-400 font-bold uppercase">INSUMOS</span>
                 </span>
                 <span class="text-[10px] font-bold text-slate-400 block mt-1 uppercase">
-                    HARINA, CARNES, CONDIMENTOS
+                    {{ $insumos->where('stock_actual', '>', 0)->count() }} CON STOCK DISPONIBLE
                 </span>
             </div>
         </div>
@@ -92,7 +92,7 @@
                 :class="activeTab === 'tandas' ? 'bg-rose-600 text-white font-black shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800 font-bold'"
                 class="px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-bowl-rice"></i>
-                <span>PASO 1: PREPARAR TANDAS (MASA & JIGOTE)</span>
+                <span>PASO 1: PREPARAR MASA O JIGOTE</span>
             </button>
 
             <button type="button" @click="activeTab = 'armado'; history.replaceState(null, '', '?tab=armado')"
@@ -111,112 +111,126 @@
         </div>
 
         <!-- ============================================================== -->
-        <!-- PESTAÑA 1: PASO 1 — PREPARAR TANDAS (MASA & JIGOTE)            -->
+        <!-- PESTAÑA 1: PASO 1 — PREPARAR MASA O JIGOTE                     -->
         <!-- ============================================================== -->
         <div x-show="activeTab === 'tandas'" class="space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-                <!-- Formulario de Registro de Tanda (Col 5) -->
+                <!-- Formulario de Registro de Preparación (Col 5) -->
                 <div class="lg:col-span-5">
                     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4 shadow-sm">
                         <div class="border-b border-slate-100 dark:border-slate-800 pb-3">
                             <h2 class="text-xs font-black text-slate-900 dark:text-rose-400 uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-plus-circle text-rose-500"></i> REGISTRAR TANDA PRODUCIDA
+                                <i class="fa-solid fa-bowl-rice text-rose-500"></i> REGISTRAR PREPARACIÓN (MASA / JIGOTE)
                             </h2>
                             <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">
                                 Descuenta automáticamente harina, manteca, carne, etc. de compras y suma las tapas o porciones listas a tu frío.
                             </p>
                         </div>
 
-                        <form action="{{ route('produccion.tanda.store') }}" method="POST" class="space-y-4" x-data="tandaForm()">
-                            @csrf
-                            <div class="grid grid-cols-2 gap-3">
+                        @if($preparaciones->isEmpty())
+                            <!-- Mensaje de Alerta si no hay preparaciones registradas aún -->
+                            <div class="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-bold space-y-2 uppercase">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-info text-base text-amber-500"></i>
+                                    <span>AÚN NO TIENES RECETAS DE MASAS O JIGOTES REGISTRADAS</span>
+                                </div>
+                                <p class="text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                                    Para registrar una preparación y descontar insumos, primero debes definir su receta base (los ingredientes que lleva) en Productos & Recetas.
+                                </p>
+                                <a href="{{ route('productos.index', ['tab' => 'preparaciones']) }}"
+                                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase shadow transition-all">
+                                    <i class="fa-solid fa-plus-circle"></i> CREAR MI PRIMERA MASA O JIGOTE AQUÍ
+                                </a>
+                            </div>
+                        @else
+                            <form action="{{ route('produccion.tanda.store') }}" method="POST" class="space-y-4" x-data="tandaForm()">
+                                @csrf
+                                <input type="hidden" name="tandas" value="1">
+
+                                <!-- Fecha Actual (No editable / Solo lectura) -->
                                 <div>
                                     <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
-                                        FECHA <span class="text-amber-500">*</span>
+                                        FECHA DE PREPARACIÓN
                                     </label>
-                                    <input type="date" name="fecha" required value="{{ date('Y-m-d') }}"
+                                    <div class="flex items-center gap-2.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-slate-800 dark:text-slate-200 uppercase">
+                                        <i class="fa-solid fa-calendar-day text-rose-500 text-sm"></i>
+                                        <span>{{ \Carbon\Carbon::now('America/La_Paz')->translatedFormat('d/m/Y') }} (HOY)</span>
+                                    </div>
+                                    <input type="hidden" name="fecha" value="{{ \Carbon\Carbon::now('America/La_Paz')->format('Y-m-d') }}">
+                                </div>
+
+                                <!-- Selector de Preparación -->
+                                <div>
+                                    <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
+                                        ¿QUÉ PREPARASTE? (MASA / JIGOTE) <span class="text-amber-500">*</span>
+                                    </label>
+                                    <select name="preparacion_id" x-model="selectedPrepId" @change="onPrepChange()" required
                                         class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-rose-500 focus:outline-none">
+                                        <option value="">SELECCIONAR PREPARACIÓN...</option>
+                                        <template x-for="p in preparacionesList" :key="p.id">
+                                            <option :value="p.id" x-text="`${p.nombre.toUpperCase()} (RINDE BASE: ~${p.rinde_cantidad} UDS.)`"></option>
+                                        </template>
+                                    </select>
                                 </div>
-                                <div>
-                                    <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
-                                        TANDAS A HACER <span class="text-amber-500">*</span>
+
+                                <!-- Campo Cantidad Producida (Exacto para tapas / Aprox para jigote) -->
+                                <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+                                    <label class="block text-[11px] font-bold uppercase text-slate-700 dark:text-slate-300">
+                                        <span x-text="esJigote() ? 'PORCIONES OBTENIDAS (APROXIMADO):' : 'TAPAS OBTENIDAS (CONTEO EXACTO):'"></span>
+                                        <span class="text-amber-500">*</span>
                                     </label>
-                                    <input type="number" step="any" min="0.1" name="tandas" x-model.number="tandas" required placeholder="1"
+                                    <input type="number" step="any" min="1" name="cantidad_producida" x-model.number="cantidadProducida" required
                                         @focus="$event.target.select()" @click="$event.target.select()"
-                                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase focus:border-rose-500 focus:outline-none">
+                                        class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-black text-rose-600 dark:text-rose-400 focus:border-rose-500 focus:outline-none uppercase">
+                                    <p class="text-[9px] font-bold text-slate-400 uppercase" x-show="esJigote()">
+                                        ℹ️ En el jigote es un rendimiento estimado; el sistema descontará de manera flexible sin trancar si sobra un poco en la olla.
+                                    </p>
+                                    <p class="text-[9px] font-bold text-slate-400 uppercase" x-show="!esJigote()">
+                                        ℹ️ En la masa puedes anotar el número exacto de tapas que cortaste y contaste al finalizar.
+                                    </p>
                                 </div>
-                            </div>
 
-                            <div>
-                                <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
-                                    ¿QUÉ PREPARASTE? (MASA / JIGOTE) <span class="text-amber-500">*</span>
-                                </label>
-                                <select name="preparacion_id" x-model="selectedPrepId" @change="onPrepChange()" required
-                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-rose-500 focus:outline-none">
-                                    <option value="">SELECCIONAR PREPARACIÓN...</option>
-                                    <template x-for="p in preparacionesList" :key="p.id">
-                                        <option :value="p.id" x-text="`${p.nombre.toUpperCase()} (RINDE ~${p.rinde_cantidad} UDS.)`"></option>
-                                    </template>
-                                </select>
-                            </div>
-
-                            <!-- Campo Cantidad Producida (Exacto para tapas / Aprox para jigote) -->
-                            <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
-                                <label class="block text-[11px] font-bold uppercase text-slate-700 dark:text-slate-300">
-                                    <span x-text="esJigote() ? 'PORCIONES OBTENIDAS (APROXIMADO):' : 'TAPAS OBTENIDAS (CONTEO EXACTO):'"></span>
-                                    <span class="text-amber-500">*</span>
-                                </label>
-                                <input type="number" step="any" min="1" name="cantidad_producida" x-model.number="cantidadProducida" required
-                                    @focus="$event.target.select()" @click="$event.target.select()"
-                                    class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-black text-rose-600 dark:text-rose-400 focus:border-rose-500 focus:outline-none uppercase">
-                                <p class="text-[9px] font-bold text-slate-400 uppercase" x-show="esJigote()">
-                                    ℹ️ En el jigote es un rendimiento estimado; el sistema descontará de manera flexible sin trancar si sobra un poco en la olla.
-                                </p>
-                                <p class="text-[9px] font-bold text-slate-400 uppercase" x-show="!esJigote()">
-                                    ℹ️ En la masa puedes anotar el número exacto de tapas que cortaste y contaste al finalizar.
-                                </p>
-                            </div>
-
-                            <!-- Desglose de Insumos que se Descontarán de Almacén -->
-                            <div x-show="currentReceta.length > 0" class="space-y-2">
-                                <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest block">
-                                    📉 INSUMOS QUE SE DESCONTARÁN DE ALMACÉN:
-                                </span>
-                                <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
-                                    <table class="w-full text-left text-[11px]">
-                                        <thead class="bg-slate-50 dark:bg-slate-950 text-[9px] font-black text-slate-400 uppercase border-b border-slate-200 dark:border-slate-800">
-                                            <tr>
-                                                <th class="py-1.5 px-2">Insumo</th>
-                                                <th class="py-1.5 px-2 text-right">A Descontar</th>
-                                                <th class="py-1.5 px-2 text-right">Stock Almacén</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                                            <template x-for="r in currentReceta" :key="r.insumo_id">
+                                <!-- Desglose de Insumos que se Descontarán de Almacén -->
+                                <div x-show="currentReceta.length > 0" class="space-y-2">
+                                    <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest block">
+                                        📉 INSUMOS QUE SE DESCONTARÁN DE ALMACÉN:
+                                    </span>
+                                    <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+                                        <table class="w-full text-left text-[11px]">
+                                            <thead class="bg-slate-50 dark:bg-slate-950 text-[9px] font-black text-slate-400 uppercase border-b border-slate-200 dark:border-slate-800">
                                                 <tr>
-                                                    <td class="py-1.5 px-2 font-bold text-slate-800 dark:text-slate-200 uppercase" x-text="r.insumo_nombre"></td>
-                                                    <td class="py-1.5 px-2 text-right font-black text-rose-600 dark:text-rose-400" x-text="`${(r.cantidad_base * tandas).toFixed(3)} ${r.unidad.toUpperCase()}`"></td>
-                                                    <td class="py-1.5 px-2 text-right font-bold" :class="r.stock_disponible < (r.cantidad_base * tandas) ? 'text-rose-500' : 'text-slate-400'"
-                                                        x-text="`${r.stock_disponible.toFixed(2)} ${r.unidad.toUpperCase()}`"></td>
+                                                    <th class="py-1.5 px-2">Insumo</th>
+                                                    <th class="py-1.5 px-2 text-right">A Descontar</th>
+                                                    <th class="py-1.5 px-2 text-right">Stock Almacén</th>
                                                 </tr>
-                                            </template>
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                                <template x-for="r in currentReceta" :key="r.insumo_id">
+                                                    <tr>
+                                                        <td class="py-1.5 px-2 font-bold text-slate-800 dark:text-slate-200 uppercase" x-text="r.insumo_nombre"></td>
+                                                        <td class="py-1.5 px-2 text-right font-black text-rose-600 dark:text-rose-400" x-text="`${r.cantidad_base.toFixed(3)} ${r.unidad.toUpperCase()}`"></td>
+                                                        <td class="py-1.5 px-2 text-right font-bold" :class="r.stock_disponible < r.cantidad_base ? 'text-rose-500' : 'text-slate-400'"
+                                                            x-text="`${r.stock_disponible.toFixed(2)} ${r.unidad.toUpperCase()}`"></td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div>
-                                <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">NOTAS / OBSERVACIONES (OPCIONAL)</label>
-                                <input type="text" name="observaciones" placeholder="Ej. Tanda doble, harina marca X"
-                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-800 dark:text-white uppercase focus:border-rose-500 focus:outline-none">
-                            </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">NOTAS / OBSERVACIONES (OPCIONAL)</label>
+                                    <input type="text" name="observaciones" placeholder="Ej. Masa salada, harina marca X"
+                                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-800 dark:text-white uppercase focus:border-rose-500 focus:outline-none">
+                                </div>
 
-                            <button type="submit"
-                                class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-bowl-rice"></i> REGISTRAR TANDA & DESCONTAR INSUMOS
-                            </button>
-                        </form>
+                                <button type="submit"
+                                    class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-bowl-rice"></i> REGISTRAR PREPARACIÓN & DESCONTAR INSUMOS
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 </div>
 
@@ -284,7 +298,7 @@
                                 </div>
                             @empty
                                 <div class="p-8 text-center text-slate-400 font-bold uppercase text-xs">
-                                    NO HAY PREPARACIONES REGISTRADAS. CREA RECETAS DE MASA Y JIGOTE EN "PRODUCTOS & RECETAS".
+                                    NO HAY PREPARACIONES REGISTRADAS AÚN. CREA TUS MASAS Y JIGOTES EN "PRODUCTOS & RECETAS".
                                 </div>
                             @endforelse
                         </div>
@@ -314,13 +328,31 @@
 
                         <form action="{{ route('produccion.armado.store') }}" method="POST" class="space-y-4" x-data="armadoForm()">
                             @csrf
-                            <div class="grid grid-cols-2 gap-3">
+
+                            <!-- Fecha Actual (No editable / Solo lectura) -->
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
+                                    FECHA DE ARMADO
+                                </label>
+                                <div class="flex items-center gap-2.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-black text-slate-800 dark:text-slate-200 uppercase">
+                                    <i class="fa-solid fa-calendar-day text-amber-500 text-sm"></i>
+                                    <span>{{ \Carbon\Carbon::now('America/La_Paz')->translatedFormat('d/m/Y') }} (HOY)</span>
+                                </div>
+                                <input type="hidden" name="fecha" value="{{ \Carbon\Carbon::now('America/La_Paz')->format('Y-m-d') }}">
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
-                                        FECHA <span class="text-amber-500">*</span>
+                                        SALTEÑA A ARMAR <span class="text-amber-500">*</span>
                                     </label>
-                                    <input type="date" name="fecha" required value="{{ date('Y-m-d') }}"
+                                    <select name="variante_id" x-model="selectedVarId" required
                                         class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-amber-500 focus:outline-none">
+                                        <option value="">SELECCIONAR...</option>
+                                        <template x-for="v in variantesList" :key="v.id">
+                                            <option :value="v.id" x-text="`${v.nombre.toUpperCase()} (EN CENTRAL: ${v.stock_armadas} UDS.)`"></option>
+                                        </template>
+                                    </select>
                                 </div>
                                 <div>
                                     <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
@@ -330,19 +362,6 @@
                                         @focus="$event.target.select()" @click="$event.target.select()"
                                         class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-black text-amber-600 dark:text-amber-400 uppercase focus:border-amber-500 focus:outline-none">
                                 </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
-                                    SALTEÑA QUE ESTÁS ARMANDO <span class="text-amber-500">*</span>
-                                </label>
-                                <select name="variante_id" x-model="selectedVarId" required
-                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-amber-500 focus:outline-none">
-                                    <option value="">SELECCIONAR VARIANTE...</option>
-                                    <template x-for="v in variantesList" :key="v.id">
-                                        <option :value="v.id" x-text="`${v.nombre.toUpperCase()} (EN CENTRAL: ${v.stock_armadas} UDS.)`"></option>
-                                    </template>
-                                </select>
                             </div>
 
                             <!-- SELECCIÓN LIBRE DE MASA / TAPAS -->
@@ -367,7 +386,7 @@
                                     </div>
                                 </div>
                                 <span class="text-[9px] font-bold text-slate-400 uppercase block">
-                                    Puedes elegir Tapas 50g, Tapas Dulces o cualquier masa que tengas en frío.
+                                    Puedes elegir Tapas 50g, Tapas Dulces o cualquier masa disponible en frío.
                                 </span>
                             </div>
 
@@ -458,11 +477,11 @@
         <div x-show="activeTab === 'historial'" class="space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                <!-- Historial de Tandas de Masa & Jigote -->
+                <!-- Historial de Preparaciones de Masa & Jigote -->
                 <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
                     <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                         <h2 class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                            <i class="fa-solid fa-bowl-rice text-rose-500"></i> ÚLTIMAS TANDAS PRODUCIDAS
+                            <i class="fa-solid fa-bowl-rice text-rose-500"></i> ÚLTIMAS PREPARACIONES ELABORADAS
                         </h2>
                     </div>
 
@@ -470,10 +489,9 @@
                         <table class="w-full text-left text-xs">
                             <thead class="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[9px] font-black text-slate-400 uppercase">
                                 <tr>
-                                    <th class="py-2 px-3">Fecha</th>
-                                    <th class="py-2 px-3">Preparación</th>
-                                    <th class="py-2 px-2 text-center">Tandas</th>
-                                    <th class="py-2 px-3 text-right">Obtenido</th>
+                                    <th class="py-2.5 px-3">Fecha</th>
+                                    <th class="py-2.5 px-3">Preparación</th>
+                                    <th class="py-2.5 px-3 text-right">Cantidad Obtenida</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -481,12 +499,11 @@
                                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
                                         <td class="py-2.5 px-3 font-bold text-slate-500 uppercase">{{ $ht->fecha->format('d/m/Y') }}</td>
                                         <td class="py-2.5 px-3 font-black text-slate-900 dark:text-white uppercase">{{ $ht->preparacion->nombre ?? 'Masa' }}</td>
-                                        <td class="py-2.5 px-2 text-center font-bold text-amber-600">{{ (float)$ht->tandas }}</td>
-                                        <td class="py-2.5 px-3 text-right font-black text-rose-600 dark:text-rose-400">+{{ number_format((float)$ht->cantidad_producida, 0) }}</td>
+                                        <td class="py-2.5 px-3 text-right font-black text-rose-600 dark:text-rose-400">+{{ number_format((float)$ht->cantidad_producida, 0) }} Uds.</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="p-6 text-center text-slate-400 font-bold uppercase text-xs">No hay tandas registradas aún.</td>
+                                        <td colspan="3" class="p-6 text-center text-slate-400 font-bold uppercase text-xs">No hay preparaciones registradas aún.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -506,10 +523,10 @@
                         <table class="w-full text-left text-xs">
                             <thead class="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[9px] font-black text-slate-400 uppercase">
                                 <tr>
-                                    <th class="py-2 px-3">Fecha</th>
-                                    <th class="py-2 px-3">Salteña Armada</th>
-                                    <th class="py-2 px-3 text-right">Armadas</th>
-                                    <th class="py-2 px-3">Masa & Jigote Usados</th>
+                                    <th class="py-2.5 px-3">Fecha</th>
+                                    <th class="py-2.5 px-3">Salteña Armada</th>
+                                    <th class="py-2.5 px-3 text-right">Armadas</th>
+                                    <th class="py-2.5 px-3">Masa & Jigote Usados</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -555,7 +572,6 @@
 
         function tandaForm() {
             return {
-                tandas: 1,
                 selectedPrepId: '',
                 cantidadProducida: 100,
                 currentReceta: [],
@@ -563,7 +579,7 @@
                     const prep = this.preparacionesList.find(p => p.id == this.selectedPrepId);
                     if (prep) {
                         this.currentReceta = prep.receta || [];
-                        this.cantidadProducida = (parseFloat(prep.rinde_cantidad) || 100) * (parseFloat(this.tandas) || 1);
+                        this.cantidadProducida = parseFloat(prep.rinde_cantidad) || 100;
                     } else {
                         this.currentReceta = [];
                         this.cantidadProducida = 100;
