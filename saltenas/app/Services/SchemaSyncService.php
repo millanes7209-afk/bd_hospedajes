@@ -89,6 +89,9 @@ class SchemaSyncService
             self::addColumnSafe('preparaciones', 'tipo_preparacion', function (Blueprint $table) {
                 $table->string('tipo_preparacion', 30)->default('masa');
             });
+            try {
+                DB::statement("UPDATE preparaciones SET tipo_preparacion = 'jigote' WHERE tipo_preparacion IS NULL OR tipo_preparacion = '' OR (tipo_preparacion = 'masa' AND (LOWER(nombre) LIKE '%queso%' OR LOWER(nombre) LIKE '%jamon%' OR LOWER(nombre) LIKE '%jigote%' OR LOWER(nombre) LIKE '%relleno%' OR LOWER(nombre) LIKE '%carne%' OR LOWER(nombre) LIKE '%pollo%'))");
+            } catch (\Throwable $e) {}
         }
 
         try {

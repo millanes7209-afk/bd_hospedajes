@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'PRODUCTOS & COSTEO DINÁMICO — SALTEÑAS')
+@section('title', 'PRODUCTOS & RECETAS — SALTEÑAS')
 
 @section('content')
     <div class="space-y-6" x-data="productosManager({
@@ -10,19 +10,19 @@
         variantes: {{ json_encode($variantesJson) }}
     })">
 
-        <!-- Header Page & Título -->
+        <!-- Header Page & Título (Simplificado) -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-black text-slate-900 dark:text-white uppercase flex items-center gap-2">
-                    <i class="fa-solid fa-coins text-amber-500"></i> PRODUCTOS, RECETAS & COSTEO
+                    <i class="fa-solid fa-boxes-stacked text-amber-500"></i> PRODUCTOS & RECETAS
                 </h1>
                 <p class="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase mt-0.5">
-                    FASE 2: COSTEO DINÁMICO EN TIEMPO REAL CON EL ÚLTIMO PRECIO DE COMPRA
+                    CATÁLOGO DE INSUMOS, MASAS, JIGOTES Y SALTEÑAS CON COSTEO EN TIEMPO REAL
                 </p>
             </div>
         </div>
 
-        <!-- KPI Cards: Métricas de Costeo & Rentabilidad (Fase 2) -->
+        <!-- KPI Cards: Métricas de Costeo & Rentabilidad -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-sm">
                 <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest block mb-1">
@@ -73,34 +73,34 @@
             </div>
         </div>
 
-        <!-- Navegación por Pestañas (Minimalista Estilo Bootstrap) -->
+        <!-- Navegación por Pestañas (Nombres Cortos y Optimizados para Celular) -->
         <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto">
             <button type="button" @click="activeTab = 'insumos'; history.replaceState(null, '', '?tab=insumos')"
                 :class="activeTab === 'insumos' ? 'bg-amber-500 text-slate-950 font-black shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800 font-bold'"
                 class="px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-boxes-stacked"></i>
-                <span>1. INSUMOS ({{ $insumos->count() }})</span>
+                <span>INSUMOS</span>
             </button>
 
             <button type="button" @click="activeTab = 'preparaciones'; history.replaceState(null, '', '?tab=preparaciones')"
                 :class="activeTab === 'preparaciones' ? 'bg-amber-500 text-slate-950 font-black shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800 font-bold'"
                 class="px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-bowl-rice"></i>
-                <span>2. MASA & SUB-RECETAS ({{ $preparaciones->count() }})</span>
+                <span>MASA O JIGOTE</span>
             </button>
 
             <button type="button" @click="activeTab = 'variantes'; history.replaceState(null, '', '?tab=variantes')"
                 :class="activeTab === 'variantes' ? 'bg-amber-500 text-slate-950 font-black shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800 font-bold'"
                 class="px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-cookie"></i>
-                <span>3. SALTEÑAS & RECETAS ({{ $variantes->count() }})</span>
+                <span>SALTEÑAS</span>
             </button>
 
             <button type="button" @click="activeTab = 'costeo'; history.replaceState(null, '', '?tab=costeo')"
                 :class="activeTab === 'costeo' ? 'bg-amber-500 text-slate-950 font-black shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800 font-bold'"
                 class="px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-chart-line"></i>
-                <span>4. MATRIZ DE RENTABILIDAD</span>
+                <span>RENTABILIDAD</span>
             </button>
         </div>
 
@@ -124,14 +124,14 @@
                                 <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
                                     NOMBRE DEL INSUMO <span class="text-amber-500">*</span>
                                 </label>
-                                <input type="text" name="nombre" required placeholder="EJ. HARINA DE TRIGO, MANTECA, POLLO"
+                                <input type="text" name="nombre" required placeholder="EJ. HARINA DE TRIGO, QUESO, POLLO"
                                     @focus="$event.target.select()" @click="$event.target.select()"
                                     class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:border-amber-500 focus:outline-none uppercase">
                             </div>
 
                             <div>
                                 <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
-                                    UNIDAD DE MEDIDA <span class="text-amber-500">*</span>
+                                    UNIDAD DE MEDIDA BASE <span class="text-amber-500">*</span>
                                 </label>
                                 <select name="unidad_medida" required
                                     class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 focus:border-amber-500 focus:outline-none uppercase">
@@ -173,7 +173,7 @@
                     </div>
                 </div>
 
-                <!-- Lista Insumos (Col 7) -->
+                <!-- Lista Insumos: Disponibles primero, agotados debajo (Col 7) -->
                 <div class="lg:col-span-7" x-data="{ editingInsumoId: null }">
                     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
                         <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
@@ -313,21 +313,21 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- PESTAÑA 2: MASA / PREPARACIONES BASE       -->
+        <!-- PESTAÑA 2: MASA O JIGOTE                   -->
         <!-- ========================================== -->
         <div x-show="activeTab === 'preparaciones'" class="space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-                <!-- Formulario Preparaciones / Masa (Col 5) -->
+                <!-- Formulario Preparaciones / Masa o Jigote (Col 5) -->
                 <div class="lg:col-span-5">
                     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4 shadow-sm">
                         <h2 class="text-xs font-black text-slate-900 dark:text-rose-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <i class="fa-solid fa-bowl-rice text-rose-500"></i> NUEVA PREPARACIÓN (MASA / JIGOTE)
+                            <i class="fa-solid fa-bowl-rice text-rose-500"></i> NUEVA RECETA (MASA O JIGOTE)
                         </h2>
 
                         @if($insumos->isEmpty())
                             <div class="p-4 rounded-xl bg-amber-50 dark:bg-rose-500/10 border border-amber-200 dark:border-rose-500/30 text-amber-800 dark:text-rose-400 text-xs font-bold space-y-2 uppercase">
-                                <p>PRIMERO REGISTRA INSUMOS (EJ. HARINA, MANTECA, AGUA) EN LA PESTAÑA DE INSUMOS.</p>
+                                <p>PRIMERO REGISTRA INSUMOS (EJ. HARINA, MANTECA, AGUA, CARNES) EN LA PESTAÑA DE INSUMOS.</p>
                                 <button type="button" @click="activeTab = 'insumos'"
                                     class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-black text-xs uppercase shadow">+ IR A INSUMOS</button>
                             </div>
@@ -335,29 +335,42 @@
                             <form action="{{ route('preparaciones.store') }}" method="POST" class="space-y-4" x-data="preparacionForm()">
                                 <input type="hidden" name="tab" value="preparaciones">
                                 @csrf
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
+
+                                <!-- Selector de Tipo (Masa vs Jigote) -->
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                    <div class="sm:col-span-1">
+                                        <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
+                                            TIPO <span class="text-amber-500">*</span>
+                                        </label>
+                                        <select name="tipo_preparacion" x-model="tipoPreparacion" required
+                                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-2 text-xs font-black text-rose-600 dark:text-rose-400 uppercase focus:border-rose-500 focus:outline-none">
+                                            <option value="masa">🥟 MASA (TAPAS)</option>
+                                            <option value="jigote">🥣 JIGOTE (RELLENO)</option>
+                                        </select>
+                                    </div>
+                                    <div class="sm:col-span-1">
+                                        <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
                                             NOMBRE <span class="text-amber-500">*</span>
                                         </label>
-                                        <input type="text" name="nombre" required placeholder="EJ. MASA DE SALTEÑA"
+                                        <input type="text" name="nombre" required placeholder="EJ. JAMÓN Y QUESO"
                                             @focus="$event.target.select()" @click="$event.target.select()"
-                                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:border-rose-500 focus:outline-none uppercase">
+                                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-2 text-xs font-bold text-slate-900 dark:text-white focus:border-rose-500 focus:outline-none uppercase">
                                     </div>
-                                    <div>
-                                        <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
-                                            RINDE (SALTEÑAS) <span class="text-amber-500">*</span>
+                                    <div class="sm:col-span-1">
+                                        <label class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">
+                                            <span x-text="tipoPreparacion === 'jigote' ? 'RINDE (PORCIONES)' : 'RINDE (TAPAS)'"></span> <span class="text-amber-500">*</span>
                                         </label>
-                                        <input type="number" step="any" min="1" name="rinde_cantidad" x-model.number="rinde" required placeholder="EJ. 100"
+                                        <input type="number" step="any" min="1" name="rinde_cantidad" x-model.number="rinde" required placeholder="EJ. 30"
                                             @focus="$event.target.select()" @click="$event.target.select()"
-                                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 focus:border-rose-500 focus:outline-none uppercase">
+                                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 focus:border-rose-500 focus:outline-none uppercase">
                                     </div>
                                 </div>
 
+                                <!-- Insumos de la Receta con Selector de Unidades (Gramos, Kilos, etc.) -->
                                 <div class="space-y-3 bg-slate-50 dark:bg-slate-950 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
                                     <div class="flex items-center justify-between">
                                         <label class="block text-[11px] font-bold uppercase text-rose-600 dark:text-rose-400">
-                                            INSUMOS DE ESTA TANDA
+                                            INSUMOS DE ESTA RECETA
                                         </label>
                                         <button type="button" @click="addRow()"
                                             class="text-[10px] font-black text-rose-600 dark:text-rose-400 hover:underline uppercase flex items-center gap-1">
@@ -366,24 +379,52 @@
                                     </div>
 
                                     <template x-for="(row, idx) in rows" :key="idx">
-                                        <div class="grid grid-cols-12 gap-2 items-center bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
-                                            <div class="col-span-6">
+                                        <div class="grid grid-cols-12 gap-1.5 items-center bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
+                                            <!-- Selector de Insumo -->
+                                            <div class="col-span-5">
                                                 <select :name="`insumos[${idx}][insumo_id]`" x-model="row.insumo_id" @change="updateRow(idx)" required
                                                     class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-rose-500 focus:outline-none">
-                                                    <option value="" class="uppercase">SELECCIONAR INSUMO...</option>
+                                                    <option value="" class="uppercase">SELECCIONAR...</option>
                                                     <template x-for="ins in insumosList" :key="ins.id">
-                                                        <option :value="ins.id" x-text="`${ins.nombre.toUpperCase()} (${ins.unidad_medida.toUpperCase()}) - BS. ${ins.ultimo_precio.toFixed(2)}`"></option>
+                                                        <option :value="ins.id" x-text="`${ins.nombre.toUpperCase()} (${ins.unidad_medida.toUpperCase()})`"></option>
                                                     </template>
                                                 </select>
                                             </div>
-                                            <div class="col-span-5 flex items-center gap-1">
+
+                                            <!-- Cantidad Usada -->
+                                            <div class="col-span-3">
                                                 <input type="number" step="any" min="0.0001" :name="`insumos[${idx}][cantidad_usada]`"
                                                     x-model.number="row.cantidad_usada" required placeholder="CANT."
                                                     @focus="$event.target.select()" @click="$event.target.select()"
                                                     class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase focus:border-rose-500 focus:outline-none">
-                                                <span x-show="row.unidad" class="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 uppercase shrink-0"
-                                                    x-text="row.unidad"></span>
                                             </div>
+
+                                            <!-- Selector de Unidad (Permite Gramos o Kilos sin obligar a solo Kg) -->
+                                            <div class="col-span-3">
+                                                <template x-if="row.baseUnidad === 'kg' || row.baseUnidad === 'g'">
+                                                    <select :name="`insumos[${idx}][unidad_ingresada]`" x-model="row.unidad_ingresada"
+                                                        class="w-full bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 rounded px-1.5 py-1.5 text-[10px] font-black text-rose-700 dark:text-rose-300 uppercase focus:outline-none">
+                                                        <option value="g">G (GRAMOS)</option>
+                                                        <option value="kg">KG (KILOS)</option>
+                                                    </select>
+                                                </template>
+                                                <template x-if="row.baseUnidad === 'litro' || row.baseUnidad === 'l' || row.baseUnidad === 'ml'">
+                                                    <select :name="`insumos[${idx}][unidad_ingresada]`" x-model="row.unidad_ingresada"
+                                                        class="w-full bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 rounded px-1.5 py-1.5 text-[10px] font-black text-rose-700 dark:text-rose-300 uppercase focus:outline-none">
+                                                        <option value="ml">ML</option>
+                                                        <option value="litro">LITRO</option>
+                                                    </select>
+                                                </template>
+                                                <template x-if="row.baseUnidad && row.baseUnidad !== 'kg' && row.baseUnidad !== 'g' && row.baseUnidad !== 'litro' && row.baseUnidad !== 'l' && row.baseUnidad !== 'ml'">
+                                                    <div>
+                                                        <span class="text-[9px] font-black px-1.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase block text-center truncate"
+                                                            x-text="row.baseUnidad"></span>
+                                                        <input type="hidden" :name="`insumos[${idx}][unidad_ingresada]`" :value="row.baseUnidad">
+                                                    </div>
+                                                </template>
+                                            </div>
+
+                                            <!-- Botón Eliminar Fila -->
                                             <div class="col-span-1 text-right">
                                                 <button type="button" @click="removeRow(idx)" x-show="rows.length > 1"
                                                     class="text-slate-400 hover:text-rose-500 text-xs p-1">
@@ -394,17 +435,17 @@
                                     </template>
                                 </div>
 
-                                <!-- Tarjeta de Costeo Dinámico en Vivo de la Tanda -->
+                                <!-- Tarjeta de Costeo Dinámico en Vivo de la Preparación -->
                                 <div class="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 flex items-center justify-between text-xs">
                                     <div>
                                         <span class="text-[10px] font-black text-rose-700 dark:text-rose-400 uppercase block">
-                                            COSTO TOTAL LOTE:
+                                            COSTO TOTAL RECETA:
                                         </span>
                                         <span class="text-sm font-black text-slate-900 dark:text-white" x-text="`BS. ${calcularTotalLote().toFixed(2)}`"></span>
                                     </div>
                                     <div class="text-right">
                                         <span class="text-[10px] font-black text-rose-700 dark:text-rose-400 uppercase block">
-                                            COSTO POR SALTEÑA (TAPA):
+                                            <span x-text="tipoPreparacion === 'jigote' ? 'COSTO / PORCIÓN RELLENO:' : 'COSTO / TAPA MASA:'"></span>
                                         </span>
                                         <span class="text-base font-black text-rose-600 dark:text-rose-400" x-text="`BS. ${calcularCostoUnitario().toFixed(3)}`"></span>
                                     </div>
@@ -412,7 +453,7 @@
 
                                 <button type="submit"
                                     class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2">
-                                    <i class="fa-solid fa-save"></i> GUARDAR PREPARACIÓN (MASA)
+                                    <i class="fa-solid fa-save"></i> GUARDAR RECETA DE <span x-text="tipoPreparacion === 'jigote' ? 'JIGOTE' : 'MASA'"></span>
                                 </button>
                             </form>
                         @endif
@@ -424,7 +465,7 @@
                     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
                         <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                             <h2 class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-list text-rose-500"></i> PREPARACIONES & COSTO POR TAPA
+                                <i class="fa-solid fa-list text-rose-500"></i> RECETAS DE MASAS Y JIGOTES
                             </h2>
                             <span class="text-[10px] font-bold text-slate-400 uppercase">{{ $preparaciones->count() }} DEFINIDAS</span>
                         </div>
@@ -435,15 +476,19 @@
                                     $costoUnitario = $prep->costoEnFecha();
                                     $costoLote = $prep->costoTotalLote();
                                     $desglose = $prep->desgloseCostos();
+                                    $esMasa = strtolower($prep->tipo_preparacion) === 'masa' || str_contains(strtolower($prep->nombre), 'masa') || str_contains(strtolower($prep->nombre), 'tapa');
                                 @endphp
                                 <div class="p-4 space-y-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
                                     <div class="flex items-center justify-between">
                                         <div>
                                             <span class="font-black text-slate-900 dark:text-white text-sm flex items-center gap-2 uppercase">
-                                                🥣 {{ strtoupper($prep->nombre) }}
+                                                {{ $esMasa ? '🥟' : '🥣' }} {{ strtoupper($prep->nombre) }}
+                                                <span class="text-[9px] px-2 py-0.5 rounded uppercase font-black {{ $esMasa ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400' }}">
+                                                    {{ $esMasa ? 'MASA / TAPAS' : 'JIGOTE / RELLENO' }}
+                                                </span>
                                             </span>
                                             <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
-                                                RINDE {{ $prep->rinde_cantidad }} UNIDADES • LOTE TOTAL: BS. {{ number_format($costoLote, 2) }}
+                                                Rinde receta base: {{ $prep->rinde_cantidad }} {{ $esMasa ? 'tapas' : 'porciones' }} • Total lote: Bs. {{ number_format($costoLote, 2) }}
                                             </span>
                                         </div>
 
@@ -461,7 +506,7 @@
                                                 <span>RECETA</span>
                                             </button>
 
-                                            <form action="{{ route('preparaciones.destroy', $prep->id) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta preparación? Las recetas que la usen quedarán sin masa.');">
+                                            <form action="{{ route('preparaciones.destroy', $prep->id) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta preparación?');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="p-1.5 rounded text-slate-400 hover:text-rose-600 transition-all text-xs" title="Eliminar Preparación">
@@ -475,17 +520,17 @@
                                     <div x-show="expandedPrep === {{ $prep->id }}" x-cloak
                                         class="p-3 bg-slate-50 dark:bg-slate-950/80 rounded-lg border border-slate-200 dark:border-slate-800 text-xs space-y-2">
                                         <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest block">
-                                            DESGLOSE DE COSTOS DEL LOTE (CON ÚLTIMO PRECIO DE COMPRA):
+                                            DESGLOSE DE INSUMOS & COSTO BASE:
                                         </span>
                                         <div class="overflow-x-auto">
                                             <table class="w-full text-left text-[11px]">
                                                 <thead>
                                                     <tr class="text-slate-400 uppercase border-b border-slate-200 dark:border-slate-800 text-[9px] font-black">
                                                         <th class="py-1">INSUMO</th>
-                                                        <th class="py-1 text-right">CANT. LOTE</th>
+                                                        <th class="py-1 text-right">CANTIDAD</th>
                                                         <th class="py-1 text-right">ÚLTIMO PRECIO</th>
                                                         <th class="py-1 text-right">SUBTOTAL</th>
-                                                        <th class="py-1 text-right">APORTE / TAPA</th>
+                                                        <th class="py-1 text-right">APORTE / SALTEÑA</th>
                                                         <th class="py-1 text-right">%</th>
                                                     </tr>
                                                 </thead>
@@ -496,7 +541,7 @@
                                                                 {{ $item['nombre'] }}
                                                             </td>
                                                             <td class="py-1.5 text-right font-medium">
-                                                                {{ $item['cantidad_lote'] }} {{ strtoupper($item['unidad']) }}
+                                                                {{ $item['cantidad_lote'] >= 1 ? $item['cantidad_lote'] : ($item['cantidad_lote'] * 1000) . ' G' }} {{ $item['cantidad_lote'] >= 1 ? strtoupper($item['unidad']) : '' }}
                                                             </td>
                                                             <td class="py-1.5 text-right font-medium">
                                                                 Bs. {{ number_format($item['precio_compra'], 2) }}
@@ -519,7 +564,7 @@
                                 </div>
                             @empty
                                 <div class="p-8 text-center text-slate-400 font-bold uppercase text-xs">
-                                    NO HAY PREPARACIONES (MASAS) CREADAS AÚN.
+                                    NO HAY RECETAS DE MASAS O JIGOTES CREADAS AÚN.
                                 </div>
                             @endforelse
                         </div>
@@ -529,7 +574,7 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- PESTAÑA 3: VARIANTES DE SALTEÑA & RECETAS  -->
+        <!-- PESTAÑA 3: SALTEÑAS & RECETAS              -->
         <!-- ========================================== -->
         <div x-show="activeTab === 'variantes'" class="space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -584,7 +629,7 @@
                                             <div class="col-span-4">
                                                 <select :name="`componentes[${idx}][tipo_componente]`" x-model="comp.tipo_componente" @change="onTipoChange(idx)"
                                                     class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase">
-                                                    <option value="preparacion">🥣 MASA/BASE</option>
+                                                    <option value="preparacion">🥣 MASA/JIGOTE</option>
                                                     <option value="insumo">📦 INSUMO DIRECTO</option>
                                                 </select>
                                             </div>
@@ -595,7 +640,7 @@
                                                 <template x-if="comp.tipo_componente === 'preparacion'">
                                                     <select :name="`componentes[${idx}][preparacion_id]`" x-model="comp.preparacion_id" @change="updateCompCost(idx)"
                                                         class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-[11px] font-bold text-slate-900 dark:text-white uppercase">
-                                                        <option value="">SELECCIONAR MASA...</option>
+                                                        <option value="">SELECCIONAR MASA O JIGOTE...</option>
                                                         <template x-for="p in preparacionesList" :key="p.id">
                                                             <option :value="p.id" x-text="`${p.nombre.toUpperCase()} (COSTO: BS. ${p.costo_unitario.toFixed(3)})`"></option>
                                                         </template>
@@ -786,7 +831,7 @@
                                                                 </td>
                                                                 <td class="py-1.5">
                                                                     <span class="text-[9px] font-black px-1.5 py-0.5 rounded uppercase {{ $item['tipo'] === 'preparacion' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400' }}">
-                                                                        {{ $item['tipo'] === 'preparacion' ? 'MASA' : 'INSUMO' }}
+                                                                        {{ $item['tipo'] === 'preparacion' ? 'MASA/JIGOTE' : 'INSUMO' }}
                                                                     </span>
                                                                 </td>
                                                                 <td class="py-1.5 text-right font-medium">
@@ -821,17 +866,17 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- PESTAÑA 4: MATRIZ DE RENTABILIDAD & COSTOS -->
+        <!-- PESTAÑA 4: RENTABILIDAD & COSTOS           -->
         <!-- ========================================== -->
         <div x-show="activeTab === 'costeo'" class="space-y-6">
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
                 <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                         <h2 class="text-sm font-black text-slate-900 dark:text-white uppercase flex items-center gap-2">
-                            <i class="fa-solid fa-scale-balanced text-amber-500"></i> MATRIZ GENERAL DE COSTOS & MÁRGENES
+                            <i class="fa-solid fa-scale-balanced text-amber-500"></i> MATRIZ GENERAL DE RENTABILIDAD
                         </h2>
                         <p class="text-xs text-slate-400 uppercase mt-0.5">
-                            ANÁLISIS COMPARATIVO DE PRECIO DE VENTA VS COSTO DE INSUMOS
+                            ANÁLISIS COMPARATIVO DE PRECIO DE VENTA VS COSTO DE PRODUCCIÓN
                         </p>
                     </div>
                 </div>
@@ -924,12 +969,13 @@
 
         function preparacionForm() {
             return {
+                tipoPreparacion: 'masa',
                 rinde: 100,
                 rows: [
-                    { insumo_id: '', cantidad_usada: 1, unidad: '', ultimo_precio: 0 }
+                    { insumo_id: '', cantidad_usada: 1, baseUnidad: '', unidad_ingresada: '', ultimo_precio: 0 }
                 ],
                 addRow() {
-                    this.rows.push({ insumo_id: '', cantidad_usada: 1, unidad: '', ultimo_precio: 0 });
+                    this.rows.push({ insumo_id: '', cantidad_usada: 1, baseUnidad: '', unidad_ingresada: '', ultimo_precio: 0 });
                 },
                 removeRow(idx) {
                     if (this.rows.length > 1) {
@@ -940,19 +986,31 @@
                     const row = this.rows[idx];
                     const ins = this.insumosList.find(i => i.id == row.insumo_id);
                     if (ins) {
-                        row.unidad = ins.unidad_medida.toUpperCase();
-                        row.ultimo_precio = ins.ultimo_precio || 0;
+                        const u = (ins.unidad_medida || 'unidad').toLowerCase();
+                        row.baseUnidad = u;
+                        row.unidad_ingresada = (u === 'kg') ? 'g' : u; // Por defecto gramos para peso si es kg
+                        row.ultimo_precio = parseFloat(ins.ultimo_precio) || 0;
                     } else {
-                        row.unidad = '';
+                        row.baseUnidad = '';
+                        row.unidad_ingresada = '';
                         row.ultimo_precio = 0;
                     }
+                },
+                calcularSubtotalRow(row) {
+                    const cant = parseFloat(row.cantidad_usada) || 0;
+                    const precio = parseFloat(row.ultimo_precio) || 0;
+                    if (row.unidad_ingresada === 'g' && row.baseUnidad === 'kg') {
+                        return (cant / 1000) * precio;
+                    }
+                    if (row.unidad_ingresada === 'ml' && (row.baseUnidad === 'litro' || row.baseUnidad === 'l')) {
+                        return (cant / 1000) * precio;
+                    }
+                    return cant * precio;
                 },
                 calcularTotalLote() {
                     let total = 0;
                     this.rows.forEach(r => {
-                        const cant = parseFloat(r.cantidad_usada) || 0;
-                        const precio = parseFloat(r.ultimo_precio) || 0;
-                        total += (cant * precio);
+                        total += this.calcularSubtotalRow(r);
                     });
                     return total;
                 },
@@ -1058,7 +1116,6 @@
                         submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> GUARDANDO Y CALCULANDO COSTO...';
                     }
 
-                    console.group('%c🚀 [DEPURADOR VARIANTE] Envío de Receta', 'color: #d97706; font-size: 13px; font-weight: bold;');
                     const formData = new FormData(formCrear);
 
                     fetch(formCrear.action, {
@@ -1076,16 +1133,12 @@
                         } catch (err) {}
 
                         if (response.ok && data && data.success) {
-                            console.log('✅ Variante guardada correctamente:', data);
-                            console.groupEnd();
                             mostrarAlerta('success', data.message || 'Variante de Salteña guardada correctamente.');
                             setTimeout(function () {
                                 window.location.href = '?tab=variantes';
                             }, 800);
                         } else {
                             let mensajeError = (data && data.error) ? data.error : 'Error al guardar la variante.';
-                            console.error('❌ Error al guardar:', mensajeError);
-                            console.groupEnd();
                             mostrarAlerta('error', mensajeError);
                             if (submitBtn) {
                                 submitBtn.disabled = false;
@@ -1094,8 +1147,6 @@
                         }
                     })
                     .catch(err => {
-                        console.error('❌ Error de red:', err);
-                        console.groupEnd();
                         mostrarAlerta('error', 'Error de conexión: ' + err.message);
                         if (submitBtn) {
                             submitBtn.disabled = false;

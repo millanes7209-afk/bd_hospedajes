@@ -92,21 +92,21 @@
                 :class="activeTab === 'tandas' ? 'bg-rose-600 text-white font-black shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800 font-bold'"
                 class="px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-bowl-rice"></i>
-                <span>PASO 1: PREPARAR MASA O JIGOTE</span>
+                <span>1. PREPARAR</span>
             </button>
 
             <button type="button" @click="activeTab = 'armado'; history.replaceState(null, '', '?tab=armado')"
                 :class="activeTab === 'armado' ? 'bg-amber-500 text-slate-950 font-black shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800 font-bold'"
                 class="px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-cookie"></i>
-                <span>PASO 2: MESA DE ARMADO (SALTEÑAS LIBRES)</span>
+                <span>2. ARMAR</span>
             </button>
 
             <button type="button" @click="activeTab = 'historial'; history.replaceState(null, '', '?tab=historial')"
                 :class="activeTab === 'historial' ? 'bg-slate-800 text-white font-black shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800 font-bold'"
                 class="px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-clock-rotate-left"></i>
-                <span>HISTORIAL DE PRODUCCIÓN</span>
+                <span>HISTORIAL</span>
             </button>
         </div>
 
