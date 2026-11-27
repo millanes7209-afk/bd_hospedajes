@@ -13,6 +13,7 @@ use App\Http\Controllers\PromocionController;
 use App\Http\Controllers\CierreDiarioController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DespachoController;
+use App\Http\Controllers\ProduccionController;
 
 // Rutas Públicas
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -65,6 +66,12 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/variantes/{id}', [VarianteSaltenaController::class, 'update'])->name('variantes.update');
     Route::delete('/variantes/{id}', [VarianteSaltenaController::class, 'destroy'])->name('variantes.destroy');
     Route::post('/variantes/{id}/toggle', [VarianteSaltenaController::class, 'toggle'])->name('variantes.toggle');
+
+    // Producción Central: Preparaciones & Armado en 2 Tiempos (Fase 3)
+    Route::get('/produccion', [ProduccionController::class, 'index'])->name('produccion.index');
+    Route::post('/produccion/tanda', [ProduccionController::class, 'storeTanda'])->name('produccion.tanda.store');
+    Route::post('/produccion/armado', [ProduccionController::class, 'storeArmado'])->name('produccion.armado.store');
+    Route::post('/produccion/ajuste/{id}', [ProduccionController::class, 'ajustarStock'])->name('produccion.ajuste');
 
     // Promociones Explícitas (Combos 3x10Bs)
     Route::get('/promociones', [PromocionController::class, 'index'])->name('promociones.index');

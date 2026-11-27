@@ -14,11 +14,19 @@ class Preparacion extends Model
     protected $fillable = [
         'nombre',
         'rinde_cantidad',
+        'stock_actual',
+        'tipo_preparacion',
     ];
 
     protected $casts = [
         'rinde_cantidad' => 'decimal:2',
+        'stock_actual' => 'decimal:3',
     ];
+
+    public function producciones()
+    {
+        return $this->hasMany(ProduccionTanda::class, 'preparacion_id');
+    }
 
     public function receta()
     {

@@ -134,6 +134,12 @@
                         <span>Compras</span>
                     </a>
 
+                    <a href="{{ route('produccion.index') }}"
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('produccion.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-amber-600 dark:hover:text-amber-400' }}">
+                        <i class="fa-solid fa-kitchen-set text-rose-500 dark:text-rose-400"></i>
+                        <span>Producción</span>
+                    </a>
+
                     <a href="{{ route('carritos.index') }}"
                         class="px-2.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5 {{ request()->routeIs('carritos.*') ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-amber-600 dark:hover:text-amber-400' }}">
                         <i class="fa-solid fa-store text-purple-600 dark:text-purple-400"></i>
@@ -298,6 +304,13 @@
                 class="mobile-item-btn px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('compras.*') ? 'is-active bg-amber-500 text-slate-950 shadow-sm' : '' }}">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-cart-shopping text-cyan-600 text-sm"></i>
                     Compras</span>
+                <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
+            </a>
+
+            <a href="{{ route('produccion.index') }}" @click="mobileMenuOpen = false"
+                class="mobile-item-btn px-3.5 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-between {{ request()->routeIs('produccion.*') ? 'is-active bg-amber-500 text-slate-950 shadow-sm' : '' }}">
+                <span class="flex items-center gap-3"><i class="fa-solid fa-kitchen-set text-rose-500 text-sm"></i>
+                    Producción & Cocina</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
             </a>
 

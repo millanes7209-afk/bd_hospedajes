@@ -15,12 +15,19 @@ class VarianteSaltena extends Model
         'nombre',
         'precio_venta',
         'activo',
+        'stock_armadas',
     ];
 
     protected $casts = [
         'precio_venta' => 'decimal:2',
         'activo' => 'boolean',
+        'stock_armadas' => 'decimal:2',
     ];
+
+    public function armados()
+    {
+        return $this->hasMany(ProduccionArmado::class, 'variante_id');
+    }
 
     public function recetas()
     {

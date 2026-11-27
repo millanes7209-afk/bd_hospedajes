@@ -82,6 +82,15 @@ class SchemaSyncService
             });
         }
 
+        if (Schema::hasTable('preparaciones')) {
+            self::addColumnSafe('preparaciones', 'stock_actual', function (Blueprint $table) {
+                $table->decimal('stock_actual', 12, 3)->default(0);
+            });
+            self::addColumnSafe('preparaciones', 'tipo_preparacion', function (Blueprint $table) {
+                $table->string('tipo_preparacion', 30)->default('masa');
+            });
+        }
+
         try {
             if (!Schema::hasTable('variantes_saltena')) {
                 Schema::create('variantes_saltena', function (Blueprint $table) {
@@ -89,6 +98,7 @@ class SchemaSyncService
                     $table->string('nombre');
                     $table->decimal('precio_venta', 10, 2)->default(0);
                     $table->boolean('activo')->default(true);
+                    $table->decimal('stock_armadas', 10, 2)->default(0);
                     $table->timestamps();
                 });
             } else {
@@ -98,10 +108,46 @@ class SchemaSyncService
                 self::addColumnSafe('variantes_saltena', 'precio_venta', function (Blueprint $table) {
                     $table->decimal('precio_venta', 10, 2)->default(0);
                 });
+                self::addColumnSafe('variantes_saltena', 'stock_armadas', function (Blueprint $table) {
+                    $table->decimal('stock_armadas', 10, 2)->default(0);
+                });
             }
         } catch (\Throwable $e) {
             // Ignorar
         }
+
+        try {
+            if (!Schema::hasTable('produccion_tandas')) {
+                Schema::create('produccion_tandas', function (Blueprint $table) {
+                    $table->id();
+                    $table->date('fecha');
+                    $table->foreignId('preparacion_id')->constrained('preparaciones')->onDelete('cascade');
+                    $table->decimal('tandas', 8, 2)->default(1);
+                    $table->decimal('cantidad_producida', 12, 3)->default(0);
+                    $table->decimal('costo_total', 10, 2)->default(0);
+                    $table->text('observaciones')->nullable();
+                    $table->timestamps();
+                });
+            }
+        } catch (\Throwable $e) {}
+
+        try {
+            if (!Schema::hasTable('produccion_armados')) {
+                Schema::create('produccion_armados', function (Blueprint $table) {
+                    $table->id();
+                    $table->date('fecha');
+                    $table->foreignId('variante_id')->constrained('variantes_saltena')->onDelete('cascade');
+                    $table->decimal('cantidad_armada', 10, 2)->default(0);
+                    $table->foreignId('tapa_preparacion_id')->nullable()->constrained('preparaciones')->onDelete('set null');
+                    $table->decimal('tapas_usadas', 10, 2)->default(0);
+                    $table->foreignId('jigote_preparacion_id')->nullable()->constrained('preparaciones')->onDelete('set null');
+                    $table->decimal('jigote_porciones_usadas', 10, 2)->default(0);
+                    $table->decimal('costo_total_armado', 10, 2)->default(0);
+                    $table->text('observaciones')->nullable();
+                    $table->timestamps();
+                });
+            }
+        } catch (\Throwable $e) {}
 
         try {
             if (!Schema::hasTable('variante_receta')) {
